@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="da">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="referrer" content="no-referrer" />
+    <title>T01 · TeamGym Team Manager</title>
+  </head>
+  <body>
+    <main>
+      <p><a href="../../">TeamGym Team Manager</a> / Teknisk test</p>
+      <h1>T01 · Betinget Drive-upload</h1>
+      <p>Kun til særskilte syntetiske testfiler. Denne side er en afprøvningskandidat og beviser ikke sikker fælles gemning.</p>
+      <p id="origin"></p>
+      <section aria-labelledby="connection-heading">
+        <h2 id="connection-heading">1. Forbind testkonto</h2>
+        <p>Google-konfiguration læses fra buildets offentlige miljøvariabler. Hver browser forbinder sin egen konto.</p>
+        <button id="prepare" disabled>Indlæs Google-testværktøj</button>
+        <button id="login" disabled>Forbind Google-testkonto</button>
+        <button id="disconnect" disabled>Afbryd forbindelse</button>
+      </section>
+      <section aria-labelledby="file-heading">
+        <h2 id="file-heading">2. Vælg testfil</h2>
+        <button id="create" disabled>Vælg testmappe og opret syntetisk testfil</button>
+        <button id="pick" disabled>Vælg eksisterende T01-testfil</button>
+        <p id="file-state">Ingen testfil valgt.</p>
+      </section>
+      <section aria-labelledby="upload-heading">
+        <h2 id="upload-heading">3. Test fra en fastholdt basis</h2>
+        <label>Sessionens mærke <select id="label"><option>A</option><option>B</option></select></label>
+        <button id="read" disabled>Indlæs og fasthold basis</button>
+        <p id="basis-state">Ingen basis indlæst.</p>
+        <label>Fælles uploadtid (UTC, valgfri) <input id="send-at" type="text" placeholder="2026-10-25T15:30:00.000Z" /></label>
+        <p>Begge konti kan klargøre til samme UTC-tid. Kontrollér tidsforskelle og faktisk overlap i DevTools.</p>
+        <button id="upload" disabled>Send betinget testupload</button>
+        <button id="wrong" disabled>Send med bevidst forkert etag</button>
+        <button id="inspect" disabled>Læs seneste indhold uden at ændre basis</button>
+        <button id="export" disabled>Eksportér sessionens syntetiske kladde</button>
+      </section>
+      <section aria-labelledby="results-heading">
+        <h2 id="results-heading">Rå testhændelser</h2>
+        <pre id="results" role="status" aria-live="polite"></pre>
+        <p>Loggen indeholder status, tid, indholdshash og syntetisk operations-id. Ingen tokens eller kontonavne. Eksportér aldrig rå HAR-filer med Authorization.</p>
+        <button id="report">Hent redigeret testlog</button>
+      </section>
+    </main>
+    <script type="module" src="./main.ts"></script>
+  </body>
+</html>
