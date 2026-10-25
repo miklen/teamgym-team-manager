@@ -21,6 +21,7 @@ jobs:
       - run: npm run check
       - run: npm run test:domain
       - run: npm run test:drive
+      - run: npm run test:mutations
       - run: npm run build
         env:
           VITE_GOOGLE_CLIENT_ID: ${{ vars.VITE_GOOGLE_CLIENT_ID }}

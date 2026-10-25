@@ -80,7 +80,7 @@ export function registerAthleteSkill(workspace: Workspace, athleteId: string, de
     if (registration) { athleteSkillId = registration.id; existed = true; return; }
     athleteSkillId = environment.id();
     copy.athleteSkills.push({ id: athleteSkillId, athleteId, skillId, archived: false, stability: null, assessedAt: null,
-      note: '', updatedAt: environment.now(), connectionConfirmation: null });
+      note: '', updatedAt: environment.now(), connectionConfirmation: null, reviewRequiredFor: [] });
   }, environment);
   return { workspace: existed ? workspace : result, athleteSkillId, existed };
 }
@@ -90,6 +90,33 @@ export function updateAssessment(workspace: Workspace, athleteSkillId: string, i
     const registration = requireItem(copy.athleteSkills, athleteSkillId);
     Object.assign(registration, input, { updatedAt: environment.now() });
     athleteSkillSchema.parse(registration);
+  }, environment);
+}
+
+/** En ændret konkret udførelse er en ny definition, men pladser beholder registreringens id. */
+export function replaceAthleteSkill(workspace: Workspace, registrationId: string, definition: SkillDefinition, environment = defaultEnvironment) {
+  return edit(workspace, (copy) => {
+    const registration = requireItem(copy.athleteSkills, registrationId);
+    const previous = requireItem(copy.skills, registration.skillId);
+    const parsed = skillDefinitionSchema.parse(definition);
+    if (parsed.discipline !== previous.discipline) throw new Error('Bevar disciplinen ved redigering.');
+    const identity = skillIdentity(parsed);
+    const existing = copy.skills.find((skill) => skillIdentity(skill) === identity);
+    const targetId = existing?.id ?? parsed.id;
+    if (copy.athleteSkills.some((item) => item.id !== registrationId && item.athleteId === registration.athleteId && item.skillId === targetId)) throw new Error('Gymnasten har allerede den præcise færdighed. Vælg den eksisterende registrering.');
+    if (!existing) copy.skills.push(parsed);
+    if (skillIdentity(previous) !== identity) {
+      registration.stability = null; registration.assessedAt = null; registration.connectionConfirmation = null; registration.reviewRequiredFor = [];
+    }
+    registration.skillId = targetId; registration.updatedAt = environment.now();
+  }, environment);
+}
+
+export function confirmRuleReview(workspace: Workspace, athleteSkillId: string, binding: RulesetBinding, input: Pick<AthleteSkill, 'stability' | 'assessedAt' | 'note'>, environment = defaultEnvironment) {
+  const assessed = updateAssessment(workspace, athleteSkillId, input, environment);
+  return edit(assessed, (copy) => {
+    const registration = requireItem(copy.athleteSkills, athleteSkillId);
+    registration.reviewRequiredFor = registration.reviewRequiredFor.filter((fingerprint) => fingerprint !== bindingFingerprint(binding));
   }, environment);
 }
 
@@ -117,12 +144,14 @@ export function setRoundEntries(workspace: Workspace, planId: string, discipline
     let countingStarted = false;
     for (const entry of entries) {
       const athlete = requireItem(copy.athletes, entry.athleteId);
-      if (athlete.archived || athlete.teamId !== team.id) throw new Error('Vælg en aktiv gymnast på holdet.');
+        const previous = requireItem(plan[discipline], roundId).entries.find((item) => item.id === entry.id);
+        const retained = previous?.athleteId === entry.athleteId && previous.athleteSkillId === entry.athleteSkillId;
+        if (!retained && (athlete.archived || athlete.teamId !== team.id)) throw new Error('Vælg en aktiv gymnast på holdet.');
       if (entry.role === 'counting') countingStarted = true;
       else if (countingStarted) throw new Error('Ekstra gymnaster skal stå først.');
       if (entry.athleteSkillId !== null) {
         const registration = requireItem(copy.athleteSkills, entry.athleteSkillId);
-        if (registration.archived || requireItem(copy.skills, registration.skillId).archived) throw new Error('Vælg en aktiv færdighed.');
+          if (!retained && (registration.archived || requireItem(copy.skills, registration.skillId).archived)) throw new Error('Vælg en aktiv færdighed.');
       }
     }
     requireItem(plan[discipline], roundId).entries = structuredClone(entries);

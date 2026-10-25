@@ -9,7 +9,7 @@ export const dateSchema = z.iso.date().refine((value) => {
   const date = new Date(`${value}T00:00:00Z`);
   return Number.isFinite(date.getTime()) && date.toISOString().slice(0, 10) === value;
 });
-export const stabilitySchema = z.number().int().min(1).max(5);
+export const stabilitySchema = z.union([z.literal(1), z.literal(2), z.literal(3), z.literal(4), z.literal(5)]);
 export type Stability = z.infer<typeof stabilitySchema>;
 
 export const rulesetBindingSchema = z.strictObject({
@@ -71,6 +71,7 @@ export const athleteSkillSchema = z.strictObject({
   id: idSchema, athleteId: idSchema, skillId: idSchema, archived: z.boolean(), stability: stabilitySchema.nullable(),
   assessedAt: dateSchema.nullable(), updatedAt: timestampSchema, note: z.string().max(2000),
   connectionConfirmation: z.strictObject({ executionIdentity: z.string().min(1), confirmedAt: timestampSchema, note: z.string().min(1).max(2000) }).nullable(),
+  reviewRequiredFor: z.array(z.string().min(1)).max(100),
 }).superRefine((registration, context) => {
   if ((registration.stability === null) !== (registration.assessedAt === null)) {
     context.addIssue({ code: 'custom', message: 'En stabilitetsvurdering skal have vurderingsdato; ikke vurderet har ingen vurderingsdato.', path: ['assessedAt'] });

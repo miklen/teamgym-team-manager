@@ -9,3 +9,9 @@ export interface DriveBasis {
   contentHash: string;
   workspaceRevision: number;
 }
+
+export * from './errors';
+export * from './storage';
+export * from './client';
+export * from './auth';
+export * from './workspace-session';

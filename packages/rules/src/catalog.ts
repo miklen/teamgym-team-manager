@@ -61,7 +61,9 @@ export const DK_SPRING_CATALOG: readonly SpringCatalogEntry[] = freezeData(sprin
   referenceId: row.reference_id!, name: row.name!, officialCode: row.printed_code!, printedValue: row.printed_value!,
   status: row.dk_status as SpringCatalogEntry['status'], issueId: row.issue_id || null,
   source: { sourceId: row.source!, section: `${row.column}, række ${row.row}`, page: 1 }, execution: springExecution(row),
-  aliases: row.name === 'Flik-flak' ? ['flik', 'flic'] : row.name === 'Kraftspring' ? ['kraft'] : row.name === 'Rondat' ? ['roundoff', 'ronde'] : [],
+  aliases: [...(row.name === 'Flik-flak' ? ['flik', 'flic'] : row.name === 'Kraftspring' ? ['kraft'] : row.name === 'Rondat' ? ['roundoff', 'ronde'] : []),
+    ...(row.column === 'vault' ? ['Pegasus', 'springbord', 'redskab'] : []),
+    ...(/^T[O/]2$/.test(row.printed_code!) ? ['Kasamatsu uden skrue'] : /^T[O/]4$/.test(row.printed_code!) ? ['Kasamatsu med helskrue'] : [])],
   startRole: row.name!.endsWith(' start'),
 })));
 if (DK_SPRING_CATALOG.length !== 103 || new Set(DK_SPRING_CATALOG.map((item) => item.referenceId)).size !== 103) throw new Error('Ufuldstændig springimport.');
@@ -144,6 +146,8 @@ function rhythmOptions(row: Record<string, string>): RhythmOption[] {
   const category = row.category!;
   const options: RhythmOption[] = [];
   const add = (key: string, label: string, values: string[]) => options.push({ key, label, values, defaultValue: values[0]! });
+  if (['rh-hb-headstand', 'rh-hb-l', 'rh-db-press-together'].includes(id)) add('legs', 'Benstilling', ['together']);
+  if (['rh-hb-straddle-l', 'rh-db-press-straddle', 'rh-db-handstand-straddle-l'].includes(id)) add('legs', 'Benstilling', ['straddle']);
   if (category === 'J-hop') add('landing', 'Landing', id.includes('sissone') ? ['one-foot'] : ['two-feet', 'one-foot']);
   if (category === 'J-spring') add('landing', 'Landing', id.includes('switch-split') ? ['opposite-foot', 'same-foot'] : ['opposite-foot']);
   if (category === 'J-hink') add('landing', 'Landing', ['same-foot']);

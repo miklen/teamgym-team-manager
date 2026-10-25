@@ -17,7 +17,7 @@
   }],
   "athleteSkills": [{
     "id": "example-registration", "athleteId": "example-athlete", "skillId": "example-skill", "archived": false,
-    "stability": null, "assessedAt": null, "updatedAt": "2026-10-25T12:00:00.000Z", "note": "Registreret, men endnu ikke vurderet.", "connectionConfirmation": null
+    "stability": null, "assessedAt": null, "updatedAt": "2026-10-25T12:00:00.000Z", "note": "Registreret, men endnu ikke vurderet.", "connectionConfirmation": null, "reviewRequiredFor": []
   }],
   "plans": [{
     "id": "example-plan", "teamId": "example-team",

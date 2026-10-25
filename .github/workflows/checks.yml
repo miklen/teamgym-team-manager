@@ -21,6 +21,12 @@ jobs:
       - run: npm run check
       - run: npm run test:domain
       - run: npm run test:drive
+      - run: npm run test:mutations
       - run: npm run build
+        env:
+          # Kun CI-testbyg: alle Google-kald i auth-browserchecken interceptes.
+          VITE_GOOGLE_CLIENT_ID: synthetic-ci.apps.googleusercontent.com
+          VITE_GOOGLE_PROJECT_NUMBER: '123456789'
+          VITE_GOOGLE_API_KEY: synthetic-ci-browser-key
       - run: npx playwright install --with-deps chromium
       - run: npm run test:e2e

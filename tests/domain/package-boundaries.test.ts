@@ -10,6 +10,7 @@ it('holder domæne og regler fri af UI, Google, Node og netværksbiblioteker', (
       if ((ts.isImportDeclaration(node) || ts.isExportDeclaration(node)) && node.moduleSpecifier) {
         expect(ts.isStringLiteral(node.moduleSpecifier)).toBe(true);
         const dependency = (node.moduleSpecifier as ts.StringLiteral).text;
+        expect(/fixtures\.json|tests\/|tests\\/.test(dependency), `Facit må ikke importeres af ${path}`).toBe(false);
         expect(allowedDependencies.has(dependency) || /^\.\.?\//.test(dependency), `${path}: ${dependency}`).toBe(true);
       }
       ts.forEachChild(node, visit);

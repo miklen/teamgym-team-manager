@@ -27,6 +27,8 @@ Ukendte referencer, dublerede id'er, samme gymnast to gange i én omgang, en and
 
 `stability` er et heltal fra 1 til 5 eller `null`. En registrering uden vurdering har `assessedAt: null`. En vurdering har en gyldig kalenderdato som `2026-10-25`; `updatedAt` er et separat ISO-tidspunkt. Noten ændrer hverken identitet eller officielle point. Der er intet konkurrerende indlærings-/konkurrenceklar-felt.
 
+`reviewRequiredFor` bevarer konkrete regelbindinger, som kræver revurdering efter ændrede udførelseskrav. Vurderingen slettes ikke, men tæller ikke som automatisk godkendt under den nye binding. En eksplicit revurdering rydder kun den valgte bindings markering.
+
 - Ingen `athleteSkills`-post: færdigheden er ikke registreret.
 - Post med `stability: null`: registreret, men ikke vurderet.
 - Post med `stability: 1`: vurderet på laveste reelle trin.

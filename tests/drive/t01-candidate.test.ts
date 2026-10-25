@@ -5,15 +5,30 @@ import type { BrowserFetch } from '@teamgym/drive';
 const fileId = 'synthetic-test-file';
 const oldEtag = '"opaque-old-etag"';
 const oldVersion = '90071992547409939';
-const document = { kind: 'teamgym-t01', schemaVersion: 1, operationId: 'synthetic-operation', label: 'initial' };
+const document = {
+  kind: 'teamgym-t01',
+  schemaVersion: 1,
+  operationId: 'synthetic-operation',
+  label: 'initial',
+};
 const bytes = JSON.stringify(document);
 
 function metadata(overrides = {}) {
-  return { id: fileId, title: 'teamgym-t01-synthetic.json', mimeType: 'application/json',
-    etag: oldEtag, version: oldVersion, editable: true, labels: { trashed: false }, ...overrides };
+  return {
+    id: fileId,
+    title: 'teamgym-t01-synthetic.json',
+    mimeType: 'application/json',
+    etag: oldEtag,
+    version: oldVersion,
+    editable: true,
+    labels: { trashed: false },
+    ...overrides,
+  };
 }
 
-function network(options: { status?: number; metadata?: ReturnType<typeof metadata>[]; failUpload?: boolean } = {}) {
+function network(
+  options: { status?: number; metadata?: ReturnType<typeof metadata>[]; failUpload?: boolean } = {},
+) {
   let readIndex = 0;
   return vi.fn<BrowserFetch>(async (input, init) => {
     if (init?.method === 'PUT') {
@@ -46,8 +61,12 @@ describe('T01-kandidat med injiceret netværk — ikke faktisk Google-bevis', ()
   });
 
   it('afgrænser gentagne læsekapløb og uploader aldrig under indlæsning', async () => {
-    const fetcher = network({ metadata: Array.from({ length: 6 }, (_, i) => metadata({ version: String(i) })) });
-    await expect(createProbeClient('synthetic-token', fetcher).read(fileId)).rejects.toThrow('alle tre læseforsøg');
+    const fetcher = network({
+      metadata: Array.from({ length: 6 }, (_, i) => metadata({ version: String(i) })),
+    });
+    await expect(createProbeClient('synthetic-token', fetcher).read(fileId)).rejects.toThrow(
+      'alle tre læseforsøg',
+    );
     expect(fetcher).toHaveBeenCalledTimes(9);
   });
 
@@ -55,13 +74,20 @@ describe('T01-kandidat med injiceret netværk — ikke faktisk Google-bevis', ()
     const fetcher = network();
     const client = createProbeClient('synthetic-token', fetcher);
     const basis = await client.read(fileId);
-    fetcher.mockImplementation(network({ status: 412, metadata: [metadata({ etag: '"new"' }), metadata({ etag: '"new"' })] }));
+    fetcher.mockImplementation(
+      network({ status: 412, metadata: [metadata({ etag: '"new"' }), metadata({ etag: '"new"' })] }),
+    );
     const result = await client.upload(basis, probeDocument('B'));
     expect(result).toEqual({ status: 412, accepted: false });
     const uploads = fetcher.mock.calls.filter(([, init]) => init?.method === 'PUT');
     expect(uploads).toHaveLength(1);
-    expect(uploads[0]?.[0]).toBe(`https://www.googleapis.com/upload/drive/v2/files/${fileId}?uploadType=media`);
-    expect(uploads[0]?.[1]?.headers).toMatchObject({ 'If-Match': oldEtag, 'Content-Type': 'application/json' });
+    expect(uploads[0]?.[0]).toBe(
+      `https://www.googleapis.com/upload/drive/v2/files/${fileId}?uploadType=media`,
+    );
+    expect(uploads[0]?.[1]?.headers).toMatchObject({
+      'If-Match': oldEtag,
+      'Content-Type': 'application/json',
+    });
     expect(basis.etag).toBe(oldEtag);
   });
 
@@ -93,7 +119,9 @@ describe('T01-kandidat med injiceret netværk — ikke faktisk Google-bevis', ()
 
   it('afviser almindelige arbejdsfiler før nogen upload', async () => {
     const fetcher = network({ metadata: [metadata({ title: 'teamets-rigtige-data.json' })] });
-    await expect(createProbeClient('synthetic-token', fetcher).read(fileId)).rejects.toThrow('ikke en skrivbar T01');
+    await expect(createProbeClient('synthetic-token', fetcher).read(fileId)).rejects.toThrow(
+      'ikke en skrivbar T01',
+    );
     expect(fetcher).toHaveBeenCalledTimes(1);
   });
 

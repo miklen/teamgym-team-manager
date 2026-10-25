@@ -2,7 +2,7 @@
 
 Dansk trænerarbejdsplads til hold, færdigheder og springplanlægning. Målrepo: [miklen/teamgym-team-manager](https://github.com/miklen/teamgym-team-manager).
 
-**Status:** Under implementering. Filmodel, domænekommandoer, stabilitet og kildekatalog er tilføjet; appskallen er endnu ikke et brugbart trænerprodukt. Den samlede [OpenSpec-change](openspec/changes/build-teamgym-team-manager/proposal.md) omfatter alle ti capabilities; [opgavelisten](openspec/changes/build-teamgym-team-manager/tasks.md) og [kontrolrapporten](docs/implementeringsstatus.md) viser fremdriften. Brugeren har bekræftet Google-login med én konto; flerbrugerverifikation er efter [brugerbeslutningen](docs/testbeslutning-2026-10-25.md) udskudt til live test i produktion.
+**Status:** Domæne, regler, browserbaseret Drive-adapter og de centrale arbejdsflader er implementeret og testes. Faktisk Pages-publicering og rigtig Drive-verifikation er udestående. Den samlede [OpenSpec-change](openspec/changes/build-teamgym-team-manager/proposal.md) omfatter alle ti capabilities; [opgavelisten](openspec/changes/build-teamgym-team-manager/tasks.md) og [kontrolrapporten](docs/implementeringsstatus.md) viser fremdriften. Flerbrugerverifikation er efter [brugerbeslutningen](docs/testbeslutning-2026-10-25.md) udskudt til live test i produktion. Se [brugsvejledningen](docs/brugsvejledning.md).
 
 ## Start fra et rent checkout
 
@@ -21,28 +21,29 @@ npm run dev
 npm run check
 npm run test:domain
 npm run test:drive
+npm run test:mutations
 npm run build
 npx playwright install chromium
 npm run test:e2e
 ```
 
-CI kører de samme separate kontroller uden Google-credentials og uden filer fra parent-mappen. Domænekontrollen omfatter foreløbig kildeintegritet og modulgrænser; den er ikke testbevis for sportslige beregninger. Drive-tests bruger injiceret netværk og er ikke bevis for faktisk CORS eller atomisk Drive-upload.
+CI kører de samme separate kontroller uden Google-credentials og uden filer fra parent-mappen. Domænekontrollen omfatter filmodel, katalogintegritet, alle 77 faste facitcases, D/C, muligheder, rytme og versionsregression. Mutationskontrollen afprøver fire bevidste regelfejl i en isoleret kopi. Dette er ikke ekstern dommergodkendelse. Drive-tests bruger injiceret netværk og er ikke bevis for faktisk CORS eller atomisk Drive-upload.
 
 ## Struktur
 
 | Mappe | Ansvar |
 | --- | --- |
 | `apps/web` | Statisk React-app og brugerflade |
-| `packages/domain` | Fælles identiteter, diagnostikkontrakt og senere filmodel |
-| `packages/rules` | Versionsbinding og senere katalog-/beregningspakker |
-| `packages/drive` | Browseradapterens grænse; sikker gemning endnu ikke implementeret |
+| `packages/domain` | Strengt filformat, identiteter, medlems-/færdighedskommandoer og stabilitet |
+| `packages/rules` | Uforanderlige pakker, katalog, eksakt D/C, muligheder, rytme og regelskift |
+| `packages/drive` | GIS/Picker, afgrænset IndexedDB-forbindelse og betinget gemning; rigtig Google-verifikation udestår |
 | `tools/t01` | Isoleret afprøvning af den betingede Drive-uploadkandidat |
 | `sources` | Henvisning til de otte medfølgende, hashregistrerede PDF-kilder |
 | `tests` | Domæne, Drive og browserkontrol |
 
 ## Google og Pages
 
-Kopiér `.env.example` til `.env.local` og angiv kun de tre offentlige Google-værdier. [Google-/T01-vejledningen](docs/google-t01.md) beskriver opsætning og den udestående test. Ingen OAuth client secret er nødvendig eller tilladt i browseren.
+Kopiér `.env.example` til `.env.local` og angiv kun de tre offentlige Google-værdier. [Google-opsætning](docs/google-opsaetning.md), [gemmeprotokol](docs/drive-gemning.md) og [T01](docs/google-t01.md) beskriver opsætning og udestående test. Ingen OAuth client secret er nødvendig eller tilladt i browseren.
 
 Pages baseres på `/teamgym-team-manager/` med hash-links. `.github/workflows/pages.yml` bygger, kontrollerer og uploader `dist`; kun deployment-jobbet får Pages-/OIDC-skriverettighed. Vælg **GitHub Actions** under repository Settings → Pages. Repository Variables med navnene fra `.env.example` leverer offentlig buildkonfiguration. En PR publicerer ikke.
 
@@ -54,4 +55,4 @@ Teknisk grundlag: [Vites Pages-vejledning](https://vite.dev/guide/static-deploy.
 
 Repoet indeholder kode, OpenSpec, officielle kildefiler og syntetiske testdata. Gymnastnavne, holdplaner, vurderinger, faktiske arbejdsrumsfiler og brugertokens hører ikke hjemme i repo, CI, billeder eller offentlige artifacts. `.env.local`, logs, browserrapporter, genererede builds og lokale arbejdsfiler ignoreres af Git.
 
-Google Drive er det planlagte autoritative datalager. Appen må senere kun huske forbindelsesoplysninger efter den specificerede kontrakt; ingen gymnastdata må caches vedvarende som en bivirkning. Ingen eksisterende fælles trænerdokumenter ændres. En test bruger en særskilt syntetisk fil.
+Google Drive er det autoritative datalager. Appen husker kun forbindelsesoplysninger efter den specificerede kontrakt; ingen gymnastdata caches vedvarende som en bivirkning. Ingen eksisterende fælles trænerdokumenter ændres. Test bruger særskilte syntetiske filer. Browserchecks opfanger Google-kald; de er ikke bevis for rigtig Google/CORS. CI's kontrolbyg bruger udtrykkeligt syntetisk offentlig konfiguration og publiceres ikke; Pages-bygget bruger repository Variables.
