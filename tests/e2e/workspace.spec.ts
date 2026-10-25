@@ -7,11 +7,11 @@ test('tomt arbejdsrum til hold, gymnast, komplet færdighed og vurdering', async
   await expect(page.getByRole('heading', { name: 'Hold', exact: true })).toBeVisible();
   await page.getByRole('button', { name: 'Opret hold', exact: true }).click();
   await page.getByLabel('Holdnavn').fill('Syntetisk junior');
-  await page.getByRole('button', { name: 'Anvend i kladde' }).click();
+  await page.getByRole('button', { name: 'Opdater' }).click();
   await page.getByRole('link', { name: 'Gymnaster', exact: true }).click();
   await page.getByRole('button', { name: 'Tilføj gymnast', exact: true }).click();
   await page.getByLabel('Navn', { exact: true }).fill('Syntetisk Maja');
-  await page.getByRole('button', { name: 'Anvend i kladde' }).click();
+  await page.getByRole('button', { name: 'Opdater' }).click();
   await page.getByRole('button', { name: /Syntetisk Maja/ }).click();
   await page.getByRole('button', { name: 'Tilføj færdighed' }).click();
   await page.getByRole('combobox', { name: 'Disciplin', exact: true }).selectOption('rhythm');
@@ -116,8 +116,8 @@ test('to ekstra først bevarer tællende stabilitet, og niende plads er utilgæn
     await page.getByRole('button', { name: '+ Tilføj plads' }).first().click();
     await page.getByRole('combobox', { name: 'Rolle', exact: true }).selectOption('extra');
     const choices = page.getByRole('combobox', { name: 'Registreret komplet færdighed', exact: true });
-    await choices.selectOption({ label: 'Syntetisk baneserie · 5/5' });
-    await page.getByRole('button', { name: 'Anvend i kladde' }).click();
+    await choices.selectOption({ label: 'Syntetisk baneserie · Salto: baglæns · 5/5' });
+    await page.getByRole('button', { name: 'Opdater' }).click();
   }
   await expect(page.getByRole('button', { name: '+ Tilføj plads' }).first()).toBeDisabled();
   await expect(page.getByText('4,3/5', { exact: true })).toHaveCount(3);

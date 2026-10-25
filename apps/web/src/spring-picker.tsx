@@ -3,7 +3,7 @@ import { STABILITY_ANCHORS } from '@teamgym/domain';
 import type { Stability, Workspace } from '@teamgym/domain';
 import type { RulePackage } from '@teamgym/rules';
 import { points, statusText } from './components';
-import { matchesSpring, springRegistrationPlan } from './spring-library';
+import { matchesSpring, springDirectionText, springRegistrationPlan } from './spring-library';
 import type { SpringChoice, SpringSelection } from './spring-library';
 
 export function SpringPicker({
@@ -63,15 +63,15 @@ export function SpringPicker({
   const inherited = plan.filter((item) => !item.explicit);
   return (
     <>
-      <p className="muted">
-        Markér de spring, gymnasten kan udføre som en hel serie uden mellemtrin. Angiv sikkerhed fra 1–5 ud
-        for hvert spring.
+      <p className="muted picker-intro">
+        Vælg hele serier uden mellemtrin, og angiv sikkerhed fra 1–5 for hvert spring.
       </p>
-      <div className="form-grid">
+      <div className="form-grid picker-filters">
         <label>
-          Søg sammensat spring eller alias
+          Find spring
           <input
             type="search"
+            aria-label="Søg sammensat spring eller alias"
             value={query}
             onChange={(event) => setQuery(event.target.value)}
             placeholder="Fx rondat-flik-1/1 eller kraft barani"
@@ -103,7 +103,6 @@ export function SpringPicker({
                 <input
                   type="checkbox"
                   checked={!!selection}
-                  disabled={!!previous?.archived}
                   onChange={(event) =>
                     change(
                       event.target.checked
@@ -111,7 +110,7 @@ export function SpringPicker({
                             ...selections,
                             {
                               definition: choice.definition,
-                              stability: previous?.stability ?? null,
+                              stability: previous?.archived ? null : (previous?.stability ?? null),
                               confirmed: true,
                             },
                           ]
@@ -123,16 +122,15 @@ export function SpringPicker({
                 />
                 <span>
                   {choice.definition.name}
+                  {springDirectionText(choice.definition) && (
+                    <small className="spring-directions">{springDirectionText(choice.definition)}</small>
+                  )}
                   <small>
                     {choice.group} · D:{' '}
                     {evaluation.difficulty.value
                       ? points(evaluation.difficulty.value)
                       : statusText[evaluation.difficulty.status]}
-                    {previous
-                      ? previous.archived
-                        ? ' · Arkiveret på gymnasten'
-                        : ' · Allerede registreret'
-                      : ''}
+                    {previous && !previous.archived ? ' · Allerede registreret' : ''}
                   </small>
                 </span>
               </label>

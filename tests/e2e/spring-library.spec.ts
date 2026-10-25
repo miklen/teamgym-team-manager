@@ -175,7 +175,7 @@ test('valg bevares mellem grupper og discipliner, og en særskilt kortere vurder
     .getByLabel('Sikkerhed for Strakt – kraftspring – rudy (strakt 540°)', { exact: true })
     .selectOption('3');
   await page.getByLabel('Søg sammensat spring eller alias').fill('strakt kraft');
-  await page.getByRole('checkbox', { name: /^Strakt – kraftspring Forlæns/ }).check();
+  await page.getByRole('checkbox', { name: /^Strakt – kraftspring Salto: forlæns Forlæns/ }).check();
   await page.getByLabel('Sikkerhed for Strakt – kraftspring', { exact: true }).selectOption('4');
   await page.getByRole('combobox', { name: 'Disciplin', exact: true }).selectOption('trampet');
   await page.getByRole('combobox', { name: 'Springgruppe', exact: true }).selectOption('Med redskab');
@@ -183,7 +183,9 @@ test('valg bevares mellem grupper og discipliner, og en særskilt kortere vurder
   await page.getByLabel('Sikkerhed for Overslag', { exact: true }).selectOption('5');
   await page.getByRole('combobox', { name: 'Disciplin', exact: true }).selectOption('tumbling');
   await expect(page.getByRole('checkbox', { name: /^Strakt – kraftspring – rudy/ })).toBeChecked();
-  await expect(page.getByRole('checkbox', { name: /^Strakt – kraftspring Forlæns/ })).toBeChecked();
+  await expect(
+    page.getByRole('checkbox', { name: /^Strakt – kraftspring Salto: forlæns Forlæns/ }),
+  ).toBeChecked();
   await page.getByRole('button', { name: 'Registrér 3 spring', exact: true }).click();
   await expect(page.getByRole('button', { name: /^Strakt – kraftspring – rudy/ })).not.toContainText(
     'Forbindelse kræver bekræftelse',

@@ -24,9 +24,11 @@ import {
   springLibrary,
   springElementName,
   springSeriesName,
+  springDirectionText,
 } from './spring-library';
 import type { SpringSelection } from './spring-library';
 import { SpringPicker } from './spring-picker';
+import { restoreRemovedSkill } from './restore-skill';
 import {
   canStartFloorSeries,
   knownSeries,
@@ -224,7 +226,7 @@ export function SkillEditor({
       className="skill-editor"
       label={
         registration
-          ? 'Erstat udførelse i kladde'
+          ? 'Opdater'
           : batchMode
             ? `Registrér ${selections.length} spring`
             : selections.length && discipline !== 'rhythm'
@@ -284,11 +286,19 @@ export function SkillEditor({
               );
             });
           if (existing) {
+            if (existing.archived) {
+              save(restoreRemovedSkill(workspace, existing.id));
+              return;
+            }
             openExisting(existing.id);
             return;
           }
           const created = registerAthleteSkill(workspace, athleteId, skill);
           if (created.existed) {
+            if (workspace.athleteSkills.find((item) => item.id === created.athleteSkillId)?.archived) {
+              save(restoreRemovedSkill(workspace, created.athleteSkillId));
+              return;
+            }
             openExisting(created.athleteSkillId);
             return;
           }
@@ -305,7 +315,7 @@ export function SkillEditor({
         save(result);
       }}
     >
-      <label>
+      <label className="discipline-field">
         Disciplin
         <select
           value={discipline}
@@ -459,6 +469,9 @@ export function SkillEditor({
                   <p>
                     <strong>{preview.name}</strong>
                   </p>
+                  {preview.discipline !== 'rhythm' && springDirectionText(preview) && (
+                    <small className="spring-directions">{springDirectionText(preview)}</small>
+                  )}
                 </div>
               )}
               {elements.length === 0 && (

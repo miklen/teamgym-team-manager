@@ -106,7 +106,7 @@ describe('personlig Google-forbindelse uden automatisk popup', () => {
     await connecting;
     await h.connection.rememberFile({ id: 'file', name: 'Test.json', folderIds: [] });
     h.advance(30_001);
-    expect(() => h.connection.getToken()).toThrow('Fortsæt med Google');
+    expect(() => h.connection.getToken()).toThrow('Forbind til Google Drive');
     await Promise.resolve();
     expect(h.connection.snapshot().status).toBe('expired');
     expect((await h.store.read()).connection?.token).toBeNull();

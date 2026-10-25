@@ -198,7 +198,7 @@ export function StabilityControl({
 export function ActionForm({
   children,
   submit,
-  label = 'Anvend i kladde',
+  label = 'Opdater',
   disabled = false,
   className,
 }: {

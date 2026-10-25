@@ -2,6 +2,18 @@
 
 Dansk er arbejds- og produktsprog. Målrepo: `miklen/teamgym-team-manager`.
 
+## Fast arbejdsgang: lokal brugertest før push
+
+Brugerbeslutning 25. oktober 2026: Ændringer skal fremover afprøves lokalt af brugeren før push til GitHub. Dette erstatter tidligere generel tilladelse til at pushe og publicere automatisk.
+
+1. Implementér ændringen, og kør relevante automatiske kontroller.
+2. Start `npm.cmd run preview:local` på `http://127.0.0.1:5173/teamgym-team-manager/`, og kontrollér at den lokale app åbner. Brug det separate `dist-local/`; port 4173 og `dist/` er til de automatiske browserprøver.
+3. Giv brugeren adressen og en kort beskrivelse af, hvad der skal afprøves. Lad den lokale testserver køre. Vent med yderligere ændringer og genbygning, mens brugeren tester denne udgave.
+4. Afvent brugerens lokale test og et udtrykkeligt klarsignal til commit/push/publicering. En afsluttet implementering eller grønne automatiske tests er ikke i sig selv tilladelse til at pushe. Også dokumentationsændringer venter på klarsignal.
+5. Ved nye rettelser forberedes en ny lokal testudgave, som brugeren igen afprøver før push. Bed brugeren gemme eller eksportere en eventuel kladde før genindlæsning.
+
+Se [lokal test](docs/lokal-test.md). Ingen eksisterende fælles trænerfiler må bruges til skriveprøver; lokalvisningen har stadig adgang til rigtig Google Drive.
+
 ## Struktur og kontrol
 
 - `apps/web`: statisk React-app. Produktionsbase er `/teamgym-team-manager/`, navigation bruger hash.

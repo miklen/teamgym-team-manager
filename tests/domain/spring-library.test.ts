@@ -18,6 +18,7 @@ import {
   springLibrary,
   springSeriesName,
   springElementName,
+  springDirectionText,
 } from '../../apps/web/src/spring-library';
 import type { SpringDefinition } from '../../apps/web/src/spring-library';
 import { syntheticWorkspace } from '../fixtures/synthetic-workspace';
@@ -434,5 +435,85 @@ describe('springbibliotek', () => {
         { includeShorter: true, assessedAt: '2026-10-25' },
       ).athleteSkills.find((item) => item.id === first.registrationId),
     ).toEqual(archived.athleteSkills.find((item) => item.id === first.registrationId));
+  });
+
+  it('adskiller to baglæns saltoer fra baglæns-forlæns i færdige serier og egne navne', () => {
+    const library = springLibrary(DK_V1, createWorkspace());
+    const backBack = library.find((item) => item.id === 'common-r-a3-b-04-a3-b-04')!;
+    const backFront = library.find((item) => item.id === 'common-r-a3-b-04-a3-f-04')!;
+    expect(backBack.definition.name).toBe('Rondat – lukket salto baglæns – lukket salto baglæns');
+    expect(backFront.definition.name).toBe('Rondat – lukket salto baglæns – lukket salto forlæns');
+    expect(springDirectionText(backBack.definition)).toBe('Saltoer: baglæns → baglæns');
+    expect(springDirectionText({ ...backFront.definition, name: 'Rondat salto salto' })).toBe(
+      'Saltoer: baglæns → forlæns',
+    );
+    if (backBack.definition.discipline !== 'tumbling' || backFront.definition.discipline !== 'tumbling')
+      throw Error('disciplin');
+    expect(backBack.definition.elements.map((element) => element.direction)).toEqual([
+      'backward',
+      'backward',
+      'backward',
+    ]);
+    expect(backFront.definition.elements.map((element) => element.direction)).toEqual([
+      'backward',
+      'backward',
+      'forward',
+    ]);
+    expect(knownSeries(backBack.definition.elements)).toBe(true);
+    expect(knownSeries(backFront.definition.elements)).toBe(true);
+    expect(DK_V1.evaluateSkill(backBack.definition).identity).not.toBe(
+      DK_V1.evaluateSkill(backFront.definition).identity,
+    );
+    expect(matchesSpring(backBack, 'rondat salto salto')).toBe(true);
+    expect(matchesSpring(backFront, 'rondat salto salto')).toBe(true);
+    expect(
+      standardTransition(
+        { ...backFront.definition.elements[1]!, landing: 'seated' },
+        backFront.definition.elements[2]!,
+      ),
+    ).toBe(false);
+  });
+
+  it('et udtrykkeligt genvalg tilføjer en fjernet færdighed uden dublet eller gammel sikkerhed', () => {
+    const fixture = syntheticWorkspace();
+    const full = choice(fullName).definition;
+    const first = registerSpringBatch(
+      fixture.workspace,
+      fixture.athleteA.id,
+      [{ definition: full, stability: 5, confirmed: true }],
+      DK_V1,
+      { includeShorter: true, assessedAt: '2026-10-24' },
+    );
+    const registration = first.athleteSkills.find(
+      (item) =>
+        item.athleteId === fixture.athleteA.id &&
+        first.skills.find((definition) => definition.id === item.skillId)?.name === fullName,
+    )!;
+    const assessed = updateAssessment(first, registration.id, {
+      stability: 5,
+      assessedAt: '2026-10-24',
+      note: 'Bevar personlig note',
+    });
+    const removed = setArchived(assessed, 'athleteSkills', registration.id, true);
+    const restored = registerSpringBatch(
+      removed,
+      fixture.athleteA.id,
+      [{ definition: full, stability: null, confirmed: true }],
+      DK_V1,
+      { includeShorter: false, assessedAt: '2026-10-25' },
+    );
+    expect(restored.athleteSkills).toHaveLength(first.athleteSkills.length);
+    expect(restored.athleteSkills.find((item) => item.id === registration.id)).toMatchObject({
+      skillId: registration.skillId,
+      archived: false,
+      stability: null,
+      assessedAt: null,
+      note: 'Bevar personlig note',
+    });
+    expect(restored.skills).toEqual(first.skills);
+    expect(restored.athleteSkills.filter((item) => item.athleteId === fixture.athleteB.id)).toEqual(
+      fixture.workspace.athleteSkills.filter((item) => item.athleteId === fixture.athleteB.id),
+    );
+    expect(removed.athleteSkills.find((item) => item.id === registration.id)?.archived).toBe(true);
   });
 });

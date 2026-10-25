@@ -22,7 +22,7 @@ export function responseError(status: number): DriveError {
   if (status === 401)
     return new DriveError(
       'auth',
-      'Google-adgangen er udløbet. Fortsæt med Google; kladden er bevaret.',
+      'Google-adgangen er udløbet. Vælg »Forbind til Google Drive«; kladden er bevaret.',
       status,
     );
   if (status === 403)

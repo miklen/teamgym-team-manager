@@ -51,6 +51,7 @@ export interface ConnectionView {
 }
 
 export class GoogleConnection {
+  private resourceKeys = new Map<string, string>();
   private record: RememberedConnection | null = null;
   private epoch = '';
   private generation = 0;
@@ -74,6 +75,7 @@ export class GoogleConnection {
     private readonly signals?: ConnectionSignals,
   ) {
     this.stopSignals = signals?.listen(() => {
+      this.resourceKeys.clear();
       this.generation++;
       this.record = null;
       this.publish({
@@ -120,6 +122,9 @@ export class GoogleConnection {
     if (generation !== this.generation) return;
     this.epoch = stored.epoch;
     this.record = stored.connection;
+    this.resourceKeys.clear();
+    if (this.record?.file?.resourceKey)
+      this.resourceKeys.set(this.record.file.id, this.record.file.resourceKey);
     this.remember = !!stored.connection;
     if (!this.record) return;
     this.publish({
@@ -160,7 +165,7 @@ export class GoogleConnection {
   getToken = (): string => {
     if (!this.isValid()) {
       this.expire();
-      throw new DriveError('auth', 'Fortsæt med Google for at få adgang. Kladden er bevaret.');
+      throw new DriveError('auth', 'Vælg »Forbind til Google Drive« for at få adgang. Kladden er bevaret.');
     }
     return this.record!.token!;
   };
@@ -170,6 +175,7 @@ export class GoogleConnection {
       this.fetcher,
       () => this.expire(),
       () => this.generation,
+      this.resourceKeys,
     );
   }
   expire() {
@@ -178,7 +184,7 @@ export class GoogleConnection {
     this.record = { ...this.record, token: null };
     this.publish({
       status: 'expired',
-      message: 'Google-adgangen er udløbet. Fortsæt med Google; kladden er bevaret.',
+      message: 'Google-adgangen er udløbet. Vælg »Forbind til Google Drive«; kladden er bevaret.',
     });
     void this.persist(this.generation);
   }
@@ -190,6 +196,7 @@ export class GoogleConnection {
     if (!accepted) {
       this.generation++;
       this.record = null;
+      this.resourceKeys.clear();
       this.publish({
         status: 'disconnected',
         account: null,
@@ -240,6 +247,7 @@ export class GoogleConnection {
               }, this.fetcher).account();
               if (generation !== this.generation) return;
               const sameAccount = previous?.account.permissionId === account.permissionId;
+              if (!sameAccount) this.resourceKeys.clear();
               if (!sameAccount || !remember) {
                 this.epoch = await this.storage((store) => store.clear());
                 this.signals?.send();
@@ -271,6 +279,7 @@ export class GoogleConnection {
   }
   async rememberFile(file: FileReference) {
     if (!this.record || !this.isValid()) throw new DriveError('auth', 'Forbind Google før filvalg.');
+    if (file.resourceKey) this.client().rememberResourceKey(file.id, file.resourceKey);
     this.record.file = structuredClone(file);
     this.publish({ file });
     await this.persist(this.generation);
@@ -279,6 +288,7 @@ export class GoogleConnection {
     const token = this.record?.token;
     this.generation++;
     this.record = null;
+    this.resourceKeys.clear();
     this.publish({
       status: 'disconnected',
       account: null,
@@ -291,6 +301,7 @@ export class GoogleConnection {
     if (revoke && token) await this.oauth.revoke(token);
   }
   dispose() {
+    this.resourceKeys.clear();
     this.stopSignals?.();
     this.listeners.clear();
   }
@@ -364,12 +375,16 @@ export function pickGoogleResource(
   config: GoogleConfiguration,
   token: string,
   folder: boolean,
+  target?: { fileId?: string; parentId?: string; includeFolders?: boolean },
 ): Promise<string | null> {
   return new Promise((resolve) => {
     const view = new google.picker.DocsView(folder ? google.picker.ViewId.FOLDERS : google.picker.ViewId.DOCS)
-      .setIncludeFolders(folder)
-      .setSelectFolderEnabled(folder);
-    if (!folder) view.setMimeTypes('application/json');
+      .setIncludeFolders(folder || !!target?.includeFolders)
+      .setSelectFolderEnabled(folder || !!target?.includeFolders)
+      .setMode(google.picker.DocsViewMode.LIST);
+    if (!folder && !target?.includeFolders) view.setMimeTypes('application/json');
+    if (target?.fileId) view.setFileIds(target.fileId);
+    else if (target?.parentId) view.setParent(target.parentId);
     const picker = new google.picker.PickerBuilder()
       .setAppId(config.projectNumber)
       .setDeveloperKey(config.apiKey)

@@ -17,6 +17,7 @@ import {
 } from './components';
 import { registry } from './rules';
 import { usePotentials } from './use-potentials';
+import { springDirectionText } from './spring-library';
 
 export function SpringPage(props: DataProps & { teamId: string }) {
   const team = props.workspace.teams.find((item) => item.id === props.teamId)!;
@@ -24,19 +25,19 @@ export function SpringPage(props: DataProps & { teamId: string }) {
   const [discipline, setDiscipline] = useState<SpringDiscipline>('tumbling');
   return (
     <>
-      <div className="page-title">
+      <div className="page-title spring-title">
         <div>
-          <p className="eyebrow">{team.name} · Seks vedvarende omgange</p>
           <h1>Springplan</h1>
+          <p className="page-description">{team.name}. Tre omgange i hver disciplin.</p>
         </div>
-      </div>
-      <div className="tabs" aria-label="Springdisciplin">
-        <button aria-pressed={discipline === 'tumbling'} onClick={() => setDiscipline('tumbling')}>
-          Bane
-        </button>
-        <button aria-pressed={discipline === 'trampet'} onClick={() => setDiscipline('trampet')}>
-          Trampet
-        </button>
+        <div className="tabs" aria-label="Springdisciplin">
+          <button aria-pressed={discipline === 'tumbling'} onClick={() => setDiscipline('tumbling')}>
+            Bane
+          </button>
+          <button aria-pressed={discipline === 'trampet'} onClick={() => setDiscipline('trampet')}>
+            Trampet
+          </button>
+        </div>
       </div>
       {resolved.status === 'known' ? (
         <SpringDisciplineView
@@ -238,10 +239,17 @@ function SpringDisciplineView({
                           {participant.entry.role === 'extra' ? 'EKSTRA · ' : ''}
                           {participant.skill?.name ?? 'Vælg registreret færdighed'}
                         </small>
+                        {participant.skill && springDirectionText(participant.skill) && (
+                          <small className="spring-directions">
+                            {springDirectionText(participant.skill)}
+                          </small>
+                        )}
                       </button>
                       <span className="entry-value">
                         {points(participant.adjustedD.value)}
-                        <small>
+                        <small
+                          className={`assessment-mark rating-${participant.registration?.stability ?? 'none'}`}
+                        >
                           {participant.registration?.stability === null || !participant.registration
                             ? 'Ikke vurderet'
                             : `${participant.registration.stability}/5`}
@@ -292,8 +300,19 @@ function SpringDisciplineView({
                     </div>
                     {(participant.diagnostics.length > 0 || participant.adjustedD.status !== 'known') && (
                       <p className="entry-warning">
-                        {participant.diagnostics.map((diagnostic) => diagnostic.message).join(' ') ||
-                          statusText[participant.adjustedD.status]}
+                        {participant.diagnostics
+                          .map((diagnostic) => {
+                            if (diagnostic.code === 'skill-archived')
+                              return 'Færdigheden er fjernet fra gymnasten. Vælg en anden færdighed.';
+                            if (
+                              diagnostic.code === 'athlete-unavailable' &&
+                              workspace.athletes.find((item) => item.id === participant.entry.athleteId)
+                                ?.archived
+                            )
+                              return 'Gymnasten er fjernet. Vælg en anden gymnast.';
+                            return diagnostic.message;
+                          })
+                          .join(' ') || statusText[participant.adjustedD.status]}
                       </p>
                     )}
                   </li>
@@ -630,7 +649,7 @@ function SpringDisciplineView({
           </div>
           <ActionForm
             disabled={!writable}
-            label="Anvend opstillingen i kladde"
+            label="Opdater"
             submit={() => {
               change(applyPotentialPreview(workspace, preview.preview!));
               setPreview(null);
@@ -739,12 +758,17 @@ function EntryForm({
             defaultValue={entry?.athleteId === athleteId ? (entry.athleteSkillId ?? '') : ''}
           >
             <option value="">Ikke valgt · ufuldstændig plads</option>
-            {skills.map((registration) => (
-              <option key={registration.id} value={registration.id}>
-                {workspace.skills.find((skill) => skill.id === registration.skillId)!.name} ·{' '}
-                {registration.stability === null ? 'Ikke vurderet' : `${registration.stability}/5`}
-              </option>
-            ))}
+            {skills.map((registration) => {
+              const skill = workspace.skills.find((item) => item.id === registration.skillId)!;
+              const directions = springDirectionText(skill);
+              return (
+                <option key={registration.id} value={registration.id}>
+                  {skill.name}
+                  {directions ? ` · ${directions}` : ''} ·{' '}
+                  {registration.stability === null ? 'Ikke vurderet' : `${registration.stability}/5`}
+                </option>
+              );
+            })}
           </select>
         </label>
         <label>

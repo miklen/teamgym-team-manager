@@ -198,3 +198,42 @@ Forberedelsesgrundlaget er allerede udarbejdet i [reference](reference/README.md
 
 - [x] 21.1 Fjern kategorien Grundspring, klassificér selvstændige indgange under retning, og hold løs baglæns salto/flik/whip ude af både standard- og egne færdige valg; bevar alle elementer i Byg selv og kræv en indgang ved registrering af nye hele baneserier.
 - [x] 21.2 Verificér kategori, filtrering, bevaret filindhold og byggerforløbet baglæns salto → tilføj/flyt rondat foran → registrér komplet serie; opdatér vejledning og kontrolrapport.
+
+## 22. Brugerens udvidelse: samlet UI-overhaling før afslutning
+
+- [x] 22.1 Gennemfør en sammenhængende visuel identitet med selvhostet typografi, desktoprail, mobilnavigation, tydelig hold-/regel-/gemmekontekst og gennemarbejdet startskærm.
+- [x] 22.2 Forfin holdvalg, gymnastlister, inspektør, springbibliotek, springomgange og rytmematrix med konsekvent hierarki og tilgængelige kontroller uden at ændre beregnings-/Drive-kontrakten.
+- [x] 22.3 Verificér fyldte og tomme arbejdsflader, responsive skærmbilleder, tastatur, reduceret bevægelse og WCAG-kontrol samt regressionsprøver; aflever en lokal testudgave til brugerens godkendelse før commit/push.
+- [ ] 22.4 Brugeren afprøver og godkender den lokale UI-kandidat og giver udtrykkeligt klarsignal til commit/push/publicering; derefter verificeres den publicerede udgave. Indtil da forbliver changen åben.
+
+## 23. Brugerens forenkling: fjern arkivfunktion fra UI
+
+- [x] 23.1 Fjern arkivfiltre samt arkiv-/genaktiveringshandlinger fra hold, gymnastkartotek og færdighedsoversigt; bevar ældre filers poster, status og referencer uden automatisk genaktivering eller sletning.
+- [x] 23.2 Verificér den enkle arbejdsflade og ældre filers gem/genåbn på mobil og desktop, opdatér krav/vejledning og aflever en ny lokal testudgave før push.
+
+## 24. Brugerens præcisering: Drive-navn og rolig opstart
+
+- [x] 24.1 Omdøb forbindelseshandlingen til Forbind til Google Drive, og skjul startsiden gennem genoprettelse, kontokontrol og automatisk filhentning; bevar forståelige fejl-/genforbindelsesmuligheder og undgå dobbelt filhentning.
+- [x] 24.2 Verificér langsomme kontosvar og filhentning uden startsideglimt på mobil/desktop, udløbet adgang, afvist fil, tilgængelig indlæsning og reduceret bevægelse; aflever en ny lokal testudgave før push.
+
+## 25. Brugerens rettelser før commit: filter, fjernelse og saltoretning
+
+- [x] 25.1 Vis Alle hold som standard i gymnastkartoteket, inklusive gymnaster uden hold, og bevar særskilt hold-/uden-hold-filtrering og søgning.
+- [x] 25.2 Tilbyd Fjern færdighed med annullering og konsekvens for valgte planpladser; bevar andre registreringer og fælles definitioner, og lad et udtrykkeligt genvalg tilføje færdigheden igen uden dublet eller automatisk gammel sikkerhed.
+- [x] 25.3 Vis saltoernes præcise retninger i liste, gymnast, bygger og plan; tilføj særskilte rondat-(flik)-baglæns-baglæns/forlæns-varianter i tre positioner uden ændring af den udgivne regelpakkes tal eller algoritmer.
+- [x] 25.4 Verificér filter, fjernelse, annullering, læseadgang, genvalg og saltoretninger ved gem/genåbn på mobil/desktop; aflever en ny lokal testudgave. Commit og push er fortsat sat i bero efter brugerens besked.
+
+## 26. Brugerens rettelse: fjern gymnast
+
+- [x] 26.1 Tilføj Fjern gymnast med personens navn/kendetegn, annullering og antal berørte planpladser. Fjern fra aktive lister og holdoverblik, bevar øvrige personer, færdigheder og planreferencer, og vis forståelig utilgængelighed samt læsetilstand for gamle referencer.
+- [x] 26.2 Verificér fjernelse med/uden hold, navnesammenfald, annullering/fokusretur, læseadgang, levende rytme og gem/genåbn på mobil/desktop; aflever ny lokal testudgave uden commit/push.
+
+## 27. Brugerens tekstændring: Opdater
+
+- [x] 27.1 Erstat Anvend i kladde og de tilsvarende udførelses-/opstillings-/regelprofilknapper med Opdater; bevar særskilt Gem på Drive, verificér formularforløb og aflever lokal testudgave uden commit/push.
+
+## 28. Brugerens udvidelse: indsæt Google Drive-link
+
+- [x] 28.1 Tilføj validerede fil-/mappelinks, resource keys og husket filreference uden bredere OAuth-adgang eller ændret konfliktbeskyttelse; verificér parsning, headers og kontoafgrænsning.
+- [x] 28.2 Tilføj Åbn fra link og valgfrit mappelink ved oprettelse med målrettet Google-bekræftelse ved manglende appadgang; bevar formular/ugemt kladde ved annullering og fejl, og suspender appdialoger under Google-valget.
+- [x] 28.3 Verificér mobil/desktop, direkte åbning, mappestart, ny fil, manglende adgang og fejl; opdatér dansk vejledning og aflever lokal testudgave uden commit/push. Reel Google-verifikation er særskilt og må ikke udledes af mocks.

@@ -22,7 +22,7 @@ export const test = base.extend<{ googleMock: GoogleMock }>({
         let attempts = 0;
         window.google = { accounts: { oauth2: {
           initTokenClient: (configuration) => ({ requestAccessToken: (options) => {
-            attempts++; window.syntheticTokenOptions = options;
+            attempts++; window.syntheticTokenRequests = attempts; window.syntheticTokenOptions = options;
             if (${googleMock.failFirstAuthorization} && attempts === 1) configuration.error_callback({type:'popup_closed'});
             else configuration.callback({access_token:'synthetic-renewed-access',expires_in:'3600',scope:'https://www.googleapis.com/auth/drive.file'});
           }}), hasGrantedAllScopes: () => true, revoke: (_, done) => done()
@@ -34,20 +34,20 @@ export const test = base.extend<{ googleMock: GoogleMock }>({
         contentType: 'application/javascript',
         body: `
       window.gapi = { load: (_, options) => {
-        class DocsView { constructor(id) { this.folder = id === 'folders'; } setIncludeFolders(){return this;} setSelectFolderEnabled(){return this;} setMimeTypes(){return this;} }
+        class DocsView { constructor(id) { this.folder = id === 'folders'; } setIncludeFolders(value){this.includeFolders=value;return this;} setSelectFolderEnabled(){return this;} setMimeTypes(){return this;} setMode(){return this;} setFileIds(value){this.fileId=value;return this;} setParent(value){this.parentId=value;return this;} }
         class PickerBuilder {
           setAppId(){return this;} setDeveloperKey(){return this;} setOAuthToken(){return this;} setOrigin(){return this;} setLocale(){return this;}
-          addView(view){this.folder=view.folder; return this;} setCallback(callback){this.callback=callback; return this;}
+          addView(view){this.folder=view.folder;this.fileId=view.fileId; window.syntheticPickerViews=[...(window.syntheticPickerViews||[]),{folder:view.folder,fileId:view.fileId,parentId:view.parentId,includeFolders:view.includeFolders}]; return this;} setCallback(callback){this.callback=callback; return this;}
           build(){
             const wrapper = document.createElement('div'); wrapper.style.cssText='position:fixed;inset:0;z-index:200000;background:#ffffffee;display:grid;place-items:center';
             const frame = document.createElement('iframe'); frame.title='Google Drive'; frame.src='https://docs.google.com/picker?synthetic=true'; frame.style.cssText='width:min(600px,95vw);height:400px;border:1px solid'; wrapper.append(frame);
             const handler = (event) => { if(event.source !== frame.contentWindow || event.data.source !== 'synthetic-picker') return;
-              this.callback(event.data.action === 'cancel' ? {action:'cancel'} : {action:'picked', docs:[{id:this.folder?'synthetic-folder':'synthetic-file'}]});
+              this.callback(event.data.action === 'cancel' ? {action:'cancel'} : {action:'picked', docs:[{id:this.fileId||(this.folder?'synthetic-folder':'synthetic-file')}]});
             };
             return {setVisible:()=>{document.body.append(wrapper);window.addEventListener('message',handler);},dispose:()=>{wrapper.remove();window.removeEventListener('message',handler);}};
           }
         }
-        window.google.picker={DocsView,PickerBuilder,ViewId:{FOLDERS:'folders',DOCS:'docs'},Action:{PICKED:'picked',CANCEL:'cancel'}}; options.callback();
+        window.google.picker={DocsView,PickerBuilder,DocsViewMode:{LIST:'list'},ViewId:{FOLDERS:'folders',DOCS:'docs'},Action:{PICKED:'picked',CANCEL:'cancel'}}; options.callback();
       }};`,
       }),
     );

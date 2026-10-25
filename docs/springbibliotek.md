@@ -1,6 +1,6 @@
 # Springbibliotek
 
-Springregistrering starter med **Vælg fra listen**. Biblioteket rummer 203 færdige banesammensætninger, 24 selvstændige spring med indgang fra tilløb og 35 komplette trampetspring i den installerede DK-pakke. Søgningen forstår navne og aliaser som `rondat-flik-1/1`, `flik hel`, `kraft barani` og `rudy`. Vælg Forlæns, Baglæns, Blandede, Med/Uden redskab eller Egne spring for at begrænse listen. D følger altid holdets regelpakke.
+Springregistrering starter med **Vælg fra listen**. Biblioteket rummer 239 færdige banesammensætninger, 24 selvstændige spring med indgang fra tilløb og 35 komplette trampetspring i den installerede DK-pakke. Søgningen forstår navne og aliaser som `rondat-flik-1/1`, `flik hel`, `kraft barani` og `rudy`. Vælg Forlæns, Baglæns, Blandede, Med/Uden redskab eller Egne spring for at begrænse listen. D følger altid holdets regelpakke.
 
 Kategorien Grundspring er fjernet. Fx rondat, kraftspring og forlæns salto ligger under deres retning. Løs baglæns salto, flik og whipback tilbydes som dele af komplette serier med indgang. Alle elementer findes fortsat i **Byg selv**, men en ny hel baneserie kan først registreres, når en indgang fra tilløb står først. Det gælder også egne genbrugelige definitioner i listen. Filtreringen ændrer ikke allerede gemte registreringer eller det officielle elementkatalog.
 
@@ -12,6 +12,7 @@ De færdige serier dækker disse afgrænsede familier:
 | Rondat–flik–flik | Samme afslutninger med den ekstra flik bevaret i den præcise serie |
 | Rondat–whipback og rondat–flik–whipback | Samme afgrænsede baglæns afslutninger |
 | Rondat direkte til salto | Lukket, hoftebøjet, strakt og de fire ovenstående strakte skruevarianter |
+| Rondat med eller uden flik til to saltoer | Baglæns → baglæns og baglæns → forlæns, med lukket/hoftebøjet/strakt position på begge saltoer |
 | Kraftspring og flyvespring | Lukket, hoftebøjet, strakt, barani, helskrue, rudy, dobbeltskrue og randy |
 | Lukket/hoftebøjet/strakt startsalto–kraftspring | Samme otte forlæns afslutninger samt den kortere startsalto–kraft-serie |
 | Lukket/hoftebøjet/strakt startsalto–rondat–flik | Ni baglæns afslutninger, herunder helskrue, samt de kortere begyndelser |

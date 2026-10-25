@@ -3,7 +3,7 @@ import type { ElementExecution } from '@teamgym/domain';
 /** Praktiske forbindelsesfamilier præciseret af træneren 2026-10-25.
  * Adskilt fra den uforanderlige DK-regelpakke: ændrer hverken D/C eller regelbinding.
  */
-export const CONNECTION_CATALOG_VERSION = 'coach-connections-2';
+export const CONNECTION_CATALOG_VERSION = 'coach-connections-3';
 
 /** Færdige banevalg skal have en indgang fra tilløb; afslutningselementer hører til i byggeren. */
 export function canStartFloorSeries(elements: readonly ElementExecution[]): boolean {
@@ -32,6 +32,17 @@ export function standardTransition(before: ElementExecution, after: ElementExecu
     return backFollow;
   if (['handspring', 'flyspring'].includes(before.family) && before.twistsHalfTurns % 2 === 0)
     return after.family === 'salto' && after.direction === 'forward';
+  if (
+    before.family === 'salto' &&
+    before.direction === 'backward' &&
+    before.rotationQuarterTurns === 4 &&
+    before.twistsHalfTurns === 0
+  )
+    return (
+      after.family === 'salto' &&
+      after.rotationQuarterTurns === 4 &&
+      (after.direction === 'backward' || after.direction === 'forward')
+    );
   if (
     before.family === 'salto' &&
     before.direction === 'forward' &&

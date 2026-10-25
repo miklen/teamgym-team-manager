@@ -1,11 +1,12 @@
 import { useState } from 'react';
-import { createTeam, renameTeam, setArchived } from '@teamgym/domain';
+import { createTeam, renameTeam } from '@teamgym/domain';
 import type { RulesetBinding } from '@teamgym/domain';
 import { applyVersionChange, previewVersionChange } from '@teamgym/rules';
 import type { VersionChangePreview } from '@teamgym/rules';
 import type { DataProps } from './athletes';
 import { ActionForm, Decision, Dialog, Empty, points, SourceLinks, statusText } from './components';
 import { registry } from './rules';
+import { Avatar, Icon } from './ui';
 
 export function Teams({
   workspace,
@@ -14,42 +15,31 @@ export function Teams({
   select,
 }: DataProps & { select: (teamId: string) => void }) {
   const [creating, setCreating] = useState(false);
-  const [archived, setArchivedFilter] = useState(false);
   const [editing, setEditing] = useState<string | null>(null);
-  const teams = workspace.teams.filter((team) => team.archived === archived);
+  const teams = workspace.teams.filter((team) => !team.archived);
   return (
     <>
       <div className="page-title">
         <div>
-          <p className="eyebrow">Arbejdsrum · {teams.length} hold</p>
           <h1>Hold</h1>
+          <p className="page-description">Vælg et hold, og fortsæt planlægningen.</p>
         </div>
         <button disabled={!writable} onClick={() => setCreating(true)}>
+          <Icon name="plus" />
           Opret hold
         </button>
       </div>
-      <label className="check">
-        <input
-          type="checkbox"
-          checked={archived}
-          onChange={(event) => setArchivedFilter(event.target.checked)}
-        />
-        Vis arkiverede hold
-      </label>
       {!teams.length ? (
-        <Empty>
-          {archived
-            ? 'Ingen arkiverede hold.'
-            : 'Opret det første hold. Hvert hold får sit eget reglement og seks omgange.'}
-        </Empty>
+        <Empty>Opret det første hold. Hvert hold får sit eget reglement og seks omgange.</Empty>
       ) : (
-        <ul className="entity-list">
+        <ul className="entity-list team-list">
           {teams.map((team) => {
             const resolved = registry.resolve(team.rulesetBinding);
             return (
               <li key={team.id}>
                 <button className="entity-link" onClick={() => select(team.id)}>
-                  <span>
+                  <Avatar name={team.name} team />
+                  <span className="entity-copy">
                     <strong>{team.name}</strong>
                     <small>
                       {resolved.status === 'known'
@@ -57,12 +47,12 @@ export function Teams({
                         : `Ukendt regelpakke ${team.rulesetBinding.rulesetId}@${team.rulesetBinding.packageVersion}`}
                     </small>
                   </span>
-                  <span>
+                  <span className="entity-stat">
                     {
                       workspace.athletes.filter((athlete) => athlete.teamId === team.id && !athlete.archived)
                         .length
                     }{' '}
-                    gymnaster →
+                    gymnaster <Icon name="arrow" />
                   </span>
                 </button>
                 <button
@@ -106,22 +96,6 @@ export function Teams({
               />
             </label>
           </ActionForm>
-          <button
-            className="quiet"
-            onClick={() => {
-              if (
-                !archived &&
-                !window.confirm(
-                  'Arkivér holdet? Gymnaster, færdigheder og alle seks omgange bevares til gennemgang. Holdet fjernes fra listen over aktive hold.',
-                )
-              )
-                return;
-              change(setArchived(workspace, 'teams', editing, !archived));
-              setEditing(null);
-            }}
-          >
-            {archived ? 'Genaktivér hold' : 'Arkivér hold'}
-          </button>
           <p className="muted">Reglement og profil ændres med forhåndsvisning på holdets reglementside.</p>
         </Dialog>
       )}
@@ -196,8 +170,8 @@ export function RulesPage({ workspace, change, writable, teamId }: DataProps & {
     <>
       <div className="page-title">
         <div>
-          <p className="eyebrow">{team.name}</p>
           <h1>Reglement</h1>
+          <p className="page-description">{team.name}. Regelpakke, profil og kildegrundlag.</p>
         </div>
       </div>
       <p>
@@ -216,7 +190,7 @@ export function RulesPage({ workspace, change, writable, teamId }: DataProps & {
           med kendte pakker kan fortsat bruges.
         </p>
       )}
-      <section>
+      <section className="rules-settings">
         <h2>Skift pakke eller profil</h2>
         <ActionForm
           disabled={!writable || resolved.status !== 'known'}
@@ -289,12 +263,31 @@ export function RulesPage({ workspace, change, writable, teamId }: DataProps & {
                 <li key={source.id}>
                   <SourceLinks
                     rulePackage={resolved.rulePackage}
-                    sources={[{ sourceId: source.id, section: source.edition }]}
+                    sources={[
+                      {
+                        sourceId: source.id,
+                        section:
+                          (
+                            {
+                              H: 'Bedømmelsesreglement',
+                              'A1.1': 'Rytme · oversigt over sværheder',
+                              A3: 'Bane · basisværdier',
+                              A4: 'Trampet · basisværdier',
+                              A5: 'Genkendelse af elementer',
+                              A6: 'Generelle fejl og fradrag',
+                            } as Record<string, string>
+                          )[source.id] ?? source.edition,
+                      },
+                    ]}
                   />
                   <a href={source.officialUrl} target="_blank" rel="noreferrer">
                     Officiel kilde
                   </a>
-                  <small>SHA-256: {source.sha256}</small>
+                  <details className="source-details">
+                    <summary>Versionsdetaljer</summary>
+                    <small>{source.edition}</small>
+                    <small>SHA-256: {source.sha256}</small>
+                  </details>
                 </li>
               ))}
             </ul>
@@ -372,7 +365,7 @@ export function RulesPage({ workspace, change, writable, teamId }: DataProps & {
               change(applyVersionChange(workspace, preview));
               setPreview(null);
             }}
-            label="Anvend samlet i kladde"
+            label="Opdater"
           >
             <p className="muted">Annullering ændrer ingen data. Gem derefter arbejdsrummet på Drive.</p>
           </ActionForm>

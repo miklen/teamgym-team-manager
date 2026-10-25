@@ -3,7 +3,7 @@ import { openWorkspace } from './drive-fixture';
 
 test('Google indlæses automatisk, men login starter først ved brugerens klik', async ({ page }) => {
   await page.goto('./');
-  await expect(page.getByRole('button', { name: 'Fortsæt med Google', exact: true })).toBeEnabled();
+  await expect(page.getByRole('button', { name: 'Forbind til Google Drive', exact: true })).toBeEnabled();
   await expect(page.getByRole('button', { name: /Klargør/ })).toHaveCount(0);
   expect(await page.evaluate(() => 'syntheticTokenOptions' in window)).toBe(false);
 });
@@ -16,7 +16,7 @@ test('en indlæsningsfejl kan prøves igen uden ekstra normaltrin eller automati
   await page.goto('./');
   await expect(page.getByRole('button', { name: 'Prøv Google igen' })).toBeVisible();
   await page.getByRole('button', { name: 'Prøv Google igen' }).click();
-  await expect(page.getByRole('button', { name: 'Fortsæt med Google', exact: true })).toBeEnabled();
+  await expect(page.getByRole('button', { name: 'Forbind til Google Drive', exact: true })).toBeEnabled();
   expect(await page.evaluate(() => 'syntheticTokenOptions' in window)).toBe(false);
 });
 

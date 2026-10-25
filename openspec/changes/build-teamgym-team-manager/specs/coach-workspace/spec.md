@@ -52,6 +52,12 @@ Navigation, formularer, vurderingsskala, valg af spring, dialoger og omarrangeri
 ### Requirement: Tilstande er en del af designet
 Appen SHALL have gennemarbejdede tom-, indlæsnings-, fejl-, læse-, konflikt- og ufuldstændige tilstande med konkrete næste handlinger. Ugemt arbejde SHALL beskyttes ved navigation, fil-/kontoskift og lukning, hvor browseren tillader det. Systemet MUST NOT vise »gemt«, før gemningen er bekræftet eller genkendt som gennemført.
 
+Ved opstart SHALL en særskilt indlæsningsvisning dække læsning af husket forbindelse, kontokontrol og automatisk hentning af arbejdsrummet. Startside og forbind-/filvalgsknapper MUST NOT vises kortvarigt eller kunne aktiveres, mens disse trin afventer svar. Den brugerstartede forbindelseshandling SHALL hedde »Forbind til Google Drive«. Udløbet adgang eller en fejlet filåbning SHALL afslutte indlæsningen og vise relevante næste handlinger.
+
+#### Scenario: Langsom genåbning med gyldig forbindelse
+- **WHEN** Google-kontokontrollen og filhentningen svarer langsomt ved genåbning af et husket arbejdsrum eller et dybt link
+- **THEN** vises kun indlæsningsstatus frem til arbejdsfladen er klar; der kommer intet glimt af startside/forbind-knap, og ingen ny OAuth-anmodning startes automatisk.
+
 #### Scenario: Tomt gymnastkartotek
 - **WHEN** et nyt arbejdsrum åbnes
 - **THEN** forklares kort, hvordan en gymnast og et hold oprettes, og der vises ingen falske persondata eller færdige analyser.

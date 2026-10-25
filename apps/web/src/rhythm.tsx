@@ -32,10 +32,10 @@ export function RhythmPage({ workspace, change, writable, teamId }: DataProps & 
     <>
       <div className="page-title">
         <div>
-          <p className="eyebrow">
-            {team.name} · {athletes.length} aktive gymnaster
-          </p>
           <h1>Rytmefællesnævnere</h1>
+          <p className="page-description">
+            {team.name}. {athletes.length} aktive gymnaster.
+          </p>
         </div>
       </div>
       <p>

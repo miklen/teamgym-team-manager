@@ -7,6 +7,7 @@ export interface FileReference {
   id: string;
   name: string;
   folderIds: string[];
+  resourceKey?: string;
 }
 export interface RememberedConnection {
   schemaVersion: 1;
@@ -46,6 +47,8 @@ function validConnection(value: unknown): value is RememberedConnection {
     (row.file === null ||
       (typeof row.file?.id === 'string' &&
         typeof row.file.name === 'string' &&
+        (row.file.resourceKey === undefined ||
+          (typeof row.file.resourceKey === 'string' && /^[\w-]{1,256}$/.test(row.file.resourceKey))) &&
         Array.isArray(row.file.folderIds) &&
         row.file.folderIds.every((id) => typeof id === 'string')))
   );

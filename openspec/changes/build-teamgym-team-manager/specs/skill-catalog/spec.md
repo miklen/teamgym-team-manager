@@ -100,11 +100,29 @@ Systemet SHALL tilbyde alle 94 individuelle momentfelter fra det fastlåste A1.1
 - **THEN** bevares de trykte koder og begge værdier 0,80, men momenterne får forskellige stabile interne id'er og krav, så registreringer ikke sammenlægges.
 
 ### Requirement: Gymnastens færdighedsregistrering
-En gymnast SHALL kunne få tilføjet, redigeret og arkiveret hele baneserier, trampetspring og rytmemomenter med stabilitet eller ikke vurderet, vurderingsdato og eventuel kort note. Registrering af samme præcise færdighed igen SHALL genbruge den eksisterende registrering frem for utilsigtede dubletter. Enkeltregistrering kan åbne redigering; samlet springregistrering SHALL opdatere de direkte valgte vurderinger i samme handling. Overgangen fra manglende registrering til registreret uden vurdering SHALL være eksplicit.
+En gymnast SHALL kunne få tilføjet og redigeret hele baneserier, trampetspring og rytmemomenter med stabilitet eller ikke vurderet, vurderingsdato og eventuel kort note. Brugerfladen SHALL ikke vise arkivfiltre eller arkiv-/genaktiveringshandlinger; ældre filers inaktive registreringer SHALL bevares. Registrering af samme præcise færdighed igen SHALL genbruge den eksisterende registrering frem for utilsigtede dubletter. Enkeltregistrering kan åbne redigering; samlet springregistrering SHALL opdatere de direkte valgte vurderinger i samme handling. Overgangen fra manglende registrering til registreret uden vurdering SHALL være eksplicit.
 
 #### Scenario: Færdigheden findes allerede
 - **WHEN** træneren forsøger at tilføje samme normaliserede færdighed til samme gymnast igen
 - **THEN** genbruges registreringen; enkeltregistrering åbner redigering, mens samlet springregistrering anvender den valgte sikkerhed og bevarer noten.
+
+### Requirement: Fjern og tilføj en personlig færdighed igen
+Træneren SHALL kunne fjerne en baneserie, et trampetspring eller et rytmemoment fra én gymnast med handlingen Fjern færdighed. En bekræftelse SHALL kunne annulleres og SHALL oplyse, hvis færdigheden anvendes på planpladser. Fjernelsen MUST NOT ændre andre personers registreringer, fælles definitioner eller kortere registrerede serier. Valgte planreferencer SHALL bevares med tydelig utilgængelighed frem for at indgå som gyldig kunnen. Fjernede færdigheder SHALL kunne vælges igen gennem den almindelige registrering uden dublet; id og note bevares, mens sikkerhed kræver et nyt valg. Arv fra længere serier MUST NOT i sig selv tilføje en fjernet kortere serie igen.
+
+#### Scenario: Fjern et spring, der bruges i planen
+- **WHEN** træneren bekræfter fjernelse af en færdighed, som er valgt på tre pladser
+- **THEN** forsvinder færdigheden fra gymnastens aktive liste, pladserne markeres som utilgængelige, og der kan vælges en anden færdighed uden at ændre andre gymnasters kunnen.
+
+#### Scenario: Vælg en fjernet færdighed igen
+- **WHEN** træneren senere udtrykkeligt registrerer samme præcise færdighed på samme gymnast
+- **THEN** genbruges registreringen uden dublet, og en gammel sikkerhed sættes ikke automatisk som den nye vurdering.
+
+### Requirement: Saltoretning vises for hvert saltoelement
+Liste, gymnastregistrering, byggerens serievisning og planlægning SHALL vise saltoernes rotationsretninger i udførelsesrækkefølge, også hvis serien har et selvvalgt navn. Biblioteket SHALL tilbyde særskilte rondat–baglæns salto–baglæns salto og rondat–baglæns salto–forlæns salto, også med flik efter rondat og med de tre kropspositioner på begge saltoer. Definitionernes retning, identitet, præcise kortere begyndelser og personlige bekræftelser SHALL bevares særskilt; appens praktiske forbindelsesviden MUST NOT ændre den frigivne regelpakkes tal eller algoritmer.
+
+#### Scenario: To forskellige rondat-salto-salto
+- **WHEN** træneren søger på rondat salto salto
+- **THEN** kan baglæns → baglæns og baglæns → forlæns vælges særskilt med entydige navne og retninger, som bevares efter gem/genåbn.
 
 ### Requirement: Regelværdi er adskilt fra færdighed
 En færdighed SHALL kunne være registreret, selv om den ikke er tilladt eller kendt i det aktuelle holds reglement. Systemet SHALL bevare registreringen og forklare anvendeligheden pr. hold; en ikke-tilladt eller ikke-verificeret færdighed MUST NOT tilbydes som gyldig kandidat i en omgang.

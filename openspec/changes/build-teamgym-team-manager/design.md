@@ -1,5 +1,11 @@
 # Design
 
+## UI-overhaling bestilt 25. oktober 2026
+
+Den visuelle konkretisering og kontrol af den nye UI-kandidat findes i [UI-redesign](../../../docs/ui-redesign.md). Den anvender selvhostet Manrope, en dyb blå navigationsrail på desktop, kølige lyse arbejdsflader og én koboltaccent. Mobil har en fast bundnavigation uden overlap med det rullende arbejdsområde. Lister, tre springomgange og rytmematrix er fortsat de centrale arbejdsstrukturer. Reglementets versionsdetaljer åbnes efter behov.
+
+Dette er brugerens bestilte overhaling før afslutning af changen. Kandidaten afprøves lokalt før commit/push/publicering efter den nye faste arbejdsgang i `AGENTS.md`; brugerens visuelle accept er endnu ikke givet. Beregningspakker og Drive-kontrakt ændres ikke af redesignrunden.
+
 ## Context
 
 Se [proposal.md](proposal.md) for formålet. Arbejdsmappen har OpenSpec og lokale skills, men ingen app, tests, pakkefiler eller commits. Det aftalte målrepo er [miklen/teamgym-team-manager](https://github.com/miklen/teamgym-team-manager), som ved gennemgangen var tomt. Lokal Git-tilknytning er oprettet; publicering er endnu ikke bekræftet. Produktet skal hedde TeamGym Team Manager. Dansk er arbejdssprog og produktsprog.

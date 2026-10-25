@@ -29,7 +29,7 @@ Systemet SHALL bevare det aktuelle access token med udløbstid, scopes, kontoref
 - **THEN** kan træneren stadig forbinde og arbejde i den aktuelle side, men appen oplyser, at forbindelsen ikke huskes efter lukning.
 
 ### Requirement: Udløbet adgang genoptages med genbrugt samtykke
-Ved udløb eller 401 SHALL tokenet slettes og kontohint/filreference bevares. Systemet SHALL tilbyde én Fortsæt med Google-handling, der fra brugerens klik anvender `requestAccessToken`, kendt `login_hint`, `include_granted_scopes:true` og `prompt:''`. Systemet MUST NOT tvinge consent eller select_account ved hvert besøg, love ubegrænset tavs tokenfornyelse eller åbne gentagne baggrundspopups. Google-krævet login/samtykke SHALL håndteres som en mulig tilstand. En genforbindelse SHALL bevare kladden og kontrollere filversion/rettighed igen før gemning.
+Ved udløb eller 401 SHALL tokenet slettes og kontohint/filreference bevares. Systemet SHALL tilbyde én Forbind til Google Drive-handling, der fra brugerens klik anvender `requestAccessToken`, kendt `login_hint`, `include_granted_scopes:true` og `prompt:''`. Systemet MUST NOT tvinge consent eller select_account ved hvert besøg, love ubegrænset tavs tokenfornyelse eller åbne gentagne baggrundspopups. Google-krævet login/samtykke SHALL håndteres som en mulig tilstand. En genforbindelse SHALL bevare kladden og kontrollere filversion/rettighed igen før gemning.
 
 #### Scenario: Tilbage efter tokenudløb
 - **WHEN** træneren vender tilbage med udløbet token, tidligere samtykke og et aktivt Google-login
@@ -60,6 +60,25 @@ Systemet SHALL oprette en identificerbar, versionsmærket JSON-datafil i en mapp
 #### Scenario: To filer med samme navn
 - **WHEN** to datafiler har samme navn
 - **THEN** kan brugeren skelne dem med mappe og filreference, og appen gemmer i præcis den valgte fil.
+
+### Requirement: Åbn og opret med Google Drive-link
+Systemet SHALL tilbyde Åbn fra link ved den forbundne startside og under arbejdsrummets indstillinger. Et gyldigt Google Drive-fillink SHALL åbne en kompatibel arbejdsrumsfil med stabil filidentitet; et mappelink SHALL åbne filvalget inde i den angivne mappe. Oprettelsesdialogen SHALL tilbyde et valgfrit mappelink som alternativ til manuel mappenavigation. Links SHALL kun bruges som validerede referencer til den faste Drive API-origin, inklusive en eventuel resource key. Den mindst mulige eksisterende OAuth-adgang SHALL bevares; et link MUST NOT behandles som tilladelse til filen.
+
+#### Scenario: Direkte link til eksisterende arbejdsrum
+- **WHEN** træneren indsætter et fillink, som kontoen og appen allerede har adgang til
+- **THEN** åbnes den validerede arbejdsrumsfil uden manuel filnavigation, og filreferencen kan huskes ved genåbning.
+
+#### Scenario: Google kræver bekræftelse af linkets fil
+- **WHEN** filens metadata afvises med manglende adgang eller ikke fundet
+- **THEN** kan Google-filvælgeren vise netop linkets fil til bekræftelse uden bredere OAuth-adgang; en anden fil accepteres ikke som bekræftelse af linket.
+
+#### Scenario: Mappelink ved oprettelse
+- **WHEN** træneren angiver navn og et gyldigt mappelink og eventuelt bekræfter mappen hos Google
+- **THEN** kontrolleres oprettelsesadgang, og én ny arbejdsrumsfil oprettes i den angivne mappe uden ændring af eksisterende filer; annullering bevarer formularens navn og link.
+
+#### Scenario: Ugyldigt link eller mislykket åbning
+- **WHEN** træneren annullerer kassation af en ugemt kladde, annullerer Google-valget eller forsøger at åbne et ugyldigt link eller en inkompatibel fil
+- **THEN** bevares det åbne arbejdsrum og den ugemte kladde; fejl forklares, og der oprettes ingen erstatningsfil.
 
 ### Requirement: Drive-rettigheder er autoritative
 Systemet SHALL kontrollere den aktuelle kontos læse-/skriveadgang ved åbning og gemning. Læseadgang SHALL give en tydelig læsetilstand. Ophævet adgang, slettet fil og afbrudt login SHALL vises uden at overskrive data eller skabe en erstatningsfil.

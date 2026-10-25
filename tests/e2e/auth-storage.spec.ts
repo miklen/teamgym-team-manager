@@ -6,7 +6,7 @@ test('GIS-adapteren skriver og rydder browserlager uden token i URL eller gymnas
   await expect(page.getByRole('heading', { name: 'Hold', exact: true })).toBeVisible();
   await page.getByRole('button', { name: 'Arbejdsrum', exact: true }).click();
   await page.getByRole('button', { name: 'Afbryd forbindelse / skift konto' }).click();
-  await page.getByRole('button', { name: 'Fortsæt med Google' }).click();
+  await page.getByRole('button', { name: 'Forbind til Google Drive' }).click();
   await expect(page.getByText('Syntetisk træner', { exact: true })).toBeVisible();
   const stored = await page.evaluate(async () => {
     const db = await new Promise<IDBDatabase>((resolve) => {
@@ -27,7 +27,7 @@ test('GIS-adapteren skriver og rydder browserlager uden token i URL eller gymnas
   expect(page.url()).not.toContain('access');
   await page.reload();
   await expect(page.getByText('Syntetisk træner', { exact: true })).toBeVisible();
-  await expect(page.getByRole('heading', { name: 'Åbn holdets arbejdsrum' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Hold', exact: true })).toBeVisible();
   await page.getByRole('button', { name: 'Arbejdsrum', exact: true }).click();
   await page.getByRole('button', { name: 'Afbryd forbindelse / skift konto' }).click();
   await expect(page.getByRole('heading', { name: 'Forbind din Google-konto' })).toBeVisible();
@@ -47,7 +47,7 @@ test('afbrydelse i anden fane lukker arbejdsrummet og isolerer ugemt kladde til 
   await expect(second.getByRole('heading', { name: 'Hold', exact: true })).toBeVisible();
   await second.getByRole('button', { name: 'Redigér hold Syntetisk hold A' }).click();
   await second.getByLabel('Holdnavn').fill('Kun lokal i fane B');
-  await second.getByRole('button', { name: 'Anvend i kladde' }).click();
+  await second.getByRole('button', { name: 'Opdater' }).click();
   await page.getByRole('button', { name: 'Arbejdsrum', exact: true }).click();
   await page.getByRole('button', { name: 'Afbryd forbindelse / skift konto' }).click();
   await expect(second.getByRole('heading', { name: 'Kladde fra afbrudt forbindelse' })).toBeVisible();
@@ -64,15 +64,15 @@ test('afbrudt Google-genforbindelse kan prøves igen uden at miste kladden', asy
   await expect(page.getByRole('heading', { name: 'Hold', exact: true })).toBeVisible();
   await page.getByRole('button', { name: 'Redigér hold Syntetisk hold A' }).click();
   await page.getByLabel('Holdnavn').fill('Kladde gennem Google-afbrydelse');
-  await page.getByRole('button', { name: 'Anvend i kladde' }).click();
+  await page.getByRole('button', { name: 'Opdater' }).click();
   source.deny(401);
   await page.getByRole('button', { name: /Lokale ændringer/ }).click();
   await expect(page.getByText('Google-adgang udløbet', { exact: true })).toBeVisible();
   source.deny(0);
-  await page.getByRole('button', { name: 'Fortsæt med Google', exact: true }).click();
+  await page.getByRole('button', { name: 'Forbind til Google Drive', exact: true }).click();
   await expect(page.getByText(/Google-vinduet blev lukket eller blokeret/)).toBeVisible();
-  await expect(page.getByRole('button', { name: 'Fortsæt med Google', exact: true })).toBeVisible();
-  await page.getByRole('button', { name: 'Fortsæt med Google', exact: true }).click();
+  await expect(page.getByRole('button', { name: 'Forbind til Google Drive', exact: true })).toBeVisible();
+  await page.getByRole('button', { name: 'Forbind til Google Drive', exact: true }).click();
   await expect(page.getByText('Syntetisk træner', { exact: true })).toBeVisible();
   await expect(page.getByRole('button', { name: /^Kladde gennem Google-afbrydelse/ })).toBeVisible();
   await page.getByRole('button', { name: 'Fejl · kladde bevaret' }).click();

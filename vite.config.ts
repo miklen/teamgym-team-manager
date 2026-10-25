@@ -10,6 +10,7 @@ const manifest = JSON.parse(readFileSync(new URL('source-manifest.json', referen
 
 export default defineConfig({
   base: '/teamgym-team-manager/',
+  publicDir: 'apps/web/public',
   plugins: [
     react(),
     {

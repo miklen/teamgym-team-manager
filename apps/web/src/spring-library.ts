@@ -2,6 +2,7 @@ import { confirmConnection, newEntityId, registerAthleteSkill, updateAssessment 
 import type { ElementExecution, SkillDefinition, Stability, Workspace } from '@teamgym/domain';
 import type { RulePackage } from '@teamgym/rules';
 import { canStartFloorSeries, knownSeries } from './spring-connections';
+import { restoreRemovedSkill } from './restore-skill';
 
 export type SpringDefinition = Exclude<SkillDefinition, { discipline: 'rhythm' }>;
 export interface SpringChoice {
@@ -10,6 +11,19 @@ export interface SpringChoice {
   aliases: string[];
   definition: SpringDefinition;
   own: boolean;
+}
+
+/** Rækkefølgen gælder saltoerne i serien, ikke tilløb eller gymnastens løberetning. */
+export function springDirectionText(skill: SkillDefinition): string {
+  if (skill.discipline === 'rhythm') return '';
+  const elements = (skill.discipline === 'tumbling' ? skill.elements : [skill.jump]).filter(
+    (item) => item.family === 'salto',
+  );
+  if (!elements.length) return '';
+  const directions = elements.map((item) =>
+    item.direction === 'backward' ? 'baglæns' : item.direction === 'forward' ? 'forlæns' : 'sidelæns',
+  );
+  return `${elements.length === 1 ? 'Salto' : 'Saltoer'}: ${directions.join(' → ')}`;
 }
 
 export function springElementName(
@@ -167,6 +181,29 @@ export function springLibrary(
   }
   for (const [endId, endName, alias] of backEnds.slice(0, 7)) {
     series(`r-${endId}`, `Rondat – ${endName}`, ['a3-b-01', endId!], 'Baglæns', [alias!]);
+  }
+  // To saltoer efter rondat, med eller uden flik: retninger er udtrykkelige i hvert valg.
+  for (const [leadId, leadName, lead] of [
+    ['r', 'Rondat', ['a3-b-01']],
+    ['rf', 'Rondat – flik', ['a3-b-01', 'a3-b-02']],
+  ] as const) {
+    for (const [firstId, firstName] of backEnds.slice(0, 3)) {
+      for (let body = 0; body < 3; body++) {
+        for (const [direction, endings] of [
+          ['baglæns', backEnds.slice(0, 3)],
+          ['forlæns', frontEnds.slice(0, 3)],
+        ] as const) {
+          const [lastId, lastName] = endings[body]!;
+          series(
+            `${leadId}-${firstId}-${lastId}`,
+            `${leadName} – ${firstName} baglæns – ${lastName} ${direction}`,
+            [...lead, firstId!, lastId!],
+            direction === 'baglæns' ? 'Baglæns' : 'Blandede',
+            ['rondat salto salto', direction === 'baglæns' ? 'baglænder baglænder' : 'baglænder forlænder'],
+          );
+        }
+      }
+    }
   }
   for (const [startId, startName] of [
     ['a3-f-04', 'Lukket salto'],
@@ -415,7 +452,10 @@ export function registerSpringBatch(
     const added = registerSpring(result, athleteId, entry.definition, rulePackage, false, null);
     result = added.workspace;
     const registration = result.athleteSkills.find((item) => item.id === added.registrationId)!;
-    if (registration.archived) continue;
+    if (registration.archived) {
+      if (!entry.explicit) continue;
+      result = restoreRemovedSkill(result, registration.id);
+    }
     const definition = result.skills.find((item) => item.id === registration.skillId)!;
     if (
       entry.confirmed &&

@@ -7,7 +7,7 @@ import { DriveError, responseError } from './errors';
 const api = 'https://www.googleapis.com/drive/v2';
 const uploadApi = 'https://www.googleapis.com/upload/drive/v2/files';
 const fields =
-  'id,title,mimeType,etag,version,editable,labels(trashed),parents(id),capabilities(canAddChildren)';
+  'id,title,mimeType,etag,version,editable,labels(trashed),parents(id),capabilities(canAddChildren),resourceKey';
 export interface FileMetadata extends FileReference {
   etag: string;
   version: string;
@@ -39,7 +39,17 @@ export class DriveClient implements WorkspaceClient {
     private readonly fetcher: BrowserFetch = globalThis.fetch.bind(globalThis),
     private readonly unauthorized: () => void = () => {},
     private readonly context: () => number = () => 0,
+    private readonly resourceKeys = new Map<string, string>(),
   ) {}
+  rememberResourceKey(fileId: string, key: string) {
+    validId(fileId);
+    if (!/^[\w-]{1,256}$/.test(key)) throw new DriveError('format', 'Linkets adgangsnøgle er ugyldig.');
+    this.resourceKeys.set(fileId, key);
+  }
+  private resourceHeaders(fileId: string): Record<string, string> {
+    const key = this.resourceKeys.get(fileId);
+    return key ? { 'X-Goog-Drive-Resource-Keys': `${fileId}/${key}` } : {};
+  }
   private checkContext(generation: number) {
     if (generation !== this.context())
       throw new DriveError(
@@ -87,7 +97,7 @@ export class DriveClient implements WorkspaceClient {
   async metadata(fileId: string, generation = this.context()): Promise<FileMetadata> {
     const response = await this.request(
       `${api}/files/${validId(fileId)}?supportsAllDrives=true&fields=${encodeURIComponent(fields)}`,
-      {},
+      { headers: this.resourceHeaders(fileId) },
       generation,
     );
     const raw = (await response.json()) as {
@@ -100,6 +110,7 @@ export class DriveClient implements WorkspaceClient {
       labels?: { trashed?: unknown };
       parents?: { id?: unknown }[];
       capabilities?: { canAddChildren?: unknown };
+      resourceKey?: unknown;
     };
     if (raw.labels?.trashed === true) throw new DriveError('missing', 'Filen er flyttet til papirkurven.');
     if (
@@ -114,6 +125,8 @@ export class DriveClient implements WorkspaceClient {
       raw.labels?.trashed !== false
     )
       throw new DriveError('format', 'Google returnerede ufuldstændige filoplysninger.');
+    if (typeof raw.resourceKey === 'string') this.rememberResourceKey(fileId, raw.resourceKey);
+    const resourceKey = this.resourceKeys.get(fileId);
     return {
       id: fileId,
       name: raw.title,
@@ -123,6 +136,7 @@ export class DriveClient implements WorkspaceClient {
       version: raw.version,
       writable: raw.editable,
       canAddChildren: raw.capabilities?.canAddChildren === true,
+      ...(resourceKey ? { resourceKey } : {}),
     };
   }
   async read(fileId: string): Promise<LoadedWorkspace> {
@@ -133,7 +147,7 @@ export class DriveClient implements WorkspaceClient {
         throw new DriveError('format', 'Vælg arbejdsrummets JSON-datafil.');
       const response = await this.request(
         `${api}/files/${validId(fileId)}?alt=media&supportsAllDrives=true`,
-        {},
+        { headers: this.resourceHeaders(fileId) },
         generation,
       );
       const bytes = await response.text();
@@ -171,7 +185,11 @@ export class DriveClient implements WorkspaceClient {
       `${uploadApi}/${validId(basis.fileId)}?uploadType=media&supportsAllDrives=true`,
       {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json; charset=UTF-8', 'If-Match': basis.etag },
+        headers: {
+          ...this.resourceHeaders(basis.fileId),
+          'Content-Type': 'application/json; charset=UTF-8',
+          'If-Match': basis.etag,
+        },
         body: serializeWorkspace(workspace),
       },
       generation,
@@ -194,7 +212,14 @@ export class DriveClient implements WorkspaceClient {
     ].join('\r\n');
     const response = await this.request(
       `${uploadApi}?uploadType=multipart&supportsAllDrives=true&fields=id`,
-      { method: 'POST', headers: { 'Content-Type': `multipart/related; boundary=${boundary}` }, body },
+      {
+        method: 'POST',
+        headers: {
+          ...this.resourceHeaders(folderId),
+          'Content-Type': `multipart/related; boundary=${boundary}`,
+        },
+        body,
+      },
       generation,
     );
     const result = (await response.json()) as { id?: unknown };

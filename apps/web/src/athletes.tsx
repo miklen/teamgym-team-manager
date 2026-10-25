@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import {
   confirmRuleReview,
   createAthlete,
@@ -21,26 +21,27 @@ import {
 } from './components';
 import { registry } from './rules';
 import { SkillEditor, variantText } from './skill-editor';
+import { Avatar, Icon } from './ui';
+import { springDirectionText } from './spring-library';
 
 export interface DataProps {
   workspace: Workspace;
   change: (workspace: Workspace) => void;
   writable: boolean;
 }
-export function Athletes({
-  workspace,
-  change,
-  writable,
-  selectedTeamId,
-}: DataProps & { selectedTeamId: string }) {
+export function Athletes({ workspace, change, writable }: DataProps) {
   const [search, setSearch] = useState('');
-  const [filter, setFilter] = useState(selectedTeamId || 'all');
-  const [archived, setArchivedFilter] = useState(false);
+  const [filter, setFilter] = useState('all');
   const [selected, setSelected] = useState<string | null>(null);
   const [creating, setCreating] = useState(false);
+  const [feedback, setFeedback] = useState('');
+  const searchField = useRef<HTMLInputElement>(null);
+  useEffect(() => {
+    if (feedback) searchField.current?.focus();
+  }, [feedback]);
   const athletes = workspace.athletes.filter(
     (athlete) =>
-      athlete.archived === archived &&
+      !athlete.archived &&
       (filter === 'all' || (filter === 'none' ? athlete.teamId === null : athlete.teamId === filter)) &&
       `${athlete.name} ${athlete.discriminator}`
         .toLocaleLowerCase('da-DK')
@@ -50,10 +51,13 @@ export function Athletes({
     <>
       <div className="page-title">
         <div>
-          <p className="eyebrow">Kartotek · {athletes.length} gymnaster</p>
           <h1>Gymnaster</h1>
+          <p className="page-description">
+            {athletes.length} gymnaster. Færdigheder og sikkerhed samlet ét sted.
+          </p>
         </div>
         <button disabled={!writable} onClick={() => setCreating(true)}>
+          <Icon name="plus" />
           Tilføj gymnast
         </button>
       </div>
@@ -61,6 +65,7 @@ export function Athletes({
         <label>
           Søg gymnast
           <input
+            ref={searchField}
             type="search"
             value={search}
             onChange={(event) => setSearch(event.target.value)}
@@ -81,35 +86,39 @@ export function Athletes({
               ))}
           </select>
         </label>
-        <label className="check">
-          <input
-            type="checkbox"
-            checked={archived}
-            onChange={(event) => setArchivedFilter(event.target.checked)}
-          />
-          Vis arkiverede
-        </label>
       </div>
+      {feedback && (
+        <p className="muted" role="status">
+          {feedback}
+        </p>
+      )}
       {!athletes.length ? (
         <Empty>Ingen gymnaster passer til filteret. Tilføj en gymnast, eller justér filtrene.</Empty>
       ) : (
         <ul className="entity-list">
           {athletes.map((athlete) => (
             <li key={athlete.id}>
-              <button className="entity-link" onClick={() => setSelected(athlete.id)}>
-                <span>
+              <button
+                className="entity-link"
+                onClick={() => {
+                  setFeedback('');
+                  setSelected(athlete.id);
+                }}
+              >
+                <Avatar name={athlete.name} />
+                <span className="entity-copy">
                   <strong>{athlete.name}</strong>
                   <small>
                     {athlete.discriminator || 'Intet kendetegn'} ·{' '}
                     {workspace.teams.find((team) => team.id === athlete.teamId)?.name ?? 'Uden hold'}
                   </small>
                 </span>
-                <span>
+                <span className="entity-stat">
                   {
                     workspace.athleteSkills.filter((item) => item.athleteId === athlete.id && !item.archived)
                       .length
                   }{' '}
-                  færdigheder <b aria-hidden="true">↗</b>
+                  færdigheder <Icon name="arrow" />
                 </span>
               </button>
             </li>
@@ -134,6 +143,12 @@ export function Athletes({
           {...{ workspace, change, writable }}
           athleteId={selected}
           close={() => setSelected(null)}
+          removed={() => {
+            setFeedback(
+              `${workspace.athletes.find((item) => item.id === selected)!.name} er fjernet fra gymnastlisten.`,
+            );
+            setSelected(null);
+          }}
         />
       )}
     </>
@@ -219,7 +234,13 @@ export function AthleteInspector({
   athleteId,
   close,
   initialRegistrationId,
-}: DataProps & { athleteId: string; close: () => void; initialRegistrationId?: string | undefined }) {
+  removed,
+}: DataProps & {
+  athleteId: string;
+  close: () => void;
+  initialRegistrationId?: string | undefined;
+  removed?: () => void;
+}) {
   const athlete = workspace.athletes.find((item) => item.id === athleteId)!;
   const team = workspace.teams.find((item) => item.id === athlete.teamId);
   const resolved = team && registry.resolve(team.rulesetBinding);
@@ -228,18 +249,49 @@ export function AthleteInspector({
   const [selectedRegistration, setSelectedRegistration] = useState<string | null>(
     initialRegistrationId ?? null,
   );
-  const [showArchived, setShowArchived] = useState(false);
+  const [removing, setRemoving] = useState<string | null>(null);
+  const [removingAthlete, setRemovingAthlete] = useState(false);
+  const [feedback, setFeedback] = useState('');
+  const addSkillButton = useRef<HTMLButtonElement>(null);
+  useEffect(() => {
+    if (feedback) addSkillButton.current?.focus();
+  }, [feedback]);
+  const removedRegistration = workspace.athleteSkills.find((item) => item.id === removing);
+  const removedDefinition = workspace.skills.find((item) => item.id === removedRegistration?.skillId);
+  const usedPlaces = removing
+    ? workspace.plans
+        .flatMap((plan) => [...plan.tumbling, ...plan.trampet])
+        .flatMap((round) => round.entries)
+        .filter((entry) => entry.athleteSkillId === removing).length
+    : 0;
+  const athletePlaces = removingAthlete
+    ? workspace.plans
+        .flatMap((plan) => [...plan.tumbling, ...plan.trampet])
+        .flatMap((round) => round.entries)
+        .filter((entry) => entry.athleteId === athleteId).length
+    : 0;
   const registration = workspace.athleteSkills.find((item) => item.id === selectedRegistration);
   const registrations = workspace.athleteSkills.filter(
-    (item) => item.athleteId === athleteId && item.archived === showArchived,
+    (item) => item.athleteId === athleteId && (!item.archived || item.id === selectedRegistration),
   );
   const chosenPackage = rulePackage ?? (athlete.teamId === null ? registry.list()[0]! : null);
   return (
     <Dialog wide title={athlete.name} close={close}>
-      <div className="inspector-meta">
-        {athlete.discriminator} · {team?.name ?? 'Uden hold'}
-        {athlete.archived ? ' · Arkiveret' : ''}
+      <div className={`inspector-meta ${mode === 'new' || mode === 'execution' ? 'editor-meta' : ''}`}>
+        <Avatar name={athlete.name} />
+        <div>
+          <strong>{team?.name ?? 'Uden hold'}</strong>
+          <small>
+            {athlete.discriminator || 'Gymnastprofil'}
+            {athlete.archived ? ' · Fjernet' : ''}
+          </small>
+        </div>
       </div>
+      {athlete.archived && (
+        <p className="notice">
+          Gymnasten er fjernet fra gymnastlisten. Vælg en anden gymnast på de berørte pladser i springplanen.
+        </p>
+      )}
       {mode === 'profile' ? (
         <>
           <button className="quiet" onClick={() => setMode('list')}>
@@ -268,7 +320,6 @@ export function AthleteInspector({
               rulePackage={chosenPackage}
               openExisting={(id) => {
                 setSelectedRegistration(id);
-                setShowArchived(workspace.athleteSkills.find((item) => item.id === id)!.archived);
                 setMode('list');
               }}
               registration={mode === 'execution' ? registration : undefined}
@@ -283,42 +334,43 @@ export function AthleteInspector({
       ) : (
         <>
           <div className="actions">
-            <button disabled={!writable || athlete.archived} onClick={() => setMode('profile')}>
+            <button
+              className="quiet"
+              disabled={!writable || athlete.archived}
+              onClick={() => setMode('profile')}
+            >
               Redigér gymnast
             </button>
             <button
-              className="quiet"
-              disabled={!writable}
+              ref={addSkillButton}
+              disabled={!writable || athlete.archived || !chosenPackage}
               onClick={() => {
-                if (
-                  athlete.archived ||
-                  window.confirm(
-                    'Arkivér gymnasten? Færdigheder bevares, og valgte omgangspladser markeres utilgængelige indtil gennemgang.',
-                  )
-                )
-                  change(setArchived(workspace, 'athletes', athleteId, !athlete.archived));
+                setFeedback('');
+                setMode('new');
               }}
             >
-              {athlete.archived ? 'Genaktivér gymnast' : 'Arkivér gymnast'}
-            </button>
-            <button disabled={!writable || athlete.archived || !chosenPackage} onClick={() => setMode('new')}>
+              <Icon name="plus" />
               Tilføj færdighed
             </button>
+            <button
+              className="quiet danger"
+              disabled={!writable || athlete.archived}
+              onClick={() => setRemovingAthlete(true)}
+            >
+              Fjern gymnast
+            </button>
           </div>
+          {feedback && (
+            <p role="status" className="muted">
+              {feedback}
+            </p>
+          )}
           {!chosenPackage && (
             <p className="notice">
               Holdets præcise regelpakke er ikke installeret. Kunnen bevares; regelkoblingen kan ikke vurderes
               her.
             </p>
           )}
-          <label className="check">
-            <input
-              type="checkbox"
-              checked={showArchived}
-              onChange={(event) => setShowArchived(event.target.checked)}
-            />
-            Vis arkiverede færdigheder
-          </label>
           {(['tumbling', 'trampet', 'rhythm'] as const).map((discipline) => (
             <section key={discipline} className="skill-section">
               <h3>
@@ -348,6 +400,9 @@ export function AthleteInspector({
                       >
                         <span>
                           <strong>{skill.name}</strong>
+                          {skill.discipline !== 'rhythm' && springDirectionText(skill) && (
+                            <small className="spring-directions">{springDirectionText(skill)}</small>
+                          )}
                           <small>
                             {rhythm
                               ? `${rhythm.moment?.officialCode ?? 'Ukendt kode'} · ${variantText(rhythm.variant)}`
@@ -356,15 +411,27 @@ export function AthleteInspector({
                                 : 'Regelkobling uafklaret'}
                           </small>
                         </span>
-                        <span>{item.stability === null ? 'Ikke vurderet' : `${item.stability}/5`}</span>
+                        <span>
+                          {item.archived
+                            ? 'Fjernet'
+                            : item.stability === null
+                              ? 'Ikke vurderet'
+                              : `${item.stability}/5`}
+                        </span>
                       </button>
                       {selectedRegistration === item.id && (
                         <>
+                          {item.archived && (
+                            <p className="notice">
+                              Færdigheden er fjernet fra gymnasten. Tilføj den igen fra listen for at bruge
+                              den.
+                            </p>
+                          )}
                           <Assessment
                             workspace={workspace}
                             registration={item}
                             team={team}
-                            writable={writable}
+                            writable={writable && !athlete.archived}
                             save={change}
                           />
                           {evaluation && (
@@ -390,13 +457,11 @@ export function AthleteInspector({
                               Redigér præcis udførelse
                             </button>
                             <button
-                              className="quiet"
-                              disabled={!writable}
-                              onClick={() =>
-                                change(setArchived(workspace, 'athleteSkills', item.id, !item.archived))
-                              }
+                              className="quiet danger"
+                              disabled={!writable || athlete.archived || item.archived}
+                              onClick={() => setRemoving(item.id)}
                             >
-                              {item.archived ? 'Genaktivér færdighed' : 'Arkivér færdighed'}
+                              Fjern færdighed
                             </button>
                           </div>
                         </>
@@ -407,12 +472,72 @@ export function AthleteInspector({
             </section>
           ))}
           {!registrations.length && (
-            <Empty>
-              Ingen {showArchived ? 'arkiverede ' : ''}færdigheder. Registrér komplette udførelser; stabilitet
-              sættes særskilt.
-            </Empty>
+            <Empty>Ingen færdigheder. Registrér komplette udførelser; stabilitet sættes særskilt.</Empty>
           )}
         </>
+      )}
+      {removingAthlete && (
+        <Dialog title="Fjern gymnast" close={() => setRemovingAthlete(false)}>
+          <p>
+            Fjern <strong>{athlete.name}</strong>
+            {athlete.discriminator ? ` (${athlete.discriminator})` : ''} fra gymnastlisten?
+          </p>
+          {athletePlaces > 0 && (
+            <p className="notice">
+              Gymnasten er valgt på {athletePlaces} {athletePlaces === 1 ? 'plads' : 'pladser'} i
+              springplanen. Der skal vælges en anden gymnast på disse pladser.
+            </p>
+          )}
+          <p className="muted">
+            Gymnastens registrerede færdigheder bevares, og holdets aktive overblik opdateres.
+          </p>
+          <div className="actions">
+            <button className="quiet" onClick={() => setRemovingAthlete(false)}>
+              Annuller
+            </button>
+            <button
+              className="danger"
+              disabled={!writable}
+              onClick={() => {
+                change(setArchived(workspace, 'athletes', athleteId, true));
+                (removed ?? close)();
+              }}
+            >
+              Fjern gymnast
+            </button>
+          </div>
+        </Dialog>
+      )}
+      {removedRegistration && removedDefinition && (
+        <Dialog title="Fjern færdighed" close={() => setRemoving(null)}>
+          <p>
+            Fjern <strong>{removedDefinition.name}</strong> fra {athlete.name}?
+          </p>
+          {usedPlaces > 0 && (
+            <p className="notice">
+              Færdigheden bruges på {usedPlaces} {usedPlaces === 1 ? 'plads' : 'pladser'} i springplanen. Der
+              skal vælges en anden færdighed på disse pladser.
+            </p>
+          )}
+          <p className="muted">Du kan tilføje færdigheden igen fra listen.</p>
+          <div className="actions">
+            <button className="quiet" onClick={() => setRemoving(null)}>
+              Annuller
+            </button>
+            <button
+              className="danger"
+              disabled={!writable}
+              onClick={() => {
+                change(setArchived(workspace, 'athleteSkills', removedRegistration.id, true));
+                setRemoving(null);
+                setSelectedRegistration(null);
+                setFeedback(`${removedDefinition.name} er fjernet fra gymnasten.`);
+              }}
+            >
+              Fjern færdighed
+            </button>
+          </div>
+        </Dialog>
       )}
     </Dialog>
   );

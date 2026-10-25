@@ -6,7 +6,7 @@ import { fourOfSix, openWorkspace } from './drive-fixture';
 async function rename(page: import('@playwright/test').Page) {
   await page.getByRole('button', { name: 'Redigér hold Syntetisk hold A' }).click();
   await page.getByLabel('Holdnavn').fill('Lokal kladde A');
-  await page.getByRole('button', { name: 'Anvend i kladde' }).click();
+  await page.getByRole('button', { name: 'Opdater' }).click();
 }
 test('konflikt bevarer eksportérbar kladde og kræver bevidst genindlæsning', async ({ page }) => {
   const source = await openWorkspace(page);
@@ -51,8 +51,9 @@ test('regelskift kan annulleres og anvendes for kun ét hold', async ({ page }) 
   await page.getByRole('button', { name: 'Annuller', exact: true }).click();
   await expect(page.getByRole('button', { name: 'Uændret', exact: true })).toBeVisible();
   await page.getByRole('button', { name: 'Vis før og efter' }).click();
-  await page.getByRole('button', { name: 'Anvend samlet i kladde' }).click();
-  await expect(page.getByText('Junior mix · dk 1.0.0', { exact: true })).toBeVisible();
+  await page.getByRole('button', { name: 'Opdater' }).click();
+  await expect(page.locator('.rail-context')).toContainText('Junior mix');
+  await expect(page.locator('.rail-context')).toContainText('dk 1.0.0');
   await page.getByRole('button', { name: /Lokale ændringer/ }).click();
   await expect(page.getByRole('button', { name: 'Gemt', exact: true })).toBeVisible();
   expect(source.workspace.teams[0]!.rulesetBinding.teamType).toBe('mix');
@@ -71,7 +72,7 @@ test('konkret potentiale 4/6 til 6/6 forhåndsvises uden automatisk anvendelse',
   await page.getByRole('button', { name: 'Annuller', exact: true }).click();
   await expect(page.getByRole('button', { name: 'Uændret', exact: true })).toBeVisible();
   await page.getByRole('button', { name: 'Se konkrete ændringer' }).first().click();
-  await page.getByRole('button', { name: 'Anvend opstillingen i kladde' }).click();
+  await page.getByRole('button', { name: 'Opdater' }).click();
   await expect(page.getByRole('button', { name: /Lokale ændringer/ })).toBeVisible();
   await expect(page.getByText('Valgt 0,600 · dokumenteret 0,600 · regelmaksimum 0,600')).toBeVisible();
   expect(source.puts).toBe(0);

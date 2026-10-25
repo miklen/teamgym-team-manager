@@ -10,10 +10,12 @@ Brug Node-versionen i `.nvmrc` og npm. På Windows kan kommandoerne køres som `
 
 ```sh
 npm ci
-npm run dev
+npm run preview:local
 ```
 
-Åbn `http://127.0.0.1:5173/teamgym-team-manager/`. `npm run build` laver kun statiske filer i `dist/`. `npm run preview` viser produktionsbygningen på port 4173. Der kræves ingen runtime-backend.
+Åbn `http://127.0.0.1:5173/teamgym-team-manager/`. På Windows kan du også dobbeltklikke på `Start-lokal-test.cmd`. Lokaltesten bygger en fast testudgave i `dist-local/`, som holdes adskilt fra de automatiske browserprøvers `dist/` på port 4173. Der kræves ingen runtime-backend.
+
+**Fast arbejdsgang:** Hver ændring afprøves lokalt af brugeren før commit, push og publicering. Agenten starter lokaltesten, afleverer linket og afventer brugerens klarsignal. Se [vejledning til lokal test](docs/lokal-test.md). Under udvikling findes også `npm run dev`; den faste brugerafprøvning bruger `preview:local`.
 
 ## Kontrol
 
