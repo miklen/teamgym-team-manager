@@ -1,0 +1,87 @@
+{
+  "auditDate": "2026-10-25",
+  "indexUrl": "https://gymdanmark.dk/konkurrence-teamgym/",
+  "note": "Hashes fastlåser disse bytes; onlinefiler kan senere ændres. Seks parent-kopier er ikke påstået byteidentiske med aktuelt onlineindhold.",
+  "sources": [
+    {
+      "id": "H",
+      "file": "sources/Bedoemmelsesreglement-DK-REG-1.pdf",
+      "sha256": "102DB1E201E44056E61212DEB2F246EF230A5667257241065183FCD853264E16",
+      "bytes": 969501,
+      "pdfPages": 48,
+      "edition": "v1.4; vedtaget august 2026",
+      "officialUrl": "https://gymdanmark.dk/wp-content/uploads/2026/10/Bedoemmelsesreglement-DK-REG-1.pdf",
+      "method": "parent; officielle punkter kontrolleret"
+    },
+    {
+      "id": "A1.1",
+      "file": "sources/Appendix-A1.1-Rytme-Oversigt-over-svaerheder-DK.pdf",
+      "sha256": "A5BBBAAAA46FFD8F9A1B6C6D20B5C1BE8B5787635E97AF4A26288A43EF91B7D5",
+      "bytes": 859722,
+      "pdfPages": 13,
+      "edition": "DK; officielt link opdateret september 2026",
+      "officialUrl": "https://gymdanmark.dk/wp-content/uploads/2026/09/Appendix-A1.1-Rytme-Oversigt-over-svaerheder-DK.pdf",
+      "method": "hentet fra officielt link; alle sider visuelt kontrolleret"
+    },
+    {
+      "id": "A3",
+      "file": "sources/A3-Appendix-A3.1-Bane-Basisvaerdier.pdf",
+      "sha256": "0F211F746BB146D33334A1B8412ACE9EC9B537BDCAD8ACF42D9BFE5225C3CA36",
+      "bytes": 137766,
+      "pdfPages": 1,
+      "edition": "officielt link opdateret juli 2025",
+      "officialUrl": "https://gymdanmark.dk/wp-content/uploads/2025/07/A3-Appendix-A3.1-Bane-Basisvaerdier.pdf",
+      "method": "parent; hele tabellen visuelt kontrolleret"
+    },
+    {
+      "id": "A4",
+      "file": "sources/A4-Appendix-A4-Trampet-Basisvaerdier.pdf",
+      "sha256": "EE5E95E0C626372ED70628383116D99F82DF296B48B5B0F90C64264778CC0733",
+      "bytes": 132909,
+      "pdfPages": 1,
+      "edition": "officielt link opdateret juli 2025",
+      "officialUrl": "https://gymdanmark.dk/wp-content/uploads/2025/07/A4-Appendix-A4-Trampet-Basisvaerdier.pdf",
+      "method": "parent; hele tabellen visuelt kontrolleret"
+    },
+    {
+      "id": "A5",
+      "file": "sources/Appendix-A5-Bane-Trampet-Genkendelse-af-elementer.pdf",
+      "sha256": "4372F24BDD3DF2B86EFCE2CC6CC89E69E6260898F90217E093C090E277C3934B",
+      "bytes": 466478,
+      "pdfPages": 4,
+      "edition": "officielt link opdateret september 2026",
+      "officialUrl": "https://gymdanmark.dk/wp-content/uploads/2026/09/Appendix-A5-Bane-Trampet-Genkendelse-af-elementer.pdf",
+      "method": "parent; alle sider visuelt kontrolleret"
+    },
+    {
+      "id": "A6",
+      "file": "sources/Appendix-A6-Bane-Trampet-Generelle-fejl-og-fradrag.pdf",
+      "sha256": "E7B0727CD693FCDE11911965701AB5CC9957FBB2A9C0658249CA5908138E0570",
+      "bytes": 1127673,
+      "pdfPages": 8,
+      "edition": "officielt link opdateret september 2026",
+      "officialUrl": "https://gymdanmark.dk/wp-content/uploads/2026/09/Appendix-A6-Bane-Trampet-Generelle-fejl-og-fradrag.pdf",
+      "method": "parent; observationsregler, ingen E-simulering"
+    },
+    {
+      "id": "QA",
+      "file": "sources/251204-Spoergsmaal-og-svar-til-Teamgym-reglementer.pdf",
+      "sha256": "6BC1AF9B8E7A1B7135D41B646653252A2222EEC1B55A71B0D192BA18F4DE833E",
+      "bytes": 318402,
+      "pdfPages": 4,
+      "edition": "4. december 2025; tidligere sæson, anvendes kun hvor stadig forenelig",
+      "officialUrl": "https://gymdanmark.dk/wp-content/uploads/2025/12/251204-Spoergsmaal-og-svar-til-Teamgym-reglementer.pdf",
+      "method": "parent; supplerende fortolkning, tilsidesætter ikke v1.4"
+    },
+    {
+      "id": "TR",
+      "file": "sources/Teknisk-Regulativ-saeson-26-27.pdf",
+      "sha256": "591419C4910696454D7556F2A4DBC3D8F6632A833EF78254A03D74614349DC14",
+      "bytes": 613192,
+      "pdfPages": 17,
+      "edition": "sæson 26/27; officielt link opdateret august 2026",
+      "officialUrl": "https://gymdanmark.dk/wp-content/uploads/2026/08/Teknisk-Regulativ-saeson-26-27.pdf",
+      "method": "hentet fra officielt link; profilafsnit læst online, side 4 også visuelt kontrolleret"
+    }
+  ]
+}

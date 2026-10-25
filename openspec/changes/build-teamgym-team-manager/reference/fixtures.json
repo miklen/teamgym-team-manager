@@ -1,0 +1,1249 @@
+{
+  "formatVersion": 1,
+  "method": "Håndberegnede faste delresultater ved samme planagent; ingen produktionsimport og ingen ekstern dommergodkendelse.",
+  "contract": "Brøkstrenge er eksakte. Hver case afprøver navngivet delregel, ikke nødvendigvis en samlet lovlig fysisk opstilling. count/qualifyingCounts er allerede validerede delinput, hvor fulde spring ikke er angivet. Oversæt semantiske felter i testadapter; generér aldrig expected fra produktionen. U-cases fastlåser ærlig uafklaret adfærd, ikke et dommersvar.",
+  "cases": [
+    {
+      "id": "D01",
+      "rule": "D-BANE",
+      "input": {
+        "sourceRows": [
+          "a3-b-01",
+          "a3-b-02",
+          "a3-b-06"
+        ]
+      },
+      "expected": {
+        "rawD": "3/5"
+      },
+      "note": ""
+    },
+    {
+      "id": "D02",
+      "rule": "D-BANE",
+      "input": {
+        "sourceRows": [
+          "a3-b-01",
+          "a3-b-02",
+          "a3-b-11"
+        ]
+      },
+      "expected": {
+        "rawD": "4/5"
+      },
+      "note": ""
+    },
+    {
+      "id": "D03",
+      "rule": "D-BANE",
+      "input": {
+        "sourceRows": [
+          "a3-b-01",
+          "a3-b-02",
+          "a3-b-02",
+          "a3-b-11"
+        ]
+      },
+      "expected": {
+        "rawD": "4/5",
+        "sameSeriesAsD02": false
+      },
+      "note": ""
+    },
+    {
+      "id": "D04",
+      "rule": "D-BANE",
+      "input": {
+        "sourceRows": [
+          "a3-f-02",
+          "a3-f-13"
+        ]
+      },
+      "expected": {
+        "rawD": "3/5"
+      },
+      "note": ""
+    },
+    {
+      "id": "D05",
+      "rule": "D-BANE",
+      "input": {
+        "sourceRows": [
+          "a3-b-01",
+          "a3-b-02",
+          "a3-b-15"
+        ]
+      },
+      "expected": {
+        "rawD": "11/10"
+      },
+      "note": ""
+    },
+    {
+      "id": "D06",
+      "rule": "D-BASIS",
+      "input": {
+        "sourceRow": "a4-f-08"
+      },
+      "expected": {
+        "rawD": "3/5"
+      },
+      "note": ""
+    },
+    {
+      "id": "D07",
+      "rule": "D-BASIS",
+      "input": {
+        "sourceRow": "a4-f-14"
+      },
+      "expected": {
+        "rawD": "4/5"
+      },
+      "note": ""
+    },
+    {
+      "id": "D08",
+      "rule": "D-BASIS",
+      "input": {
+        "sourceRow": "a4-v-10"
+      },
+      "expected": {
+        "rawD": "6/5"
+      },
+      "note": ""
+    },
+    {
+      "id": "D09",
+      "rule": "D-BASIS",
+      "input": {
+        "sourceRow": "a4-v-03"
+      },
+      "expected": {
+        "rawD": "4/5",
+        "rotationCategory": 2
+      },
+      "note": ""
+    },
+    {
+      "id": "D10",
+      "rule": "D-MIDDEL",
+      "input": {
+        "roundSums": [
+          "18/5",
+          "21/5",
+          "24/5"
+        ]
+      },
+      "expected": {
+        "rawD": "21/5"
+      },
+      "note": ""
+    },
+    {
+      "id": "D11",
+      "rule": "D-MIDDEL",
+      "input": {
+        "oneAthleteDelta": "1/10",
+        "changedRounds": 1
+      },
+      "expected": {
+        "rawDisciplineDelta": "1/30"
+      },
+      "note": ""
+    },
+    {
+      "id": "D12",
+      "rule": "D-BANE",
+      "input": {
+        "sourceRows": [
+          "a3-b-01",
+          "a3-b-02",
+          "a3-b-11"
+        ],
+        "stabilities": [
+          1,
+          5
+        ]
+      },
+      "expected": {
+        "rawDForBoth": "4/5"
+      },
+      "note": ""
+    },
+    {
+      "id": "D13",
+      "rule": "D-BANE",
+      "input": {
+        "distinctElementValues": [
+          "1/10",
+          "1/5",
+          "3/10",
+          "1/2"
+        ],
+        "connectionAssumedVerified": true
+      },
+      "expected": {
+        "rawD": "1/1",
+        "countedValues": [
+          "1/2",
+          "3/10",
+          "1/5"
+        ]
+      },
+      "note": "Isolerer top-tre-aggregering; er ikke bevis for en fysisk forbindelse."
+    },
+    {
+      "id": "T00",
+      "rule": "D-SKRUE",
+      "input": {
+        "halfTurns": 0,
+        "family": "single-or-double"
+      },
+      "expected": {
+        "twistIncrement": "0/1"
+      },
+      "note": ""
+    },
+    {
+      "id": "T01",
+      "rule": "D-SKRUE",
+      "input": {
+        "halfTurns": 1,
+        "family": "single-or-double"
+      },
+      "expected": {
+        "twistIncrement": "1/10"
+      },
+      "note": ""
+    },
+    {
+      "id": "T02",
+      "rule": "D-SKRUE",
+      "input": {
+        "halfTurns": 2,
+        "family": "single-or-double"
+      },
+      "expected": {
+        "twistIncrement": "1/5"
+      },
+      "note": ""
+    },
+    {
+      "id": "T03",
+      "rule": "D-SKRUE",
+      "input": {
+        "halfTurns": 3,
+        "family": "single-or-double"
+      },
+      "expected": {
+        "twistIncrement": "3/10"
+      },
+      "note": ""
+    },
+    {
+      "id": "T04",
+      "rule": "D-SKRUE",
+      "input": {
+        "halfTurns": 4,
+        "family": "single-or-double"
+      },
+      "expected": {
+        "twistIncrement": "2/5"
+      },
+      "note": ""
+    },
+    {
+      "id": "T05",
+      "rule": "D-SKRUE",
+      "input": {
+        "halfTurns": 5,
+        "family": "single-or-double"
+      },
+      "expected": {
+        "twistIncrement": "1/2"
+      },
+      "note": ""
+    },
+    {
+      "id": "T06",
+      "rule": "D-SKRUE",
+      "input": {
+        "halfTurns": 6,
+        "family": "single-or-double"
+      },
+      "expected": {
+        "twistIncrement": "7/10"
+      },
+      "note": ""
+    },
+    {
+      "id": "T07",
+      "rule": "D-SKRUE",
+      "input": {
+        "halfTurns": 7,
+        "family": "single-or-double"
+      },
+      "expected": {
+        "twistIncrement": "4/5"
+      },
+      "note": ""
+    },
+    {
+      "id": "T08",
+      "rule": "D-SKRUE",
+      "input": {
+        "halfTurns": 8,
+        "family": "single-or-double"
+      },
+      "expected": {
+        "twistIncrement": "1/1"
+      },
+      "note": ""
+    },
+    {
+      "id": "C01",
+      "rule": "B-SKRUE",
+      "input": {
+        "qualifyingCounts": [
+          2,
+          6,
+          4
+        ]
+      },
+      "expected": {
+        "bonus": "3/5"
+      },
+      "note": ""
+    },
+    {
+      "id": "C02",
+      "rule": "B-DOBBELT",
+      "input": {
+        "qualifyingCounts": [
+          0,
+          1,
+          3
+        ]
+      },
+      "expected": {
+        "bonus": "3/10"
+      },
+      "note": ""
+    },
+    {
+      "id": "C03",
+      "rule": "T-SKRUE",
+      "input": {
+        "profile": "junior",
+        "rotationCategory": 1,
+        "halfTurns": 2,
+        "count": 6
+      },
+      "expected": {
+        "bonus": "0/1"
+      },
+      "note": ""
+    },
+    {
+      "id": "C04",
+      "rule": "T-SKRUE",
+      "input": {
+        "profile": "junior",
+        "rotationCategory": 1,
+        "halfTurns": 3,
+        "count": 6
+      },
+      "expected": {
+        "bonus": "3/5"
+      },
+      "note": ""
+    },
+    {
+      "id": "C05",
+      "rule": "T-SKRUE",
+      "input": {
+        "profile": "U14",
+        "rotationCategory": 1,
+        "halfTurns": 2,
+        "count": 6
+      },
+      "expected": {
+        "bonus": "3/5"
+      },
+      "note": ""
+    },
+    {
+      "id": "C06",
+      "rule": "T-SKRUE",
+      "input": {
+        "profile": "junior",
+        "rotationCategory": 2,
+        "halfTurns": 1,
+        "apparatus": "free",
+        "count": 6
+      },
+      "expected": {
+        "twistBonus": "3/5",
+        "freeDoubleBonus": "3/5"
+      },
+      "note": ""
+    },
+    {
+      "id": "C07",
+      "rule": "T-DOBBELT-REDSKAB",
+      "input": {
+        "sourceRow": "a4-v-03",
+        "count": 6
+      },
+      "expected": {
+        "twistBonus": "0/1",
+        "vaultDoubleBonus": "3/5"
+      },
+      "note": ""
+    },
+    {
+      "id": "C08",
+      "rule": "T-DOBBELT-FRI",
+      "input": {
+        "freeDoubleCounts": [
+          4,
+          0,
+          2
+        ],
+        "vaultDoubleCounts": [
+          0,
+          3,
+          0
+        ]
+      },
+      "expected": {
+        "freeDoubleBonus": "2/5",
+        "vaultDoubleBonus": "3/10"
+      },
+      "note": ""
+    },
+    {
+      "id": "C09",
+      "rule": "C-HOLD",
+      "input": {
+        "round": 1,
+        "seriesCases": [
+          "D01",
+          "D01",
+          "D01",
+          "D01",
+          "D01",
+          "D02"
+        ]
+      },
+      "expected": {
+        "adjustedRoundD": "3/1",
+        "teamDeduction": "1/5",
+        "lastAthleteAdjustedD": "0/1",
+        "lastAthleteEligibleForTwistBonus": true
+      },
+      "note": ""
+    },
+    {
+      "id": "C10",
+      "rule": "C-FLOW",
+      "input": {
+        "plannedOrderCompliant": true,
+        "observedExecution": false
+      },
+      "expected": {
+        "flow": "requires-observation",
+        "flowDeduction": null
+      },
+      "note": ""
+    },
+    {
+      "id": "C11",
+      "rule": "C-GRUND",
+      "input": {
+        "base": "1/1",
+        "bonuses": "3/10",
+        "deductions": "8/5"
+      },
+      "expected": {
+        "rawC": "-3/10",
+        "clampedC": "0/1"
+      },
+      "note": ""
+    },
+    {
+      "id": "B01",
+      "rule": "B-SKRUE",
+      "input": {
+        "elementHalfTurns": [
+          1,
+          1
+        ]
+      },
+      "expected": {
+        "qualifies": false
+      },
+      "note": "360 grader skal ligge i ét element."
+    },
+    {
+      "id": "B02",
+      "rule": "B-DOBBELT",
+      "input": {
+        "twistCounts": [
+          6,
+          1,
+          0
+        ],
+        "doubleCounts": [
+          0,
+          2,
+          5
+        ]
+      },
+      "expected": {
+        "twistBonus": "3/5",
+        "doubleBonus": "1/2"
+      },
+      "note": ""
+    },
+    {
+      "id": "B03",
+      "rule": "T-SKRUE",
+      "input": {
+        "profile": "senior",
+        "rotationCategory": 1,
+        "halfTurns": 2,
+        "count": 6
+      },
+      "expected": {
+        "bonus": "0/1"
+      },
+      "note": ""
+    },
+    {
+      "id": "B04",
+      "rule": "T-SKRUE",
+      "input": {
+        "profile": "U14",
+        "rotationCategory": 2,
+        "halfTurns": 0,
+        "apparatus": "free",
+        "count": 6
+      },
+      "expected": {
+        "bonus": "0/1"
+      },
+      "note": ""
+    },
+    {
+      "id": "B05",
+      "rule": "T-SKRUE",
+      "input": {
+        "profile": "junior",
+        "rotationCategory": 2,
+        "halfTurns": 0,
+        "apparatus": "free",
+        "count": 6
+      },
+      "expected": {
+        "bonus": "0/1"
+      },
+      "note": ""
+    },
+    {
+      "id": "F01",
+      "rule": "C-RETNING",
+      "input": {
+        "pureForwardCounts": [
+          0,
+          6,
+          0
+        ],
+        "pureBackwardCounts": [
+          6,
+          0,
+          3
+        ]
+      },
+      "expected": {
+        "deduction": "0/1"
+      },
+      "note": ""
+    },
+    {
+      "id": "F02",
+      "rule": "C-RETNING",
+      "input": {
+        "pureForwardCounts": [
+          0,
+          4,
+          2
+        ],
+        "pureBackwardCounts": [
+          6,
+          0,
+          3
+        ]
+      },
+      "expected": {
+        "deduction": "2/5"
+      },
+      "note": ""
+    },
+    {
+      "id": "F03",
+      "rule": "C-RETNING",
+      "input": {
+        "sixCompleteMixedSeriesPerRound": true,
+        "pureForwardCounts": [
+          0,
+          0,
+          0
+        ],
+        "pureBackwardCounts": [
+          0,
+          0,
+          0
+        ]
+      },
+      "expected": {
+        "deduction": "12/5"
+      },
+      "note": ""
+    },
+    {
+      "id": "V01",
+      "rule": "C-REDSKAB",
+      "input": {
+        "sixPerRound": true,
+        "apparatusByRound": [
+          "free",
+          "vault",
+          "free"
+        ]
+      },
+      "expected": {
+        "deduction": "0/1"
+      },
+      "note": ""
+    },
+    {
+      "id": "V02",
+      "rule": "C-REDSKAB",
+      "input": {
+        "sixPerRound": true,
+        "apparatusByRound": [
+          "free",
+          "free",
+          "free"
+        ]
+      },
+      "expected": {
+        "deduction": "6/5"
+      },
+      "note": "Direkte seks manglende gymnaster; se også bekræftelsesspørgsmål Q04."
+    },
+    {
+      "id": "V03",
+      "rule": "C-REDSKAB",
+      "input": {
+        "sixPerRound": true,
+        "apparatusByRound": [
+          "vault",
+          "vault",
+          "vault"
+        ]
+      },
+      "expected": {
+        "deduction": "6/5"
+      },
+      "note": "Direkte seks manglende gymnaster; se også Q04."
+    },
+    {
+      "id": "R01",
+      "rule": "C-GENTAG",
+      "input": {
+        "identityCounts": [
+          6,
+          0,
+          0
+        ],
+        "sameAthletes": true
+      },
+      "expected": {
+        "deduction": "0/1"
+      },
+      "note": ""
+    },
+    {
+      "id": "R02",
+      "rule": "C-GENTAG",
+      "input": {
+        "identityCounts": [
+          6,
+          6,
+          0
+        ],
+        "sameAthletes": true
+      },
+      "expected": {
+        "deduction": "6/5"
+      },
+      "note": ""
+    },
+    {
+      "id": "R03",
+      "rule": "C-GENTAG",
+      "input": {
+        "identityCounts": [
+          6,
+          6,
+          6
+        ],
+        "sameAthletes": true
+      },
+      "expected": {
+        "deduction": "12/5"
+      },
+      "note": ""
+    },
+    {
+      "id": "O01",
+      "rule": "C-ORDEN",
+      "input": {
+        "round": 2,
+        "rotations": [
+          1,
+          1,
+          1,
+          2,
+          2,
+          2
+        ],
+        "D": [
+          "2/5",
+          "1/2",
+          "3/5",
+          "4/5",
+          "9/10",
+          "1/1"
+        ]
+      },
+      "expected": {
+        "compliant": true,
+        "deduction": "0/1"
+      },
+      "note": ""
+    },
+    {
+      "id": "O02",
+      "rule": "C-ORDEN",
+      "input": {
+        "round": 1,
+        "identicalTeamRound": true
+      },
+      "expected": {
+        "applyRound2And3OrderDeduction": false
+      },
+      "note": ""
+    },
+    {
+      "id": "P01",
+      "rule": "P01",
+      "input": {
+        "entries": 8,
+        "extraFirst": 2,
+        "countingLast": 6
+      },
+      "expected": {
+        "validStructure": true
+      },
+      "note": ""
+    },
+    {
+      "id": "P02",
+      "rule": "P01",
+      "input": {
+        "entries": 9
+      },
+      "expected": {
+        "validStructure": false
+      },
+      "note": ""
+    },
+    {
+      "id": "P03",
+      "rule": "P01",
+      "input": {
+        "profile": "mix",
+        "countingCategories": [
+          "pige",
+          "pige",
+          "pige",
+          "dreng",
+          "dreng",
+          "dreng"
+        ],
+        "extraCategories": [
+          "pige",
+          "pige"
+        ]
+      },
+      "expected": {
+        "countingMixCompliant": true
+      },
+      "note": ""
+    },
+    {
+      "id": "P04",
+      "rule": "P03",
+      "input": {
+        "countingFilled": 5,
+        "observedExecution": false
+      },
+      "expected": {
+        "analysisStatus": "incomplete",
+        "inventMissingAthleteCDeduction": false
+      },
+      "note": ""
+    },
+    {
+      "id": "P05",
+      "rule": "D-BASIS",
+      "input": {
+        "sourceRow": "a4-v-16",
+        "profile": "DK"
+      },
+      "expected": {
+        "validity": "forbidden",
+        "safeCandidate": false
+      },
+      "note": ""
+    },
+    {
+      "id": "N01",
+      "rule": "TAL",
+      "input": {
+        "raw": "19/30"
+      },
+      "expected": {
+        "panel": "63/100",
+        "display": "0,630"
+      },
+      "note": ""
+    },
+    {
+      "id": "N02",
+      "rule": "TAL",
+      "input": {
+        "raw": "127/30"
+      },
+      "expected": {
+        "panel": "423/100",
+        "display": "4,230"
+      },
+      "note": ""
+    },
+    {
+      "id": "N03",
+      "rule": "TAL",
+      "input": {
+        "raw": "847/200"
+      },
+      "expected": {
+        "panel": "847/200",
+        "display": "4,235"
+      },
+      "note": ""
+    },
+    {
+      "id": "I01",
+      "rule": "ID01",
+      "input": {
+        "positionsA": [
+          "straight",
+          "pike"
+        ],
+        "positionsB": [
+          "pike",
+          "pike"
+        ],
+        "otherIdentityFieldsEqual": true
+      },
+      "expected": {
+        "sameDPositionBasis": true,
+        "sameCIdentity": false
+      },
+      "note": ""
+    },
+    {
+      "id": "I02",
+      "rule": "ID01",
+      "input": {
+        "twistHalfTurnsA": [
+          2,
+          1
+        ],
+        "twistHalfTurnsB": [
+          1,
+          2
+        ],
+        "otherIdentityFieldsEqual": true
+      },
+      "expected": {
+        "sameIdentity": false
+      },
+      "note": ""
+    },
+    {
+      "id": "I03",
+      "rule": "ID01",
+      "input": {
+        "twistHalfTurnsA": [
+          4,
+          2
+        ],
+        "twistHalfTurnsB": [
+          2,
+          4
+        ],
+        "otherIdentityFieldsEqual": true
+      },
+      "expected": {
+        "sameIdentity": true
+      },
+      "note": ""
+    },
+    {
+      "id": "I04",
+      "rule": "ID01",
+      "input": {
+        "sourceRowA": "a3-b-06",
+        "sourceRowB": "a3-f-08"
+      },
+      "expected": {
+        "sameIdentity": false
+      },
+      "note": "Samme D, forskellig retning."
+    },
+    {
+      "id": "U01",
+      "rule": "D-BASIS",
+      "input": {
+        "sourceRow": "a4-v-12"
+      },
+      "expected": {
+        "status": "unresolved",
+        "issue": "Q02",
+        "officialD": null,
+        "alternatives": {
+          "table": "6/5",
+          "formula": "11/10"
+        }
+      },
+      "note": ""
+    },
+    {
+      "id": "U02",
+      "rule": "B-ELEMENT",
+      "input": {
+        "distinctCountsByRound": [
+          [
+            2,
+            2,
+            2,
+            2,
+            2,
+            2
+          ],
+          [
+            2,
+            2,
+            3,
+            3,
+            3,
+            3
+          ],
+          [
+            1,
+            1,
+            1,
+            2,
+            2,
+            2
+          ]
+        ]
+      },
+      "expected": {
+        "status": "unresolved",
+        "issue": "Q01",
+        "officialBonus": null,
+        "alternatives": {
+          "literal": "37/30",
+          "example": "19/30"
+        }
+      },
+      "note": ""
+    },
+    {
+      "id": "U03",
+      "rule": "C-GENTAG",
+      "input": {
+        "identityCounts": [
+          6,
+          2,
+          0
+        ],
+        "athletesMayChange": true
+      },
+      "expected": {
+        "status": "unresolved",
+        "issue": "Q03",
+        "officialDeduction": null
+      },
+      "note": ""
+    },
+    {
+      "id": "U04",
+      "rule": "C-GENTAG",
+      "input": {
+        "identityCounts": [
+          3,
+          3,
+          0
+        ],
+        "athletesMayChange": true
+      },
+      "expected": {
+        "status": "unresolved",
+        "issue": "Q03",
+        "officialDeduction": null
+      },
+      "note": ""
+    },
+    {
+      "id": "U05",
+      "rule": "D-HOLD",
+      "input": {
+        "identityCounts": [
+          3,
+          3
+        ]
+      },
+      "expected": {
+        "status": "unresolved",
+        "issue": "Q05",
+        "officialAdjustedD": null
+      },
+      "note": ""
+    },
+    {
+      "id": "U06",
+      "rule": "D-HOLD",
+      "input": {
+        "identityCounts": [
+          2,
+          2,
+          2
+        ]
+      },
+      "expected": {
+        "status": "unresolved",
+        "issue": "Q05",
+        "officialAdjustedD": null
+      },
+      "note": ""
+    },
+    {
+      "id": "U07",
+      "rule": "D-HOLD",
+      "input": {
+        "identityCounts": [
+          3,
+          2,
+          1
+        ]
+      },
+      "expected": {
+        "status": "unresolved",
+        "issue": "Q05",
+        "officialAdjustedD": null
+      },
+      "note": ""
+    },
+    {
+      "id": "U08",
+      "rule": "C-REDSKAB",
+      "input": {
+        "vaultCounts": [
+          4,
+          2,
+          3
+        ],
+        "freeCounts": [
+          2,
+          4,
+          3
+        ]
+      },
+      "expected": {
+        "status": "unresolved",
+        "issue": "Q04",
+        "officialDeduction": null
+      },
+      "note": ""
+    },
+    {
+      "id": "U09",
+      "rule": "C-ORDEN",
+      "input": {
+        "round": 2,
+        "rotationCategories": [
+          1,
+          1,
+          1
+        ],
+        "D": [
+          "4/5",
+          "1/2",
+          "3/5"
+        ]
+      },
+      "expected": {
+        "compliant": false,
+        "status": "unresolved",
+        "issue": "Q06",
+        "officialDeduction": null
+      },
+      "note": ""
+    },
+    {
+      "id": "U10",
+      "rule": "B-ELEMENT",
+      "input": {
+        "distinctCount": 4,
+        "countedForD": 3
+      },
+      "expected": {
+        "status": "unresolved",
+        "issue": "Q01",
+        "alternativesPerAthlete": {
+          "literal": "2/5",
+          "example": "3/10"
+        }
+      },
+      "note": ""
+    },
+    {
+      "id": "H01",
+      "rule": "rhythm",
+      "input": {
+        "momentA": "rh-db-turn-leg90-540",
+        "momentB": "rh-db-press-together",
+        "printedCodeForBoth": "DB804"
+      },
+      "expected": {
+        "sameMoment": false,
+        "valueForBoth": "4/5"
+      },
+      "note": ""
+    },
+    {
+      "id": "H02",
+      "rule": "rhythm",
+      "input": {
+        "category": "G",
+        "operation": "register-or-show-in-commonality"
+      },
+      "expected": {
+        "included": false
+      },
+      "note": ""
+    },
+    {
+      "id": "H03",
+      "rule": "rhythm",
+      "input": {
+        "teamSize": 10,
+        "athletesWithMoment": 8,
+        "ratings": [
+          5,
+          5,
+          5,
+          5,
+          5,
+          5,
+          5,
+          5
+        ]
+      },
+      "expected": {
+        "coverage": "8/10",
+        "commonForAll": false,
+        "mean": "5/1"
+      },
+      "note": ""
+    },
+    {
+      "id": "H04",
+      "rule": "rhythm",
+      "input": {
+        "teamSize": 6,
+        "ratings": [
+          5,
+          5,
+          5,
+          5,
+          5,
+          1
+        ],
+        "allHaveExactMoment": true,
+        "threshold": 4
+      },
+      "expected": {
+        "mean": "13/3",
+        "minimum": 1,
+        "lowCount": 1,
+        "passesThreshold": false
+      },
+      "note": ""
+    },
+    {
+      "id": "H05",
+      "rule": "rhythm",
+      "input": {
+        "teamSize": 6,
+        "ratings": [
+          5,
+          5,
+          5,
+          5,
+          5,
+          null
+        ],
+        "allHaveExactMoment": true,
+        "threshold": 4
+      },
+      "expected": {
+        "ratingCoverage": "5/6",
+        "commonWithoutThreshold": true,
+        "passesThreshold": false,
+        "mean": "5/1"
+      },
+      "note": ""
+    },
+    {
+      "id": "H06",
+      "rule": "rhythm",
+      "input": {
+        "teamSize": 0
+      },
+      "expected": {
+        "commonMoments": [],
+        "mean": null,
+        "minimum": null
+      },
+      "note": ""
+    }
+  ]
+}

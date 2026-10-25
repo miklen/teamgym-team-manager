@@ -1,0 +1,8 @@
+* text=auto
+*.pdf binary
+*.png binary
+*.jpg binary
+*.json text eol=lf
+*.ts text eol=lf
+*.tsx text eol=lf
+*.yml text eol=lf
