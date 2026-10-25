@@ -1,14 +1,17 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import {
   confirmConnection,
   newEntityId,
   registerAthleteSkill,
   replaceAthleteSkill,
   skillDefinitionSchema,
+  skillIdentity,
 } from '@teamgym/domain';
 import type { AthleteSkill, Discipline, ElementExecution, SkillDefinition, Workspace } from '@teamgym/domain';
 import type { RhythmCatalogEntry, RulePackage } from '@teamgym/rules';
-import { ActionForm, Decision, SkillBreakdown, SourceLinks, statusText } from './components';
+import { ActionForm, Decision, SkillBreakdown, SourceLinks, points, statusText } from './components';
+import { matchesSpring, registerSpring, shorterSeries, springLibrary } from './spring-library';
+import type { SpringChoice } from './spring-library';
 
 const positions = { tuck: 'Lukket', pike: 'Hoftebøjet', straight: 'Strakt' };
 const variants: Record<string, string> = {
@@ -73,6 +76,17 @@ export function SkillEditor({
     : undefined;
   const [discipline, setDiscipline] = useState<Discipline>(original?.discipline ?? initialDiscipline);
   const [query, setQuery] = useState('');
+  const [building, setBuilding] = useState(!!registration);
+  const [chosen, setChosen] = useState<SpringChoice | null>(null);
+  const [group, setGroup] = useState('Alle spring');
+  const [includeShorter, setIncludeShorter] = useState(true);
+  const library = useMemo(() => springLibrary(rulePackage, workspace), [rulePackage, workspace]);
+  const choices = library.filter(
+    (item) =>
+      item.definition.discipline === discipline &&
+      (group === 'Alle spring' || item.group === group) &&
+      matchesSpring(item, query),
+  );
   const [elements, setElements] = useState<ElementExecution[]>(
     original?.discipline === 'tumbling'
       ? structuredClone(original.elements)
@@ -113,6 +127,14 @@ export function SkillEditor({
         .includes(query.toLocaleLowerCase('da-DK')),
   );
   function definition(): SkillDefinition {
+    if (discipline !== 'rhythm' && !building) {
+      if (!chosen) throw new Error('Vælg et spring fra listen.');
+      return {
+        ...structuredClone(chosen.definition),
+        id: newEntityId(),
+        name: name.trim() || chosen.definition.name,
+      };
+    }
     const base = {
       id: newEntityId(),
       name:
@@ -142,9 +164,7 @@ export function SkillEditor({
                 kind: custom ? 'custom' : 'standard',
                 transitions: elements
                   .slice(1)
-                  .map(() =>
-                    custom ? 'Trænerbeskrevet direkte forbindelse' : 'Direkte standardforbindelse',
-                  ),
+                  .map(() => (custom ? 'Trænerbeskrevet direkte forbindelse' : 'direct')),
               },
             },
     );
@@ -155,10 +175,39 @@ export function SkillEditor({
   } catch {
     /* Formularen forklarer manglende valg. */
   }
-  const evaluation = preview && preview.discipline !== 'rhythm' ? rulePackage.evaluateSkill(preview) : null;
+  const confirmedPreview: AthleteSkill | undefined =
+    preview && custom && confirm
+      ? {
+          id: 'preview',
+          athleteId,
+          skillId: preview.id,
+          archived: false,
+          stability: null,
+          assessedAt: null,
+          note: '',
+          updatedAt: new Date().toISOString(),
+          reviewRequiredFor: [],
+          connectionConfirmation: {
+            executionIdentity: skillIdentity(preview),
+            confirmedAt: new Date().toISOString(),
+            note: confirmation || `Træneren har verificeret ${preview.name}.`,
+          },
+        }
+      : undefined;
+  const evaluation =
+    preview && preview.discipline !== 'rhythm' ? rulePackage.evaluateSkill(preview, confirmedPreview) : null;
+  const shorter = useMemo(
+    () =>
+      preview && preview.discipline === 'tumbling' && !registration
+        ? shorterSeries(preview, rulePackage)
+        : [],
+    [preview, registration, rulePackage],
+  );
   return (
     <ActionForm
+      className="skill-editor"
       label={registration ? 'Erstat udførelse i kladde' : 'Registrér færdighed'}
+      disabled={!preview}
       submit={() => {
         const skill = definition();
         let result: Workspace;
@@ -167,10 +216,23 @@ export function SkillEditor({
           result = replaceAthleteSkill(workspace, registration.id, skill);
           registrationId = registration.id;
         } else {
-          const normalizedKey =
-            skill.discipline === 'rhythm'
-              ? rulePackage.bindRhythm(skill).key
-              : rulePackage.evaluateSkill(skill).identity;
+          if (skill.discipline !== 'rhythm') {
+            const created = registerSpring(
+              workspace,
+              athleteId,
+              skill,
+              rulePackage,
+              includeShorter,
+              custom && confirm
+                ? confirmation ||
+                    `Træneren har verificeret den komplette serie ${skill.name} og de medtagne kortere serier.`
+                : null,
+            );
+            if (created.workspace === workspace) openExisting(created.registrationId);
+            else save(created.workspace);
+            return;
+          }
+          const normalizedKey = rulePackage.bindRhythm(skill).key;
           const existing =
             normalizedKey &&
             workspace.athleteSkills.find((item) => {
@@ -208,6 +270,11 @@ export function SkillEditor({
             setDiscipline(event.target.value as Discipline);
             setElements([]);
             setName('');
+            setChosen(null);
+            setQuery('');
+            setGroup('Alle spring');
+            setCustom(false);
+            setConfirm(false);
           }}
         >
           <option value="tumbling">Bane</option>
@@ -215,15 +282,17 @@ export function SkillEditor({
           <option value="rhythm">Rytme</option>
         </select>
       </label>
-      <label>
-        Navn på færdighed
-        <input
-          value={name}
-          onChange={(event) => setName(event.target.value)}
-          placeholder="Udfyldes fra dine valg, hvis feltet er tomt"
-          maxLength={200}
-        />
-      </label>
+      {(discipline === 'rhythm' || building) && (
+        <label>
+          Navn på færdighed
+          <input
+            value={name}
+            onChange={(event) => setName(event.target.value)}
+            placeholder="Udfyldes fra dine valg, hvis feltet er tomt"
+            maxLength={200}
+          />
+        </label>
+      )}
       {discipline === 'rhythm' ? (
         <>
           <label>
@@ -286,111 +355,244 @@ export function SkillEditor({
         </>
       ) : (
         <>
-          <h3>
-            {discipline === 'tumbling' ? 'Komplet serie i udførelsesrækkefølge' : 'Komplet trampetspring'}
-          </h3>
-          {elements.length === 0 && (
-            <p className="empty">
-              Vælg {discipline === 'tumbling' ? 'seriens første element' : 'et spring'} i kataloget.
-            </p>
-          )}
-          <ol className="element-list">
-            {elements.map((element, index) => (
-              <li key={index}>
-                <span>
-                  {rulePackage.springCatalog.find(
-                    (item) => JSON.stringify(item.execution) === JSON.stringify(element),
-                  )?.name ??
-                    `${element.family} · ${element.rotationQuarterTurns / 4} rotation · ${element.twistsHalfTurns * 180}°`}
-                </span>
-                {evaluation?.elementValues[index] && (
-                  <small>
-                    Element-D: <Decision value={evaluation.elementValues[index].value} />
-                  </small>
-                )}
-                <button
-                  type="button"
-                  className="quiet"
-                  onClick={() => setAdvanced(advanced === index ? null : index)}
-                >
-                  Variant {index + 1}
-                </button>
-                <button
-                  type="button"
-                  className="quiet"
-                  disabled={index === 0}
-                  aria-label={`Flyt element ${index + 1} op`}
-                  onClick={() => {
-                    const copy = [...elements];
-                    [copy[index - 1], copy[index]] = [copy[index]!, copy[index - 1]!];
-                    setElements(copy);
-                  }}
-                >
-                  ↑
-                </button>
-                <button
-                  type="button"
-                  className="quiet"
-                  aria-label={`Fjern element ${index + 1}`}
-                  onClick={() => setElements(elements.filter((_, position) => position !== index))}
-                >
-                  ×
-                </button>
-              </li>
-            ))}
-          </ol>
-          {advanced !== null && elements[advanced] && (
-            <ElementVariant
-              value={elements[advanced]}
-              change={(value) =>
-                setElements(elements.map((item, index) => (index === advanced ? value : item)))
-              }
-            />
-          )}
-          <label>
-            Søg spring, kode eller alias
-            <input type="search" value={query} onChange={(event) => setQuery(event.target.value)} />
-          </label>
-          <div className="catalog-results" aria-label="Springkatalog">
-            {catalog.map((item) => (
+          {!registration && (
+            <div className="segmented" role="group" aria-label="Vælg eller byg spring">
               <button
                 type="button"
-                className="catalog-option"
-                key={item.referenceId}
+                aria-pressed={!building}
                 onClick={() => {
-                  setElements(
-                    discipline === 'trampet'
-                      ? [structuredClone(item.execution)]
-                      : [...elements, structuredClone(item.execution)],
-                  );
+                  if (building) {
+                    setChosen(null);
+                    setName('');
+                    setCustom(false);
+                    setConfirm(false);
+                  }
+                  setBuilding(false);
+                  setQuery('');
                   setAdvanced(null);
                 }}
               >
-                <span>
-                  {item.name}
-                  <small>
-                    {item.officialCode} · {item.source.sourceId} ·{' '}
-                    {item.status === 'allowed'
-                      ? 'Kendt variant'
-                      : item.status === 'forbidden'
-                        ? 'Forbudt i DK'
-                        : `Uafklaret ${item.issueId}`}
-                  </small>
-                </span>
-                <strong>{item.printedValue.replace('.', ',')}</strong>
+                Vælg fra listen
               </button>
-            ))}
-          </div>
+              <button
+                type="button"
+                aria-pressed={building}
+                onClick={() => {
+                  setBuilding(true);
+                  setQuery('');
+                  setAdvanced(null);
+                }}
+              >
+                Byg selv
+              </button>
+            </div>
+          )}
+          {!building && (
+            <>
+              <p className="muted">
+                Vælg en færdig serie. Spring, du selv har bygget, kan også vælges på andre gymnaster.
+              </p>
+              <div className="form-grid">
+                <label>
+                  Søg sammensat spring eller alias
+                  <input
+                    type="search"
+                    value={query}
+                    onChange={(event) => setQuery(event.target.value)}
+                    placeholder="Fx rondat-flik-1/1 eller kraft barani"
+                  />
+                </label>
+                <label>
+                  Springgruppe
+                  <select value={group} onChange={(event) => setGroup(event.target.value)}>
+                    <option>Alle spring</option>
+                    {[
+                      ...new Set(
+                        library
+                          .filter((item) => item.definition.discipline === discipline)
+                          .map((item) => item.group),
+                      ),
+                    ].map((value) => (
+                      <option key={value}>{value}</option>
+                    ))}
+                  </select>
+                </label>
+              </div>
+              <div className="catalog-results spring-library" aria-label="Færdige spring">
+                {choices.map((choice) => {
+                  const result = rulePackage.evaluateSkill(choice.definition);
+                  return (
+                    <button
+                      type="button"
+                      className="catalog-option"
+                      aria-pressed={chosen?.id === choice.id}
+                      key={choice.id}
+                      onClick={() => {
+                        setChosen(choice);
+                        setName(choice.definition.name);
+                        setElements(
+                          choice.definition.discipline === 'tumbling'
+                            ? structuredClone(choice.definition.elements)
+                            : [structuredClone(choice.definition.jump)],
+                        );
+                        setCustom(
+                          choice.definition.discipline === 'tumbling' &&
+                            choice.definition.connection.kind === 'custom',
+                        );
+                        setConfirm(false);
+                        setConfirmation('');
+                      }}
+                    >
+                      <span>
+                        {choice.definition.name}
+                        <small>
+                          {choice.group}
+                          {result.connection === 'unverified'
+                            ? ' · Bekræft forbindelsen på denne gymnast'
+                            : ''}
+                        </small>
+                      </span>
+                      <strong>
+                        {result.difficulty.value
+                          ? points(result.difficulty.value)
+                          : statusText[result.difficulty.status]}
+                      </strong>
+                    </button>
+                  );
+                })}
+                {choices.length === 0 && (
+                  <p>Ingen spring matcher. Prøv en anden søgning, eller vælg Byg selv.</p>
+                )}
+              </div>
+              {chosen && (
+                <div className="selected-spring" role="status">
+                  <h3>{chosen.definition.name}</h3>
+                  <p>
+                    {chosen.definition.discipline === 'tumbling'
+                      ? `${chosen.definition.elements.length} elementer i den valgte serie`
+                      : 'Komplet trampetspring'}
+                  </p>
+                </div>
+              )}
+            </>
+          )}
+          {building && (
+            <>
+              {!registration && (
+                <p className="muted">
+                  Når du registrerer springet, bliver det også tilgængeligt i listen på andre gymnaster i
+                  arbejdsrummet.
+                </p>
+              )}
+              <h3>
+                {discipline === 'tumbling' ? 'Komplet serie i udførelsesrækkefølge' : 'Komplet trampetspring'}
+              </h3>
+              {elements.length === 0 && (
+                <p className="empty">
+                  Vælg {discipline === 'tumbling' ? 'seriens første element' : 'et spring'} i kataloget.
+                </p>
+              )}
+              <ol className="element-list">
+                {elements.map((element, index) => (
+                  <li key={index}>
+                    <span>
+                      {rulePackage.springCatalog.find(
+                        (item) => JSON.stringify(item.execution) === JSON.stringify(element),
+                      )?.name ??
+                        `${element.family} · ${element.rotationQuarterTurns / 4} rotation · ${element.twistsHalfTurns * 180}°`}
+                    </span>
+                    {evaluation?.elementValues[index] && (
+                      <small>
+                        Element-D: <Decision value={evaluation.elementValues[index].value} />
+                      </small>
+                    )}
+                    <button
+                      type="button"
+                      className="quiet"
+                      onClick={() => setAdvanced(advanced === index ? null : index)}
+                    >
+                      Variant {index + 1}
+                    </button>
+                    <button
+                      type="button"
+                      className="quiet"
+                      disabled={index === 0}
+                      aria-label={`Flyt element ${index + 1} op`}
+                      onClick={() => {
+                        const copy = [...elements];
+                        [copy[index - 1], copy[index]] = [copy[index]!, copy[index - 1]!];
+                        setElements(copy);
+                      }}
+                    >
+                      ↑
+                    </button>
+                    <button
+                      type="button"
+                      className="quiet"
+                      aria-label={`Fjern element ${index + 1}`}
+                      onClick={() => setElements(elements.filter((_, position) => position !== index))}
+                    >
+                      ×
+                    </button>
+                  </li>
+                ))}
+              </ol>
+              {advanced !== null && elements[advanced] && (
+                <ElementVariant
+                  value={elements[advanced]}
+                  change={(value) =>
+                    setElements(elements.map((item, index) => (index === advanced ? value : item)))
+                  }
+                />
+              )}
+              <label>
+                Søg spring, kode eller alias
+                <input type="search" value={query} onChange={(event) => setQuery(event.target.value)} />
+              </label>
+              <div className="catalog-results" aria-label="Springkatalog">
+                {catalog.map((item) => (
+                  <button
+                    type="button"
+                    className="catalog-option"
+                    key={item.referenceId}
+                    onClick={() => {
+                      setElements(
+                        discipline === 'trampet'
+                          ? [structuredClone(item.execution)]
+                          : [...elements, structuredClone(item.execution)],
+                      );
+                      setAdvanced(null);
+                    }}
+                  >
+                    <span>
+                      {item.name}
+                      <small>
+                        {item.officialCode} · {item.source.sourceId} ·{' '}
+                        {item.status === 'allowed'
+                          ? 'Kendt variant'
+                          : item.status === 'forbidden'
+                            ? 'Forbudt i DK'
+                            : `Uafklaret ${item.issueId}`}
+                      </small>
+                    </span>
+                    <strong>{item.printedValue.replace('.', ',')}</strong>
+                  </button>
+                ))}
+              </div>
+            </>
+          )}
           {discipline === 'tumbling' && (
             <>
-              <label className="check">
-                <input
-                  type="checkbox"
-                  checked={custom}
-                  onChange={(event) => setCustom(event.target.checked)}
-                />
-                Specialforbindelse uden kendt standardkobling
-              </label>
+              {building && (
+                <label className="check">
+                  <input
+                    type="checkbox"
+                    checked={custom}
+                    onChange={(event) => setCustom(event.target.checked)}
+                  />
+                  Specialforbindelse uden kendt standardkobling
+                </label>
+              )}
               {custom && (
                 <>
                   <p className="muted">
@@ -403,9 +605,9 @@ export function SkillEditor({
                       checked={confirm}
                       onChange={(event) => setConfirm(event.target.checked)}
                     />
-                    Jeg har verificeret gymnastens præcise forbindelse
+                    Jeg har verificeret gymnastens præcise forbindelse og de medtagne kortere serier
                   </label>
-                  {confirm && (
+                  {confirm && building && (
                     <label>
                       Beskrivelse af forbindelsen
                       <textarea
@@ -419,6 +621,22 @@ export function SkillEditor({
                 </>
               )}
             </>
+          )}
+          {shorter.length > 0 && (
+            <div className="shorter-series">
+              <label className="check">
+                <input
+                  type="checkbox"
+                  checked={includeShorter}
+                  onChange={(event) => setIncludeShorter(event.target.checked)}
+                />
+                Medtag kortere serier fra samme begyndelse
+              </label>
+              <p>{shorter.map((skill) => skill.name).join(' · ')}</p>
+              <small>
+                Nye registreringer får hver sin stabilitetsvurdering. Eksisterende vurderinger bevares.
+              </small>
+            </div>
           )}
           {evaluation && (
             <section className="inline-analysis">

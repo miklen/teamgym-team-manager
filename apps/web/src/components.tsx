@@ -200,15 +200,18 @@ export function ActionForm({
   submit,
   label = 'Anvend i kladde',
   disabled = false,
+  className,
 }: {
   children: ReactNode;
   submit: (data: FormData) => void;
   label?: string;
   disabled?: boolean;
+  className?: string;
 }) {
   const [error, setError] = useState('');
   return (
     <form
+      className={className}
       onSubmit={(event) => {
         event.preventDefault();
         if (disabled) return;

@@ -41,7 +41,10 @@ for (const width of [1440, 390]) {
     await picker.getByRole('button', { name: 'Accepter kun nødvendige' }).click();
     await page.screenshot({ path: `tmp/ui-qa/google-picker-${width}.png` });
     await picker.getByRole('button', { name: 'Vælg', exact: true }).click();
-    await expect(page.getByText('Syntetisk sæson.json', { exact: true })).toBeVisible();
+    await expect(
+      page.getByRole('contentinfo').getByText('Syntetisk sæson.json', { exact: true }),
+    ).toBeVisible();
+    await expect(page.getByRole('dialog')).toHaveCount(0);
     await expect(page.locator('iframe[title="Google Drive"]')).toHaveCount(0);
     expect(source.creates).toBe(1);
     expect(source.created?.workspace.teams).toHaveLength(0);

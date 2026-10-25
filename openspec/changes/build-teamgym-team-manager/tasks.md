@@ -175,3 +175,9 @@ Forberedelsesgrundlaget er allerede udarbejdet i [reference](reference/README.md
 - [x] 17.6 Afstem samtlige krav og scenarier i de ti specs med implementering, tests eller dokumenteret manuel kontrol og luk eventuelle huller; verificér at ingen aftalt funktion er udskudt som MVP, død knap eller demonstrationsdata.
 - [x] 17.7 Lever kode, dokumentation, kilde-/regeldata, frontend-skill og OpenSpec-status i målrepoet med en gennemgåelig commit/PR; verificér at ændringerne er tilgængelige på GitHub og at ingen private gymnastdata, tokens eller lokale credentials er inkluderet.
 - [x] 17.8 Gennemfør selvstændig kontrol af kode mod regelmatrix og kildegrundlag, inklusive bevidste fejlmutationer som 360° i stedet for 540°, forkert sats, dobbelttalt flik og C-filtrering på justeret D; verificér at facittests opdager fejlene, og at hver frigivet numerisk regel har kilde-, fortolknings- og testbevis. Manglende faglig afklaring skal forblive synlig som uafklaret, ikke godkendes af implementeringsagenten selv.
+
+## 18. Brugerens udvidelse: færdige sammensætninger og genbrug
+
+- [x] 18.1 Gør et bredt søgbart bibliotek af komplette juniorserier til standardvalget; bevar Byg selv til sjældne varianter og præcise D-/forbindelsesbegrænsninger.
+- [x] 18.2 Medtag synlige, fravælgelige kortere begyndelser uden at kopiere stabilitet eller ændre eksisterende vurderinger/arkivering; verificér rondat-flik-1/1 → rondat og rondat-flik uden omvendt eller skruereducerende inferens.
+- [x] 18.3 Genbrug egne springdefinitioner på andre gymnaster efter gem/genåbn med selvstændig vurdering og forbindelsesbekræftelse; aflever browser-/domænekontrol, mobilvisning og dansk vejledning.

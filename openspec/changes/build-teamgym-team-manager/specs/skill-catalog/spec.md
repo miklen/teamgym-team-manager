@@ -24,6 +24,24 @@ Træneren SHALL kunne søge standardfærdigheder og opbygge en komplet baneserie
 - **WHEN** træneren vælger rondat, flik og strakt baglæns salto med helskrue
 - **THEN** vises hele kæden, elementernes værdier og samlet D under den valgte regelprofil før registrering på gymnasten.
 
+### Requirement: Færdige spring og fælles springbibliotek
+Registrering af spring SHALL som udgangspunkt tilbyde en søgbar liste af gængse komplette sammensætninger med præcise positioner, skruer og D under holdets regelpakke. Listen SHALL omfatte rondat-/flik-/whipbackfamilier og kraftspring-/forlæns startsaltofamilier, herunder rondat-flik-1/1, kraft-barani og strakt-kraft-rudy. En særskilt Byg selv-mulighed SHALL bevare den strukturerede bygger til sjældne varianter. Springdefinitioner registreret i arbejdsrummet SHALL kunne genbruges på andre gymnaster efter gemning og genåbning uden at skulle bygges igen. Vurdering og personlig forbindelsesbekræftelse MUST NOT kopieres til den næste gymnast.
+
+#### Scenario: Vælg en gængs hel serie
+- **WHEN** træneren søger rondat-flik-1/1
+- **THEN** kan rondat-flik-strakt baglæns salto med 360° vælges samlet med D og præcis udførelse uden valg af hvert element.
+
+#### Scenario: Egne spring genbruges
+- **WHEN** træneren bygger og registrerer en egen serie og senere åbner en anden gymnast i samme arbejdsrum
+- **THEN** kan serien vælges fra listen med samme definition og en selvstændig uvurderet registrering; en eventuel personlig forbindelsesbekræftelse skal gives på ny.
+
+### Requirement: Kortere begyndelser af en registreret serie
+Ved registrering af en komplet baneserie SHALL de præcise kortere serier fra samme begyndelse være medtaget som standard og vises før registrering. Træneren SHALL kunne fravælge dem. Rondat-flik-1/1 SHALL således medtage rondat og rondat-flik. Dette MUST NOT udlede færre skruer, andre kropspositioner, nye efterfølgende forbindelser eller færdigheder ved at kombinere enkeltregistreringer. Nye kortere registreringer SHALL være uden stabilitetsvurdering. Eksisterende id'er, vurderinger, noter og arkiveringsvalg SHALL bevares.
+
+#### Scenario: Helskrueserie giver kortere begyndelser
+- **WHEN** rondat-flik-1/1 registreres med kortere serier medtaget
+- **THEN** oprettes manglende rondat og rondat-flik som særskilte uvurderede registreringer uden dubletter eller antaget stabilitet; rondat-flik-halvskrue udledes ikke.
+
 ### Requirement: Kontrol af forbindelser
 Springbyggeren MUST kontrollere kendte orienterings- og forbindelsesbegrænsninger og MUST skelne mellem dokumenteret forbindelse, ugyldig forbindelse og ikke-verificeret forbindelse. Reglementsmæssige elementværdier MUST NOT alene godkende enhver elementpermutation som anvendelig serie. En hel serie SHALL registreres særskilt som gymnastens færdighed.
 

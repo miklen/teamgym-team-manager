@@ -6,7 +6,7 @@ Interaktionerne er korte positionsovergange ved inspektør, nye/flyttede rækker
 
 ## Kontrol 25. oktober 2026
 
-Chromium kontrollerer produktionsbygget med syntetisk Google-/Drive-netværk. Der er ingen skjult demonstrationsfil i produktet. 33 browserchecks bestod ved seneste samlede kørsel. De dækker oprettelse af hold/gymnast, komplet banekæde og element-D, dubletåbning, stabilitet, seks omgange, ekstra først/grænse, gem/genåbn, læseadgang, ukendt pakke, konflikter/eksport, mistet uploadsvar, potentiale 4/6→6/6, regelskift/annullering, IndexedDB og afbrydelse mellem faner.
+Chromium kontrollerer produktionsbygget med syntetisk Google-/Drive-netværk. Der er ingen skjult demonstrationsfil i produktet. 36 browserchecks bestod ved seneste samlede kørsel. De dækker oprettelse af hold/gymnast, komplet banekæde og element-D, dubletåbning, stabilitet, seks omgange, ekstra først/grænse, gem/genåbn, læseadgang, ukendt pakke, konflikter/eksport, mistet uploadsvar, potentiale 4/6→6/6, regelskift/annullering, IndexedDB og afbrydelse mellem faner.
 
 Efter brugerens fejlmelding er Googles SDK-indlæsning automatisk; login kræver fortsat et direkte klik. Appens native modaler lukkes midlertidigt, før Picker åbnes, så de ikke gør Googles iframe og cookievalg inert. Formularen forbliver monteret og bevarer filnavnet ved annullering; Picker fjernes, før appens dialog genåbnes. Fem ekstra browserchecks dækker automatisk indlæsning uden OAuth-kald, genforsøg ved indlæsningsfejl, cookie-/mappevalg og oprettelse ved 1440 og 390 px samt filvalg fra indstillinger. Cookievalget foregår i en separat iframe uden for appdialogerne, så testen rammer den oprindelige native-modal-konflikt. Det er en simulator og ikke en ny faktisk Google-accepttest.
 
@@ -26,3 +26,7 @@ Supplerende billeder: [vurdering](ui/vurdering.png), [konkret potentiale](ui/pot
 ## Afgrænsning
 
 Rigtig Google-login/genbrug, Picker, CORS og betinget media-upload på Pages er særskilt manuel accept. To-konto-testen udfører brugeren efter publicering som aftalt. En browser-simulator eller et grønt axe-resultat må ikke bruges som bevis for disse Google-egenskaber. Se [testbeslutningen](testbeslutning-2026-10-25.md), [Google-opsætning](google-opsaetning.md) og [gemmeprotokol](drive-gemning.md).
+
+## Springbibliotek efter brugerens afprøvning
+
+Tre ekstra browserprøver dækker valg af en komplet helskrueserie, præcise kortere begyndelser, gem/genåbn på desktop og mobil samt genbrug af en egen serie på en anden gymnast uden kopieret stabilitet eller personlig bekræftelse. Axe fandt ingen overtrædelser i biblioteket. Den fastholdte registreringsknap blev visuelt kontrolleret ved 390 px. Se [biblioteket på desktop](ui/springbibliotek-1440.png), [mobilvisningen](ui/springbibliotek-390.png) og [forklaringen](springbibliotek.md).

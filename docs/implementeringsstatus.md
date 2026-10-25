@@ -1,6 +1,6 @@
 # Implementeringskontrol · 25. oktober 2026
 
-Change: `build-teamgym-team-manager`, schema `spec-driven`. **109/122 opgaver fuldført.** Domæne, regler, Drive-adapter og centrale arbejdsflader er implementeret. Første Pages-deployment er bestået; reel Google-/Drive-verifikation er fortsat udestående. Se [opgavelisten](../openspec/changes/build-teamgym-team-manager/tasks.md).
+Change: `build-teamgym-team-manager`, schema `spec-driven`. **112/125 opgaver fuldført.** Brugerens tre tilføjede opgaver om færdige spring og genbrug er udført. Domæne, regler, Drive-adapter og centrale arbejdsflader er implementeret. Første Pages-deployment er bestået; reel Google-/Drive-verifikation er fortsat udestående. Se [opgavelisten](../openspec/changes/build-teamgym-team-manager/tasks.md).
 
 ## Implementeret
 
@@ -17,15 +17,17 @@ Der findes ingen frigivet ældre arbejdsrumsudgave; format 1 er første underst�
 | Kontrol | Seneste resultat |
 | --- | --- |
 | `npm run check` | Typekontrol og lint bestået |
-| `npm run test:domain` | 176 tests bestået, inklusive 77 faste facitcases og fulde integrationer |
+| `npm run test:domain` | 181 tests bestået, inklusive 77 faste facitcases og springbibliotekets fem nye kontroller |
 | `npm run test:drive` | 34 tests bestået med injiceret netværk/lager/klokke |
 | `npm run test:mutations` | 4/4 bevidste regelfejl fanget i isoleret kopi |
 | `npm run build` | Statisk app/worker/T01 og otte medfølgende PDF-assets; kilders SHA-256 og størrelse matcher |
-| `npm run test:e2e` | 33 Chromium-checks bestået mod produktionsbyg med syntetisk Google/Drive |
+| `npm run test:e2e` | 36 Chromium-checks bestået mod produktionsbyg med syntetisk Google/Drive |
 | axe | Ingen fund i valgte WCAG 2.2 AA-regler på fem arbejdsflader og vurderingsdialog |
 | Visuel kontrol | Fire viewports, 20 syntetiske gymnaster/lange navne, fokus, tastatur, reduceret bevægelse og 200 % tekst |
 
 Se [UI-rapport og billeder](ui-kontrol.md), [kravdækning](kravdaekning.md), [regelkontrol](regler-og-katalog.md), [gemmeprotokol](drive-gemning.md) og [brugsvejledning](brugsvejledning.md). Automatiserede Google-svar er simulatorer, ikke bevis for faktisk Drive/CORS/GIS. Billeder og testdata indeholder kun syntetiske personer.
+
+Springregistrering starter nu i [springbiblioteket](springbibliotek.md) med 90 komplette banesammensætninger og fælles genbrug af egne definitioner. Præcise kortere begyndelser medtages som standard uden kopieret stabilitet, noter eller arkiveringsændringer. Egne spring blev bygget én gang, gemt/genåbnet og valgt på en anden gymnast med selvstændig vurdering/bekræftelse i browserkontrollen. Standardbyggerens overgangsmetadata er rettet til den eksisterende regelpakkes `direct`-kontrakt; den udgivne regelpakkes algoritmer og værdier er uændrede.
 
 Brugerens efterfølgende fejlmelding om et unødvendigt klargøringstrin og blokeret Google-cookievalg er rettet. Google indlæses automatisk uden at starte OAuth; appens modaler skjules under Picker og bevarer filnavnet ved annullering. De fem ekstra browserchecks dækker indlæsning/genforsøg, cookie-/mappevalg og syntetisk filoprettelse på mobil og desktop samt filvalg fra indstillinger. Den reelle Google-oplevelse efter denne rettelse kræver fortsat brugerens afprøvning.
 

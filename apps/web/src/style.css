@@ -481,6 +481,49 @@ h3 {
 .catalog-option:hover:not(:disabled) {
   background: #edf3ec;
 }
+.segmented {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-block: 16px;
+}
+.segmented button[aria-pressed='false'] {
+  color: #202e2c;
+  background: transparent;
+  border-color: #869c91;
+}
+.spring-library .catalog-option[aria-pressed='true'] {
+  background: #dfede5;
+  box-shadow: inset 4px 0 #166557;
+}
+.catalog-option > span {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.catalog-option > strong {
+  flex-shrink: 0;
+  font-variant-numeric: tabular-nums;
+}
+.selected-spring,
+.shorter-series {
+  margin-block: 16px;
+}
+.selected-spring h3 {
+  margin-bottom: 4px;
+}
+.selected-spring p,
+.shorter-series p {
+  margin-block: 8px;
+}
+.skill-editor > .actions {
+  position: sticky;
+  bottom: 0;
+  z-index: 1;
+  background: #fffefa;
+  border-top: 1px solid #d8ded8;
+  padding-block: 12px;
+  margin-bottom: 0;
+}
 .element-list {
   padding-left: 22px;
 }

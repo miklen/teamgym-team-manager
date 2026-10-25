@@ -16,7 +16,9 @@ Opret et hold med navn, præcis regelpakke og profil. Juniorpiger er standard i 
 
 Kartoteket kan søges og filtreres på hold, uden hold og arkiverede gymnaster. Brug kendetegn, når to gymnaster hedder det samme. Gymnastens identitet og færdigheder følger med ved flytning. Gamle omgangspladser bliver stående med advarsel, indtil træneren retter dem. Arkivering bevarer data og kan ophæves.
 
-Åbn gymnasten for at registrere en **komplet** baneserie, et trampetspring eller et individuelt rytmemoment. Enkeltkompetencer bliver ikke automatisk sat sammen til en behersket serie. Vælg elementer i rækkefølge og undersøg D, gyldighed og kilde. Brug Variant til præcis kropsposition, rotation og skruefordeling. En ukendt specialforbindelse kræver konkret trænerbekræftelse; den gør ikke forbudte spring lovlige.
+Åbn gymnasten og vælg **Tilføj færdighed**. Spring vælges som udgangspunkt samlet fra den søgbare liste, fx rondat–flik–1/1 eller kraft–barani. Listen rummer 90 færdige banesammensætninger samt grundspring og trampetspring. Kortere serier fra samme begyndelse medtages som standard: rondat–flik–1/1 medtager rondat og rondat–flik. De kan fravælges og får hver sin stabilitetsvurdering; eksisterende vurderinger bevares.
+
+Mangler et spring, bruges **Byg selv** med elementer i rækkefølge. En registreret egen serie kan derefter vælges på andre gymnaster i samme arbejdsrum, også efter gem/genåbn. Brug Variant til præcis kropsposition, rotation og skruefordeling. Enkeltkompetencer bliver ikke automatisk sat sammen til en behersket serie, og vurdering eller personlig forbindelsesbekræftelse kopieres ikke mellem gymnaster. En ukendt specialforbindelse kræver konkret trænerbekræftelse; den gør ikke forbudte spring lovlige. Se [springbiblioteket](springbibliotek.md).
 
 Stabilitet er en trænerskala fra 1 til 5 med synlige ankre. »Ikke vurderet« er en særskilt tilstand. En vurdering kræver dato og kan have note. Ændres den præcise udførelse, skal den nye udførelse vurderes på ny. Forsøg på at tilføje samme færdighed åbner den eksisterende registrering.
 
