@@ -368,7 +368,11 @@ function SpringDisciplineView({
             <details key={item.id}>
               <summary>
                 <span>{item.label}</span>
-                <Decision value={item.decision} />
+                {item.kind === 'observation' ? (
+                  <span>Kræver observation</span>
+                ) : (
+                  <Decision value={item.decision} />
+                )}
               </summary>
               <p>
                 {item.kind === 'deduction'

@@ -34,6 +34,22 @@ export const statusText = {
 export function points(value: Fraction | null | undefined) {
   return value ? formatPoints(value) : '—';
 }
+const issueLabels: Record<string, string> = {
+  'REQUIRES-OBSERVATION': 'Kræver observation',
+  'UNKNOWN-ELEMENT': 'Ukendt springvariant',
+  'UNKNOWN-VARIANT': 'Ukendt udførelsesvariant',
+  'DK-TRIPLE-FORBIDDEN': 'Trippelrotation er ikke tilladt',
+  'TWIST-PLACEMENT': 'Skrueplacering kræver gennemgang',
+  'ELEMENT-EXECUTION': 'Udførelsen er ikke gyldig',
+  'ELEMENT-DIRECTION': 'Retningen passer ikke til springet',
+  'ELEMENT-TAKEOFF': 'Afsættet passer ikke til springet',
+};
+const alternativeLabels: Record<string, string> = {
+  table: 'Tabel',
+  formula: 'Formel',
+  literal: 'Ordlydsspor',
+  example: 'Eksempelspor',
+};
 export function Decision({ value }: { value: NumericDecision }) {
   return (
     <span className={`decision ${value.status}`}>
@@ -41,12 +57,14 @@ export function Decision({ value }: { value: NumericDecision }) {
       {value.value === null && (
         <small>
           Kendt del: {points(value.knownSubtotal)}
-          {value.issues.length ? ` · ${value.issues.join(', ')}` : ''}
+          {value.issues.length
+            ? ` · ${value.issues.map((issue) => (/^Q\d+$/.test(issue) ? issue : (issueLabels[issue] ?? 'Kræver reglementsgennemgang'))).join(', ')}`
+            : ''}
         </small>
       )}
       {Object.entries(value.alternatives).map(([key, amount]) => (
         <small key={key}>
-          {key === 'table' ? 'Tabel' : key === 'formula' ? 'Formel' : key}: {points(amount)}
+          {alternativeLabels[key] ?? key}: {points(amount)}
         </small>
       ))}
     </span>
