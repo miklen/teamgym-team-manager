@@ -16,7 +16,7 @@ Opret et hold med navn, præcis regelpakke og profil. Juniorpiger er standard i 
 
 Kartoteket kan søges og filtreres på hold, uden hold og arkiverede gymnaster. Brug kendetegn, når to gymnaster hedder det samme. Gymnastens identitet og færdigheder følger med ved flytning. Gamle omgangspladser bliver stående med advarsel, indtil træneren retter dem. Arkivering bevarer data og kan ophæves.
 
-Åbn gymnasten og vælg **Tilføj færdighed**. Sæt flueben ved flere spring fra den søgbare liste, fx rondat–flik–1/1 og kraft–barani, og angiv sikkerhed 1–5 ud for hvert spring. Fluebenet betyder, at gymnasten kan udføre hele serien uden mellemtrin. Listen rummer 90 færdige banesammensætninger samt grundspring og trampetspring. Valgene bevares mellem søgninger, grupper og bane/trampet. Vælg vurderingsdato, og registrér alle valgene samlet.
+Åbn gymnasten og vælg **Tilføj færdighed**. Sæt flueben ved flere spring fra den søgbare liste, fx rondat–flik–1/1 og kraft–barani, og angiv sikkerhed 1–5 ud for hvert spring. Fluebenet betyder, at gymnasten kan udføre hele serien uden mellemtrin. Listen rummer 203 færdige banesammensætninger samt grundspring og trampetspring. Valgene bevares mellem søgninger, grupper og bane/trampet. Vælg vurderingsdato, og registrér alle valgene samlet.
 
 Kortere serier medtages som standard med samme sikkerhed: rondat–flik–1/1 medtager rondat og rondat–flik. Deler flere valgte spring en kortere serie, arves sikkerheden fra springet med lavest sværhed (D). En direkte angivet vurdering af den korte serie har forrang. Arv kan opdatere en tidligere kortere vurdering med bevaret note og id; arkiverede registreringer ændres ikke. Du kan gennemgå arven eller fravælge de kortere serier.
 

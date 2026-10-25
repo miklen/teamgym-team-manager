@@ -124,7 +124,7 @@ export function confirmConnection(workspace: Workspace, athleteSkillId: string, 
   return edit(workspace, (copy) => {
     const registration = requireItem(copy.athleteSkills, athleteSkillId);
     const skill = requireItem(copy.skills, registration.skillId);
-    if (skill.discipline !== 'tumbling' || skill.connection.kind !== 'custom') throw new Error('Kun en konkret specialforbindelse kan bekræftes.');
+    if (skill.discipline !== 'tumbling') throw new Error('Kun en konkret baneserie kan bekræftes.');
     registration.connectionConfirmation = { executionIdentity: skillIdentity(skill), confirmedAt: environment.now(), note };
     registration.updatedAt = environment.now();
     // Bekræftelsen er ikke en regelgodkendelse. Regelpakken skal fortsat kontrollere gyldighed.

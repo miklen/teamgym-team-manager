@@ -29,7 +29,7 @@ for (const width of [1440, 390]) {
     await expect(page.getByText('2 spring valgt · 2 kortere serier medtages', { exact: true })).toBeVisible();
     await page.getByText('Se sikkerhed på kortere serier', { exact: true }).click();
     await expect(page.getByText('Rondat · 2/5', { exact: true })).toBeVisible();
-    await expect(page.getByText('Rondat – Flik-flak · 2/5', { exact: true })).toBeVisible();
+    await expect(page.getByText('Rondat – flik · 2/5', { exact: true })).toBeVisible();
     await expect(page.getByText(/Jeg har verificeret gymnastens præcise forbindelse/)).toHaveCount(0);
     await expect(
       page.getByRole('checkbox', { name: 'Medtag kortere serier med samme sikkerhed' }),
@@ -44,7 +44,7 @@ for (const width of [1440, 390]) {
     await page.getByRole('button', { name: 'Registrér 2 spring', exact: true }).click();
     await expect(page.getByRole('button', { name: /^Rondat – flik – strakt 1\/1/ })).toBeVisible();
     await expect(page.getByRole('button', { name: /^Rondat D:/ })).toBeVisible();
-    await expect(page.getByRole('button', { name: /^Rondat – Flik-flak D:/ })).toBeVisible();
+    await expect(page.getByRole('button', { name: /^Rondat – flik D:/ })).toBeVisible();
     await page.getByRole('button', { name: 'Luk dialog', exact: true }).click();
     await page.getByRole('button', { name: /Lokale ændringer/ }).click();
     await expect(page.getByRole('button', { name: 'Gemt', exact: true })).toBeVisible();
@@ -73,16 +73,16 @@ test('byg én gang, genbrug på anden gymnast med et selvstændigt valg af hele 
     ['flic', /^Flik-flak F/],
     ['flic', /^Flik-flak F/],
     ['flic', /^Flik-flak F/],
-    ['Strakt salto 360', /^Strakt salto 360 \/2/],
+    ['Strakt salto 360', /^Strakt salto 360 \(baglæns\)/],
   ] as const) {
     await page.getByLabel('Søg spring, kode eller alias').fill(query);
     await page.getByRole('button', { name }).click();
   }
   await page.getByLabel('Navn på færdighed').fill('Syntetisk egen serie');
   await page.getByRole('checkbox', { name: 'Medtag kortere serier med samme sikkerhed' }).uncheck();
-  await page.getByRole('checkbox', { name: 'Specialforbindelse uden kendt standardkobling' }).check();
-  await page.getByRole('checkbox', { name: 'Gymnasten kan udføre hele serien uden mellemtrin' }).check();
-  await page.getByLabel('Beskrivelse af forbindelsen').fill('Observeret som direkte serie på gymnast A.');
+  await expect(
+    page.getByRole('checkbox', { name: 'Gymnasten kan udføre hele serien uden mellemtrin' }),
+  ).toHaveCount(0);
   await page.getByRole('button', { name: 'Registrér færdighed', exact: true }).click();
   await page.getByRole('button', { name: /^Syntetisk egen serie/ }).click();
   await page.getByRole('radio', { name: '5', exact: true }).check();
@@ -113,12 +113,9 @@ test('byg én gang, genbrug på anden gymnast med et selvstændigt valg af hele 
   expect(registrations).toHaveLength(2);
   expect(new Set(registrations.map((item) => item.skillId)).size).toBe(1);
   expect(registrations[0]!.stability).toBe(5);
-  expect(registrations[0]!.connectionConfirmation).not.toBeNull();
+  expect(registrations[0]!.connectionConfirmation).toBeNull();
   expect(registrations[1]!.stability).toBeNull();
-  expect(registrations[1]!.connectionConfirmation).not.toBeNull();
-  expect(registrations[1]!.connectionConfirmation?.note).not.toBe(
-    registrations[0]!.connectionConfirmation?.note,
-  );
+  expect(registrations[1]!.connectionConfirmation).toBeNull();
   expect(source.failures).toEqual([]);
 });
 

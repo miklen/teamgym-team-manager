@@ -187,3 +187,9 @@ Forberedelsesgrundlaget er allerede udarbejdet i [reference](reference/README.md
 - [x] 19.1 Tilføj flueben og sikkerhed 1–5/ikke vurderet ved hvert spring, fælles dato og én samlet registrering; bevar valg mellem søgninger, grupper og bane/trampet.
 - [x] 19.2 Nedarv sikkerhed og dato til præcise kortere begyndelser fra den valgte serie med lavest D, med direkte kortere vurdering som forrang; verificér klikrækkefølge, dubletter, eksisterende noter og arkivering.
 - [x] 19.3 Erstat den tekniske bekræftelsestekst med forståelig angivelse af hele serier, bevar personlig bekræftelse uden kopiering, og aflever domæne-/browserkontrol, mobilbilleder og dansk vejledning.
+
+## 20. Brugerens præcisering: almindelige overgange og entydig serievisning
+
+- [x] 20.1 Vis hovedserien særskilt, saml kortere serier under en udfoldelig overskrift, og gør forlæns/baglæns salto entydig i elementvalg og søgning.
+- [x] 20.2 Tilføj praktisk genkendelse af forlæns salto i tre positioner til rondat/kraft og ulige halve skruer til flik/whip; udvid færdige familier uden at ændre den udgivne regelpakkes værdier eller algoritmer.
+- [x] 20.3 Verificér strakt-rondat-flik-hel, forkert afslutningsretning og kortere begyndelser med syntetiske browserforløb på mobil/desktop, bevarede vurderinger og separate personlige bekræftelser; aflever vejledning og kontrolrapport.

@@ -1,12 +1,14 @@
 import { describe, expect, it } from 'vitest';
 import {
   createWorkspace,
+  confirmConnection,
   parseWorkspace,
   serializeWorkspace,
   setArchived,
   updateAssessment,
 } from '@teamgym/domain';
 import { DK_V1 } from '@teamgym/rules';
+import { knownSeries, standardTransition } from '../../apps/web/src/spring-connections';
 import {
   matchesSpring,
   registerSpring,
@@ -14,6 +16,8 @@ import {
   springRegistrationPlan,
   shorterSeries,
   springLibrary,
+  springSeriesName,
+  springElementName,
 } from '../../apps/web/src/spring-library';
 import type { SpringDefinition } from '../../apps/web/src/spring-library';
 import { syntheticWorkspace } from '../fixtures/synthetic-workspace';
@@ -51,7 +55,7 @@ describe('springbibliotek', () => {
     const fixture = syntheticWorkspace();
     const full = choice(fullName).definition;
     const shorter = shorterSeries(full, DK_V1);
-    expect(shorter.map((item) => item.name)).toEqual(['Rondat', 'Rondat – Flik-flak']);
+    expect(shorter.map((item) => item.name)).toEqual(['Rondat', 'Rondat – flik']);
     const result = registerSpring(fixture.workspace, fixture.athleteA.id, full, DK_V1, true, null);
     const added = result.workspace.athleteSkills.filter(
       (item) => !fixture.workspace.athleteSkills.some((old) => old.id === item.id),
@@ -60,7 +64,7 @@ describe('springbibliotek', () => {
     expect(added.every((item) => item.stability === null && item.assessedAt === null)).toBe(true);
     expect(
       added.map((item) => result.workspace.skills.find((skill) => skill.id === item.skillId)!.name),
-    ).toEqual([fullName, 'Rondat', 'Rondat – Flik-flak']);
+    ).toEqual([fullName, 'Rondat', 'Rondat – flik']);
     expect(fixture.workspace.athleteSkills).toHaveLength(24);
     expect(registerSpring(result.workspace, fixture.athleteA.id, full, DK_V1, true, null).workspace).toBe(
       result.workspace,
@@ -152,7 +156,11 @@ describe('springbibliotek', () => {
     for (const item of library) {
       const result = DK_V1.evaluateSkill(item.definition);
       expect(result.difficulty.status).not.toBe('invalid');
-      if (item.definition.discipline === 'tumbling' && result.connection === 'unverified')
+      if (
+        item.definition.discipline === 'tumbling' &&
+        !knownSeries(item.definition.elements) &&
+        result.connection === 'unverified'
+      )
         expect(item.definition.connection.kind).toBe('custom');
     }
   });
@@ -201,6 +209,96 @@ describe('springbibliotek', () => {
         false,
       ),
     ).toHaveLength(2);
+  });
+
+  it('genkender forlæns salto i tre positioner til rondat/kraft og ulige halve skruer til flik/whip', () => {
+    const row = (id: string) =>
+      structuredClone(DK_V1.springCatalog.find((item) => item.referenceId === id)!.execution);
+    for (const id of ['a3-f-04', 'a3-f-06', 'a3-f-08'])
+      for (const twists of [0, 2, 4]) {
+        const before = { ...row(id), twistsHalfTurns: twists, twistDistribution: twists ? [twists] : [] };
+        expect(standardTransition(before, row('a3-b-01'))).toBe(true);
+        expect(standardTransition(before, row('a3-f-02'))).toBe(true);
+        expect(standardTransition(before, row('a3-b-02'))).toBe(false);
+        for (const halfTwists of [1, 3]) {
+          const turned = { ...before, twistsHalfTurns: halfTwists, twistDistribution: [halfTwists] };
+          expect(standardTransition(turned, row('a3-b-02'))).toBe(true);
+          expect(standardTransition(turned, row('a3-b-03'))).toBe(true);
+          expect(standardTransition(turned, row('a3-b-01'))).toBe(false);
+        }
+      }
+    expect(standardTransition(row('a3-b-02'), row('a3-f-14'))).toBe(false);
+    expect(standardTransition({ ...row('a3-f-08'), landing: 'seated' }, row('a3-b-01'))).toBe(false);
+  });
+
+  it('strakt-rondat-flik-hel er entydig med D 1,00 og særskilte kortere begyndelser', () => {
+    const fixture = syntheticWorkspace();
+    const full = choice('Strakt – rondat – flik – strakt 1/1 (360°)').definition;
+    if (full.discipline !== 'tumbling') throw Error('disciplin');
+    expect(full.elements.map((item) => item.direction)).toEqual([
+      'forward',
+      'backward',
+      'backward',
+      'backward',
+    ]);
+    expect(knownSeries(full.elements)).toBe(true);
+    expect(springSeriesName(full.elements, DK_V1)).toBe('Strakt – rondat – flik – helskrue');
+    expect(shorterSeries(full, DK_V1).map((item) => item.name)).toEqual([
+      'Strakt',
+      'Strakt – rondat',
+      'Strakt – rondat – flik',
+    ]);
+    expect(springElementName(full.elements[0]!, DK_V1)).toContain('(forlæns)');
+    expect(springElementName(full.elements[3]!, DK_V1)).toContain('(baglæns)');
+    // Den udgivne regelpakkes tidligere adfærd bevares. Det konkrete gymnastvalg gemmer bekræftelsen.
+    expect(DK_V1.evaluateSkill(full).connection).toBe('unverified');
+    const result = registerSpringBatch(
+      fixture.workspace,
+      fixture.athleteA.id,
+      [{ definition: full, stability: 3, confirmed: true }],
+      DK_V1,
+      { includeShorter: true, assessedAt: '2026-10-25' },
+    );
+    const registration = result.athleteSkills.find((item) =>
+      result.skills.some((skill) => skill.id === item.skillId && skill.name === full.name),
+    )!;
+    const actual = result.skills.find((item) => item.id === registration.skillId)!;
+    if (actual.discipline !== 'tumbling') throw Error('disciplin');
+    const evaluation = DK_V1.evaluateSkill(actual, registration);
+    expect(evaluation.connection).toBe('verified');
+    expect(evaluation.difficulty.value?.toString()).toBe('1');
+    expect(evaluation.pureBackward).toBe(false);
+    expect(evaluation.pureForward).toBe(false);
+    expect(result.athleteSkills.slice(24).every((item) => item.stability === 3)).toBe(true);
+  });
+
+  it('personlig bekræftelse af en standardserie ændrer ikke udførelse, vurdering eller revurderingsmarkører', () => {
+    const fixture = syntheticWorkspace();
+    const full = choice('Strakt – rondat – flik – strakt 1/1 (360°)').definition;
+    const added = registerSpring(fixture.workspace, fixture.athleteA.id, full, DK_V1, false, null);
+    const assessed = updateAssessment(added.workspace, added.registrationId, {
+      stability: 4,
+      assessedAt: '2026-10-25',
+      note: 'Bevar noten',
+    });
+    assessed.athleteSkills.find((item) => item.id === added.registrationId)!.reviewRequiredFor = [
+      'existing-review',
+    ];
+    const before = assessed.athleteSkills.find((item) => item.id === added.registrationId)!;
+    const result = confirmConnection(
+      assessed,
+      added.registrationId,
+      'Konkret standardserie registreret på denne gymnast.',
+    );
+    const after = result.athleteSkills.find((item) => item.id === added.registrationId)!;
+    expect(after).toMatchObject({
+      skillId: before.skillId,
+      stability: 4,
+      assessedAt: '2026-10-25',
+      note: 'Bevar noten',
+      reviewRequiredFor: ['existing-review'],
+    });
+    expect(result.skills).toEqual(assessed.skills);
   });
 
   it('registrerer flere spring med individuelle vurderinger og fælles begyndelser én gang', () => {

@@ -1,6 +1,6 @@
 # Springbibliotek
 
-Springregistrering starter med **Vælg fra listen**. Biblioteket rummer 90 færdige banesammensætninger, 45 grundspring og 35 komplette trampetspring i den installerede DK-pakke. Søgningen forstår navne og aliaser som `rondat-flik-1/1`, `flik hel`, `kraft barani` og `rudy`. Vælg Forlæns, Baglæns, Grundspring, Med/Uden redskab eller Egne spring for at begrænse listen. D følger altid holdets regelpakke.
+Springregistrering starter med **Vælg fra listen**. Biblioteket rummer 203 færdige banesammensætninger, 45 grundspring og 35 komplette trampetspring i den installerede DK-pakke. Søgningen forstår navne og aliaser som `rondat-flik-1/1`, `flik hel`, `kraft barani` og `rudy`. Vælg Forlæns, Baglæns, Grundspring, Med/Uden redskab eller Egne spring for at begrænse listen. D følger altid holdets regelpakke.
 
 De færdige serier dækker disse afgrænsede familier:
 
@@ -12,6 +12,8 @@ De færdige serier dækker disse afgrænsede familier:
 | Rondat direkte til salto | Lukket, hoftebøjet, strakt og de fire ovenstående strakte skruevarianter |
 | Kraftspring og flyvespring | Lukket, hoftebøjet, strakt, barani, helskrue, rudy, dobbeltskrue og randy |
 | Lukket/hoftebøjet/strakt startsalto–kraftspring | Samme otte forlæns afslutninger samt den kortere startsalto–kraft-serie |
+| Lukket/hoftebøjet/strakt startsalto–rondat–flik | Ni baglæns afslutninger, herunder helskrue, samt de kortere begyndelser |
+| Barani/rudy samt lukket/hoftebøjet halvskrue til flik eller whipback | Ni baglæns afslutninger og de kortere indgange |
 
 Listen er udarbejdet med udgangspunkt i brugerens `Springgrundlag-Juniorpiger.md` og det tilknyttede `Banespring-Udviklingsspor-Juniorpiger.md`, som præciserer bl.a. strakt flik-1/1, kraft-barani og strakt-kraft-rudy. GymDanmarks [TeamGym-samling](https://gymdanmark.dk/arrangement/teamgym-samling-1/) beskriver også hofte/strakt-kraft-barani og rondat-flik-dobbelt som relevante sammensætninger. De præcise elementer hentes fra appens fastlåste A3/A4-katalog; opskrifterne indfører ingen nye officielle koder eller point.
 
@@ -29,10 +31,16 @@ Arv kan opdatere en eksisterende kortere vurdering, men bevarer id og note. Arki
 
 ## Byg én gang, genbrug
 
+Byggeren viser **Valgt serie**, fx *Strakt – rondat – flik – helskrue*. De automatisk medtagne begyndelser ligger særskilt under **Medtagne kortere serier (3)** som *Strakt*, *Strakt – rondat* og *Strakt – rondat – flik*. Oversigten er lukket som standard. Elementvalg viser tydeligt **forlæns** og **baglæns**, og søgning som `baglæns 360` eller `forlæns helskrue` finder den relevante retning.
+
+Det praktiske forbindelseskatalog `coach-connections-2` genkender forlæns salto i alle tre positioner med hele skruer til rondat/kraft og med ulige halve skruer til flik/whipback. Kendte serier vises uden felt om specialforbindelse. Hvis en forlæns salto vælges efter flik, gives en konkret forklaring om den baglæns afslutning til den almindelige serie. Trænerens valg omskrives ikke automatisk.
+
+Genkendelsen er en klientfunktion, som er adskilt fra den fastlåste DK-pakkes pointberegning. Når træneren registrerer den konkrete hele serie på gymnasten, kan en personlig bekræftelse lagres uden at omklassificere udførelsen som en specialserie. Den udgivne DK-pakke kan læse bekræftelsen; dens algoritmer, D/C, binding og filformat ændres ikke. Noter, sikkerhed og revurderingsmarkører nulstilles ikke af selve bekræftelsen.
+
 **Byg selv** bevarer elementbyggeren og de præcise varianter til spring, som mangler i listen. Giv serien et navn og registrér den; definitionen ligger derefter i det fælles arbejdsrums `skills` og findes i listen på andre gymnaster. Færdighedens navn er også søgbart, når den samme udførelse allerede findes som standardspring.
 
 Gem arbejdsrummet på Drive for at bevare egne spring til næste åbning og dele dem med de andre trænere, der bruger samme fil. Vurdering, vurderingsdato, note og personlig forbindelsesbekræftelse følger den enkelte gymnast og kopieres ikke. Der er ingen ny filtype, særskilt browserdatabase eller automatisk ændring af eksisterende færdigheder.
 
 ## Kontrol
 
-Otte domænetests kontrollerer håndregnede D-eksempler, præcise begyndelser, fravalg, dubletter, fælles begyndelser med forskellige D-/sikkerhedsværdier, direkte forrang, dato, bevarede noter/arkivering, atomisk fejl ved ugyldig dato og genbrug efter fil-roundtrip uden kopieret vurdering/bekræftelse. Fire browserprøver dækker flervalg, vurdering og arv ved 1440 og 390 px, genbrug af egne spring og valg mellem grupper/discipliner. Axe kontrollerer bibliotekets tilgængelighed. Testpersoner og Drive-svar er syntetiske; dette er ikke en ny reel Google-/flerbrugertest.
+Elleve domænetests kontrollerer håndregnede D-eksempler, præcise begyndelser, fravalg, dubletter, fælles begyndelser med forskellige D-/sikkerhedsværdier, direkte forrang, dato, bevarede noter/arkivering, atomisk fejl ved ugyldig dato og genbrug efter fil-roundtrip uden kopieret vurdering/bekræftelse. Seks browserprøver dækker flervalg, vurdering og arv ved 1440 og 390 px, genbrug af egne spring og valg mellem grupper/discipliner. Axe kontrollerer bibliotekets tilgængelighed. Testpersoner og Drive-svar er syntetiske; dette er ikke en ny reel Google-/flerbrugertest.

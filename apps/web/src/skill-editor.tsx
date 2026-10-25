@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react';
 import {
   confirmConnection,
+  canonicalJson,
   newEntityId,
   registerAthleteSkill,
   replaceAthleteSkill,
@@ -17,9 +18,16 @@ import type {
 } from '@teamgym/domain';
 import type { RhythmCatalogEntry, RulePackage } from '@teamgym/rules';
 import { ActionForm, Decision, SkillBreakdown, SourceLinks, statusText } from './components';
-import { registerSpringBatch, shorterSeries, springLibrary } from './spring-library';
+import {
+  registerSpringBatch,
+  shorterSeries,
+  springLibrary,
+  springElementName,
+  springSeriesName,
+} from './spring-library';
 import type { SpringSelection } from './spring-library';
 import { SpringPicker } from './spring-picker';
+import { knownSeries, connectionHint, CONNECTION_CATALOG_VERSION } from './spring-connections';
 
 const positions = { tuck: 'Lukket', pike: 'Hoftebøjet', straight: 'Strakt' };
 const variants: Record<string, string> = {
@@ -114,22 +122,27 @@ export function SkillEditor({
           ]),
         ),
   );
-  const [custom, setCustom] = useState(
-    original?.discipline === 'tumbling' && original.connection.kind === 'custom',
-  );
+  const commonSeries = discipline === 'tumbling' && knownSeries(elements);
+  const custom = discipline === 'tumbling' && elements.length > 1 && !commonSeries;
   const [confirm, setConfirm] = useState(false);
   const [confirmation, setConfirmation] = useState('');
   const [name, setName] = useState(original?.name ?? '');
   const [advanced, setAdvanced] = useState<number | null>(null);
-  const catalog = rulePackage.springCatalog.filter(
-    (item) =>
-      (discipline === 'tumbling'
-        ? item.execution.apparatus === 'floor'
-        : item.execution.apparatus !== 'floor') &&
-      `${item.name} ${item.officialCode} ${item.aliases.join(' ')}`
-        .toLocaleLowerCase('da-DK')
-        .includes(query.toLocaleLowerCase('da-DK')),
-  );
+  const catalog = rulePackage.springCatalog.filter((item) => {
+    if (
+      discipline === 'tumbling' ? item.execution.apparatus !== 'floor' : item.execution.apparatus === 'floor'
+    )
+      return false;
+    const searchable =
+      `${springElementName(item.execution, rulePackage, item.name)} ${springSeriesName([item.execution], rulePackage)} ${item.officialCode} ${item.aliases.join(' ')}`.toLocaleLowerCase(
+        'da-DK',
+      );
+    return query
+      .toLocaleLowerCase('da-DK')
+      .trim()
+      .split(/\s+/)
+      .every((part) => searchable.includes(part));
+  });
   function definition(): SkillDefinition {
     if (discipline !== 'rhythm' && !building) {
       throw new Error('Vælg spring fra listen.');
@@ -140,14 +153,7 @@ export function SkillEditor({
         name.trim() ||
         (discipline === 'rhythm'
           ? (moment?.name ?? 'Ukendt moment')
-          : elements
-              .map(
-                (element) =>
-                  rulePackage.springCatalog.find(
-                    (item) => JSON.stringify(item.execution) === JSON.stringify(element),
-                  )?.name ?? 'Formelvariant',
-              )
-              .join(' → ')),
+          : springSeriesName(elements, rulePackage)),
       archived: false,
     };
     return skillDefinitionSchema.parse(
@@ -159,12 +165,16 @@ export function SkillEditor({
               ...base,
               discipline,
               elements,
-              connection: {
-                kind: custom ? 'custom' : 'standard',
-                transitions: elements
-                  .slice(1)
-                  .map(() => (custom ? 'Trænerbeskrevet direkte forbindelse' : 'direct')),
-              },
+              connection:
+                original?.discipline === 'tumbling' &&
+                canonicalJson(original.elements) === canonicalJson(elements)
+                  ? structuredClone(original.connection)
+                  : {
+                      kind: custom ? 'custom' : 'standard',
+                      transitions: elements
+                        .slice(1)
+                        .map(() => (custom ? 'Trænerbeskrevet direkte forbindelse' : 'direct')),
+                    },
             },
     );
   }
@@ -175,7 +185,7 @@ export function SkillEditor({
     /* Formularen forklarer manglende valg. */
   }
   const confirmedPreview: AthleteSkill | undefined =
-    preview && custom && confirm
+    preview && (commonSeries || (custom && confirm))
       ? {
           id: 'preview',
           athleteId,
@@ -189,7 +199,8 @@ export function SkillEditor({
           connectionConfirmation: {
             executionIdentity: skillIdentity(preview),
             confirmedAt: new Date().toISOString(),
-            note: confirmation || `Træneren har verificeret ${preview.name}.`,
+            note:
+              confirmation || `Kendte standardovergange (${CONNECTION_CATALOG_VERSION}): ${preview.name}.`,
           },
         }
       : undefined;
@@ -242,7 +253,7 @@ export function SkillEditor({
                   {
                     definition: skill,
                     stability: newStability,
-                    confirmed: custom && confirm,
+                    confirmed: commonSeries || (custom && confirm),
                     ...(confirmation ? { confirmationNote: confirmation } : {}),
                   },
                 ],
@@ -277,7 +288,13 @@ export function SkillEditor({
           result = created.workspace;
           registrationId = created.athleteSkillId;
         }
-        if (custom && confirm) result = confirmConnection(result, registrationId, confirmation);
+        if (skill.discipline === 'tumbling' && (commonSeries || (custom && confirm)))
+          result = confirmConnection(
+            result,
+            registrationId,
+            confirmation ||
+              `Standardserien ${skill.name} er registreret på gymnasten (${CONNECTION_CATALOG_VERSION}).`,
+          );
         save(result);
       }}
     >
@@ -291,7 +308,6 @@ export function SkillEditor({
             setElements([]);
             setName('');
             setQuery('');
-            setCustom(false);
             setConfirm(false);
           }}
         >
@@ -381,7 +397,6 @@ export function SkillEditor({
                 onClick={() => {
                   if (building) {
                     setName('');
-                    setCustom(false);
                     setConfirm(false);
                   }
                   setBuilding(false);
@@ -431,6 +446,14 @@ export function SkillEditor({
               <h3>
                 {discipline === 'tumbling' ? 'Komplet serie i udførelsesrækkefølge' : 'Komplet trampetspring'}
               </h3>
+              {preview && elements.length > 0 && (
+                <div className="selected-spring" role="status">
+                  <h3>Valgt serie</h3>
+                  <p>
+                    <strong>{preview.name}</strong>
+                  </p>
+                </div>
+              )}
               {elements.length === 0 && (
                 <p className="empty">
                   Vælg {discipline === 'tumbling' ? 'seriens første element' : 'et spring'} i kataloget.
@@ -439,12 +462,7 @@ export function SkillEditor({
               <ol className="element-list">
                 {elements.map((element, index) => (
                   <li key={index}>
-                    <span>
-                      {rulePackage.springCatalog.find(
-                        (item) => JSON.stringify(item.execution) === JSON.stringify(element),
-                      )?.name ??
-                        `${element.family} · ${element.rotationQuarterTurns / 4} rotation · ${element.twistsHalfTurns * 180}°`}
-                    </span>
+                    <span>{springElementName(element, rulePackage)}</span>
                     {evaluation?.elementValues[index] && (
                       <small>
                         Element-D: <Decision value={evaluation.elementValues[index].value} />
@@ -509,7 +527,7 @@ export function SkillEditor({
                     }}
                   >
                     <span>
-                      {item.name}
+                      {springElementName(item.execution, rulePackage, item.name)}
                       <small>
                         {item.officialCode} · {item.source.sourceId} ·{' '}
                         {item.status === 'allowed'
@@ -556,46 +574,32 @@ export function SkillEditor({
               )}
             </div>
           )}
-          {discipline === 'tumbling' && building && (
-            <>
-              {building && (
-                <label className="check">
-                  <input
-                    type="checkbox"
-                    checked={custom}
-                    onChange={(event) => setCustom(event.target.checked)}
+          {building && custom && evaluation?.connection === 'unverified' && (
+            <section className="connection-review">
+              <p className="notice">
+                {connectionHint(elements) ??
+                  'Appen genkender ikke denne sammensætning endnu. Kontrollér elementernes retning og den samlede serie.'}
+              </p>
+              <label className="check">
+                <input
+                  type="checkbox"
+                  checked={confirm}
+                  onChange={(event) => setConfirm(event.target.checked)}
+                />
+                Gymnasten kan udføre hele serien uden mellemtrin
+              </label>
+              {confirm && (
+                <label>
+                  Beskrivelse af forbindelsen
+                  <textarea
+                    value={confirmation}
+                    onChange={(event) => setConfirmation(event.target.value)}
+                    required
+                    maxLength={2000}
                   />
-                  Specialforbindelse uden kendt standardkobling
                 </label>
               )}
-              {custom && (
-                <>
-                  <p className="muted">
-                    Bekræft kun en konkret komplet serie. Bekræftelsen gør ikke forbudte eller uafklarede
-                    elementer gyldige.
-                  </p>
-                  <label className="check">
-                    <input
-                      type="checkbox"
-                      checked={confirm}
-                      onChange={(event) => setConfirm(event.target.checked)}
-                    />
-                    Gymnasten kan udføre hele serien uden mellemtrin
-                  </label>
-                  {confirm && building && (
-                    <label>
-                      Beskrivelse af forbindelsen
-                      <textarea
-                        value={confirmation}
-                        onChange={(event) => setConfirmation(event.target.value)}
-                        required
-                        maxLength={2000}
-                      />
-                    </label>
-                  )}
-                </>
-              )}
-            </>
+            </section>
           )}
           {shorter.length > 0 && (
             <div className="shorter-series">
@@ -607,7 +611,20 @@ export function SkillEditor({
                 />
                 Medtag kortere serier med samme sikkerhed
               </label>
-              <p>{shorter.map((skill) => skill.name).join(' · ')}</p>
+              {includeShorter && (
+                <details>
+                  <summary>Medtagne kortere serier ({shorter.length})</summary>
+                  <p>Disse registreres også. Dit valgte spring står ovenfor under Valgt serie.</p>
+                  <ul>
+                    {shorter.map((skill) => (
+                      <li key={skill.id}>
+                        {skill.name}
+                        {newStability !== null ? ` · ${newStability}/5` : ''}
+                      </li>
+                    ))}
+                  </ul>
+                </details>
+              )}
               <small>
                 De kortere serier arver sikkerheden. Vælges en kortere serie også særskilt, bruges dens egen
                 vurdering.

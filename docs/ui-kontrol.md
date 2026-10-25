@@ -6,7 +6,7 @@ Interaktionerne er korte positionsovergange ved inspektør, nye/flyttede rækker
 
 ## Kontrol 25. oktober 2026
 
-Chromium kontrollerer produktionsbygget med syntetisk Google-/Drive-netværk. Der er ingen skjult demonstrationsfil i produktet. 37 browserchecks bestod ved seneste samlede kørsel. De dækker oprettelse af hold/gymnast, komplet banekæde og element-D, dubletåbning, stabilitet, seks omgange, ekstra først/grænse, gem/genåbn, læseadgang, ukendt pakke, konflikter/eksport, mistet uploadsvar, potentiale 4/6→6/6, regelskift/annullering, IndexedDB og afbrydelse mellem faner.
+Chromium kontrollerer produktionsbygget med syntetisk Google-/Drive-netværk. Der er ingen skjult demonstrationsfil i produktet. 39 browserchecks bestod ved seneste samlede kørsel. De dækker oprettelse af hold/gymnast, komplet banekæde og element-D, dubletåbning, stabilitet, seks omgange, ekstra først/grænse, gem/genåbn, læseadgang, ukendt pakke, konflikter/eksport, mistet uploadsvar, potentiale 4/6→6/6, regelskift/annullering, IndexedDB og afbrydelse mellem faner.
 
 Efter brugerens fejlmelding er Googles SDK-indlæsning automatisk; login kræver fortsat et direkte klik. Appens native modaler lukkes midlertidigt, før Picker åbnes, så de ikke gør Googles iframe og cookievalg inert. Formularen forbliver monteret og bevarer filnavnet ved annullering; Picker fjernes, før appens dialog genåbnes. Fem ekstra browserchecks dækker automatisk indlæsning uden OAuth-kald, genforsøg ved indlæsningsfejl, cookie-/mappevalg og oprettelse ved 1440 og 390 px samt filvalg fra indstillinger. Cookievalget foregår i en separat iframe uden for appdialogerne, så testen rammer den oprindelige native-modal-konflikt. Det er en simulator og ikke en ny faktisk Google-accepttest.
 
@@ -34,3 +34,7 @@ Tre ekstra browserprøver dækker valg af en komplet helskrueserie, præcise kor
 ## Flueben og sikkerhed
 
 Listen har nu flueben og sikkerhed ved hvert spring, med bevarede valg mellem søgninger, grupper og discipliner. Den tekniske ekstraerklæring er erstattet af tekst om hele serien uden mellemtrin. Opdaterede desktop-/mobilbilleder viser flere valgte serier og forskellige sikkerheder; en udfoldelig oversigt viser arven fra lavest D. Axe fandt ingen fund i de afprøvede WCAG 2.2 AA-regler ved 1440 og 390 px. Hele den samlede kørsel har 37 browserchecks. De tidligere beskrivelser af en ekstra personlig bekræftelse gælder den oprindelige udgave; det aktuelle personlige valg udtrykkes med listens flueben.
+
+## Standardserier og kortere begyndelser
+
+To nye browserprøver genskaber eksempelserien med udelukkende syntetiske personer: først en forlæns afslutning efter flik med forklaring, dernæst den korrekte baglæns helskrue med kendt forbindelse, D 1,00 og sikkerhed 3 på alle tre begyndelser. Byggerens gamle sammensatte navnelinje er erstattet af en særskilt overskrift og en udfoldelig punktliste. Forlæns og baglæns er synlige i alle saltoelementer. Kontrolleret på [desktop](ui/standardserie-1440.png) og [mobil](ui/standardserie-390.png). Brugerens originale PDF er ikke medtaget. Samlet browserkontrol: 39 bestået.

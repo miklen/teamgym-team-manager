@@ -56,6 +56,19 @@ Ved registrering af komplette baneserier SHALL de præcise kortere serier fra sa
 ### Requirement: Kontrol af forbindelser
 Springbyggeren MUST kontrollere kendte orienterings- og forbindelsesbegrænsninger og MUST skelne mellem dokumenteret forbindelse, ugyldig forbindelse og ikke-verificeret forbindelse. Reglementsmæssige elementværdier MUST NOT alene godkende enhver elementpermutation som anvendelig serie. En hel serie SHALL registreres særskilt som gymnastens færdighed.
 
+Det praktiske forbindelseskatalog SHALL genkende afsluttet forlæns salto i lukket, hoftebøjet og strakt position med hele skruer til rondat eller kraftspring samt ulige halve skruer, fx barani/rudy, til flik eller whipback. Kataloget SHALL være adskilt fra den udgivne regelpakkes pointalgoritmer. Trænerens registrering af den konkrete komplette standardserie SHALL kunne gemme en personlig bekræftelse, som den eksisterende regelpakke kan læse, uden at ændre udførelsen, vurderingen, revurderingsmarkører eller regelbindingen. Uafklarede/forbudte elementer MUST NOT blive gyldige af denne grund.
+
+#### Scenario: Almindelig startsalto genkendes
+- **WHEN** strakt-rondat-flik-baglæns helskrue bygges eller vælges fra listen
+- **THEN** vises den som kendt uden en ekstra erklæring om specialforbindelse og kan registreres som én præcis serie med D 1,00 i den aktuelle DK-pakke.
+
+### Requirement: Entydige serienavne og separate kortere serier
+Byggeren SHALL vise den valgte komplette serie særskilt. Automatisk medtagne kortere begyndelser SHALL ligge i en særskilt udfoldelig liste med tydelig overskrift og MUST NOT vises som én sammensat navnelinje. Elementkataloget SHALL vise forlæns/baglæns ved saltoer og kunne søges på både retning og skrueantal. Kendte almindelige sammensætninger MUST NOT vise feltet om specialforbindelse.
+
+#### Scenario: Retningen på afslutningen er synlig
+- **WHEN** forlæns helskrue vælges efter flik i en selvbygget serie
+- **THEN** er den forlæns retning synlig, og byggeren forklarer at vælge den baglæns variant til den almindelige afslutning uden at omskrive trænerens valg automatisk.
+
 #### Scenario: Enkeltelementer danner ikke automatisk en færdighed
 - **WHEN** en gymnast har kraftspring og salto registreret hver for sig
 - **THEN** kan kraftspring-salto ikke vælges som hendes beherskede serie, før den komplette forbindelse er registreret.

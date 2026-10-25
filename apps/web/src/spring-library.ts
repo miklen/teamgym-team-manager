@@ -1,12 +1,7 @@
-import {
-  confirmConnection,
-  newEntityId,
-  registerAthleteSkill,
-  replaceAthleteSkill,
-  updateAssessment,
-} from '@teamgym/domain';
-import type { SkillDefinition, Stability, Workspace } from '@teamgym/domain';
+import { confirmConnection, newEntityId, registerAthleteSkill, updateAssessment } from '@teamgym/domain';
+import type { ElementExecution, SkillDefinition, Stability, Workspace } from '@teamgym/domain';
 import type { RulePackage } from '@teamgym/rules';
+import { knownSeries } from './spring-connections';
 
 export type SpringDefinition = Exclude<SkillDefinition, { discipline: 'rhythm' }>;
 export interface SpringChoice {
@@ -15,6 +10,71 @@ export interface SpringChoice {
   aliases: string[];
   definition: SpringDefinition;
   own: boolean;
+}
+
+export function springElementName(
+  element: ElementExecution,
+  rulePackage: RulePackage,
+  catalogName?: string,
+): string {
+  const record = rulePackage.springCatalog.find(
+    (item) => JSON.stringify(item.execution) === JSON.stringify(element),
+  );
+  const direction =
+    element.direction === 'backward' ? 'baglæns' : element.direction === 'forward' ? 'forlæns' : 'sidelæns';
+  return record
+    ? `${catalogName ?? record.name}${element.family === 'salto' ? ` (${direction})` : ''}`
+    : `${element.family} · ${direction} · ${element.rotationQuarterTurns / 4} rotation · ${element.twistsHalfTurns * 180}°`;
+}
+
+export function springSeriesName(elements: readonly ElementExecution[], rulePackage: RulePackage): string {
+  const fixed: Record<string, string> = {
+    roundoff: 'rondat',
+    flic: 'flik',
+    handspring: 'kraftspring',
+    flyspring: 'flyvespring',
+    whipback: 'whipback',
+    cartwheel: 'vejrmølle',
+  };
+  const name = elements
+    .map((element) => {
+      if (fixed[element.family]) return fixed[element.family];
+      if (
+        element.family === 'salto' &&
+        element.rotationQuarterTurns === 4 &&
+        element.bodyPositions.length === 1 &&
+        element.bodyPositions[0] === 'straight'
+      ) {
+        if (element.direction === 'forward')
+          return (
+            (
+              {
+                0: 'strakt',
+                1: 'barani',
+                2: 'forlæns helskrue',
+                3: 'rudy',
+                4: 'forlæns dobbeltskrue',
+                5: 'randy',
+              } as Record<number, string>
+            )[element.twistsHalfTurns] ?? springElementName(element, rulePackage)
+          );
+        if (element.direction === 'backward')
+          return (
+            (
+              {
+                0: 'strakt baglæns',
+                1: 'baglæns halvskrue',
+                2: 'helskrue',
+                3: 'baglæns 1½ skrue',
+                4: 'dobbeltskrue',
+              } as Record<number, string>
+            )[element.twistsHalfTurns] ?? springElementName(element, rulePackage)
+          );
+      }
+      return springElementName(element, rulePackage).replace(/ start/, '');
+    })
+    .join(' – ');
+  return name.charAt(0).toLocaleUpperCase('da-DK') + name.slice(1);
 }
 
 /** Opskrifter til registrering, ikke nye reglementskoder eller automatisk gymnastkunnen. */
@@ -47,7 +107,7 @@ export function springLibrary(
       elements: records.map((record) => structuredClone(record!.execution)),
       connection: { kind: 'standard', transitions: references.slice(1).map(() => 'direct') },
     };
-    if (rulePackage.evaluateSkill(definition).connection === 'unverified') {
+    if (!knownSeries(definition.elements)) {
       definition.connection.kind = 'custom';
     }
     add({ id: definition.id, definition, group, aliases, own: false });
@@ -105,6 +165,43 @@ export function springLibrary(
   }
   for (const [endId, endName, alias] of backEnds.slice(0, 7)) {
     series(`r-${endId}`, `Rondat – ${endName}`, ['a3-b-01', endId!], 'Baglæns', [alias!]);
+  }
+  for (const [startId, startName] of [
+    ['a3-f-04', 'Lukket salto'],
+    ['a3-f-06', 'Hoftebøjet salto'],
+    ['a3-f-08', 'Strakt'],
+  ] as const) {
+    series(`${startId}-r`, `${startName} – rondat`, [startId, 'a3-b-01'], 'Blandede');
+    series(`${startId}-rf`, `${startName} – rondat – flik`, [startId, 'a3-b-01', 'a3-b-02'], 'Blandede');
+    for (const [endId, endName, alias] of backEnds)
+      series(
+        `${startId}-rf-${endId}`,
+        `${startName} – rondat – flik – ${endName}`,
+        [startId, 'a3-b-01', 'a3-b-02', endId!],
+        'Blandede',
+        [alias!],
+      );
+  }
+  for (const [startId, startName] of [
+    ['a3-f-10', 'Lukket barani'],
+    ['a3-f-12', 'Hoftebøjet barani'],
+    ['a3-f-13', 'Barani'],
+    ['a3-f-16', 'Rudy'],
+  ] as const) {
+    for (const [leadId, leadName] of [
+      ['a3-b-02', 'flik'],
+      ['a3-b-03', 'whipback'],
+    ] as const) {
+      series(`${startId}-${leadId}`, `${startName} – ${leadName}`, [startId, leadId], 'Blandede');
+      for (const [endId, endName, alias] of backEnds)
+        series(
+          `${startId}-${leadId}-${endId}`,
+          `${startName} – ${leadName} – ${endName}`,
+          [startId, leadId, endId!],
+          'Blandede',
+          [alias!],
+        );
+    }
   }
   for (const [leadId, leadName, lead] of [
     ['h', 'Kraftspring', ['a3-f-02']],
@@ -184,41 +281,9 @@ export function matchesSpring(choice: SpringChoice, query: string) {
 /** Kun præcise begyndelser af den valgte serie; aldrig færre skruer eller nye forbindelser. */
 export function shorterSeries(skill: SpringDefinition, rulePackage: RulePackage): SpringDefinition[] {
   if (skill.discipline !== 'tumbling') return [];
-  const names = new Map(
-    rulePackage.springCatalog
-      .filter((item) => item.execution.apparatus === 'floor')
-      .map((item) => {
-        const single: SpringDefinition = {
-          id: 'single',
-          name: item.name,
-          archived: false,
-          discipline: 'tumbling',
-          elements: [item.execution],
-          connection: { kind: 'standard', transitions: [] },
-        };
-        const direction = item.execution.direction === 'backward' ? 'baglæns' : 'forlæns';
-        return [
-          rulePackage.evaluateSkill(single).identity,
-          `${item.name.replace(/ start$/, '')}${item.execution.family === 'salto' ? ` ${direction}` : ''}`,
-        ];
-      }),
-  );
   return skill.elements.slice(0, -1).map((_, index) => {
     const elements = structuredClone(skill.elements.slice(0, index + 1));
-    const name = elements
-      .map((element) => {
-        const single: SpringDefinition = {
-          id: 'prefix',
-          name: 'prefix',
-          archived: false,
-          discipline: 'tumbling',
-          elements: [element],
-          connection: { kind: 'standard', transitions: [] },
-        };
-        const identity = rulePackage.evaluateSkill(single).identity;
-        return names.get(identity) ?? element.family;
-      })
-      .join(' – ');
+    const name = springSeriesName(elements, rulePackage);
     return {
       ...skill,
       id: newEntityId(),
@@ -341,25 +406,14 @@ export function registerSpringBatch(
   for (const entry of plan) {
     const added = registerSpring(result, athleteId, entry.definition, rulePackage, false, null);
     result = added.workspace;
-    let registration = result.athleteSkills.find((item) => item.id === added.registrationId)!;
+    const registration = result.athleteSkills.find((item) => item.id === added.registrationId)!;
     if (registration.archived) continue;
-    let definition = result.skills.find((item) => item.id === registration.skillId)!;
+    const definition = result.skills.find((item) => item.id === registration.skillId)!;
     if (
       entry.confirmed &&
       definition.discipline === 'tumbling' &&
       rulePackage.evaluateSkill(definition, registration).connection === 'unverified'
     ) {
-      // Også ældre, brugerbyggede serier kan være beskrevet som standard uden kendt kobling.
-      // Det konkrete valg bekræfter denne gymnasts hele serie, ikke en ny generel regelfortolkning.
-      if (definition.connection.kind !== 'custom') {
-        result = replaceAthleteSkill(result, registration.id, {
-          ...definition,
-          id: newEntityId(),
-          connection: { ...definition.connection, kind: 'custom' },
-        });
-        registration = result.athleteSkills.find((item) => item.id === registration.id)!;
-        definition = result.skills.find((item) => item.id === registration.skillId)!;
-      }
       result = confirmConnection(
         result,
         registration.id,

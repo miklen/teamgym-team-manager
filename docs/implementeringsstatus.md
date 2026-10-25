@@ -1,6 +1,6 @@
 # Implementeringskontrol · 25. oktober 2026
 
-Change: `build-teamgym-team-manager`, schema `spec-driven`. **115/128 opgaver fuldført.** Brugerens seks tilføjede opgaver om færdige spring, genbrug, flervalg og nedarvet sikkerhed er udført. Domæne, regler, Drive-adapter og centrale arbejdsflader er implementeret. Første Pages-deployment er bestået; reel Google-/Drive-verifikation er fortsat udestående. Se [opgavelisten](../openspec/changes/build-teamgym-team-manager/tasks.md).
+Change: `build-teamgym-team-manager`, schema `spec-driven`. **118/131 opgaver fuldført.** Brugerens ni tilføjede opgaver om springbibliotek, flervalg, sikkerhed, almindelige forbindelser og tydelig serievisning er udført. Domæne, regler, Drive-adapter og centrale arbejdsflader er implementeret. Første Pages-deployment er bestået; reel Google-/Drive-verifikation er fortsat udestående. Se [opgavelisten](../openspec/changes/build-teamgym-team-manager/tasks.md).
 
 ## Implementeret
 
@@ -17,17 +17,17 @@ Der findes ingen frigivet ældre arbejdsrumsudgave; format 1 er første underst�
 | Kontrol | Seneste resultat |
 | --- | --- |
 | `npm run check` | Typekontrol og lint bestået |
-| `npm run test:domain` | 184 tests bestået, inklusive 77 faste facitcases og springbibliotekets otte kontroller |
+| `npm run test:domain` | 187 tests bestået, inklusive 77 faste facitcases og springbibliotekets elleve kontroller |
 | `npm run test:drive` | 34 tests bestået med injiceret netværk/lager/klokke |
 | `npm run test:mutations` | 4/4 bevidste regelfejl fanget i isoleret kopi |
 | `npm run build` | Statisk app/worker/T01 og otte medfølgende PDF-assets; kilders SHA-256 og størrelse matcher |
-| `npm run test:e2e` | 37 Chromium-checks bestået mod produktionsbyg med syntetisk Google/Drive |
+| `npm run test:e2e` | 39 Chromium-checks bestået mod produktionsbyg med syntetisk Google/Drive |
 | axe | Ingen fund i valgte WCAG 2.2 AA-regler på fem arbejdsflader og vurderingsdialog |
 | Visuel kontrol | Fire viewports, 20 syntetiske gymnaster/lange navne, fokus, tastatur, reduceret bevægelse og 200 % tekst |
 
 Se [UI-rapport og billeder](ui-kontrol.md), [kravdækning](kravdaekning.md), [regelkontrol](regler-og-katalog.md), [gemmeprotokol](drive-gemning.md) og [brugsvejledning](brugsvejledning.md). Automatiserede Google-svar er simulatorer, ikke bevis for faktisk Drive/CORS/GIS. Billeder og testdata indeholder kun syntetiske personer.
 
-Springregistrering starter nu i [springbiblioteket](springbibliotek.md) med 90 komplette banesammensætninger og fælles genbrug af egne definitioner. Præcise kortere begyndelser medtages som standard. Efter brugerens præcisering angives sikkerhed ved flervalg, og den nedarves fra den valgte længere serie med lavest D. En direkte kortere vurdering har forrang; noter og arkiveringsvalg bevares. Egne spring blev bygget én gang, gemt/genåbnet og valgt på en anden gymnast med selvstændig vurdering/bekræftelse i browserkontrollen. Standardbyggerens overgangsmetadata er rettet til den eksisterende regelpakkes `direct`-kontrakt; den udgivne regelpakkes algoritmer og værdier er uændrede.
+Springregistrering starter nu i [springbiblioteket](springbibliotek.md) med 203 komplette banesammensætninger og fælles genbrug af egne definitioner. Præcise kortere begyndelser medtages som standard. Efter brugerens præcisering angives sikkerhed ved flervalg, og den nedarves fra den valgte længere serie med lavest D. En direkte kortere vurdering har forrang; noter og arkiveringsvalg bevares. Egne spring blev bygget én gang, gemt/genåbnet og valgt på en anden gymnast med selvstændig vurdering/bekræftelse i browserkontrollen. Standardbyggerens overgangsmetadata er rettet til den eksisterende regelpakkes `direct`-kontrakt; den udgivne regelpakkes algoritmer og værdier er uændrede.
 
 Springbiblioteket ved `d9ee672` er publiceret i [Pages-kørsel 40208681874](https://github.com/miklen/teamgym-team-manager/actions/runs/40208681874). Både Pages og den særskilte [kontrolkørsel 40208681935](https://github.com/miklen/teamgym-team-manager/actions/runs/40208681935) bestod alle trin. Efter deployment returnerede den offentlige side og dens script HTTP 200, og det publicerede script indeholdt bibliotek, kortere serier og Byg selv. Der blev ikke læst eller ændret rigtige gymnastdata under efterkontrollen.
 
@@ -56,3 +56,7 @@ T01, reel Picker-/filadgang, husket adgang før/efter udløb og redeploy, forker
 Springlisten har flueben og sikkerhed 1–5/ikke vurderet på hver række, fælles dato og samlet registrering. Valg bevares mellem søgninger, grupper og bane/trampet. Den tekniske ekstraerklæring er fjernet fra listen; hjælpeteksten forklarer, at et flueben betyder, at gymnasten kan hele serien uden mellemtrin. Et eget spring får dermed en ny personlig bekræftelse ved valget på den næste gymnast, uden at bekræftelsen kopieres fra den første. Tre nye domænechecks og de opdaterede/fire browserchecks kontrollerer sikkerhedsarv fra lavest D, direkte forrang, dato, dubletter, noter, arkivering, gem/genåbn og valg mellem discipliner. Alle 184 domæne-, 34 Drive- og 37 browserchecks består lokalt. Ingen reel Google-/flerbrugertest er tilføjet som bestået.
 
 Ændringen ved `18a04d4` er publiceret gennem [Pages-kørsel 40210569666](https://github.com/miklen/teamgym-team-manager/actions/runs/40210569666). Både Pages og [kontrolkørsel 40210569626](https://github.com/miklen/teamgym-team-manager/actions/runs/40210569626) bestod alle trin. Efterkontrollen af den offentlige side og dens script gav HTTP 200 og fandt flervalg, sikkerhedsfelter og teksten om laveste sværhed; den gamle bekræftelsestekst var væk. Der blev ikke læst eller ændret faktiske gymnastdata.
+
+## Entydige navne og almindelige overgange
+
+Det brugerleverede skærmbillede blev kun gennemgået lokalt; ingen faktiske personnavne, fil-id'er eller billedsider er lagt i repoet. Byggerens hovedserie vises særskilt, og kortere begyndelser ligger i en lukket, mærket liste. Forlæns/baglæns er synligt og søgbart i kataloget; en forlæns afslutning efter flik forklares konkret. Det særskilte praktiske katalog coach-connections-2 følger brugerens præciseringer om forlæns salto til rondat/kraft og ulige halve skruer til flik/whip. Registrering af hele serien lagrer om nødvendigt en personlig bekræftelse også på en standardserie, uden at ændre dens identitet, vurdering eller revurderingsmarkører. DK 1.0.0's kode og algoritmer er uændrede og regressionsprøvet. Biblioteket rummer nu 203 komplette sammensætninger. Alle 187 domæne-, 34 Drive- og 39 browserchecks består; den syntetiske eksempelserie er gennemgået ved 1440 og 390 px. Ingen ny faktisk Google-verifikation er markeret bestået.

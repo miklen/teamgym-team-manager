@@ -88,7 +88,7 @@ test('bane bygger komplet kæde, viser element-D og åbner eksisterende registre
   for (const [query, name] of [
     ['Rondat', /^Rondat R/],
     ['flic', /^Flik-flak F/],
-    ['Strakt salto 360', /^Strakt salto 360 \/2/],
+    ['Strakt salto 360', /^Strakt salto 360 \(baglæns\)/],
   ] as const) {
     await page.getByLabel('Søg spring, kode eller alias').fill(query);
     await page.getByRole('button', { name }).click();
