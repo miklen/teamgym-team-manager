@@ -31,6 +31,13 @@ Registrering af spring SHALL som udgangspunkt tilbyde en søgbar liste af gængs
 - **WHEN** træneren søger rondat-flik-1/1
 - **THEN** kan rondat-flik-strakt baglæns salto med 360° vælges samlet med D og præcis udførelse uden valg af hvert element.
 
+### Requirement: Færdige banevalg med indgang
+Springlisten MUST NOT have en separat kategori Grundspring. Selvstændige spring med indgang fra tilløb SHALL placeres under Forlæns eller Baglæns. En løs baglæns salto, flik eller whipback MUST NOT tilbydes som et færdigt banevalg, heller ikke via arbejdsrummets egne springdefinitioner. Alle rå elementer SHALL fortsat være tilgængelige i Byg selv. Byggeren SHALL forklare en manglende indgang og forhindre registrering af en ny komplet baneserie, indtil en indgang er sat først. Eksisterende filindhold MUST NOT slettes eller omskrives af filtreringen.
+
+#### Scenario: Baglæns salto skal indgå i en serie
+- **WHEN** en baglæns salto søges blandt færdige banevalg
+- **THEN** tilbydes relevante komplette serier, fx rondat-salto eller rondat-flik-salto, mens den løse salto kun kan tilføjes som element i Byg selv; registrering kræver en indgang først.
+
 #### Scenario: Egne spring genbruges
 - **WHEN** træneren bygger og registrerer en egen serie og senere åbner en anden gymnast i samme arbejdsrum
 - **THEN** kan serien vælges fra listen med samme definition og en selvstændig vurdering; markeringen under den tydelige tekst om hele serier er trænerens nye personlige bekræftelse, og en anden gymnasts vurdering eller bekræftelse kopieres ikke.

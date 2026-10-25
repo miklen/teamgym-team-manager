@@ -16,7 +16,7 @@ Opret et hold med navn, præcis regelpakke og profil. Juniorpiger er standard i 
 
 Kartoteket kan søges og filtreres på hold, uden hold og arkiverede gymnaster. Brug kendetegn, når to gymnaster hedder det samme. Gymnastens identitet og færdigheder følger med ved flytning. Gamle omgangspladser bliver stående med advarsel, indtil træneren retter dem. Arkivering bevarer data og kan ophæves.
 
-Åbn gymnasten og vælg **Tilføj færdighed**. Sæt flueben ved flere spring fra den søgbare liste, fx rondat–flik–1/1 og kraft–barani, og angiv sikkerhed 1–5 ud for hvert spring. Fluebenet betyder, at gymnasten kan udføre hele serien uden mellemtrin. Listen rummer 203 færdige banesammensætninger samt grundspring og trampetspring. Valgene bevares mellem søgninger, grupper og bane/trampet. Vælg vurderingsdato, og registrér alle valgene samlet.
+Åbn gymnasten og vælg **Tilføj færdighed**. Sæt flueben ved flere spring fra den søgbare liste, fx rondat–flik–1/1 og kraft–barani, og angiv sikkerhed 1–5 ud for hvert spring. Fluebenet betyder, at gymnasten kan udføre hele serien uden mellemtrin. Listen rummer 203 færdige banesammensætninger samt selvstændige spring med indgang fra tilløb og trampetspring. Valgene bevares mellem søgninger, grupper og bane/trampet. Vælg vurderingsdato, og registrér alle valgene samlet.
 
 Kortere serier medtages som standard med samme sikkerhed: rondat–flik–1/1 medtager rondat og rondat–flik. Deler flere valgte spring en kortere serie, arves sikkerheden fra springet med lavest sværhed (D). En direkte angivet vurdering af den korte serie har forrang. Arv kan opdatere en tidligere kortere vurdering med bevaret note og id; arkiverede registreringer ændres ikke. Du kan gennemgå arven eller fravælge de kortere serier.
 
@@ -47,3 +47,5 @@ Reglement viser installeret pakke/profil, kilder, algoritmeversioner og kendt tv
 **Lokale ændringer · Gem på Drive** gemmer en snapshot. Redigerer du videre under upload, står de nye ændringer fortsat som ugemte. »Gemt« vises først efter bekræftet eller genkendt operation. Ved konflikt kan kladden eksporteres, gennemgås eller kasseres bevidst før indlæsning af den nye fil. Der findes ingen automatisk sammenfletning eller »overskriv alligevel«.
 
 Ved udløbet Google-adgang bevares kladden. Fortsæt med Google og kontrollér den aktuelle fil igen. Afbryd forbindelse rydder lokal adgang; tilbagekaldelse af samtykke er særskilt. Hvis en anden fane afbryder, lukkes arbejdsrummet, og en ugemt kladde tilbydes som isoleret eksport. Luk ikke siden, før ugemt arbejde er gemt eller eksporteret.
+
+Grundspring er ikke en særskilt kategori. Færdige banevalg sorteres efter Forlæns, Baglæns og Blandede. Fx en baglæns salto vælges i en serie med indgang, som rondat-salto. I Byg selv er alle elementer tilgængelige, men tilføj og flyt en indgang til starten, før en hel baneserie registreres.

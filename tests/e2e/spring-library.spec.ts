@@ -2,6 +2,48 @@ import AxeBuilder from '@axe-core/playwright';
 import { expect, test } from './test';
 import { openWorkspace } from './drive-fixture';
 
+test('ingen Grundspring eller løs baglæns salto i færdige valg, men alle elementer er tilgængelige i Byg selv', async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 390, height: 900 });
+  const source = await openWorkspace(page);
+  await expect(page.getByRole('heading', { name: 'Hold', exact: true })).toBeVisible();
+  await page.getByRole('link', { name: 'Gymnaster', exact: true }).click();
+  await page.getByRole('button', { name: /Maja Test Test 1/ }).click();
+  await page.getByRole('button', { name: 'Tilføj færdighed' }).click();
+  await expect(page.getByRole('option', { name: 'Grundspring', exact: true })).toHaveCount(0);
+  await page.getByRole('combobox', { name: 'Springgruppe', exact: true }).selectOption('Baglæns');
+  await expect(page.getByRole('checkbox', { name: /^Rondat Baglæns/ })).toBeVisible();
+  await expect(page.getByRole('checkbox', { name: /^Lukket salto baglæns/ })).toHaveCount(0);
+  await expect(page.getByRole('checkbox', { name: /^Flik-flak Baglæns/ })).toHaveCount(0);
+  await expect(page.getByRole('checkbox', { name: /^Whipback Baglæns/ })).toHaveCount(0);
+  await page.getByRole('button', { name: 'Byg selv', exact: true }).click();
+  await page.getByLabel('Søg spring, kode eller alias').fill('baglæns salto');
+  await page.getByRole('button', { name: /^Lukket salto \(baglæns\)/ }).click();
+  await expect(page.getByText(/Serien mangler en indgang fra tilløb/)).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Registrér færdighed', exact: true })).toBeDisabled();
+  await page.screenshot({ path: 'tmp/ui-qa/springindgang-390.png' });
+  await page.getByLabel('Søg spring, kode eller alias').fill('rondat');
+  await page.getByRole('button', { name: /^Rondat R/ }).click();
+  await page.getByRole('button', { name: 'Flyt element 2 op', exact: true }).click();
+  await expect(page.getByText(/Serien mangler en indgang fra tilløb/)).toHaveCount(0);
+  await expect(page.getByRole('button', { name: 'Registrér færdighed', exact: true })).toBeEnabled();
+  await page.getByRole('button', { name: 'Registrér færdighed', exact: true }).click();
+  await page.getByRole('button', { name: 'Luk dialog', exact: true }).click();
+  await page.getByRole('button', { name: /Lokale ændringer/ }).click();
+  await expect(page.getByRole('button', { name: 'Gemt', exact: true })).toBeVisible();
+  const complete = source.workspace.skills.find(
+    (item) =>
+      item.discipline === 'tumbling' &&
+      item.elements.length === 2 &&
+      item.elements[0]!.family === 'roundoff' &&
+      item.elements[1]!.family === 'salto' &&
+      item.elements[1]!.bodyPositions[0] === 'tuck',
+  );
+  expect(complete).toBeDefined();
+  expect(source.failures).toEqual([]);
+});
+
 for (const width of [1440, 390]) {
   test(`vælg flere spring med sikkerhed og arv fra laveste D ved ${width}`, async ({ page }) => {
     await page.setViewportSize({ width, height: 900 });

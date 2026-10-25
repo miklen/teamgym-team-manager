@@ -27,7 +27,12 @@ import {
 } from './spring-library';
 import type { SpringSelection } from './spring-library';
 import { SpringPicker } from './spring-picker';
-import { knownSeries, connectionHint, CONNECTION_CATALOG_VERSION } from './spring-connections';
+import {
+  canStartFloorSeries,
+  knownSeries,
+  connectionHint,
+  CONNECTION_CATALOG_VERSION,
+} from './spring-connections';
 
 const positions = { tuck: 'Lukket', pike: 'Hoftebøjet', straight: 'Strakt' };
 const variants: Record<string, string> = {
@@ -123,6 +128,7 @@ export function SkillEditor({
         ),
   );
   const commonSeries = discipline === 'tumbling' && knownSeries(elements);
+  const missingEntry = discipline === 'tumbling' && elements.length > 0 && !canStartFloorSeries(elements);
   const custom = discipline === 'tumbling' && elements.length > 1 && !commonSeries;
   const [confirm, setConfirm] = useState(false);
   const [confirmation, setConfirmation] = useState('');
@@ -225,7 +231,7 @@ export function SkillEditor({
               ? `Registrér ${selections.length + 1} spring`
               : 'Registrér færdighed'
       }
-      disabled={batchMode ? selections.length === 0 : !preview}
+      disabled={batchMode ? selections.length === 0 : !preview || missingEntry}
       submit={() => {
         if (batchMode) {
           save(
@@ -236,6 +242,7 @@ export function SkillEditor({
           );
           return;
         }
+        if (missingEntry) throw new Error('Tilføj en indgang fra tilløb, fx rondat, før serien registreres.');
         const skill = definition();
         let result: Workspace;
         let registrationId: string;
@@ -499,6 +506,12 @@ export function SkillEditor({
                   </li>
                 ))}
               </ol>
+              {missingEntry && (
+                <p className="notice" role="status">
+                  Serien mangler en indgang fra tilløb. Tilføj fx rondat før den baglæns salto, flik eller
+                  whipback, og flyt indgangen til starten.
+                </p>
+              )}
               {advanced !== null && elements[advanced] && (
                 <ElementVariant
                   value={elements[advanced]}
@@ -637,7 +650,7 @@ export function SkillEditor({
               <Decision value={evaluation.difficulty} />
               <SkillBreakdown evaluation={evaluation} />
               <p>
-                Gyldighed: {statusText[evaluation.validity]} · forbindelse:{' '}
+                Gyldighed: {missingEntry ? 'Mangler indgang' : statusText[evaluation.validity]} · forbindelse:{' '}
                 {evaluation.connection === 'verified'
                   ? 'Kendt'
                   : evaluation.connection === 'invalid'

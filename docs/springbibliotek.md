@@ -1,6 +1,8 @@
 # Springbibliotek
 
-Springregistrering starter med **Vælg fra listen**. Biblioteket rummer 203 færdige banesammensætninger, 45 grundspring og 35 komplette trampetspring i den installerede DK-pakke. Søgningen forstår navne og aliaser som `rondat-flik-1/1`, `flik hel`, `kraft barani` og `rudy`. Vælg Forlæns, Baglæns, Grundspring, Med/Uden redskab eller Egne spring for at begrænse listen. D følger altid holdets regelpakke.
+Springregistrering starter med **Vælg fra listen**. Biblioteket rummer 203 færdige banesammensætninger, 24 selvstændige spring med indgang fra tilløb og 35 komplette trampetspring i den installerede DK-pakke. Søgningen forstår navne og aliaser som `rondat-flik-1/1`, `flik hel`, `kraft barani` og `rudy`. Vælg Forlæns, Baglæns, Blandede, Med/Uden redskab eller Egne spring for at begrænse listen. D følger altid holdets regelpakke.
+
+Kategorien Grundspring er fjernet. Fx rondat, kraftspring og forlæns salto ligger under deres retning. Løs baglæns salto, flik og whipback tilbydes som dele af komplette serier med indgang. Alle elementer findes fortsat i **Byg selv**, men en ny hel baneserie kan først registreres, når en indgang fra tilløb står først. Det gælder også egne genbrugelige definitioner i listen. Filtreringen ændrer ikke allerede gemte registreringer eller det officielle elementkatalog.
 
 De færdige serier dækker disse afgrænsede familier:
 

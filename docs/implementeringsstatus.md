@@ -1,6 +1,6 @@
 # Implementeringskontrol · 25. oktober 2026
 
-Change: `build-teamgym-team-manager`, schema `spec-driven`. **118/131 opgaver fuldført.** Brugerens ni tilføjede opgaver om springbibliotek, flervalg, sikkerhed, almindelige forbindelser og tydelig serievisning er udført. Domæne, regler, Drive-adapter og centrale arbejdsflader er implementeret. Første Pages-deployment er bestået; reel Google-/Drive-verifikation er fortsat udestående. Se [opgavelisten](../openspec/changes/build-teamgym-team-manager/tasks.md).
+Change: `build-teamgym-team-manager`, schema `spec-driven`. **120/133 opgaver fuldført.** Brugerens elleve tilføjede opgaver om springbibliotek, flervalg, sikkerhed, almindelige forbindelser, serievisning og meningsfulde banevalg er udført. Domæne, regler, Drive-adapter og centrale arbejdsflader er implementeret. Første Pages-deployment er bestået; reel Google-/Drive-verifikation er fortsat udestående. Se [opgavelisten](../openspec/changes/build-teamgym-team-manager/tasks.md).
 
 ## Implementeret
 
@@ -17,11 +17,11 @@ Der findes ingen frigivet ældre arbejdsrumsudgave; format 1 er første underst�
 | Kontrol | Seneste resultat |
 | --- | --- |
 | `npm run check` | Typekontrol og lint bestået |
-| `npm run test:domain` | 187 tests bestået, inklusive 77 faste facitcases og springbibliotekets elleve kontroller |
+| `npm run test:domain` | 188 tests bestået, inklusive 77 faste facitcases og springbibliotekets tolv kontroller |
 | `npm run test:drive` | 34 tests bestået med injiceret netværk/lager/klokke |
 | `npm run test:mutations` | 4/4 bevidste regelfejl fanget i isoleret kopi |
 | `npm run build` | Statisk app/worker/T01 og otte medfølgende PDF-assets; kilders SHA-256 og størrelse matcher |
-| `npm run test:e2e` | 39 Chromium-checks bestået mod produktionsbyg med syntetisk Google/Drive |
+| `npm run test:e2e` | 40 Chromium-checks bestået mod produktionsbyg med syntetisk Google/Drive |
 | axe | Ingen fund i valgte WCAG 2.2 AA-regler på fem arbejdsflader og vurderingsdialog |
 | Visuel kontrol | Fire viewports, 20 syntetiske gymnaster/lange navne, fokus, tastatur, reduceret bevægelse og 200 % tekst |
 
@@ -62,3 +62,7 @@ Springlisten har flueben og sikkerhed 1–5/ikke vurderet på hver række, fæll
 Det brugerleverede skærmbillede blev kun gennemgået lokalt; ingen faktiske personnavne, fil-id'er eller billedsider er lagt i repoet. Byggerens hovedserie vises særskilt, og kortere begyndelser ligger i en lukket, mærket liste. Forlæns/baglæns er synligt og søgbart i kataloget; en forlæns afslutning efter flik forklares konkret. Det særskilte praktiske katalog coach-connections-2 følger brugerens præciseringer om forlæns salto til rondat/kraft og ulige halve skruer til flik/whip. Registrering af hele serien lagrer om nødvendigt en personlig bekræftelse også på en standardserie, uden at ændre dens identitet, vurdering eller revurderingsmarkører. DK 1.0.0's kode og algoritmer er uændrede og regressionsprøvet. Biblioteket rummer nu 203 komplette sammensætninger. Alle 187 domæne-, 34 Drive- og 39 browserchecks består; den syntetiske eksempelserie er gennemgået ved 1440 og 390 px. Ingen ny faktisk Google-verifikation er markeret bestået.
 
 Rettelsen ved `3f8b1a6` er publiceret gennem [Pages-kørsel 40213518513](https://github.com/miklen/teamgym-team-manager/actions/runs/40213518513); den og [kontrolkørsel 40213518528](https://github.com/miklen/teamgym-team-manager/actions/runs/40213518528) bestod alle trin. Den offentlige side og script gav HTTP 200. Scriptet indeholdt det nye forbindelseskatalog, Valgt serie og særskilte kortere serier, mens den gamle specialtekst var væk. Der blev ikke åbnet eller ændret faktiske gymnastdata i efterkontrollen.
+
+## Færdige banevalg med indgang fra tilløb
+
+Grundspring er fjernet som kategori. De 24 selvstændige indgange klassificeres under Forlæns/Baglæns, mens løs baglæns salto, flik og whipback er filtreret fra både standardvalg og egne genbrugelige valg. Alle 103 rå A3/A4-poster bevares i kildekataloget og byggeren. Byggeren forklarer Mangler indgang og blokerer ny hel registrering, indtil en indgang står først; eksisterende filindhold, regelalgoritmer og værdier ændres ikke. Den nye domænekontrol verificerer kategorier, afslutningselementer, rå katalogadgang og uændrede filbytes. Den nye mobile browserprøve bygger baglæns salto, konstaterer manglende indgang, tilføjer/flytter rondat foran og gemmer en komplet serie. Alle 188 domæne-, 34 Drive- og 40 browserchecks består lokalt. Den reelle Google-verifikation er fortsat særskilt.

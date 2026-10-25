@@ -5,6 +5,17 @@ import type { ElementExecution } from '@teamgym/domain';
  */
 export const CONNECTION_CATALOG_VERSION = 'coach-connections-2';
 
+/** Færdige banevalg skal have en indgang fra tilløb; afslutningselementer hører til i byggeren. */
+export function canStartFloorSeries(elements: readonly ElementExecution[]): boolean {
+  const first = elements[0];
+  return (
+    !!first &&
+    first.apparatus === 'floor' &&
+    (['cartwheel', 'roundoff', 'handspring', 'flyspring'].includes(first.family) ||
+      (first.family === 'salto' && first.direction === 'forward'))
+  );
+}
+
 export function standardTransition(before: ElementExecution, after: ElementExecution): boolean {
   if (
     before.apparatus !== 'floor' ||

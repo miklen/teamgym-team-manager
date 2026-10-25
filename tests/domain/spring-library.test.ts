@@ -30,6 +30,59 @@ function choice(query: string) {
 const fullName = 'Rondat – flik – strakt 1/1 (360°)';
 
 describe('springbibliotek', () => {
+  it('klassificerer selvstændige indgange efter retning og holder afslutningselementer ude af færdige banevalg', () => {
+    const fixture = syntheticWorkspace();
+    const before = serializeWorkspace(fixture.workspace);
+    const library = springLibrary(DK_V1, fixture.workspace);
+    expect(library.some((item) => item.group === 'Grundspring')).toBe(false);
+    const singles = library.filter(
+      (item) => item.definition.discipline === 'tumbling' && item.definition.elements.length === 1,
+    );
+    expect(
+      singles.some(
+        (item) =>
+          item.definition.discipline === 'tumbling' &&
+          item.definition.elements[0]!.family === 'roundoff' &&
+          item.group === 'Baglæns',
+      ),
+    ).toBe(true);
+    expect(
+      singles.some(
+        (item) =>
+          item.definition.discipline === 'tumbling' &&
+          item.definition.elements[0]!.family === 'handspring' &&
+          item.group === 'Forlæns',
+      ),
+    ).toBe(true);
+    expect(
+      singles.some(
+        (item) =>
+          item.definition.discipline === 'tumbling' &&
+          item.definition.elements[0]!.family === 'salto' &&
+          item.definition.elements[0]!.direction === 'forward' &&
+          item.group === 'Forlæns',
+      ),
+    ).toBe(true);
+    expect(
+      singles.some(
+        (item) =>
+          item.definition.discipline === 'tumbling' &&
+          ['flic', 'whipback'].includes(item.definition.elements[0]!.family),
+      ),
+    ).toBe(false);
+    expect(
+      library.some(
+        (item) =>
+          item.definition.discipline === 'tumbling' &&
+          item.definition.elements[0]!.family === 'salto' &&
+          item.definition.elements[0]!.direction === 'backward',
+      ),
+    ).toBe(false);
+    expect(library.some((item) => item.definition.name === 'Rondat – flik – lukket salto')).toBe(true);
+    expect(DK_V1.springCatalog.some((item) => item.referenceId === 'a3-b-04')).toBe(true);
+    expect(serializeWorkspace(fixture.workspace)).toBe(before);
+  });
+
   it('dækker de konkrete juniorfamilier med præcise udførelser og håndregnede D-værdier', () => {
     for (const [name, difficulty, count] of [
       [fullName, '4/5', 3],

@@ -1,7 +1,7 @@
 import { confirmConnection, newEntityId, registerAthleteSkill, updateAssessment } from '@teamgym/domain';
 import type { ElementExecution, SkillDefinition, Stability, Workspace } from '@teamgym/domain';
 import type { RulePackage } from '@teamgym/rules';
-import { knownSeries } from './spring-connections';
+import { canStartFloorSeries, knownSeries } from './spring-connections';
 
 export type SpringDefinition = Exclude<SkillDefinition, { discipline: 'rhythm' }>;
 export interface SpringChoice {
@@ -85,6 +85,8 @@ export function springLibrary(
   const choices: SpringChoice[] = [];
   const seen = new Map<string, SpringChoice>();
   function add(choice: SpringChoice) {
+    if (choice.definition.discipline === 'tumbling' && !canStartFloorSeries(choice.definition.elements))
+      return;
     const identity = rulePackage.evaluateSkill(choice.definition).identity;
     const previous = seen.get(identity);
     if (previous) {
@@ -218,7 +220,7 @@ export function springLibrary(
       ]);
     }
   }
-  // Enkeltelementer og komplette trampetspring fra det eksisterende kildekatalog.
+  // Selvstændige spring med indgang samt komplette trampetspring. Alle elementer bevares i Byg selv.
   for (const entry of rulePackage.springCatalog) {
     if (entry.status === 'forbidden') continue;
     const floor = entry.execution.apparatus === 'floor';
@@ -242,7 +244,13 @@ export function springLibrary(
     add({
       id: definition.id,
       definition,
-      group: floor ? 'Grundspring' : entry.execution.apparatus === 'pegasus' ? 'Med redskab' : 'Uden redskab',
+      group: floor
+        ? entry.execution.direction === 'backward'
+          ? 'Baglæns'
+          : 'Forlæns'
+        : entry.execution.apparatus === 'pegasus'
+          ? 'Med redskab'
+          : 'Uden redskab',
       aliases: [...entry.aliases, entry.officialCode],
       own: false,
     });

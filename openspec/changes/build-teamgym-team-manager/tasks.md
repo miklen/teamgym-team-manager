@@ -193,3 +193,8 @@ Forberedelsesgrundlaget er allerede udarbejdet i [reference](reference/README.md
 - [x] 20.1 Vis hovedserien særskilt, saml kortere serier under en udfoldelig overskrift, og gør forlæns/baglæns salto entydig i elementvalg og søgning.
 - [x] 20.2 Tilføj praktisk genkendelse af forlæns salto i tre positioner til rondat/kraft og ulige halve skruer til flik/whip; udvid færdige familier uden at ændre den udgivne regelpakkes værdier eller algoritmer.
 - [x] 20.3 Verificér strakt-rondat-flik-hel, forkert afslutningsretning og kortere begyndelser med syntetiske browserforløb på mobil/desktop, bevarede vurderinger og separate personlige bekræftelser; aflever vejledning og kontrolrapport.
+
+## 21. Brugerens præcisering: retninger og meningsfulde færdige valg
+
+- [x] 21.1 Fjern kategorien Grundspring, klassificér selvstændige indgange under retning, og hold løs baglæns salto/flik/whip ude af både standard- og egne færdige valg; bevar alle elementer i Byg selv og kræv en indgang ved registrering af nye hele baneserier.
+- [x] 21.2 Verificér kategori, filtrering, bevaret filindhold og byggerforløbet baglæns salto → tilføj/flyt rondat foran → registrér komplet serie; opdatér vejledning og kontrolrapport.

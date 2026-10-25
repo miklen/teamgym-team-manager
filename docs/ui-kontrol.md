@@ -6,7 +6,7 @@ Interaktionerne er korte positionsovergange ved inspektør, nye/flyttede rækker
 
 ## Kontrol 25. oktober 2026
 
-Chromium kontrollerer produktionsbygget med syntetisk Google-/Drive-netværk. Der er ingen skjult demonstrationsfil i produktet. 39 browserchecks bestod ved seneste samlede kørsel. De dækker oprettelse af hold/gymnast, komplet banekæde og element-D, dubletåbning, stabilitet, seks omgange, ekstra først/grænse, gem/genåbn, læseadgang, ukendt pakke, konflikter/eksport, mistet uploadsvar, potentiale 4/6→6/6, regelskift/annullering, IndexedDB og afbrydelse mellem faner.
+Chromium kontrollerer produktionsbygget med syntetisk Google-/Drive-netværk. Der er ingen skjult demonstrationsfil i produktet. 40 browserchecks bestod ved seneste samlede kørsel. De dækker oprettelse af hold/gymnast, komplet banekæde og element-D, dubletåbning, stabilitet, seks omgange, ekstra først/grænse, gem/genåbn, læseadgang, ukendt pakke, konflikter/eksport, mistet uploadsvar, potentiale 4/6→6/6, regelskift/annullering, IndexedDB og afbrydelse mellem faner.
 
 Efter brugerens fejlmelding er Googles SDK-indlæsning automatisk; login kræver fortsat et direkte klik. Appens native modaler lukkes midlertidigt, før Picker åbnes, så de ikke gør Googles iframe og cookievalg inert. Formularen forbliver monteret og bevarer filnavnet ved annullering; Picker fjernes, før appens dialog genåbnes. Fem ekstra browserchecks dækker automatisk indlæsning uden OAuth-kald, genforsøg ved indlæsningsfejl, cookie-/mappevalg og oprettelse ved 1440 og 390 px samt filvalg fra indstillinger. Cookievalget foregår i en separat iframe uden for appdialogerne, så testen rammer den oprindelige native-modal-konflikt. Det er en simulator og ikke en ny faktisk Google-accepttest.
 
@@ -38,3 +38,7 @@ Listen har nu flueben og sikkerhed ved hvert spring, med bevarede valg mellem s�
 ## Standardserier og kortere begyndelser
 
 To nye browserprøver genskaber eksempelserien med udelukkende syntetiske personer: først en forlæns afslutning efter flik med forklaring, dernæst den korrekte baglæns helskrue med kendt forbindelse, D 1,00 og sikkerhed 3 på alle tre begyndelser. Byggerens gamle sammensatte navnelinje er erstattet af en særskilt overskrift og en udfoldelig punktliste. Forlæns og baglæns er synlige i alle saltoelementer. Kontrolleret på [desktop](ui/standardserie-1440.png) og [mobil](ui/standardserie-390.png). Brugerens originale PDF er ikke medtaget. Samlet browserkontrol: 39 bestået.
+
+## Retninger og indgang fra tilløb
+
+Ny mobilkontrol verificerer, at Grundspring og løs baglæns salto/flik/whipback ikke findes i færdige valg. Alle elementer findes i Byg selv; en [tydelig besked om manglende indgang](ui/springindgang-390.png) ledsager den deaktiverede registreringsknap, indtil rondat er sat foran. Serien kan derefter registreres og gemmes med uændrede eksisterende data. Samlet browserkontrol: 40 bestået.
