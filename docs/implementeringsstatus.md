@@ -29,6 +29,8 @@ Se [UI-rapport og billeder](ui-kontrol.md), [kravdækning](kravdaekning.md), [re
 
 Brugerens efterfølgende fejlmelding om et unødvendigt klargøringstrin og blokeret Google-cookievalg er rettet. Google indlæses automatisk uden at starte OAuth; appens modaler skjules under Picker og bevarer filnavnet ved annullering. De fem ekstra browserchecks dækker indlæsning/genforsøg, cookie-/mappevalg og syntetisk filoprettelse på mobil og desktop samt filvalg fra indstillinger. Den reelle Google-oplevelse efter denne rettelse kræver fortsat brugerens afprøvning.
 
+Rettelsen ved `f1ec04f` er publiceret gennem [Pages-kørsel 40206439592](https://github.com/miklen/teamgym-team-manager/actions/runs/40206439592), som bestod hele build- og testforløbet samt deployment. På den offentlige Pages-origin blev Google indlæst automatisk, og **Fortsæt med Google** blev aktiv uden et forberedende klik. Der blev ikke startet login eller oprettet en rigtig Drive-fil under denne efterkontrol.
+
 A3/A4 og alle A1.1-sider er visuelt genlæst mod de fastlåste kilder. Teknisk Regulativs profiler henviser til 1.3/PDF-side 4. Dette er implementeringsagentens kilde-/facitkontrol og ikke ekstern dommergodkendelse. Uafklarede fortolkninger forbliver uafklarede.
 
 ## GitHub og offentlig konfiguration
