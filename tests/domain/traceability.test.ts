@@ -1,6 +1,6 @@
 import { existsSync } from 'node:fs';
 import { expect, it } from 'vitest';
-import fixtures from '../../openspec/changes/build-teamgym-team-manager/reference/fixtures.json';
+import fixtures from '../../openspec/changes/archive/2026-10-25-build-teamgym-team-manager/reference/fixtures.json';
 import { ADDITIONAL_TRACE, RULE_TRACE } from '../../packages/rules/src/traceability';
 
 it('hver matrixregel og alle facitregler har kode-/testspor med bevaret kilde, tælleunivers og status', () => {

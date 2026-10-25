@@ -1,6 +1,6 @@
 # Regelpakker, katalog og beregningskontrol
 
-Første pakke er `dk@1.0.0`, baseret på de otte fastlåste [kilder](../openspec/changes/build-teamgym-team-manager/reference/source-manifest.json). Hovedreglementet er v1.4, og de nominelle DK-profiler kommer fra Teknisk Regulativ 26/27, afsnit 1.3 på PDF-side 4. U14, junior og senior med piger/drenge/mix udbydes; U11 udbydes ikke som DK. Aldersprofilerne er ikke fuld licens-/konkurrenceberettigelse.
+Første pakke er `dk@1.0.0`, baseret på de otte fastlåste [kilder](../openspec/changes/archive/2026-10-25-build-teamgym-team-manager/reference/source-manifest.json). Hovedreglementet er v1.4, og de nominelle DK-profiler kommer fra Teknisk Regulativ 26/27, afsnit 1.3 på PDF-side 4. U14, junior og senior med piger/drenge/mix udbydes; U11 udbydes ikke som DK. Aldersprofilerne er ikke fuld licens-/konkurrenceberettigelse.
 
 ## Identitet og katalog
 
@@ -22,7 +22,7 @@ Panelværdien nedrundes efter den eksakte disciplinberegning: `floor(200*x)/200`
 
 ## Regelspor og faste eksempler
 
-Den fulde [regelmatrix](../openspec/changes/build-teamgym-team-manager/reference/rule-matrix.md) fastlægger inputunivers, profilgrænser, formler, kildepunkter, tælleenheder og K/U/O/X-status. `packages/rules/src/traceability.ts` bevarer matrixens tekst og knytter hver regel til konkrete kode- og testfiler. Testen kontrollerer også, at alle 77 facitcases har et regelspor.
+Den fulde [regelmatrix](../openspec/changes/archive/2026-10-25-build-teamgym-team-manager/reference/rule-matrix.md) fastlægger inputunivers, profilgrænser, formler, kildepunkter, tælleenheder og K/U/O/X-status. `packages/rules/src/traceability.ts` bevarer matrixens tekst og knytter hver regel til konkrete kode- og testfiler. Testen kontrollerer også, at alle 77 facitcases har et regelspor.
 
 | Regel | Kilde og enhed | Formel/eksempel og kontrol |
 | --- | --- | --- |

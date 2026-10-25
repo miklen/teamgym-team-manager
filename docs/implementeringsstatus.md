@@ -1,6 +1,6 @@
 # Implementeringskontrol · 25. oktober 2026
 
-Change: `build-teamgym-team-manager`, schema `spec-driven`. **120/133 opgaver fuldført.** Brugerens elleve tilføjede opgaver om springbibliotek, flervalg, sikkerhed, almindelige forbindelser, serievisning og meningsfulde banevalg er udført. Domæne, regler, Drive-adapter og centrale arbejdsflader er implementeret. Første Pages-deployment er bestået; reel Google-/Drive-verifikation er fortsat udestående. Se [opgavelisten](../openspec/changes/build-teamgym-team-manager/tasks.md).
+Change: `build-teamgym-team-manager`, schema `spec-driven`, arkiveret 25. oktober 2026 efter brugerens udtrykkelige godkendelse. **138/151 opgaver fuldført; 13 udestående testopgaver er bevaret som uafsluttede.** Domæne, regler, Drive-adapter, UI-overhaling og efterfølgende brugerrettelser er implementeret og publiceret. Reel Google-/Drive-/flerbrugerverifikation er fortsat udestående. Se den [arkiverede opgaveliste](../openspec/changes/archive/2026-10-25-build-teamgym-team-manager/tasks.md).
 
 ## Implementeret
 
@@ -78,3 +78,11 @@ Udgaven omfatter den nye visuelle identitet/navigation, fjernede arkivkontroller
 Efter deployment gav den offentlige app, dens nye script `app-D6oXUORS.js` og den selvhostede Manrope-font HTTP 200. Scriptet indeholdt de nye linkhandlinger, Forbind til Google Drive, Fjern gymnast, Fjern færdighed og `coach-connections-3`. I en ny Edge-fane åbnede den offentlige app med den nye startside og en aktiv Forbind til Google Drive efter automatisk Google-indlæsning. Efterkontrollen startede ikke login og læste eller ændrede ingen faktiske Drive-/gymnastdata.
 
 OpenSpec-opgave 22.4 er dermed afsluttet. Changen forbliver åben med de tidligere udestående reelle Google-/T01-/flerbrugerprøver; denne publicering er ikke evidens for dem.
+
+## Arkivering efter brugerens godkendelse
+
+Brugeren godkendte derefter udtrykkeligt arkivering med de 13 udestående opgaver og synkronisering af specs først. Alle ti capabilities er synkroniseret til `openspec/specs/` med 90 krav og 141 scenarier, kontrolleret mod deltaerne og valideret. Changen er flyttet til `openspec/changes/archive/2026-10-25-build-teamgym-team-manager/`, inklusive `.openspec.yaml`, kilder og opgaveliste. Alle 31 filers bytes blev kontrolleret uændrede ved selve flytningen; efterfølgende er kun eksterne dokumentationslinks i tre arkivdokumenter rettet til den ekstra mappedybde. Kilder, kataloger, facit, dommerspørgsmål, specs, opgavestatus og metadata er uændrede. Arkiveringen er ikke en godkendelse af de udestående prøver; de bevares i arkivet og er fortsat brugerens planlagte live test med trænerteamet.
+
+Bygge-/testimporter og dokumentationslinks peger nu på arkivplaceringen, så de fastlåste kildefiler fortsat kan bruges uden en aktiv change. Arkiveringen ændrer hverken arbejdsrumsformat, regelværdier eller produktets adfærd.
+
+Efterkontrol af arkiveringen: streng OpenSpec-validering af alle ti hovedspecs, TypeScript/ESLint, 190 domæneprøver, fire fangede regelmutationer og produktionsbyg består. Alle otte fastlåste PDF-hashes er uændrede, og hele produktionsoutputtet er byte-identisk med den tidligere lokalt afprøvede udgave i `dist-local/`. Den lokale testudgave er ikke genbygget under arkiveringen. Brugeren gav derefter udtrykkeligt klarsignal til commit og push af arkiveringen.

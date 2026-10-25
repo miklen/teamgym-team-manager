@@ -3,7 +3,7 @@ import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { resolve } from 'node:path';
 
-const referenceRoot = new URL('../openspec/changes/build-teamgym-team-manager/reference/', import.meta.url);
+const referenceRoot = new URL('../openspec/changes/archive/2026-10-25-build-teamgym-team-manager/reference/', import.meta.url);
 
 export function verifySources(root = referenceRoot) {
   const manifest = JSON.parse(readFileSync(new URL('source-manifest.json', root), 'utf8'));

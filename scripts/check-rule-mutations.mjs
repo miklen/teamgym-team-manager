@@ -7,7 +7,7 @@ const root = fileURLToPath(new URL('..', import.meta.url));
 mkdirSync(join(root, 'tmp'), { recursive: true });
 const target = mkdtempSync(join(root, 'tmp', 'rule-mutations-'));
 if (relative(root, target).startsWith('..')) throw new Error('Testkopien ligger uden for projektet.');
-for (const path of ['packages/rules', 'tests', 'openspec/changes/build-teamgym-team-manager/reference', 'vitest.config.ts', 'tsconfig.json']) {
+for (const path of ['packages/rules', 'tests', 'openspec/changes/archive/2026-10-25-build-teamgym-team-manager/reference', 'vitest.config.ts', 'tsconfig.json']) {
   cpSync(join(root, path), join(target, path), { recursive: true });
 }
 const mutations = [

@@ -20,7 +20,7 @@ Se [lokal test](docs/lokal-test.md). Ingen eksisterende fælles trænerfiler må
 - `packages/domain` og `packages/rules`: fælles browserkompatibel TypeScript uden Google, UI eller Node-afhængigheder.
 - `packages/drive`: direkte browseradapter med injicerbart netværk. Ingen runtime-backend.
 - `tools/t01`: særskilt teknisk Drive-test; ingen rigtige gymnastdata.
-- `openspec/changes/build-teamgym-team-manager`: krav, design, opgaver og fastlåst kildegrundlag.
+- `openspec/changes/archive/2026-10-25-build-teamgym-team-manager`: krav, design, opgaver og fastlåst kildegrundlag.
 
 Brug `npm ci`, `npm run check`, `npm run test:domain`, `npm run test:drive`, `npm run build` og `npm run test:e2e`. Installér testbrowseren med `npx playwright install chromium`.
 

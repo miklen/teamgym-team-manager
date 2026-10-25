@@ -1,9 +1,9 @@
 import { createHash } from 'node:crypto';
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
-import manifest from '../../openspec/changes/build-teamgym-team-manager/reference/source-manifest.json';
+import manifest from '../../openspec/changes/archive/2026-10-25-build-teamgym-team-manager/reference/source-manifest.json';
 
-const root = new URL('../../openspec/changes/build-teamgym-team-manager/reference/', import.meta.url);
+const root = new URL('../../openspec/changes/archive/2026-10-25-build-teamgym-team-manager/reference/', import.meta.url);
 
 describe('kildegrundlag uden parent-filer eller netværk', () => {
   it('bevarer alle otte forskellige kildeidentiteter', () => {

@@ -2,8 +2,8 @@ import { describe, expect, it } from 'vitest';
 import { canonicalJson } from '@teamgym/domain';
 import { DK_RHYTHM_CATALOG, DK_SPRING_CATALOG, rawElementIdentity } from '../../packages/rules/src/catalog';
 import { DK_KNOWN_ISSUES, DK_PROFILES, DK_SOURCE_MANIFEST } from '../../packages/rules/src/dk-data';
-import springCsv from '../../openspec/changes/build-teamgym-team-manager/reference/spring-source-catalog.csv?raw';
-import rhythmCsv from '../../openspec/changes/build-teamgym-team-manager/reference/rhythm-catalog.csv?raw';
+import springCsv from '../../openspec/changes/archive/2026-10-25-build-teamgym-team-manager/reference/spring-source-catalog.csv?raw';
+import rhythmCsv from '../../openspec/changes/archive/2026-10-25-build-teamgym-team-manager/reference/rhythm-catalog.csv?raw';
 
 describe('versionsbundet katalog og diagnoser', () => {
   it('bevarer alle 103 kildeposter med 83 tilladte, 19 forbudte og én uafklaret', () => {

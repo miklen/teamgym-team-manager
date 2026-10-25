@@ -1,7 +1,7 @@
 import { canonicalJson, elementExecutionSchema } from '@teamgym/domain';
 import type { ElementExecution, SourceReference } from '@teamgym/domain';
-import springCsv from '../../../openspec/changes/build-teamgym-team-manager/reference/spring-source-catalog.csv?raw';
-import rhythmCsv from '../../../openspec/changes/build-teamgym-team-manager/reference/rhythm-catalog.csv?raw';
+import springCsv from '../../../openspec/changes/archive/2026-10-25-build-teamgym-team-manager/reference/spring-source-catalog.csv?raw';
+import rhythmCsv from '../../../openspec/changes/archive/2026-10-25-build-teamgym-team-manager/reference/rhythm-catalog.csv?raw';
 
 export function freezeData<T>(value: T): T {
   if (value && typeof value === 'object' && !Object.isFrozen(value)) {

@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { Fraction, canonicalJson, createWorkspace, formatPoints } from '@teamgym/domain';
 import type { ElementExecution, Stability } from '@teamgym/domain';
-import fixtures from '../../openspec/changes/build-teamgym-team-manager/reference/fixtures.json';
+import fixtures from '../../openspec/changes/archive/2026-10-25-build-teamgym-team-manager/reference/fixtures.json';
 import { DK_RHYTHM_CATALOG, DK_SPRING_CATALOG } from '../../packages/rules/src/catalog';
 import { elementDifficulty, elementIdentity, evaluateSpringSkill, normalizeElement, positionBasis, springIdentity } from '../../packages/rules/src/dk-spring';
 import { apparatusDeduction, bestBonus, compositionTotal, disciplineMean, elementBonus, elementBonusForAthlete, holdReference, holdRound,

@@ -2,7 +2,7 @@
 
 Dansk trænerarbejdsplads til hold, færdigheder og springplanlægning. Målrepo: [miklen/teamgym-team-manager](https://github.com/miklen/teamgym-team-manager).
 
-**Status:** Første udgave er [publiceret på GitHub Pages](https://miklen.github.io/teamgym-team-manager/). Domæne, regler, browserbaseret Drive-adapter og de centrale arbejdsflader er implementeret. Rigtig Google-/Drive-verifikation er udestående. Den samlede [OpenSpec-change](openspec/changes/build-teamgym-team-manager/proposal.md) omfatter alle ti capabilities; [opgavelisten](openspec/changes/build-teamgym-team-manager/tasks.md) og [kontrolrapporten](docs/implementeringsstatus.md) viser fremdriften. Flerbrugerverifikation er efter [brugerbeslutningen](docs/testbeslutning-2026-10-25.md) udskudt til live test i produktion. Se [brugsvejledningen](docs/brugsvejledning.md).
+**Status:** Appen er [publiceret på GitHub Pages](https://miklen.github.io/teamgym-team-manager/). Domæne, regler, browserbaseret Drive-adapter, UI-overhaling og brugerrettelser er implementeret. Den samlede [OpenSpec-change er arkiveret](openspec/changes/archive/2026-10-25-build-teamgym-team-manager/proposal.md) efter brugerens godkendelse; alle ti [hovedspecs](openspec/specs/) er synkroniseret. De 13 udestående opgaver om reel Google-/Drive-verifikation er bevaret i [arkivets opgaveliste](openspec/changes/archive/2026-10-25-build-teamgym-team-manager/tasks.md). Flerbrugerverifikation er efter [brugerbeslutningen](docs/testbeslutning-2026-10-25.md) udskudt til live test i produktion. Se [kontrolrapporten](docs/implementeringsstatus.md) og [brugsvejledningen](docs/brugsvejledning.md).
 
 ## Start fra et rent checkout
 

@@ -2,7 +2,7 @@
 
 ## UI-overhaling bestilt 25. oktober 2026
 
-Den visuelle konkretisering og kontrol af den nye UI-kandidat findes i [UI-redesign](../../../docs/ui-redesign.md). Den anvender selvhostet Manrope, en dyb blå navigationsrail på desktop, kølige lyse arbejdsflader og én koboltaccent. Mobil har en fast bundnavigation uden overlap med det rullende arbejdsområde. Lister, tre springomgange og rytmematrix er fortsat de centrale arbejdsstrukturer. Reglementets versionsdetaljer åbnes efter behov.
+Den visuelle konkretisering og kontrol af den nye UI-kandidat findes i [UI-redesign](../../../../docs/ui-redesign.md). Den anvender selvhostet Manrope, en dyb blå navigationsrail på desktop, kølige lyse arbejdsflader og én koboltaccent. Mobil har en fast bundnavigation uden overlap med det rullende arbejdsområde. Lister, tre springomgange og rytmematrix er fortsat de centrale arbejdsstrukturer. Reglementets versionsdetaljer åbnes efter behov.
 
 Dette er brugerens bestilte overhaling før afslutning af changen. Kandidaten afprøves lokalt før commit/push/publicering efter den nye faste arbejdsgang i `AGENTS.md`; brugerens visuelle accept er endnu ikke givet. Beregningspakker og Drive-kontrakt ændres ikke af redesignrunden.
 
@@ -12,7 +12,7 @@ Se [proposal.md](proposal.md) for formålet. Arbejdsmappen har OpenSpec og lokal
 
 De seks PDF-kilder ligger i `../reglement/`. `../Springgrundlag-Juniorpiger.md`, `../Banespring-Traeneroversigt-Junior-DK.md` og `../Banespring-Udviklingsspor-Juniorpiger.md` er supplerende trænernotater. De er baggrund, ikke en erstatning for de officielle kilder. Parent-filer følger ikke automatisk med et GitHub-checkout; de otte fastlåste PDF’er og manifestet i [reference](reference/README.md) er derfor en del af denne change. Ingen faktisk gymnastliste er forudsat eller skal udledes af notaterne.
 
-Den lokale [frontend-skill](../../../.agents/skills/frontend-skill/SKILL.md) er læst og skal bruges ved UI-arbejdet. Dens appvejledning er relevant: informationsrig arbejdsflade, tydeligt hierarki, få farver og minimal indramning. Dens marketing-landingssidevejledning er ikke den centrale produktstruktur.
+Den lokale [frontend-skill](../../../../.agents/skills/frontend-skill/SKILL.md) er læst og skal bruges ved UI-arbejdet. Dens appvejledning er relevant: informationsrig arbejdsflade, tydeligt hierarki, få farver og minimal indramning. Dens marketing-landingssidevejledning er ikke den centrale produktstruktur.
 
 ## Goals / Non-Goals
 
@@ -100,7 +100,7 @@ Google OAuth JavaScript-origin registreres som `https://miklen.github.io`, separ
 
 Den eksisterende konfliktkontrakt bevares: højst én af to konkurrerende gemninger fra samme basis må lykkes. En lokal browserkø forebygger dobbeltklik, men koordinerer ikke to computere. En dobbeltlæsning eller `files.version`-kontrol før ubetinget upload opfylder ikke kravet. Drive skal selv kontrollere en revisionsbetingelse atomisk med indholdsopdateringen.
 
-**T01 afprøves med den tilgængelige konto; to-konto-delen er udskudt af brugeren:** afprøv direkte browserbaseret Drive v2 `files.get`/`etag` og media-`files.update` med `If-Match` fra den rigtige Pages-origin. De konkrete endpoints, input og tests DRIVE01–DRIVE05 står i [reference/github-pages-drive.md](reference/github-pages-drive.md). V2-filressourcen dokumenterer etag; det er ikke bevis for, at den valgte uploadtype/CORS faktisk håndhæver betingelsen. Forventet gammel-basis-afvisning er412. Der er ikke kørt rigtig Drive-skrivetest i planfasen. Efter [brugerbeslutningen 25. oktober 2026](../../../docs/testbeslutning-2026-10-25.md) fortsætter implementering og første publicering med én konto, og brugeren udfører live test med trænerteamets konti i produktion. Verifikation beskrives efter faktisk evidens; udskudte tests er ikke beståede. Ingen serverfallback.
+**T01 afprøves med den tilgængelige konto; to-konto-delen er udskudt af brugeren:** afprøv direkte browserbaseret Drive v2 `files.get`/`etag` og media-`files.update` med `If-Match` fra den rigtige Pages-origin. De konkrete endpoints, input og tests DRIVE01–DRIVE05 står i [reference/github-pages-drive.md](reference/github-pages-drive.md). V2-filressourcen dokumenterer etag; det er ikke bevis for, at den valgte uploadtype/CORS faktisk håndhæver betingelsen. Forventet gammel-basis-afvisning er412. Der er ikke kørt rigtig Drive-skrivetest i planfasen. Efter [brugerbeslutningen 25. oktober 2026](../../../../docs/testbeslutning-2026-10-25.md) fortsætter implementering og første publicering med én konto, og brugeren udfører live test med trænerteamets konti i produktion. Verifikation beskrives efter faktisk evidens; udskudte tests er ikke beståede. Ingen serverfallback.
 
 Konsistent indlæsning: metadata før, JSON-indhold, metadata efter; gentag ved ændret etag/version. Basis indeholder opaque etag, versionsstreng, workspace-revision og hash. Før gemning kontrolleres aktuelle rettigheder og basis igen, hvorefter browseren validerer/serialiserer snapshot og udfører den atomisk betingede upload på den indlæste basis-etag. Versionsstrenge må ikke konverteres til JavaScript-tal eller bruges som opdigtet ETag. Bevar fil-id, mappe og deling.
 

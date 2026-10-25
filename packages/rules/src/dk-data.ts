@@ -1,5 +1,5 @@
 import type { SourceReference, RulesetBinding } from '@teamgym/domain';
-import sourceManifest from '../../../openspec/changes/build-teamgym-team-manager/reference/source-manifest.json';
+import sourceManifest from '../../../openspec/changes/archive/2026-10-25-build-teamgym-team-manager/reference/source-manifest.json';
 import { freezeData } from './catalog';
 
 export interface TeamProfile {

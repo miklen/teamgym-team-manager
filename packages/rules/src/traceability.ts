@@ -1,4 +1,4 @@
-import matrix from '../../../openspec/changes/build-teamgym-team-manager/reference/rule-matrix.md?raw';
+import matrix from '../../../openspec/changes/archive/2026-10-25-build-teamgym-team-manager/reference/rule-matrix.md?raw';
 import { freezeData } from './catalog';
 
 const coverage: Record<string, { code: string[]; tests: string[] }> = {

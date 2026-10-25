@@ -5,7 +5,7 @@ import { DK_SPRING_CATALOG } from '../../packages/rules/src/catalog';
 import { DK_PROFILES, DK_DEFAULT_BINDING } from '../../packages/rules/src/dk-data';
 import { evaluateDiscipline } from '../../packages/rules/src/dk-engine';
 import { elementDifficulty, elementIdentity, evaluateSpringSkill, normalizeElement } from '../../packages/rules/src/dk-spring';
-import springCsv from '../../openspec/changes/build-teamgym-team-manager/reference/spring-source-catalog.csv?raw';
+import springCsv from '../../openspec/changes/archive/2026-10-25-build-teamgym-team-manager/reference/spring-source-catalog.csv?raw';
 
 const profile = DK_PROFILES.find((item) => item.ageGroup === 'junior' && item.teamType === 'girls')!;
 const row = (id: string): ElementExecution => structuredClone(DK_SPRING_CATALOG.find((item) => item.referenceId === id)!.execution);

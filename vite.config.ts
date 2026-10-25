@@ -3,7 +3,7 @@ import react from '@vitejs/plugin-react';
 import { fileURLToPath } from 'node:url';
 import { readFileSync } from 'node:fs';
 
-const reference = new URL('./openspec/changes/build-teamgym-team-manager/reference/', import.meta.url);
+const reference = new URL('./openspec/changes/archive/2026-10-25-build-teamgym-team-manager/reference/', import.meta.url);
 const manifest = JSON.parse(readFileSync(new URL('source-manifest.json', reference), 'utf8')) as {
   sources: { file: string }[];
 };

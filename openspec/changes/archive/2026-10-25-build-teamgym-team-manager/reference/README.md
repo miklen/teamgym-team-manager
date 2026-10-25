@@ -11,7 +11,7 @@ Kontrolleret 25. oktober 2026. Læs denne mappe før opgavegruppe 2 og før impl
 - Fire bevidste fejl i isolerede kodekopier er fanget af assertions: juniorgrænse 360° i stedet for 540°, forkert fliksats, dobbelttalt flik og C-filtrering på justeret D. Produktionsfilerne ændres ikke af mutationskontrollen.
 - Ingen ekstern dommergodkendelse er indhentet, og ingen faglige svar på Q01–Q06 foreligger. Visuel kontrol, samme agents håndregning, automatiske tests og mutationskontrol beskrives som forskellige kontrolformer. De uafklarede tilfælde forbliver uafklarede.
 
-Se [beregningsvejledningen](../../../../docs/regler-og-katalog.md), [regelvedligeholdelse](../../../../docs/regelvedligeholdelse.md) og [aktuel implementeringsstatus](../../../../docs/implementeringsstatus.md) for kommandoer og samlet fremdrift. UI, Drive og endelig browseraccept afsluttes særskilt.
+Se [beregningsvejledningen](../../../../../docs/regler-og-katalog.md), [regelvedligeholdelse](../../../../../docs/regelvedligeholdelse.md) og [aktuel implementeringsstatus](../../../../../docs/implementeringsstatus.md) for kommandoer og samlet fremdrift. UI, Drive og endelig browseraccept afsluttes særskilt.
 
 | Fil | Anvendelse |
 | --- | --- |
