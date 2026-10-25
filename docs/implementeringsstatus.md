@@ -21,7 +21,7 @@ Der findes ingen frigivet ældre arbejdsrumsudgave; format 1 er første underst�
 | `npm run test:drive` | 34 tests bestået med injiceret netværk/lager/klokke |
 | `npm run test:mutations` | 4/4 bevidste regelfejl fanget i isoleret kopi |
 | `npm run build` | Statisk app/worker/T01 og otte medfølgende PDF-assets; kilders SHA-256 og størrelse matcher |
-| `npm run test:e2e` | 27 Chromium-checks bestået mod produktionsbyg med syntetisk Google/Drive |
+| `npm run test:e2e` | 28 Chromium-checks bestået mod produktionsbyg med syntetisk Google/Drive |
 | axe | Ingen fund i valgte WCAG 2.2 AA-regler på fem arbejdsflader og vurderingsdialog |
 | Visuel kontrol | Fire viewports, 20 syntetiske gymnaster/lange navne, fokus, tastatur, reduceret bevægelse og 200 % tekst |
 
@@ -35,7 +35,7 @@ Implementeringen er merged gennem [PR #1](https://github.com/miklen/teamgym-team
 
 GitHub-pluginets tidligere PR-forsøg blev afvist med `403 Resource not accessible by integration`. Repoets eksisterende Git-login er senere kontrolleret gennem den normale credential-manager uden at udskrive credentials og har adminadgang. De tre offentlige Google-buildværdier er gemt som repository Variables, og Pages er konfigureret med `build_type: workflow`. Koden er leveret som [PR #1](https://github.com/miklen/teamgym-team-manager/pull/1). Første [Pages-deployment 40202795321](https://github.com/miklen/teamgym-team-manager/actions/runs/40202795321) bestod bygning, samtlige checks, artifact og deployment ved `194cb43`. Den [offentlige app](https://miklen.github.io/teamgym-team-manager/) er åbnet over HTTPS; assets, dybt hash-link og genindlæsning virkede. Ingen client secret eller brugertoken er overført.
 
-Den lokale OAuth-webklient angiver korrekt Pages-origin uden repostien og begge localhost-origins. GIS-/Picker-scripts kunne indlæses under CSP både lokalt og fra den faktiske Pages-origin; appen nåede Fortsæt med Google uden konfigurationsfejl. Et nyt Google-loginvindue står til brugerens login; agenten har ikke gennemført nyt login eller en rigtig skriveprøve i produktionsadapteren. En efterfølgende rettelse bevarer en direkte genforsøgsknap efter et afbrudt Google-popup med eksisterende kladde; alle tre målrettede auth-browserchecks bestod.
+Den lokale OAuth-webklient angiver korrekt Pages-origin uden repostien og begge localhost-origins. GIS-/Picker-scripts kunne indlæses under CSP både lokalt og fra den faktiske Pages-origin; appen nåede Fortsæt med Google uden konfigurationsfejl. Et nyt Google-loginvindue står til brugerens login; agenten har ikke gennemført nyt login eller en rigtig skriveprøve i produktionsadapteren. En efterfølgende rettelse bevarer en direkte genforsøgsknap efter et afbrudt Google-popup med eksisterende kladde; alle tre målrettede auth-browserchecks bestod. Den efterfølgende [Pages-kørsel 40203249155](https://github.com/miklen/teamgym-team-manager/actions/runs/40203249155) bestod hele kontrollen med 28 browserchecks og publicerede rettelsen ved `cb918ab`.
 
 ## Udskudt og udestående
 
