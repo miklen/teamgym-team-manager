@@ -14,7 +14,7 @@ Brugeren har bekræftet fungerende login med én konto. Det er ikke et bevis for
 
 ## GitHub
 
-Opret de tre offentlige konfigurationsværdier som repository **Variables** med navnene ovenfor, og vælg GitHub Actions som Pages-kilde. Workflowet bygger fra `main` efter typekontrol, tests, mutationer og Chromium-kontrol. Kun deployment-jobbet har Pages-/OIDC-skriverettigheder. Der bruges ingen runtime-server.
+De tre offentlige konfigurationsværdier er nu gemt som repository **Variables** med navnene ovenfor, og GitHub Actions er valgt som Pages-kilde. Workflowet bygger fra `main` efter typekontrol, tests, mutationer og Chromium-kontrol. Kun deployment-jobbet har Pages-/OIDC-skriverettigheder. Der bruges ingen runtime-server.
 
 Produktionsadresse: `https://miklen.github.io/teamgym-team-manager/`. Navigation er hash-baseret. Den aktuelle lokale udgave kan køres på `http://127.0.0.1:4173/teamgym-team-manager/` efter `npm run build` og `npm run preview`.
 
