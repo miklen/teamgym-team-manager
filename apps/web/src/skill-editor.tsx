@@ -7,11 +7,19 @@ import {
   skillDefinitionSchema,
   skillIdentity,
 } from '@teamgym/domain';
-import type { AthleteSkill, Discipline, ElementExecution, SkillDefinition, Workspace } from '@teamgym/domain';
+import type {
+  AthleteSkill,
+  Discipline,
+  ElementExecution,
+  SkillDefinition,
+  Stability,
+  Workspace,
+} from '@teamgym/domain';
 import type { RhythmCatalogEntry, RulePackage } from '@teamgym/rules';
-import { ActionForm, Decision, SkillBreakdown, SourceLinks, points, statusText } from './components';
-import { matchesSpring, registerSpring, shorterSeries, springLibrary } from './spring-library';
-import type { SpringChoice } from './spring-library';
+import { ActionForm, Decision, SkillBreakdown, SourceLinks, statusText } from './components';
+import { registerSpringBatch, shorterSeries, springLibrary } from './spring-library';
+import type { SpringSelection } from './spring-library';
+import { SpringPicker } from './spring-picker';
 
 const positions = { tuck: 'Lukket', pike: 'Hoftebøjet', straight: 'Strakt' };
 const variants: Record<string, string> = {
@@ -77,16 +85,12 @@ export function SkillEditor({
   const [discipline, setDiscipline] = useState<Discipline>(original?.discipline ?? initialDiscipline);
   const [query, setQuery] = useState('');
   const [building, setBuilding] = useState(!!registration);
-  const [chosen, setChosen] = useState<SpringChoice | null>(null);
-  const [group, setGroup] = useState('Alle spring');
+  const [selections, setSelections] = useState<SpringSelection[]>([]);
+  const [newStability, setNewStability] = useState<Stability | null>(null);
+  const [assessedAt, setAssessedAt] = useState(new Date().toISOString().slice(0, 10));
+  const batchMode = discipline !== 'rhythm' && !building && !registration;
   const [includeShorter, setIncludeShorter] = useState(true);
   const library = useMemo(() => springLibrary(rulePackage, workspace), [rulePackage, workspace]);
-  const choices = library.filter(
-    (item) =>
-      item.definition.discipline === discipline &&
-      (group === 'Alle spring' || item.group === group) &&
-      matchesSpring(item, query),
-  );
   const [elements, setElements] = useState<ElementExecution[]>(
     original?.discipline === 'tumbling'
       ? structuredClone(original.elements)
@@ -128,12 +132,7 @@ export function SkillEditor({
   );
   function definition(): SkillDefinition {
     if (discipline !== 'rhythm' && !building) {
-      if (!chosen) throw new Error('Vælg et spring fra listen.');
-      return {
-        ...structuredClone(chosen.definition),
-        id: newEntityId(),
-        name: name.trim() || chosen.definition.name,
-      };
+      throw new Error('Vælg spring fra listen.');
     }
     const base = {
       id: newEntityId(),
@@ -206,9 +205,26 @@ export function SkillEditor({
   return (
     <ActionForm
       className="skill-editor"
-      label={registration ? 'Erstat udførelse i kladde' : 'Registrér færdighed'}
-      disabled={!preview}
+      label={
+        registration
+          ? 'Erstat udførelse i kladde'
+          : batchMode
+            ? `Registrér ${selections.length} spring`
+            : selections.length && discipline !== 'rhythm'
+              ? `Registrér ${selections.length + 1} spring`
+              : 'Registrér færdighed'
+      }
+      disabled={batchMode ? selections.length === 0 : !preview}
       submit={() => {
+        if (batchMode) {
+          save(
+            registerSpringBatch(workspace, athleteId, selections, rulePackage, {
+              includeShorter,
+              assessedAt,
+            }),
+          );
+          return;
+        }
         const skill = definition();
         let result: Workspace;
         let registrationId: string;
@@ -217,19 +233,23 @@ export function SkillEditor({
           registrationId = registration.id;
         } else {
           if (skill.discipline !== 'rhythm') {
-            const created = registerSpring(
-              workspace,
-              athleteId,
-              skill,
-              rulePackage,
-              includeShorter,
-              custom && confirm
-                ? confirmation ||
-                    `Træneren har verificeret den komplette serie ${skill.name} og de medtagne kortere serier.`
-                : null,
+            save(
+              registerSpringBatch(
+                workspace,
+                athleteId,
+                [
+                  ...selections,
+                  {
+                    definition: skill,
+                    stability: newStability,
+                    confirmed: custom && confirm,
+                    ...(confirmation ? { confirmationNote: confirmation } : {}),
+                  },
+                ],
+                rulePackage,
+                { includeShorter, assessedAt },
+              ),
             );
-            if (created.workspace === workspace) openExisting(created.registrationId);
-            else save(created.workspace);
             return;
           }
           const normalizedKey = rulePackage.bindRhythm(skill).key;
@@ -270,9 +290,7 @@ export function SkillEditor({
             setDiscipline(event.target.value as Discipline);
             setElements([]);
             setName('');
-            setChosen(null);
             setQuery('');
-            setGroup('Alle spring');
             setCustom(false);
             setConfirm(false);
           }}
@@ -362,7 +380,6 @@ export function SkillEditor({
                 aria-pressed={!building}
                 onClick={() => {
                   if (building) {
-                    setChosen(null);
                     setName('');
                     setCustom(false);
                     setConfirm(false);
@@ -388,93 +405,20 @@ export function SkillEditor({
             </div>
           )}
           {!building && (
-            <>
-              <p className="muted">
-                Vælg en færdig serie. Spring, du selv har bygget, kan også vælges på andre gymnaster.
-              </p>
-              <div className="form-grid">
-                <label>
-                  Søg sammensat spring eller alias
-                  <input
-                    type="search"
-                    value={query}
-                    onChange={(event) => setQuery(event.target.value)}
-                    placeholder="Fx rondat-flik-1/1 eller kraft barani"
-                  />
-                </label>
-                <label>
-                  Springgruppe
-                  <select value={group} onChange={(event) => setGroup(event.target.value)}>
-                    <option>Alle spring</option>
-                    {[
-                      ...new Set(
-                        library
-                          .filter((item) => item.definition.discipline === discipline)
-                          .map((item) => item.group),
-                      ),
-                    ].map((value) => (
-                      <option key={value}>{value}</option>
-                    ))}
-                  </select>
-                </label>
-              </div>
-              <div className="catalog-results spring-library" aria-label="Færdige spring">
-                {choices.map((choice) => {
-                  const result = rulePackage.evaluateSkill(choice.definition);
-                  return (
-                    <button
-                      type="button"
-                      className="catalog-option"
-                      aria-pressed={chosen?.id === choice.id}
-                      key={choice.id}
-                      onClick={() => {
-                        setChosen(choice);
-                        setName(choice.definition.name);
-                        setElements(
-                          choice.definition.discipline === 'tumbling'
-                            ? structuredClone(choice.definition.elements)
-                            : [structuredClone(choice.definition.jump)],
-                        );
-                        setCustom(
-                          choice.definition.discipline === 'tumbling' &&
-                            choice.definition.connection.kind === 'custom',
-                        );
-                        setConfirm(false);
-                        setConfirmation('');
-                      }}
-                    >
-                      <span>
-                        {choice.definition.name}
-                        <small>
-                          {choice.group}
-                          {result.connection === 'unverified'
-                            ? ' · Bekræft forbindelsen på denne gymnast'
-                            : ''}
-                        </small>
-                      </span>
-                      <strong>
-                        {result.difficulty.value
-                          ? points(result.difficulty.value)
-                          : statusText[result.difficulty.status]}
-                      </strong>
-                    </button>
-                  );
-                })}
-                {choices.length === 0 && (
-                  <p>Ingen spring matcher. Prøv en anden søgning, eller vælg Byg selv.</p>
-                )}
-              </div>
-              {chosen && (
-                <div className="selected-spring" role="status">
-                  <h3>{chosen.definition.name}</h3>
-                  <p>
-                    {chosen.definition.discipline === 'tumbling'
-                      ? `${chosen.definition.elements.length} elementer i den valgte serie`
-                      : 'Komplet trampetspring'}
-                  </p>
-                </div>
-              )}
-            </>
+            <SpringPicker
+              key={discipline}
+              library={library}
+              discipline={discipline}
+              workspace={workspace}
+              athleteId={athleteId}
+              rulePackage={rulePackage}
+              selections={selections}
+              change={setSelections}
+              includeShorter={includeShorter}
+              setIncludeShorter={setIncludeShorter}
+              assessedAt={assessedAt}
+              setAssessedAt={setAssessedAt}
+            />
           )}
           {building && (
             <>
@@ -581,7 +525,38 @@ export function SkillEditor({
               </div>
             </>
           )}
-          {discipline === 'tumbling' && (
+          {building && !registration && (
+            <div className="form-grid">
+              <label>
+                Sikkerhed
+                <select
+                  value={newStability ?? ''}
+                  onChange={(event) =>
+                    setNewStability(event.target.value ? (Number(event.target.value) as Stability) : null)
+                  }
+                >
+                  <option value="">Ikke vurderet</option>
+                  {[1, 2, 3, 4, 5].map((number) => (
+                    <option key={number} value={number}>
+                      {number}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              {newStability !== null && (
+                <label>
+                  Vurderingsdato
+                  <input
+                    type="date"
+                    value={assessedAt}
+                    required
+                    onChange={(event) => setAssessedAt(event.target.value)}
+                  />
+                </label>
+              )}
+            </div>
+          )}
+          {discipline === 'tumbling' && building && (
             <>
               {building && (
                 <label className="check">
@@ -605,7 +580,7 @@ export function SkillEditor({
                       checked={confirm}
                       onChange={(event) => setConfirm(event.target.checked)}
                     />
-                    Jeg har verificeret gymnastens præcise forbindelse og de medtagne kortere serier
+                    Gymnasten kan udføre hele serien uden mellemtrin
                   </label>
                   {confirm && building && (
                     <label>
@@ -630,11 +605,12 @@ export function SkillEditor({
                   checked={includeShorter}
                   onChange={(event) => setIncludeShorter(event.target.checked)}
                 />
-                Medtag kortere serier fra samme begyndelse
+                Medtag kortere serier med samme sikkerhed
               </label>
               <p>{shorter.map((skill) => skill.name).join(' · ')}</p>
               <small>
-                Nye registreringer får hver sin stabilitetsvurdering. Eksisterende vurderinger bevares.
+                De kortere serier arver sikkerheden. Vælges en kortere serie også særskilt, bruges dens egen
+                vurdering.
               </small>
             </div>
           )}

@@ -524,6 +524,69 @@ h3 {
   padding-block: 12px;
   margin-bottom: 0;
 }
+.spring-batch {
+  max-height: 420px;
+  overflow: auto;
+  list-style: none;
+  padding: 0;
+  margin: 12px 0;
+  border-block: 1px solid #ccd6cd;
+}
+.spring-batch-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 114px;
+  gap: 16px;
+  align-items: center;
+  padding: 12px;
+  border-bottom: 1px solid #d8ded8;
+}
+.spring-batch-row.selected {
+  background: #dfede5;
+  box-shadow: inset 4px 0 #166557;
+}
+.spring-batch-choice {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 44px;
+  margin: 0;
+  cursor: pointer;
+  overflow-wrap: anywhere;
+}
+.spring-batch-choice input {
+  flex: 0 0 22px;
+  width: 22px;
+  height: 22px;
+  min-height: 0;
+  accent-color: var(--accent);
+  margin: 0;
+}
+.spring-batch-rating {
+  margin: 0;
+}
+.spring-batch-rating > span {
+  display: block;
+  font-size: 0.75rem;
+  margin-bottom: 4px;
+}
+.spring-batch-rating select {
+  width: 100%;
+  padding-inline: 8px;
+}
+.batch-summary {
+  margin-block: 16px;
+  font-weight: 650;
+}
+@media (max-width: 480px) {
+  .spring-batch-row {
+    grid-template-columns: minmax(0, 1fr) 90px;
+    gap: 10px;
+    padding: 12px 8px;
+  }
+  .spring-batch-choice {
+    gap: 8px;
+  }
+}
 .element-list {
   padding-left: 22px;
 }

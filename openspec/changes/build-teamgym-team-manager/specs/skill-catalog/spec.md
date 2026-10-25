@@ -33,14 +33,25 @@ Registrering af spring SHALL som udgangspunkt tilbyde en søgbar liste af gængs
 
 #### Scenario: Egne spring genbruges
 - **WHEN** træneren bygger og registrerer en egen serie og senere åbner en anden gymnast i samme arbejdsrum
-- **THEN** kan serien vælges fra listen med samme definition og en selvstændig uvurderet registrering; en eventuel personlig forbindelsesbekræftelse skal gives på ny.
+- **THEN** kan serien vælges fra listen med samme definition og en selvstændig vurdering; markeringen under den tydelige tekst om hele serier er trænerens nye personlige bekræftelse, og en anden gymnasts vurdering eller bekræftelse kopieres ikke.
+
+### Requirement: Flere spring med sikkerhed i samme registrering
+Træneren SHALL kunne markere flere spring i listen og angive sikkerhed 1–5 eller ikke vurderet ud for hvert valgt spring. Valg og vurderinger SHALL bevares mellem søgninger, grupper og skift mellem bane/trampet. Én samlet handling SHALL oprette eller opdatere valgene med den angivne vurderingsdato uden dubletter eller ændringer på andre gymnaster. En markering SHALL tydeligt betyde, at gymnasten kan udføre hele serien uden mellemtrin; listen MUST NOT kræve den tekniske ekstraerklæring om at have verificeret en præcis forbindelse.
+
+#### Scenario: Flere spring registreres samlet
+- **WHEN** træneren markerer en helskrueserie med sikkerhed 5 og en halvskrueserie med sikkerhed 2
+- **THEN** kan begge registreres i én handling med hver sin vurdering og fælles vurderingsdato, og valgene forsvinder ikke ved søgning eller disciplinskift.
 
 ### Requirement: Kortere begyndelser af en registreret serie
-Ved registrering af en komplet baneserie SHALL de præcise kortere serier fra samme begyndelse være medtaget som standard og vises før registrering. Træneren SHALL kunne fravælge dem. Rondat-flik-1/1 SHALL således medtage rondat og rondat-flik. Dette MUST NOT udlede færre skruer, andre kropspositioner, nye efterfølgende forbindelser eller færdigheder ved at kombinere enkeltregistreringer. Nye kortere registreringer SHALL være uden stabilitetsvurdering. Eksisterende id'er, vurderinger, noter og arkiveringsvalg SHALL bevares.
+Ved registrering af komplette baneserier SHALL de præcise kortere serier fra samme begyndelse være medtaget som standard og vises før registrering. Træneren SHALL kunne fravælge dem. Rondat-flik-1/1 SHALL således medtage rondat og rondat-flik med samme sikkerhed og dato. Deles en kortere serie af flere valgte serier, SHALL sikkerheden komme fra den valgte serie med lavest kendt D, uanset om dens sikkerhed er højere eller lavere. Ved samme D bruges laveste sikkerhed, og en direkte angivet vurdering af den korte serie har altid forrang. Dette MUST NOT udlede færre skruer, andre kropspositioner, nye efterfølgende forbindelser eller færdigheder ved at kombinere enkeltregistreringer. Arv SHALL kunne opdatere eksisterende kortere vurderinger med bevarede id'er og noter; arkiveringsvalg SHALL bevares. Manglende vurdering af en længere serie MUST NOT slette en eksisterende vurdering af dens korte begyndelse.
 
 #### Scenario: Helskrueserie giver kortere begyndelser
-- **WHEN** rondat-flik-1/1 registreres med kortere serier medtaget
-- **THEN** oprettes manglende rondat og rondat-flik som særskilte uvurderede registreringer uden dubletter eller antaget stabilitet; rondat-flik-halvskrue udledes ikke.
+- **WHEN** rondat-flik-1/1 registreres med sikkerhed 4 og kortere serier medtaget
+- **THEN** medtages rondat og rondat-flik med sikkerhed 4 uden dubletter; rondat-flik-halvskrue udledes ikke.
+
+#### Scenario: Arv følger laveste sværhed
+- **WHEN** en helskrueserie med D 0,80 og sikkerhed 5 samt en halvskrueserie med D 0,70 og sikkerhed 2 deler rondat-flik
+- **THEN** får rondat-flik sikkerhed 2 fra halvskrueserien, mens et direkte valg af rondat-flik med sikkerhed 4 i stedet giver 4.
 
 ### Requirement: Kontrol af forbindelser
 Springbyggeren MUST kontrollere kendte orienterings- og forbindelsesbegrænsninger og MUST skelne mellem dokumenteret forbindelse, ugyldig forbindelse og ikke-verificeret forbindelse. Reglementsmæssige elementværdier MUST NOT alene godkende enhver elementpermutation som anvendelig serie. En hel serie SHALL registreres særskilt som gymnastens færdighed.
@@ -69,11 +80,11 @@ Systemet SHALL tilbyde alle 94 individuelle momentfelter fra det fastlåste A1.1
 - **THEN** bevares de trykte koder og begge værdier 0,80, men momenterne får forskellige stabile interne id'er og krav, så registreringer ikke sammenlægges.
 
 ### Requirement: Gymnastens færdighedsregistrering
-En gymnast SHALL kunne få tilføjet, redigeret og arkiveret hele baneserier, trampetspring og rytmemomenter med stabilitet eller ikke vurderet, vurderingsdato og eventuel kort note. Registrering af samme præcise færdighed igen SHALL føre til redigering af den eksisterende registrering frem for utilsigtede dubletter. Overgangen fra manglende registrering til registreret uden vurdering SHALL være eksplicit.
+En gymnast SHALL kunne få tilføjet, redigeret og arkiveret hele baneserier, trampetspring og rytmemomenter med stabilitet eller ikke vurderet, vurderingsdato og eventuel kort note. Registrering af samme præcise færdighed igen SHALL genbruge den eksisterende registrering frem for utilsigtede dubletter. Enkeltregistrering kan åbne redigering; samlet springregistrering SHALL opdatere de direkte valgte vurderinger i samme handling. Overgangen fra manglende registrering til registreret uden vurdering SHALL være eksplicit.
 
 #### Scenario: Færdigheden findes allerede
 - **WHEN** træneren forsøger at tilføje samme normaliserede færdighed til samme gymnast igen
-- **THEN** åbnes den eksisterende registrering, så stabilitet og note kan opdateres.
+- **THEN** genbruges registreringen; enkeltregistrering åbner redigering, mens samlet springregistrering anvender den valgte sikkerhed og bevarer noten.
 
 ### Requirement: Regelværdi er adskilt fra færdighed
 En færdighed SHALL kunne være registreret, selv om den ikke er tilladt eller kendt i det aktuelle holds reglement. Systemet SHALL bevare registreringen og forklare anvendeligheden pr. hold; en ikke-tilladt eller ikke-verificeret færdighed MUST NOT tilbydes som gyldig kandidat i en omgang.

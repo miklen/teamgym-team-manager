@@ -1,5 +1,11 @@
-import { confirmConnection, newEntityId, registerAthleteSkill } from '@teamgym/domain';
-import type { SkillDefinition, Workspace } from '@teamgym/domain';
+import {
+  confirmConnection,
+  newEntityId,
+  registerAthleteSkill,
+  replaceAthleteSkill,
+  updateAssessment,
+} from '@teamgym/domain';
+import type { SkillDefinition, Stability, Workspace } from '@teamgym/domain';
 import type { RulePackage } from '@teamgym/rules';
 
 export type SpringDefinition = Exclude<SkillDefinition, { discipline: 'rhythm' }>;
@@ -266,4 +272,108 @@ export function registerSpring(
     }
   }
   return { workspace: result, registrationId };
+}
+
+export interface SpringSelection {
+  definition: SpringDefinition;
+  stability: Stability | null;
+  confirmed: boolean;
+  confirmationNote?: string;
+}
+/** Et direkte valg har forrang for arv; fælles begyndelser samles uafhængigt af klikrækkefølge. */
+export function springRegistrationPlan(
+  selections: readonly SpringSelection[],
+  rulePackage: RulePackage,
+  includeShorter: boolean,
+) {
+  type Planned = SpringSelection & { explicit: boolean; sourceName: string };
+  const planned = new Map<string, Planned>();
+  const sources = new Map<string, SpringSelection>();
+  for (const selection of selections) {
+    if (!includeShorter) continue;
+    for (const definition of shorterSeries(selection.definition, rulePackage)) {
+      const key = rulePackage.evaluateSkill(definition).identity;
+      const previous = planned.get(key);
+      const source = sources.get(key);
+      const currentD = rulePackage.evaluateSkill(selection.definition).difficulty.value;
+      const previousD = source && rulePackage.evaluateSkill(source.definition).difficulty.value;
+      const comparison = !source
+        ? -1
+        : currentD && previousD
+          ? currentD.compare(previousD)
+          : currentD
+            ? -1
+            : previousD
+              ? 1
+              : 0;
+      // Ved samme D vælges den laveste sikkerhed; rækkefølgen af markeringer har ingen betydning.
+      const tieWins = comparison === 0 && (selection.stability ?? 0) < (source?.stability ?? 0);
+      if (!previous || comparison < 0 || tieWins) {
+        planned.set(key, {
+          ...selection,
+          definition,
+          explicit: false,
+          sourceName: selection.definition.name,
+        });
+        sources.set(key, selection);
+      }
+    }
+  }
+  for (const selection of selections)
+    planned.set(rulePackage.evaluateSkill(selection.definition).identity, {
+      ...selection,
+      explicit: true,
+      sourceName: selection.definition.name,
+    });
+  return [...planned.values()];
+}
+
+/** Ét samlet kladderesultat. Ingen vurdering eller bekræftelse hentes fra en anden gymnast. */
+export function registerSpringBatch(
+  workspace: Workspace,
+  athleteId: string,
+  selections: readonly SpringSelection[],
+  rulePackage: RulePackage,
+  options: { includeShorter: boolean; assessedAt: string },
+) {
+  let result = workspace;
+  const plan = springRegistrationPlan(selections, rulePackage, options.includeShorter);
+  for (const entry of plan) {
+    const added = registerSpring(result, athleteId, entry.definition, rulePackage, false, null);
+    result = added.workspace;
+    let registration = result.athleteSkills.find((item) => item.id === added.registrationId)!;
+    if (registration.archived) continue;
+    let definition = result.skills.find((item) => item.id === registration.skillId)!;
+    if (
+      entry.confirmed &&
+      definition.discipline === 'tumbling' &&
+      rulePackage.evaluateSkill(definition, registration).connection === 'unverified'
+    ) {
+      // Også ældre, brugerbyggede serier kan være beskrevet som standard uden kendt kobling.
+      // Det konkrete valg bekræfter denne gymnasts hele serie, ikke en ny generel regelfortolkning.
+      if (definition.connection.kind !== 'custom') {
+        result = replaceAthleteSkill(result, registration.id, {
+          ...definition,
+          id: newEntityId(),
+          connection: { ...definition.connection, kind: 'custom' },
+        });
+        registration = result.athleteSkills.find((item) => item.id === registration.id)!;
+        definition = result.skills.find((item) => item.id === registration.skillId)!;
+      }
+      result = confirmConnection(
+        result,
+        registration.id,
+        entry.confirmationNote ||
+          `Træneren har markeret, at gymnasten kan udføre hele serien uden mellemtrin: ${definition.name}.`,
+      );
+    }
+    // Et tomt felt på en længere serie fjerner ikke en tidligere vurdering af dens begyndelse.
+    if (!entry.explicit && entry.stability === null && registration.stability !== null) continue;
+    result = updateAssessment(result, registration.id, {
+      stability: entry.stability,
+      assessedAt: entry.stability === null ? null : options.assessedAt,
+      note: registration.note,
+    });
+  }
+  return result;
 }

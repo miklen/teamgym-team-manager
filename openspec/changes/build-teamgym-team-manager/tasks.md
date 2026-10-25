@@ -181,3 +181,9 @@ Forberedelsesgrundlaget er allerede udarbejdet i [reference](reference/README.md
 - [x] 18.1 Gør et bredt søgbart bibliotek af komplette juniorserier til standardvalget; bevar Byg selv til sjældne varianter og præcise D-/forbindelsesbegrænsninger.
 - [x] 18.2 Medtag synlige, fravælgelige kortere begyndelser uden at kopiere stabilitet eller ændre eksisterende vurderinger/arkivering; verificér rondat-flik-1/1 → rondat og rondat-flik uden omvendt eller skruereducerende inferens.
 - [x] 18.3 Genbrug egne springdefinitioner på andre gymnaster efter gem/genåbn med selvstændig vurdering og forbindelsesbekræftelse; aflever browser-/domænekontrol, mobilvisning og dansk vejledning.
+
+## 19. Brugerens udvidelse: flervalg og nedarvet sikkerhed
+
+- [x] 19.1 Tilføj flueben og sikkerhed 1–5/ikke vurderet ved hvert spring, fælles dato og én samlet registrering; bevar valg mellem søgninger, grupper og bane/trampet.
+- [x] 19.2 Nedarv sikkerhed og dato til præcise kortere begyndelser fra den valgte serie med lavest D, med direkte kortere vurdering som forrang; verificér klikrækkefølge, dubletter, eksisterende noter og arkivering.
+- [x] 19.3 Erstat den tekniske bekræftelsestekst med forståelig angivelse af hele serier, bevar personlig bekræftelse uden kopiering, og aflever domæne-/browserkontrol, mobilbilleder og dansk vejledning.
