@@ -1,0 +1,561 @@
+import { useState } from 'react';
+import {
+  confirmConnection,
+  newEntityId,
+  registerAthleteSkill,
+  replaceAthleteSkill,
+  skillDefinitionSchema,
+} from '@teamgym/domain';
+import type { AthleteSkill, Discipline, ElementExecution, SkillDefinition, Workspace } from '@teamgym/domain';
+import type { RhythmCatalogEntry, RulePackage } from '@teamgym/rules';
+import { ActionForm, Decision, SkillBreakdown, SourceLinks, statusText } from './components';
+
+const positions = { tuck: 'Lukket', pike: 'Hoftebøjet', straight: 'Strakt' };
+const variants: Record<string, string> = {
+  'two-feet': 'To fødder',
+  'one-foot': 'Én fod',
+  'same-foot': 'Samme fod',
+  'opposite-foot': 'Modsatte fod',
+  together: 'Samlede',
+  straddle: 'Spredte',
+  seated: 'Siddende',
+  left: 'Venstre',
+  right: 'Højre',
+  forward: 'Fremad',
+  backward: 'Bagud',
+  sideways: 'Sidelæns',
+  standing: 'Stående',
+  kneeling: 'Knælende',
+  one: 'Én',
+  two: 'To',
+  tuck: 'Lukket',
+  pike: 'Hoftebøjet',
+  straight: 'Strakt',
+};
+const variantLabels: Record<string, string> = {
+  legs: 'Ben',
+  landing: 'Landing',
+  takeoff: 'Afsæt',
+  facing: 'Front',
+  side: 'Side',
+  supportLeg: 'Støtteben',
+  handSupport: 'Håndstøtte',
+  bodyPosition: 'Kropsposition',
+  startOrientation: 'Startretning',
+  startLevel: 'Startniveau',
+};
+export function variantText(variant: Readonly<Record<string, string | number | boolean>>) {
+  return Object.entries(variant)
+    .map(([key, value]) => `${variantLabels[key] ?? key}: ${variants[String(value)] ?? value}`)
+    .join(' · ');
+}
+export function SkillEditor({
+  workspace,
+  athleteId,
+  rulePackage,
+  save,
+  openExisting,
+  registration,
+  initialDiscipline = 'tumbling',
+  initialMoment,
+}: {
+  workspace: Workspace;
+  athleteId: string;
+  rulePackage: RulePackage;
+  save: (workspace: Workspace) => void;
+  openExisting: (registrationId: string) => void;
+  registration?: AthleteSkill | undefined;
+  initialDiscipline?: Discipline;
+  initialMoment?: RhythmCatalogEntry | undefined;
+}) {
+  const original = registration
+    ? workspace.skills.find((skill) => skill.id === registration.skillId)
+    : undefined;
+  const [discipline, setDiscipline] = useState<Discipline>(original?.discipline ?? initialDiscipline);
+  const [query, setQuery] = useState('');
+  const [elements, setElements] = useState<ElementExecution[]>(
+    original?.discipline === 'tumbling'
+      ? structuredClone(original.elements)
+      : original?.discipline === 'trampet'
+        ? [structuredClone(original.jump)]
+        : [],
+  );
+  const [momentId, setMomentId] = useState(
+    original?.discipline === 'rhythm'
+      ? original.momentId
+      : (initialMoment?.id ?? rulePackage.rhythmCatalog[0]!.id),
+  );
+  const moment = rulePackage.rhythmCatalog.find((item) => item.id === momentId);
+  const [variant, setVariant] = useState<Record<string, string | number | boolean>>(
+    original?.discipline === 'rhythm'
+      ? original.variant
+      : Object.fromEntries(
+          (initialMoment ?? rulePackage.rhythmCatalog[0])!.options.map((option) => [
+            option.key,
+            option.defaultValue,
+          ]),
+        ),
+  );
+  const [custom, setCustom] = useState(
+    original?.discipline === 'tumbling' && original.connection.kind === 'custom',
+  );
+  const [confirm, setConfirm] = useState(false);
+  const [confirmation, setConfirmation] = useState('');
+  const [name, setName] = useState(original?.name ?? '');
+  const [advanced, setAdvanced] = useState<number | null>(null);
+  const catalog = rulePackage.springCatalog.filter(
+    (item) =>
+      (discipline === 'tumbling'
+        ? item.execution.apparatus === 'floor'
+        : item.execution.apparatus !== 'floor') &&
+      `${item.name} ${item.officialCode} ${item.aliases.join(' ')}`
+        .toLocaleLowerCase('da-DK')
+        .includes(query.toLocaleLowerCase('da-DK')),
+  );
+  function definition(): SkillDefinition {
+    const base = {
+      id: newEntityId(),
+      name:
+        name.trim() ||
+        (discipline === 'rhythm'
+          ? (moment?.name ?? 'Ukendt moment')
+          : elements
+              .map(
+                (element) =>
+                  rulePackage.springCatalog.find(
+                    (item) => JSON.stringify(item.execution) === JSON.stringify(element),
+                  )?.name ?? 'Formelvariant',
+              )
+              .join(' → ')),
+      archived: false,
+    };
+    return skillDefinitionSchema.parse(
+      discipline === 'rhythm'
+        ? { ...base, discipline, momentId, variant }
+        : discipline === 'trampet'
+          ? { ...base, discipline, jump: elements[0] }
+          : {
+              ...base,
+              discipline,
+              elements,
+              connection: {
+                kind: custom ? 'custom' : 'standard',
+                transitions: elements
+                  .slice(1)
+                  .map(() =>
+                    custom ? 'Trænerbeskrevet direkte forbindelse' : 'Direkte standardforbindelse',
+                  ),
+              },
+            },
+    );
+  }
+  let preview: SkillDefinition | null = null;
+  try {
+    preview = definition();
+  } catch {
+    /* Formularen forklarer manglende valg. */
+  }
+  const evaluation = preview && preview.discipline !== 'rhythm' ? rulePackage.evaluateSkill(preview) : null;
+  return (
+    <ActionForm
+      label={registration ? 'Erstat udførelse i kladde' : 'Registrér færdighed'}
+      submit={() => {
+        const skill = definition();
+        let result: Workspace;
+        let registrationId: string;
+        if (registration) {
+          result = replaceAthleteSkill(workspace, registration.id, skill);
+          registrationId = registration.id;
+        } else {
+          const normalizedKey =
+            skill.discipline === 'rhythm'
+              ? rulePackage.bindRhythm(skill).key
+              : rulePackage.evaluateSkill(skill).identity;
+          const existing =
+            normalizedKey &&
+            workspace.athleteSkills.find((item) => {
+              if (item.athleteId !== athleteId) return false;
+              const previous = workspace.skills.find((definition) => definition.id === item.skillId)!;
+              if (previous.discipline !== skill.discipline) return false;
+              return (
+                (previous.discipline === 'rhythm'
+                  ? rulePackage.bindRhythm(previous).key
+                  : rulePackage.evaluateSkill(previous).identity) === normalizedKey
+              );
+            });
+          if (existing) {
+            openExisting(existing.id);
+            return;
+          }
+          const created = registerAthleteSkill(workspace, athleteId, skill);
+          if (created.existed) {
+            openExisting(created.athleteSkillId);
+            return;
+          }
+          result = created.workspace;
+          registrationId = created.athleteSkillId;
+        }
+        if (custom && confirm) result = confirmConnection(result, registrationId, confirmation);
+        save(result);
+      }}
+    >
+      <label>
+        Disciplin
+        <select
+          value={discipline}
+          disabled={!!registration}
+          onChange={(event) => {
+            setDiscipline(event.target.value as Discipline);
+            setElements([]);
+            setName('');
+          }}
+        >
+          <option value="tumbling">Bane</option>
+          <option value="trampet">Trampet</option>
+          <option value="rhythm">Rytme</option>
+        </select>
+      </label>
+      <label>
+        Navn på færdighed
+        <input
+          value={name}
+          onChange={(event) => setName(event.target.value)}
+          placeholder="Udfyldes fra dine valg, hvis feltet er tomt"
+          maxLength={200}
+        />
+      </label>
+      {discipline === 'rhythm' ? (
+        <>
+          <label>
+            Moment
+            <select
+              value={momentId}
+              onChange={(event) => {
+                const selected = rulePackage.rhythmCatalog.find((item) => item.id === event.target.value)!;
+                setMomentId(selected.id);
+                setVariant(
+                  Object.fromEntries(selected.options.map((option) => [option.key, option.defaultValue])),
+                );
+              }}
+            >
+              {!moment && <option value={momentId}>Ukendt kobling: {momentId}</option>}
+              {[...new Set(rulePackage.rhythmCatalog.map((item) => item.category))].map((category) => (
+                <optgroup key={category} label={category}>
+                  {rulePackage.rhythmCatalog
+                    .filter((item) => item.category === category)
+                    .map((item) => (
+                      <option key={item.id} value={item.id}>
+                        {item.officialCode} · {item.name} · {item.value.replace('.', ',')}
+                      </option>
+                    ))}
+                </optgroup>
+              ))}
+            </select>
+          </label>
+          {moment && (
+            <>
+              <p>{moment.specificRequirement}</p>
+              {moment.options.map((option) => (
+                <label key={option.key}>
+                  {option.label}
+                  <select
+                    value={String(variant[option.key] ?? option.defaultValue)}
+                    onChange={(event) => setVariant({ ...variant, [option.key]: event.target.value })}
+                  >
+                    {option.values.map((value) => (
+                      <option key={value} value={value}>
+                        {variants[value] ?? value}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+              ))}
+              <details>
+                <summary>Udførelseskrav og kilde</summary>
+                {[
+                  ...moment.generalRequirements,
+                  ...moment.categoryRequirements,
+                  ...moment.rowRequirements,
+                ].map((requirement) => (
+                  <p key={requirement}>{requirement}</p>
+                ))}
+                <SourceLinks sources={[moment.source]} rulePackage={rulePackage} />
+              </details>
+            </>
+          )}
+        </>
+      ) : (
+        <>
+          <h3>
+            {discipline === 'tumbling' ? 'Komplet serie i udførelsesrækkefølge' : 'Komplet trampetspring'}
+          </h3>
+          {elements.length === 0 && (
+            <p className="empty">
+              Vælg {discipline === 'tumbling' ? 'seriens første element' : 'et spring'} i kataloget.
+            </p>
+          )}
+          <ol className="element-list">
+            {elements.map((element, index) => (
+              <li key={index}>
+                <span>
+                  {rulePackage.springCatalog.find(
+                    (item) => JSON.stringify(item.execution) === JSON.stringify(element),
+                  )?.name ??
+                    `${element.family} · ${element.rotationQuarterTurns / 4} rotation · ${element.twistsHalfTurns * 180}°`}
+                </span>
+                {evaluation?.elementValues[index] && (
+                  <small>
+                    Element-D: <Decision value={evaluation.elementValues[index].value} />
+                  </small>
+                )}
+                <button
+                  type="button"
+                  className="quiet"
+                  onClick={() => setAdvanced(advanced === index ? null : index)}
+                >
+                  Variant {index + 1}
+                </button>
+                <button
+                  type="button"
+                  className="quiet"
+                  disabled={index === 0}
+                  aria-label={`Flyt element ${index + 1} op`}
+                  onClick={() => {
+                    const copy = [...elements];
+                    [copy[index - 1], copy[index]] = [copy[index]!, copy[index - 1]!];
+                    setElements(copy);
+                  }}
+                >
+                  ↑
+                </button>
+                <button
+                  type="button"
+                  className="quiet"
+                  aria-label={`Fjern element ${index + 1}`}
+                  onClick={() => setElements(elements.filter((_, position) => position !== index))}
+                >
+                  ×
+                </button>
+              </li>
+            ))}
+          </ol>
+          {advanced !== null && elements[advanced] && (
+            <ElementVariant
+              value={elements[advanced]}
+              change={(value) =>
+                setElements(elements.map((item, index) => (index === advanced ? value : item)))
+              }
+            />
+          )}
+          <label>
+            Søg spring, kode eller alias
+            <input type="search" value={query} onChange={(event) => setQuery(event.target.value)} />
+          </label>
+          <div className="catalog-results" aria-label="Springkatalog">
+            {catalog.map((item) => (
+              <button
+                type="button"
+                className="catalog-option"
+                key={item.referenceId}
+                onClick={() => {
+                  setElements(
+                    discipline === 'trampet'
+                      ? [structuredClone(item.execution)]
+                      : [...elements, structuredClone(item.execution)],
+                  );
+                  setAdvanced(null);
+                }}
+              >
+                <span>
+                  {item.name}
+                  <small>
+                    {item.officialCode} · {item.source.sourceId} ·{' '}
+                    {item.status === 'allowed'
+                      ? 'Kendt variant'
+                      : item.status === 'forbidden'
+                        ? 'Forbudt i DK'
+                        : `Uafklaret ${item.issueId}`}
+                  </small>
+                </span>
+                <strong>{item.printedValue.replace('.', ',')}</strong>
+              </button>
+            ))}
+          </div>
+          {discipline === 'tumbling' && (
+            <>
+              <label className="check">
+                <input
+                  type="checkbox"
+                  checked={custom}
+                  onChange={(event) => setCustom(event.target.checked)}
+                />
+                Specialforbindelse uden kendt standardkobling
+              </label>
+              {custom && (
+                <>
+                  <p className="muted">
+                    Bekræft kun en konkret komplet serie. Bekræftelsen gør ikke forbudte eller uafklarede
+                    elementer gyldige.
+                  </p>
+                  <label className="check">
+                    <input
+                      type="checkbox"
+                      checked={confirm}
+                      onChange={(event) => setConfirm(event.target.checked)}
+                    />
+                    Jeg har verificeret gymnastens præcise forbindelse
+                  </label>
+                  {confirm && (
+                    <label>
+                      Beskrivelse af forbindelsen
+                      <textarea
+                        value={confirmation}
+                        onChange={(event) => setConfirmation(event.target.value)}
+                        required
+                        maxLength={2000}
+                      />
+                    </label>
+                  )}
+                </>
+              )}
+            </>
+          )}
+          {evaluation && (
+            <section className="inline-analysis">
+              <h3>Planlagt D</h3>
+              <Decision value={evaluation.difficulty} />
+              <SkillBreakdown evaluation={evaluation} />
+              <p>
+                Gyldighed: {statusText[evaluation.validity]} · forbindelse:{' '}
+                {evaluation.connection === 'verified'
+                  ? 'Kendt'
+                  : evaluation.connection === 'invalid'
+                    ? 'Ugyldig'
+                    : 'Kræver konkret bekræftelse'}
+              </p>
+              <SourceLinks sources={evaluation.explanation.sources} rulePackage={rulePackage} />
+              {evaluation.explanation.notes.map((note) => (
+                <p key={note}>{note}</p>
+              ))}
+            </section>
+          )}
+        </>
+      )}
+      {registration && (
+        <p className="notice">
+          Når den konkrete udførelse ændres, bevares omgangspladserne, og stabilitet og
+          forbindelsesbekræftelse skal vurderes på ny.
+        </p>
+      )}
+    </ActionForm>
+  );
+}
+
+function ElementVariant({
+  value,
+  change,
+}: {
+  value: ElementExecution;
+  change: (value: ElementExecution) => void;
+}) {
+  const [distribution, setDistribution] = useState(value.twistDistribution.join(','));
+  function update(patch: Partial<ElementExecution>) {
+    change({ ...value, ...patch });
+  }
+  return (
+    <fieldset className="variant-fields">
+      <legend>Præcis formelvariant</legend>
+      <div className="form-grid">
+        <label>
+          Rotationer
+          <select
+            value={value.rotationQuarterTurns / 4}
+            onChange={(event) => update({ rotationQuarterTurns: Number(event.target.value) * 4 })}
+          >
+            {[1, 2, 3].map((number) => (
+              <option key={number}>{number}</option>
+            ))}
+          </select>
+        </label>
+        <label>
+          Samlet skrue (grader)
+          <input
+            type="number"
+            min={0}
+            max={3600}
+            step={180}
+            value={value.twistsHalfTurns * 180}
+            onChange={(event) =>
+              update({ twistsHalfTurns: Number(event.target.value) / 180, twistDistribution: [] })
+            }
+          />
+        </label>
+        <label>
+          Retning
+          <select
+            value={value.direction}
+            onChange={(event) => update({ direction: event.target.value as ElementExecution['direction'] })}
+          >
+            <option value="forward">Forlæns</option>
+            <option value="backward">Baglæns</option>
+            <option value="sideways">Sidelæns</option>
+          </select>
+        </label>
+      </div>
+      {value.bodyPositions.map((position, index) => (
+        <label key={index}>
+          Kropsposition {index + 1}
+          <select
+            value={position}
+            onChange={(event) =>
+              update({
+                bodyPositions: value.bodyPositions.map((item, position) =>
+                  position === index ? (event.target.value as typeof item) : item,
+                ),
+              })
+            }
+          >
+            {Object.entries(positions).map(([key, label]) => (
+              <option value={key} key={key}>
+                {label}
+              </option>
+            ))}
+          </select>
+        </label>
+      ))}
+      <div className="actions">
+        <button
+          type="button"
+          className="quiet"
+          onClick={() => update({ bodyPositions: [...value.bodyPositions, 'tuck'], twistDistribution: [] })}
+        >
+          Tilføj salto-kropsposition
+        </button>
+        <button
+          type="button"
+          className="quiet"
+          disabled={value.bodyPositions.length === 1}
+          onClick={() => update({ bodyPositions: value.bodyPositions.slice(0, -1), twistDistribution: [] })}
+        >
+          Fjern sidste kropsposition
+        </button>
+      </div>
+      <label>
+        Skruefordeling pr. salto (antal halve skruer, fx 1,0)
+        <input
+          value={distribution}
+          onChange={(event) => {
+            setDistribution(event.target.value);
+            const parts = event.target.value.trim() ? event.target.value.split(',').map(Number) : [];
+            if (parts.every((number) => Number.isInteger(number) && number >= 0))
+              update({ twistDistribution: parts });
+          }}
+        />
+      </label>
+      <p className="muted">
+        Kropsposition, rotationer og skruefordeling skal passe sammen. Ukendte koblinger forbliver uafklarede;
+        der opfindes ingen officiel kode.
+      </p>
+    </fieldset>
+  );
+}

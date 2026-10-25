@@ -1,6 +1,17 @@
 # Regelgrundlag til implementering
 
-Kontrolleret 25. oktober 2026. Læs denne mappe før opgavegruppe 2 og før implementering af regelpakken. Materialet er et konkret fagligt arbejdsgrundlag; der er endnu ingen applikation eller beståede implementeringstests.
+Kontrolleret 25. oktober 2026. Læs denne mappe før opgavegruppe 2 og før implementering af regelpakken. Materialet er det faste faglige arbejdsgrundlag. Implementeringskontrollen nedenfor er tilføjet efter planlægningen og må ikke forveksles med ekstern dommergodkendelse.
+
+## Implementeringskontrol
+
+- Alle 103 springposter og 94 individuelle rytmefelter er indlæst i versionsbundne kataloger med krav, kilder og status. Source-manifestets otte hashes kontrolleres ved bygning.
+- A3/A4-tabellerne og alle 13 A1.1-sider er genlæst visuelt under modelimporten. Gumbi-start og fælles håndhjælp er kontrolleret i den fastlåste Q&A side 3. Denne kontrol er udført af samme implementeringsagent, ikke en ekstern dommer.
+- Alle 77 faste facitcases er eksekverbare og består med forventninger fra referencefilen og en semantisk inputadapter. Produktionsmoduler importerer ikke facit. Der er yderligere fulde integrationschecks gennem filmodel, registrering, seks omgange, D/C, potentiale og rytme.
+- Kode-/testspor til alle 24 matrixrækker samt potentiale, rytme og eksplicit scope findes i `packages/rules/src/traceability.ts`. K/U/O/X og inputunivers/formler bevares; Q01–Q06 og K01/K02 er ikke fjernet eller selvafklaret.
+- Fire bevidste fejl i isolerede kodekopier er fanget af assertions: juniorgrænse 360° i stedet for 540°, forkert fliksats, dobbelttalt flik og C-filtrering på justeret D. Produktionsfilerne ændres ikke af mutationskontrollen.
+- Ingen ekstern dommergodkendelse er indhentet, og ingen faglige svar på Q01–Q06 foreligger. Visuel kontrol, samme agents håndregning, automatiske tests og mutationskontrol beskrives som forskellige kontrolformer. De uafklarede tilfælde forbliver uafklarede.
+
+Se [beregningsvejledningen](../../../../docs/regler-og-katalog.md), [regelvedligeholdelse](../../../../docs/regelvedligeholdelse.md) og [aktuel implementeringsstatus](../../../../docs/implementeringsstatus.md) for kommandoer og samlet fremdrift. UI, Drive og endelig browseraccept afsluttes særskilt.
 
 | Fil | Anvendelse |
 | --- | --- |

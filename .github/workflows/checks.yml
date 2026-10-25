@@ -1,0 +1,32 @@
+name: Kontrol
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  checks:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci
+      - run: npm run check
+      - run: npm run test:domain
+      - run: npm run test:drive
+      - run: npm run test:mutations
+      - run: npm run build
+        env:
+          # Kun CI-testbyg: alle Google-kald i auth-browserchecken interceptes.
+          VITE_GOOGLE_CLIENT_ID: synthetic-ci.apps.googleusercontent.com
+          VITE_GOOGLE_PROJECT_NUMBER: '123456789'
+          VITE_GOOGLE_API_KEY: synthetic-ci-browser-key
+      - run: npx playwright install --with-deps chromium
+      - run: npm run test:e2e
