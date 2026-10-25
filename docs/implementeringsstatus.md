@@ -1,6 +1,14 @@
 # Implementeringskontrol · 25. oktober 2026
 
-Change: `build-teamgym-team-manager`, schema `spec-driven`. **5/122 opgaver fuldført:** 1.1–1.4 og 2.1. Dette er projektgrundlag; det samlede produkt er ikke implementeret eller frigivet.
+Change: `build-teamgym-team-manager`, schema `spec-driven`. **16/122 opgaver fuldført:** 1.1–1.4, 2.1–2.4, 3.1–3.7 og 6.1. Det samlede produkt er ikke implementeret eller frigivet.
+
+## Seneste implementering
+
+Arbejdsrumsformat 1, strenge skemaer, serialisering, medlems-/arkiveringskommandoer, seks omgange, vurderinger og stabilitetsaggregater er implementeret. Se [filformatet](filformat.md) og det validerede [syntetiske eksempel](../examples/arbejdsrum-v1.json). Eksakte rationelle point og panelnedrunding er tilføjet; de sportslige beregningsmoduler er endnu ikke færdige.
+
+Alle 103 springkildeposter og 94 individuelle rytmeposter er indlæst med status, værdier, identiteter og krav. A3/A4 og A1.1 side 1–13 er genlæst visuelt under implementeringen; Gumbi-start og fælles håndhjælp er suppleret med den fastlåste Q&A side 3. Denne kontrol er udført af implementeringsagenten og er ikke ekstern dommergodkendelse. Teknisk Regulativs DK-profiler henviser korrekt til 1.3 på PDF-side 4.
+
+`npm run check` og `npm run test:domain` består nu med 59 tests. De dækker domæneinvarianter, de to stabilitetseksempler, alle kildeposter, nominelle profiler og eksakt panelnedrunding. De 77 sportslige facitcases er endnu ikke omsat til en bestået samlet suite. Den oprindelige CI-kørsel nedenfor gælder projektgrundlaget før disse seneste tilføjelser.
 
 ## Leveret
 
@@ -33,11 +41,15 @@ På Windows krævede Playwright kørsel uden værktøjssandbox for korrekt afslu
 
 Planlægningsgrundlaget og implementeringsbranchen er publiceret til målrepoet uden force-push. [Sammenlign ændringen](https://github.com/miklen/teamgym-team-manager/compare/main...feat/build-teamgym-team-manager). Forsøg på draft-PR blev afvist med `403 Resource not accessible by integration`; browseren havde ingen aktiv GitHub-login. Der er derfor ikke oprettet en PR eller foretaget merge.
 
-## Åbent før næste trin
+## Opdateret Google-/testbeslutning
+
+Brugeren har efter denne grundkontrol leveret offentlig Google-konfiguration og bekræftet fungerende login med én konto. Konfigurationen ligger i Git-ignoreret `.env.local`; client secret er ikke kopieret til app eller build. Efter [brugerbeslutningen](testbeslutning-2026-10-25.md) fortsætter implementering og første publicering nu, og brugeren udfører live test med trænerteamet i produktion. Det er ikke et bestået T01-/to-konto-testresultat.
+
+## Åbent i det videre arbejde
 
 1. Færdiggør og verificér faktisk Pages-publicering (resten af 1.5).
-2. Konfigurér Google Cloud-projektet med de offentlige værdier i `.env.example` og fremskaf en anden autoriseret testkonto. Brugeren har oplyst at have én konto. Mappen alene erstatter ikke OAuth/Picker-konfiguration eller anden konto.
-3. Kør T01/DRIVE01–DRIVE05 fra rigtig Pages-origin efter [Google-/T01-vejledningen](google-t01.md). To sessioner på samme konto opfylder ikke det nuværende krav om to konti.
-4. Fortsæt de øvrige domæne-, regel- og UI-opgaver. En særskilt brugerbeslutning kan lade dette arbejde fortsætte, mens den eksterne T01-verifikation står åben; det ændrer ikke frigivelseskravet.
+2. Kontrollér Google API-adgang, nøglebegrænsninger og offentlig konfiguration ved Pages-publicering. Lokal login er bekræftet; øvrige Google-forløb skal stadig afprøves.
+3. Kør de tilgængelige T01/DRIVE01–DRIVE05-tests fra rigtig Pages-origin efter [Google-/T01-vejledningen](google-t01.md). Brugeren udfører den udskudte test med trænerteamets separate konti efter første publicering.
+4. Fortsæt de øvrige domæne-, regel- og UI-opgaver efter brugerens udtrykkelige beslutning. Bevar den udskudte eksterne verifikation som udestående.
 
 Ingen filer i brugerens Google-mappe er ændret. Ingen private gymnastdata, Google-tokens eller lokale credentials er medtaget.

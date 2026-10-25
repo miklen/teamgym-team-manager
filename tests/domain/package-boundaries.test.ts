@@ -3,7 +3,7 @@ import ts from 'typescript';
 import { expect, it } from 'vitest';
 
 it('holder domæne og regler fri af UI, Google, Node og netværksbiblioteker', () => {
-  const allowedDependencies = new Set(['@teamgym/domain', '@teamgym/rules']);
+  const allowedDependencies = new Set(['@teamgym/domain', '@teamgym/rules', 'zod']);
   for (const path of globSync('packages/{domain,rules}/src/**/*.ts')) {
     const source = ts.createSourceFile(path, readFileSync(path, 'utf8'), ts.ScriptTarget.Latest, true);
     function visit(node: ts.Node) {

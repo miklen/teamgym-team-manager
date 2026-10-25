@@ -2,7 +2,9 @@
 
 ## Status
 
-**Ikke udført.** Brugeren har én Google-konto og har angivet en mappe. Mappe-id'et gemmes ikke i det offentlige repo. Der er ikke konfigureret et Google Cloud-projekt her, og ingen fil i mappen er ændret. T01 kræver to autoriserede konti, faktisk browser-CORS og test fra `https://miklen.github.io`.
+**Delvist afprøvet.** Offentlig Google-konfiguration er indlæst i Git-ignoreret `.env.local`; de tre JavaScript-origins er kontrolleret i den downloadede OAuth-fil. Brugeren har bekræftet, at login virker med én konto. Ingen fil i den oplyste Drive-mappe er ændret af agenten. CORS, betinget medieupload og samtidig gemning er endnu ikke verificeret mod Google.
+
+Efter [brugerens beslutning 25. oktober 2026](testbeslutning-2026-10-25.md) er den ene konto tilstrækkelig nu. Implementering og første publicering fortsætter; brugeren udfører live test med trænerteamets separate konti i produktion. T01's to-konto-del er udskudt, ikke bestået.
 
 `tools/t01` er en særskilt afprøvningsside, ikke appens produktionsadapter. CI bruger injiceret netværk; beståede CI-tests er ikke Drive-bevis. Den samlede app er ikke frigivet.
 
@@ -11,7 +13,7 @@
 1. Opret eller vælg ét Google Cloud-projekt. Aktivér Google Drive API og Google Picker API.
 2. Opsæt OAuth consent screen. Ved teststatus skal begge testkonti tilføjes som testbrugere. Brug kun `https://www.googleapis.com/auth/drive.file` i den første afprøvning.
 3. Opret et OAuth-klient-id af typen webapp. Registrér JavaScript-origin `https://miklen.github.io` uden repo-sti og separat `http://127.0.0.1:5173` til udvikling. T01 lokalt via preview kræver også `http://127.0.0.1:4173`. Der bruges ingen client secret.
-4. Opret en browser-API-nøgle i samme projekt. Begræns HTTP-referrers til den aftalte Pages-sti og de valgte lokale testadresser. Begræns API-adgang til de aktiverede API'er. Brug projektnummeret, ikke projektnavnet, til Picker.
+4. Opret en browser-API-nøgle i samme projekt. Begræns Websites til `https://miklen.github.io/*`, `https://docs.google.com/*` og de valgte lokale testadresser med `/*`. Picker bruger en iframe på `docs.google.com`; origin-baserede referrers må ikke fejlagtigt kræve repo-stien. Begræns API-adgang til Google Picker API og Google Drive API. Brug projektnummeret, ikke projektnavnet, til Picker.
 5. Udfyld `VITE_GOOGLE_CLIENT_ID`, `VITE_GOOGLE_PROJECT_NUMBER` og `VITE_GOOGLE_API_KEY` i `.env.local`. Ved Pages placeres de samme offentlige værdier som repository Variables. Genbyg derefter; variablerne læses ved build.
 6. Angiv projekt-id, consent-status, registrerede origins og restriktioner i en lokal opsætningsnote. Ingen brugertokens, client secrets eller persondata i noten eller repoet.
 
@@ -45,4 +47,4 @@ Loginoplysninger holdes kun i testsidens hukommelse og ryddes ved afbrydelse/udl
 
 Registrér dato, commit, origin, to særskilte anonymiserede kontobetegnelser, antal gentagelser, HTTP-status, CORS-resultat, versioner og før/efter-hash. Gem kun redigerede testlogs uden Authorization, tokens, kontonavne eller rå HAR-filer. Testsidens eksport mærkes altid `unverified`; en eksport er ikke automatisk godkendelse.
 
-Kandidaten følger [Drive v2 files.update](https://developers.google.com/workspace/drive/api/reference/rest/v2/files/update) og sender `PUT /upload/drive/v2/files/{fileId}?uploadType=media` med præcis indlæst `If-Match`. At v2 dokumenterer etag er ikke i sig selv bevis for uploadens atomiske effekt. Produktionsadapteren må først betegnes sikker efter den specificerede reelle test. Hvis kravet om to konti ønskes ændret, kræver det et eksplicit valg og en opdatering af krav/design; én konto i to faner opfylder ikke det aktuelle acceptkrav.
+Kandidaten følger [Drive v2 files.update](https://developers.google.com/workspace/drive/api/reference/rest/v2/files/update) og sender `PUT /upload/drive/v2/files/{fileId}?uploadType=media` med præcis indlæst `If-Match`. At v2 dokumenterer etag er ikke i sig selv bevis for uploadens atomiske effekt. Én konto i to faner kan afprøve skrivekapløb, men beviser ikke rettigheder mellem forskellige brugere. Den sidste del udfører brugeren med trænerteamet efter første publicering; der må indtil da ikke påstås bestået to-konto-verifikation.

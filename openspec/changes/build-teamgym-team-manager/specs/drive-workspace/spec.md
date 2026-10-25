@@ -73,7 +73,7 @@ Systemet SHALL kontrollere den aktuelle kontos læse-/skriveadgang ved åbning o
 - **THEN** afvises gemningen, og det lokale arbejde bevares uden beskeden »gemt«.
 
 ### Requirement: Konfliktbeskyttet gemning
-Systemet MUST knytte en gemning til den indlæste filversion og MUST afvise forældede gemninger. To appsessioner, der gemmer samme basisversion, MUST NOT begge kunne overskrive filen. Konfliktkontrollen MUST omfatte kapløbet mellem kontrol og skrivning ved en atomisk betinget Drive-indholdsopdatering direkte fra browseren. Den konkrete API-/uploadtype SHALL bestå T01 i reference/github-pages-drive.md med faktisk CORS og to selvstændige konti, før sikker delt gemning betegnes implementeret. En ekstra versionslæsning, browserlås, låsefelt i JSON eller ubetinget upload MUST NOT erstatte dette bevis. Backend MUST NOT indføres som fallback.
+Systemet MUST knytte en gemning til den indlæste filversion og MUST afvise forældede gemninger. To appsessioner, der gemmer samme basisversion, MUST NOT begge kunne overskrive filen. Konfliktkontrollen MUST omfatte kapløbet mellem kontrol og skrivning ved en atomisk betinget Drive-indholdsopdatering direkte fra browseren. Den konkrete API-/uploadtype SHALL afprøves efter T01 i reference/github-pages-drive.md. Efter brugerens udtrykkelige beslutning 25. oktober 2026 MAY implementering og første publicering fortsætte med én konto, mens brugeren udfører live test med trænerteamets separate konti i produktion. Den udskudte test MUST registreres som udestående og MUST NOT betegnes bestået. En ekstra versionslæsning, browserlås, låsefelt i JSON eller ubetinget upload MUST NOT erstatte betinget skrivning. Backend MUST NOT indføres som fallback.
 
 #### Scenario: En anden træner har gemt
 - **WHEN** A og B har indlæst version 7, A gemmer version 8, og B forsøger at gemme sit arbejde baseret på version 7
@@ -89,7 +89,7 @@ Systemet MUST knytte en gemning til den indlæste filversion og MUST afvise for�
 
 #### Scenario: Betinget upload er ikke bevist
 - **WHEN** den konkrete media-upload/CORS-test ikke kan dokumentere atomisk afvisning af en gammel filrevision
-- **THEN** forbliver sikker delt gemning en teknisk frigivelsesblokering med dokumenteret årsag; appen må ikke erklæres færdig med ubetinget upload eller en skjult backend.
+- **THEN** beskrives verifikationen som udestående, og den aftalte live test med trænerteamet udføres efter første publicering; en faktisk påvist accept af gammel betingelse blokerer den defekte skrivevej, og appen må ikke bruge ubetinget upload eller en skjult backend.
 
 ### Requirement: Bevidst håndtering af konflikt
 Ved konflikt SHALL brugeren kunne bevare en lokal kopi af sit arbejde, indlæse den nyeste fil efter bekræftelse af kassation eller fortsætte med at gennemse kladden. Automatisk sammenfletning og en automatisk »overskriv alligevel«-handling MUST NOT forekomme.

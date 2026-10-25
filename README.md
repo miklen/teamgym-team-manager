@@ -2,7 +2,7 @@
 
 Dansk trænerarbejdsplads til hold, færdigheder og springplanlægning. Målrepo: [miklen/teamgym-team-manager](https://github.com/miklen/teamgym-team-manager).
 
-**Status:** Projektgrundlag under implementering. Appskallen er endnu ikke et brugbart trænerprodukt. Den samlede [OpenSpec-change](openspec/changes/build-teamgym-team-manager/proposal.md) omfatter alle ti capabilities; [opgavelisten](openspec/changes/build-teamgym-team-manager/tasks.md) viser den faktiske fremdrift. Google-integration og T01 er ikke verificeret.
+**Status:** Under implementering. Filmodel, domænekommandoer, stabilitet og kildekatalog er tilføjet; appskallen er endnu ikke et brugbart trænerprodukt. Den samlede [OpenSpec-change](openspec/changes/build-teamgym-team-manager/proposal.md) omfatter alle ti capabilities; [opgavelisten](openspec/changes/build-teamgym-team-manager/tasks.md) og [kontrolrapporten](docs/implementeringsstatus.md) viser fremdriften. Brugeren har bekræftet Google-login med én konto; flerbrugerverifikation er efter [brugerbeslutningen](docs/testbeslutning-2026-10-25.md) udskudt til live test i produktion.
 
 ## Start fra et rent checkout
 

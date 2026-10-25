@@ -16,3 +16,10 @@ export interface Diagnostic {
   affectedIds: readonly EntityId[];
   sources: readonly SourceReference[];
 }
+
+export * from './schema';
+export * from './identity';
+export * from './workspace';
+export * from './stability';
+export * from './commands';
+export * from './fraction';

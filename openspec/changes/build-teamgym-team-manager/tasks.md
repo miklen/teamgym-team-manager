@@ -8,16 +8,16 @@
 - [x] 1.4 Dokumentér startkommandoer, miljøvariabler og grænsen mellem offentlige kilde-/testdata og private trænerdata; verificér at miljøeksempler er uden hemmeligheder, og at udviklingsdata kun er syntetiske.
 
 - [ ] 1.5 Opsæt GitHub Actions-checks og Pages-publicering med korrekt artifact, Pages/OIDC-rettigheder, miljø og deployment-concurrency; verificér repo-base `/teamgym-team-manager/`, hash-dyblink, genindlæsning og offentlig konfiguration uden client secret. Ingen backend må være nødvendig ved drift.
-- [ ] 1.6 Udfør T01 fra reference/github-pages-drive.md tidligt med to autoriserede testkonti og en særskilt JSON-testfil: direkte Drive v2 etag/media-If-Match-kandidat, faktisk CORS og samtidige/stale requests; dokumentér atomisk afvisning af gammel basis før adapteren betegnes sikker. Ingen ubetinget upload eller serverfallback, hvis testen fejler.
+- [ ] 1.6 Udfør tilgængelige T01-tests fra reference/github-pages-drive.md med den ene autoriserede konto og en særskilt JSON-testfil: direkte Drive v2 etag/media-If-Match-kandidat, faktisk CORS og samtidige/stale requests. Efter brugerbeslutning 25. oktober 2026 udfører brugeren to-konto-live-test med trænerteamet efter første publicering; denne del forbliver udestående, ikke bestået. Ingen ubetinget upload eller serverfallback, hvis testen fejler.
 
 ## 2. Reproducerbare regelkilder og katalogdækning
 
 Forberedelsesgrundlaget er allerede udarbejdet i [reference](reference/README.md): otte hashregistrerede PDF'er, to komplette dækningslister, regelmatrix, rytmekrav, 77 faste facitcases og seks konkrete faglige spørgsmål. Nedenstående er implementerings- og importkontrol; materialet må ikke erstattes af et nyt, mindre katalog. Ingen appopgave er markeret udført alene på grund af denne planlægning.
 
 - [x] 2.1 Indlæs det medfølgende source-manifest.json og bevar de otte kildefiler; verificér alle hashes fra et rent checkout uden parent-mappen og stop ved ændrede bytes frem for at hente en nyere udgave stiltiende.
-- [ ] 2.2 Bind DK-profilerne til den medfølgende Teknisk Regulativ 26/27 og hovedreglement v1.4; verificér U14/junior/senior, piger/drenge/mix og at U11 ikke udbydes som DK. Hold fuld licens-/aldersberettigelse uden for produktets løfte.
-- [ ] 2.3 Importér alle 103 A3/A4-kildeposter fra spring-source-catalog.csv til versionsbundet katalog/diagnostik; kontrollér post-for-post mod kilde og import, at 83 tilladte, 19 forbudte ogén uafklaret er bevaret, og at startposter/alias ikke bliver falske nye identiteter.
-- [ ] 2.4 Importér alle 94 individuelle A1.1-felter og deres generelle, kategori-, række- og cellekrav efter rhythm-catalog.csv/rhythm-requirements.md; verificér den implementerede model visuelt mod PDF-figurerne, fire bevidst udeladte G-felter samt separate id'er for de to trykte DB804.
+- [x] 2.2 Bind DK-profilerne til den medfølgende Teknisk Regulativ 26/27 og hovedreglement v1.4; verificér U14/junior/senior, piger/drenge/mix og at U11 ikke udbydes som DK. Hold fuld licens-/aldersberettigelse uden for produktets løfte.
+- [x] 2.3 Importér alle 103 A3/A4-kildeposter fra spring-source-catalog.csv til versionsbundet katalog/diagnostik; kontrollér post-for-post mod kilde og import, at 83 tilladte, 19 forbudte ogén uafklaret er bevaret, og at startposter/alias ikke bliver falske nye identiteter.
+- [x] 2.4 Importér alle 94 individuelle A1.1-felter og deres generelle, kategori-, række- og cellekrav efter rhythm-catalog.csv/rhythm-requirements.md; verificér den implementerede model visuelt mod PDF-figurerne, fire bevidst udeladte G-felter samt separate id'er for de to trykte DB804.
 - [ ] 2.5 Implementér de seks afgrænsede spørgsmål Q01–Q06 og katalogbemærkninger K01/K02 som versionsbundne diagnosedata; verificér uafklarede delresultater/totalsummer og ingen opdigtet standardværdi, kode eller kattespring540°.
 - [ ] 2.6 Bevar den medfølgende regelmatrixs inputunivers, profilgrænser, formler, kildepunkter og status i implementeringens sporbarhed; verificér at hvert relevant krav er dækket af kode/test eller en begrundet observations-/uafklaret-/scope-status.
 - [ ] 2.7 Implementér præcise kendte optællinger efter rule-matrix.md, herunder eksakte mellemregninger og panelnedrunding til 0,005; verificér top-tre-D, separat C-berettigelse, nærmeste rene baneomgang og uafhængige bedste omgange pr. tillæg.
@@ -27,13 +27,13 @@ Forberedelsesgrundlaget er allerede udarbejdet i [reference](reference/README.md
 
 ## 3. Domænemodel, filskema og stabilitet
 
-- [ ] 3.1 Implementér skemaer og serialisering for arbejdsrum, holdbinding, gymnaster, præcise færdigheder, vurderinger og seks omgange; verificér round-trip med et fuldt syntetisk arbejdsrum og ufuldstændige, men lovlige kladder.
-- [ ] 3.2 Implementér stabile identiteter, ét valgfrit holdmedlemskab pr. gymnast og unikke registreringer pr. gymnast/færdighed; verificér navnesammenfald, flytning, ingen dubletter og bevarede vurderinger.
-- [ ] 3.3 Implementér arkivering og diagnosticering af berørte planreferencer frem for skjult sletning/udskiftning; verificér flyttet/arkiveret gymnast, arkiveret færdighed og genaktivering af hold.
-- [ ] 3.4 Implementér stabilitet 1–5, null, vurderingsdato og note uden konkurrerende indlæringsstatus; verificér afvisning af 0/6/brøktal og adskillelse mellem manglende registrering, null og 1.
-- [ ] 3.5 Implementér aggregater med gennemsnit, minimum, antal 1–2, vurderingsdækning og krævede/udfyldte pladser; verificér 5,5,5,5,5,1 samt fem femmere og null, tomt input og ekstra gymnaster.
-- [ ] 3.6 Implementér formatversionskontrol og en eksplicit migrationsgrænse; verificér at beskadiget JSON, almindelig uvedkommende JSON og nyere ukendt skema aldrig bliver til et tomt arbejdsrum eller kan gemmes over.
-- [ ] 3.7 Dokumentér filformat, invariants, kladdetilstande og stabilitetssemantik med syntetiske eksempler; verificér at eksemplerne validerer med de implementerede skemaer.
+- [x] 3.1 Implementér skemaer og serialisering for arbejdsrum, holdbinding, gymnaster, præcise færdigheder, vurderinger og seks omgange; verificér round-trip med et fuldt syntetisk arbejdsrum og ufuldstændige, men lovlige kladder.
+- [x] 3.2 Implementér stabile identiteter, ét valgfrit holdmedlemskab pr. gymnast og unikke registreringer pr. gymnast/færdighed; verificér navnesammenfald, flytning, ingen dubletter og bevarede vurderinger.
+- [x] 3.3 Implementér arkivering og diagnosticering af berørte planreferencer frem for skjult sletning/udskiftning; verificér flyttet/arkiveret gymnast, arkiveret færdighed og genaktivering af hold.
+- [x] 3.4 Implementér stabilitet 1–5, null, vurderingsdato og note uden konkurrerende indlæringsstatus; verificér afvisning af 0/6/brøktal og adskillelse mellem manglende registrering, null og 1.
+- [x] 3.5 Implementér aggregater med gennemsnit, minimum, antal 1–2, vurderingsdækning og krævede/udfyldte pladser; verificér 5,5,5,5,5,1 samt fem femmere og null, tomt input og ekstra gymnaster.
+- [x] 3.6 Implementér formatversionskontrol og en eksplicit migrationsgrænse; verificér at beskadiget JSON, almindelig uvedkommende JSON og nyere ukendt skema aldrig bliver til et tomt arbejdsrum eller kan gemmes over.
+- [x] 3.7 Dokumentér filformat, invariants, kladdetilstande og stabilitetssemantik med syntetiske eksempler; verificér at eksemplerne validerer med de implementerede skemaer.
 
 ## 4. Regelregistry og versionskontrakt
 
@@ -57,7 +57,7 @@ Forberedelsesgrundlaget er allerede udarbejdet i [reference](reference/README.md
 
 ## 6. Sværhedsberegning
 
-- [ ] 6.1 Implementér eksakt pointrepræsentation, summer, gennemsnit og regelbestemt formatering; verificér at 0,10/3 og gentagne mellemregninger ikke akkumulerer binære afrundingsfejl.
+- [x] 6.1 Implementér eksakt pointrepræsentation, summer, gennemsnit og regelbestemt formatering; verificér at 0,10/3 og gentagne mellemregninger ikke akkumulerer binære afrundingsfejl.
 - [ ] 6.2 Implementér banens op til tre forskellige højest værdisatte elementer; verificér 0,80 for rondat-flik-strakt helskrue, uændret D med ekstra flik, 0,60 for kraft-strakt halvskrue og en serie med fire forskellige elementer.
 - [ ] 6.3 Implementér trampets komplette springværdi og redskabets samlede rotationskategori; verificér at overslag-salto/Tsukahara ikke værdisættes ved at lægge to uafhængige spring sammen.
 - [ ] 6.4 Implementér holdomgangens identitetsafvigelse og korrekt nulstilling af D; verificér fem ens plus én afvigende med samme D samt uafklaret reference ved stemmelighed.

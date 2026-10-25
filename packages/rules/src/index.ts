@@ -1,13 +1,7 @@
 import type { SourceReference } from '@teamgym/domain';
+export type { RulesetBinding } from '@teamgym/domain';
 
 /** Reglementsudgave og appens fortolkningsversion er forskellige identiteter. */
-export interface RulesetBinding {
-  rulesetId: string;
-  packageVersion: string;
-  ageGroup: string;
-  teamType: string;
-}
-
 export interface RulesetManifest {
   rulesetId: string;
   packageVersion: string;
