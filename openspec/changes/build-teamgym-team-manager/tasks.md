@@ -204,7 +204,7 @@ Forberedelsesgrundlaget er allerede udarbejdet i [reference](reference/README.md
 - [x] 22.1 Gennemfør en sammenhængende visuel identitet med selvhostet typografi, desktoprail, mobilnavigation, tydelig hold-/regel-/gemmekontekst og gennemarbejdet startskærm.
 - [x] 22.2 Forfin holdvalg, gymnastlister, inspektør, springbibliotek, springomgange og rytmematrix med konsekvent hierarki og tilgængelige kontroller uden at ændre beregnings-/Drive-kontrakten.
 - [x] 22.3 Verificér fyldte og tomme arbejdsflader, responsive skærmbilleder, tastatur, reduceret bevægelse og WCAG-kontrol samt regressionsprøver; aflever en lokal testudgave til brugerens godkendelse før commit/push.
-- [ ] 22.4 Brugeren afprøver og godkender den lokale UI-kandidat og giver udtrykkeligt klarsignal til commit/push/publicering; derefter verificeres den publicerede udgave. Indtil da forbliver changen åben.
+- [x] 22.4 Brugeren afprøver og godkender den lokale UI-kandidat og giver udtrykkeligt klarsignal til commit/push/publicering; derefter verificeres den publicerede udgave. Klarsignal og faktisk Pages-verifikation er registreret i docs/implementeringsstatus.md; øvrige udestående Google-prøver holder fortsat changen åben.
 
 ## 23. Brugerens forenkling: fjern arkivfunktion fra UI
 

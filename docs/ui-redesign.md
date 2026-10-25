@@ -110,3 +110,5 @@ Prøverne bruger syntetiske data og Google-mocks. De beviser ikke rigtig Google-
 ## Klarsignal til publicering
 
 Efter den lokale testleverance gav brugeren 25. oktober 2026 udtrykkeligt klarsignal: »lad os publicere den«. Den samlede kandidat med UI-overhaling og de efterfølgende rettelser må derfor committes og publiceres. Det ændrer ikke den faste arbejdsgang for fremtidige ændringer eller status for de udestående rigtige Google-/flerbrugerprøver. Actions- og Pages-resultat registreres efter faktisk publicering.
+
+Den godkendte kandidat er publiceret ved `a1701b4`. [Pages-kørslen](https://github.com/miklen/teamgym-team-manager/actions/runs/40224205860) og [kontrolkørslen](https://github.com/miklen/teamgym-team-manager/actions/runs/40224205828) bestod alle trin, inklusive 72 browserprøver. Den offentlige side, script og font gav HTTP 200, og den nye startside blev åbnet i Edge med aktiv Forbind til Google Drive. Se [publiceringsbeviset](implementeringsstatus.md#publiceret-ui-overhaling-og-efterfølgende-brugerrettelser). Ingen faktiske Drive-data blev ændret under efterkontrollen.
