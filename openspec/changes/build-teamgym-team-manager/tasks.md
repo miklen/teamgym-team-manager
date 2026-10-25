@@ -3,9 +3,9 @@
 ## 1. Projektgrundlag og målrepo
 
 - [x] 1.1 Tilknyt arbejdet til `miklen/teamgym-team-manager`, kontrollér eksisterende fjernindhold før ændringer, og medtag denne OpenSpec-change og projektets frontend-skill; verificér korrekte repo-/branchreferencer og at ingen eksisterende filer er overskrevet.
-- [ ] 1.2 Opret TypeScript-struktur til statisk webapp, browserbaseret Google-adapter, fælles domæne og regelpakker efter designet med låste afhængigheder; verificér installation, typekontrol og produktionsbyg fra et rent checkout.
-- [ ] 1.3 Opsæt separate testkommandoer til domæne, Drive-adapterintegration og browserforløb samt lint/typekontrol i CI; verificér at de kan køres uden Google-hemmeligheder og uden lokale parent-filer.
-- [ ] 1.4 Dokumentér startkommandoer, miljøvariabler og grænsen mellem offentlige kilde-/testdata og private trænerdata; verificér at miljøeksempler er uden hemmeligheder, og at udviklingsdata kun er syntetiske.
+- [x] 1.2 Opret TypeScript-struktur til statisk webapp, browserbaseret Google-adapter, fælles domæne og regelpakker efter designet med låste afhængigheder; verificér installation, typekontrol og produktionsbyg fra et rent checkout.
+- [x] 1.3 Opsæt separate testkommandoer til domæne, Drive-adapterintegration og browserforløb samt lint/typekontrol i CI; verificér at de kan køres uden Google-hemmeligheder og uden lokale parent-filer.
+- [x] 1.4 Dokumentér startkommandoer, miljøvariabler og grænsen mellem offentlige kilde-/testdata og private trænerdata; verificér at miljøeksempler er uden hemmeligheder, og at udviklingsdata kun er syntetiske.
 
 - [ ] 1.5 Opsæt GitHub Actions-checks og Pages-publicering med korrekt artifact, Pages/OIDC-rettigheder, miljø og deployment-concurrency; verificér repo-base `/teamgym-team-manager/`, hash-dyblink, genindlæsning og offentlig konfiguration uden client secret. Ingen backend må være nødvendig ved drift.
 - [ ] 1.6 Udfør T01 fra reference/github-pages-drive.md tidligt med to autoriserede testkonti og en særskilt JSON-testfil: direkte Drive v2 etag/media-If-Match-kandidat, faktisk CORS og samtidige/stale requests; dokumentér atomisk afvisning af gammel basis før adapteren betegnes sikker. Ingen ubetinget upload eller serverfallback, hvis testen fejler.
@@ -14,7 +14,7 @@
 
 Forberedelsesgrundlaget er allerede udarbejdet i [reference](reference/README.md): otte hashregistrerede PDF'er, to komplette dækningslister, regelmatrix, rytmekrav, 77 faste facitcases og seks konkrete faglige spørgsmål. Nedenstående er implementerings- og importkontrol; materialet må ikke erstattes af et nyt, mindre katalog. Ingen appopgave er markeret udført alene på grund af denne planlægning.
 
-- [ ] 2.1 Indlæs det medfølgende source-manifest.json og bevar de otte kildefiler; verificér alle hashes fra et rent checkout uden parent-mappen og stop ved ændrede bytes frem for at hente en nyere udgave stiltiende.
+- [x] 2.1 Indlæs det medfølgende source-manifest.json og bevar de otte kildefiler; verificér alle hashes fra et rent checkout uden parent-mappen og stop ved ændrede bytes frem for at hente en nyere udgave stiltiende.
 - [ ] 2.2 Bind DK-profilerne til den medfølgende Teknisk Regulativ 26/27 og hovedreglement v1.4; verificér U14/junior/senior, piger/drenge/mix og at U11 ikke udbydes som DK. Hold fuld licens-/aldersberettigelse uden for produktets løfte.
 - [ ] 2.3 Importér alle 103 A3/A4-kildeposter fra spring-source-catalog.csv til versionsbundet katalog/diagnostik; kontrollér post-for-post mod kilde og import, at 83 tilladte, 19 forbudte ogén uafklaret er bevaret, og at startposter/alias ikke bliver falske nye identiteter.
 - [ ] 2.4 Importér alle 94 individuelle A1.1-felter og deres generelle, kategori-, række- og cellekrav efter rhythm-catalog.csv/rhythm-requirements.md; verificér den implementerede model visuelt mod PDF-figurerne, fire bevidst udeladte G-felter samt separate id'er for de to trykte DB804.
