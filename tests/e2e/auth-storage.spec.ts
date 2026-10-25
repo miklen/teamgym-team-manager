@@ -1,24 +1,11 @@
-import { expect, test } from '@playwright/test';
+import { expect, test } from './test';
 import { openWorkspace } from './drive-fixture';
 
 test('GIS-adapteren skriver og rydder browserlager uden token i URL eller gymnastfil', async ({ page }) => {
   const source = await openWorkspace(page);
   await expect(page.getByRole('heading', { name: 'Hold', exact: true })).toBeVisible();
-  await page.route('https://accounts.google.com/gsi/client', (route) =>
-    route.fulfill({
-      contentType: 'application/javascript',
-      body: `window.google = { accounts: { oauth2: { initTokenClient: (configuration) => ({ requestAccessToken: (options) => { window.syntheticTokenOptions = options; configuration.callback({ access_token: 'synthetic-renewed-access', expires_in: '3600', scope: 'https://www.googleapis.com/auth/drive.file' }); } }), hasGrantedAllScopes: () => true, revoke: (_, done) => done() } } };`,
-    }),
-  );
-  await page.route('https://apis.google.com/js/api.js', (route) =>
-    route.fulfill({
-      contentType: 'application/javascript',
-      body: 'window.gapi = { load: (_, options) => options.callback() };',
-    }),
-  );
   await page.getByRole('button', { name: 'Arbejdsrum', exact: true }).click();
   await page.getByRole('button', { name: 'Afbryd forbindelse / skift konto' }).click();
-  await page.getByRole('button', { name: 'Klargør Google-forbindelse' }).click();
   await page.getByRole('button', { name: 'Fortsæt med Google' }).click();
   await expect(page.getByText('Syntetisk træner', { exact: true })).toBeVisible();
   const stored = await page.evaluate(async () => {
@@ -71,7 +58,8 @@ test('afbrydelse i anden fane lukker arbejdsrummet og isolerer ugemt kladde til 
   await expect(second.getByRole('button', { name: /Kun lokal i fane B/ })).toHaveCount(0);
 });
 
-test('afbrudt Google-genforbindelse kan prøves igen uden at miste kladden', async ({ page }) => {
+test('afbrudt Google-genforbindelse kan prøves igen uden at miste kladden', async ({ page, googleMock }) => {
+  googleMock.failFirstAuthorization = true;
   const source = await openWorkspace(page);
   await expect(page.getByRole('heading', { name: 'Hold', exact: true })).toBeVisible();
   await page.getByRole('button', { name: 'Redigér hold Syntetisk hold A' }).click();
@@ -81,19 +69,6 @@ test('afbrudt Google-genforbindelse kan prøves igen uden at miste kladden', asy
   await page.getByRole('button', { name: /Lokale ændringer/ }).click();
   await expect(page.getByText('Google-adgang udløbet', { exact: true })).toBeVisible();
   source.deny(0);
-  await page.route('https://accounts.google.com/gsi/client', (route) =>
-    route.fulfill({
-      contentType: 'application/javascript',
-      body: `let attempts = 0; window.google = { accounts: { oauth2: { initTokenClient: (configuration) => ({ requestAccessToken: () => { attempts++; if (attempts === 1) configuration.error_callback({ type: 'popup_closed' }); else configuration.callback({ access_token: 'synthetic-reconnected-access', expires_in: '3600', scope: 'https://www.googleapis.com/auth/drive.file' }); } }), hasGrantedAllScopes: () => true, revoke: (_, done) => done() } } };`,
-    }),
-  );
-  await page.route('https://apis.google.com/js/api.js', (route) =>
-    route.fulfill({
-      contentType: 'application/javascript',
-      body: 'window.gapi = { load: (_, options) => options.callback() };',
-    }),
-  );
-  await page.getByRole('button', { name: 'Klargør Google', exact: true }).click();
   await page.getByRole('button', { name: 'Fortsæt med Google', exact: true }).click();
   await expect(page.getByText(/Google-vinduet blev lukket eller blokeret/)).toBeVisible();
   await expect(page.getByRole('button', { name: 'Fortsæt med Google', exact: true })).toBeVisible();

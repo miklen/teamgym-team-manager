@@ -1,4 +1,4 @@
-import { expect, test } from '@playwright/test';
+import { expect, test } from './test';
 import { openWorkspace } from './drive-fixture';
 
 for (const width of [1440, 1024]) {

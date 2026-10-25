@@ -1,5 +1,6 @@
 import { useEffect, useState, useSyncExternalStore } from 'react';
 import { createRoot } from 'react-dom/client';
+import { flushSync } from 'react-dom';
 import { createWorkspace } from '@teamgym/domain';
 import { pickGoogleResource, prepareGoogle } from '@teamgym/drive';
 import { Athletes } from './athletes';
@@ -33,6 +34,9 @@ function App() {
   const data = useSyncExternalStore(workspaceSession.subscribe, workspaceSession.snapshot);
   const [route, setRoute] = useState(location.hash || '#/arbejdsrum');
   const [ready, setReady] = useState(false);
+  const [googleLoading, setGoogleLoading] = useState(configured);
+  const [googleError, setGoogleError] = useState('');
+  const [pickerActive, setPickerActive] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
   const [settings, setSettings] = useState(false);
@@ -40,6 +44,26 @@ function App() {
   const [remember, setRemember] = useState(true);
   const [recovery, setRecovery] = useState<string | null>(null);
   const [observedAccount, setObservedAccount] = useState<string | null>(null);
+  useEffect(() => {
+    if (!configured) return;
+    let active = true;
+    void prepareGoogle()
+      .then(() => {
+        if (active) {
+          setReady(true);
+          setGoogleLoading(false);
+        }
+      })
+      .catch((error: unknown) => {
+        if (active) {
+          setGoogleLoading(false);
+          setGoogleError(error instanceof Error ? error.message : 'Google kunne ikke indlæses.');
+        }
+      });
+    return () => {
+      active = false;
+    };
+  }, []);
   useEffect(() => {
     void restoreConnection();
     const hash = () => setRoute(location.hash || '#/arbejdsrum');
@@ -95,10 +119,26 @@ function App() {
     }
   }
   async function loadScripts() {
-    await run(async () => {
+    setGoogleError('');
+    setGoogleLoading(true);
+    try {
       await prepareGoogle();
       setReady(true);
-    });
+    } catch (error) {
+      setGoogleError(error instanceof Error ? error.message : 'Google kunne ikke indlæses.');
+    } finally {
+      setGoogleLoading(false);
+    }
+  }
+  async function chooseGoogleResource(folder: boolean) {
+    // Native showModal gør resten af dokumentet inert, også Googles eksterne iframe.
+    // Luk alle app-modaler i samme render, før Picker (og eventuelt cookievalg) vises.
+    flushSync(() => setPickerActive(true));
+    try {
+      return await pickGoogleResource(googleConfig, connection.getToken(), folder);
+    } finally {
+      flushSync(() => setPickerActive(false));
+    }
   }
   function confirmDiscard() {
     return (
@@ -111,7 +151,7 @@ function App() {
   async function chooseFile() {
     await run(async () => {
       if (!confirmDiscard()) return;
-      const fileId = await pickGoogleResource(googleConfig, connection.getToken(), false);
+      const fileId = await chooseGoogleResource(false);
       if (!fileId) return;
       await workspaceSession.open(fileId, true);
       const loaded = workspaceSession.snapshot().loaded;
@@ -230,6 +270,19 @@ function App() {
         </div>
       )}
       <main id="main-content" tabIndex={-1}>
+        {googleLoading && !ready && !workspace && (
+          <p className="muted" role="status">
+            Indlæser Google…
+          </p>
+        )}
+        {googleError && (
+          <div className="notice" role="status">
+            <p>{googleError}</p>
+            <button disabled={googleLoading} onClick={() => void loadScripts()}>
+              Prøv Google igen
+            </button>
+          </div>
+        )}
         {(error || data.message || auth.message) && (
           <div className="notice" role="status">
             {error && <p>{error}</p>}
@@ -255,16 +308,15 @@ function App() {
             )}
           </div>
         )}
-        {(auth.status === 'expired' || (workspace && auth.status === 'error')) && (
+        {workspace && (auth.status === 'expired' || auth.status === 'error') && (
           <section className="reconnect">
             <p>Kladden er i denne side. Genforbind for at kontrollere filversion og fortsætte.</p>
-            {!ready ? (
-              <button disabled={busy || !configured} onClick={() => void loadScripts()}>
-                Klargør Google
-              </button>
-            ) : (
-              <button onClick={() => void connection.connect(remember)}>Fortsæt med Google</button>
-            )}
+            <button
+              disabled={!ready || busy || !configured}
+              onClick={() => void connection.connect(remember)}
+            >
+              Fortsæt med Google
+            </button>
           </section>
         )}
         {!workspace ? (
@@ -293,11 +345,6 @@ function App() {
                   <button disabled={busy || !ready} className="quiet" onClick={() => setCreating(true)}>
                     Opret arbejdsrum
                   </button>
-                  {!ready && (
-                    <button disabled={busy || !configured} onClick={() => void loadScripts()}>
-                      Klargør filvælger
-                    </button>
-                  )}
                 </div>
               ) : (
                 <>
@@ -309,18 +356,12 @@ function App() {
                     />
                     Husk Google-forbindelsen på denne enhed
                   </label>
-                  {!ready ? (
-                    <button disabled={busy || !configured} onClick={() => void loadScripts()}>
-                      Klargør Google-forbindelse
-                    </button>
-                  ) : (
-                    <button
-                      disabled={busy || auth.status === 'connecting'}
-                      onClick={() => void connection.connect(remember)}
-                    >
-                      Fortsæt med Google
-                    </button>
-                  )}
+                  <button
+                    disabled={!ready || !configured || busy || auth.status === 'connecting'}
+                    onClick={() => void connection.connect(remember)}
+                  >
+                    {auth.status === 'connecting' ? 'Forbinder…' : 'Fortsæt med Google'}
+                  </button>
                 </>
               )}
             </section>
@@ -382,7 +423,7 @@ function App() {
         </span>
       </footer>
       {settings && (
-        <Dialog title="Arbejdsrum og forbindelse" close={() => setSettings(false)}>
+        <Dialog title="Arbejdsrum og forbindelse" suspended={pickerActive} close={() => setSettings(false)}>
           <p>{auth.account ? `${auth.account.name} · ${auth.account.email}` : 'Ingen konto forbundet.'}</p>
           <p>
             {auth.remembered
@@ -432,25 +473,20 @@ function App() {
           )}
           {auth.status === 'connected' && (
             <div className="actions">
-              {!ready ? (
-                <button disabled={busy} onClick={() => void loadScripts()}>
-                  Klargør filvælger
-                </button>
-              ) : (
-                <>
-                  <button disabled={busy || data.state === 'saving'} onClick={() => void chooseFile()}>
-                    Vælg anden fil
-                  </button>
-                  <button
-                    disabled={busy || data.state === 'saving'}
-                    onClick={() => {
-                      if (confirmDiscard()) setCreating(true);
-                    }}
-                  >
-                    Opret arbejdsrum
-                  </button>
-                </>
-              )}
+              <button
+                disabled={!ready || busy || data.state === 'saving'}
+                onClick={() => void chooseFile()}
+              >
+                Vælg anden fil
+              </button>
+              <button
+                disabled={!ready || busy || data.state === 'saving'}
+                onClick={() => {
+                  if (confirmDiscard()) setCreating(true);
+                }}
+              >
+                Opret arbejdsrum
+              </button>
             </div>
           )}
           <div className="actions">
@@ -514,14 +550,14 @@ function App() {
         </Dialog>
       )}
       {creating && (
-        <Dialog title="Opret arbejdsrum på Drive" close={() => setCreating(false)}>
+        <Dialog title="Opret arbejdsrum på Drive" suspended={pickerActive} close={() => setCreating(false)}>
           <ActionForm
             disabled={busy}
             label="Vælg mappe og opret JSON-fil"
             submit={(form) => {
               const name = String(form.get('name'));
               void run(async () => {
-                const folder = await pickGoogleResource(googleConfig, connection.getToken(), true);
+                const folder = await chooseGoogleResource(true);
                 if (!folder) return;
                 const loaded = await connection.client().create(folder, name, createWorkspace());
                 workspaceSession.adopt(loaded);
@@ -539,6 +575,7 @@ function App() {
             <p className="muted">
               Der oprettes én ny JSON-fil i den valgte mappe. Eksisterende dokumenter ændres ikke.
             </p>
+            {busy && <p role="status">Opretter arbejdsrum…</p>}
           </ActionForm>
         </Dialog>
       )}

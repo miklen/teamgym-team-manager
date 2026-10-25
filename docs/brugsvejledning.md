@@ -1,10 +1,12 @@
 # TeamGym Team Manager
 
-Forbind din egen Google-konto. Første klik klargør Googles scripts; **Fortsæt med Google** åbner login fra dit klik. Markér »Husk Google-forbindelsen«, hvis forbindelsen skal genbruges på denne enhed. Appen husker kun forbindelsen og filreferencen. Ugemte gymnastdata ligger i den aktuelle side.
+Forbind din egen Google-konto med **Fortsæt med Google**. Google indlæses automatisk; login åbner først, når du klikker. Markér »Husk Google-forbindelsen«, hvis forbindelsen skal genbruges på denne enhed. Appen husker kun forbindelsen og filreferencen. Ugemte gymnastdata ligger i den aktuelle side.
 
 ## Arbejdsrum
 
 Vælg den fælles JSON-fil gennem Google-filvælgeren. Et link til arbejdsrummet giver ikke filadgang i sig selv. En ny træner skal både have adgang hos Google og vælge filen i appen. Opret kun et nyt arbejdsrum, hvis der ikke allerede findes et fælles kartotek: vælg en mappe med oprettelsesadgang og giv filen et navn. Almindelige Google Docs eller andre JSON-filer kan ikke åbnes som arbejdsrum.
+
+Mens Googles filvælger er åben, skjules appens dialog, så du kan vælge cookiepræferencer og mappe. Annullerer du mappevalget, vender du tilbage til dialogen med filnavnet bevaret.
 
 **Arbejdsrum** øverst viser konto, fil-id, mappe, version og rettighed. Samme filnavn kan forekomme flere gange; fil-id bestemmer, hvor der gemmes. En læser kan gennemse analyser, men kan ikke ændre filen.
 

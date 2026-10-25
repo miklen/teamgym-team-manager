@@ -1,4 +1,4 @@
-import { useEffect, useId, useRef, useState } from 'react';
+import { useId, useLayoutEffect, useRef, useState } from 'react';
 import type { ReactNode } from 'react';
 import { formatPoints, STABILITY_ANCHORS } from '@teamgym/domain';
 import type { SourceReference, Stability } from '@teamgym/domain';
@@ -106,24 +106,30 @@ export function Dialog({
   close,
   wide = false,
   dismissible = true,
+  suspended = false,
 }: {
   title: string;
   children: ReactNode;
   close: () => void;
   wide?: boolean;
   dismissible?: boolean;
+  suspended?: boolean;
 }) {
   const titleId = useId();
   const ref = useRef<HTMLDialogElement>(null);
-  useEffect(() => {
+  useLayoutEffect(() => {
     const previous = document.activeElement;
     const dialog = ref.current!;
-    dialog.showModal();
     return () => {
       dialog.close();
       if (previous instanceof HTMLElement && previous.isConnected) previous.focus();
     };
   }, []);
+  useLayoutEffect(() => {
+    const dialog = ref.current!;
+    if (suspended) dialog.close();
+    else dialog.showModal();
+  }, [suspended]);
   return (
     <dialog
       className={wide ? 'wide' : ''}

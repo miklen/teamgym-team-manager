@@ -1,4 +1,4 @@
-import { expect, test } from '@playwright/test';
+import { expect, test } from './test';
 import { createWorkspace } from '@teamgym/domain';
 import { openWorkspace, twentyAthletes } from './drive-fixture';
 

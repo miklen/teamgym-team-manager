@@ -1,4 +1,4 @@
-import { expect, test } from '@playwright/test';
+import { expect, test } from './test';
 import { createTeam } from '@teamgym/domain';
 import { binding } from '../fixtures/synthetic-workspace';
 import { fourOfSix, openWorkspace } from './drive-fixture';

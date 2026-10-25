@@ -1,5 +1,5 @@
 import AxeBuilder from '@axe-core/playwright';
-import { expect, test } from '@playwright/test';
+import { expect, test } from './test';
 import { openWorkspace } from './drive-fixture';
 
 test('WCAG 2.2 AA på centrale arbejdsflader og vurderingsdialog', async ({ page }) => {

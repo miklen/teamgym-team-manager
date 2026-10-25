@@ -65,6 +65,8 @@ export async function openWorkspace(
   let puts = 0;
   let denied = 0;
   let drop = false;
+  let created: { bytes: string; name: string } | null = null;
+  let creates = 0;
   const failures: string[] = [];
   page.on('pageerror', (error) => failures.push(error.message));
   await page.route('https://www.googleapis.com/**', async (route) => {
@@ -84,6 +86,53 @@ export async function openWorkspace(
           },
         },
       });
+      return;
+    }
+    if (request.method() === 'POST') {
+      creates++;
+      const boundary = request.headers()['content-type']!.split('boundary=')[1]!;
+      const parts = request.postData()!.split(`--${boundary}`);
+      const metadata = JSON.parse(parts[1]!.split('\r\n\r\n')[1]!.trim()) as {
+        title: string;
+        parents: { id: string }[];
+      };
+      if (metadata.parents[0]?.id !== 'synthetic-folder') throw Error('Forkert testmappe');
+      created = { name: metadata.title, bytes: parts[2]!.split('\r\n\r\n')[1]!.trim() };
+      await route.fulfill({ json: { id: 'synthetic-created' } });
+      return;
+    }
+    if (url.pathname.endsWith('/synthetic-folder')) {
+      await route.fulfill({
+        json: {
+          id: 'synthetic-folder',
+          title: 'Syntetisk testmappe',
+          mimeType: 'application/vnd.google-apps.folder',
+          etag: '"folder"',
+          version: '1',
+          editable: true,
+          labels: { trashed: false },
+          capabilities: { canAddChildren: true },
+        },
+      });
+      return;
+    }
+    if (url.pathname.endsWith('/synthetic-created') && created) {
+      await route.fulfill(
+        url.searchParams.get('alt') === 'media'
+          ? { body: created.bytes, contentType: 'application/json' }
+          : {
+              json: {
+                id: 'synthetic-created',
+                title: created.name,
+                mimeType: 'application/json',
+                etag: '"created"',
+                version: '1',
+                editable: true,
+                labels: { trashed: false },
+                parents: [{ id: 'synthetic-folder' }],
+              },
+            },
+      );
       return;
     }
     if (request.method() === 'PUT') {
@@ -175,6 +224,12 @@ export async function openWorkspace(
     },
     dropResponse() {
       drop = true;
+    },
+    get creates() {
+      return creates;
+    },
+    get created() {
+      return created ? { name: created.name, workspace: JSON.parse(created.bytes) as Workspace } : null;
     },
     empty: createWorkspace,
   };

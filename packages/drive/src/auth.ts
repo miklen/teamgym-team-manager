@@ -370,7 +370,7 @@ export function pickGoogleResource(
       .setIncludeFolders(folder)
       .setSelectFolderEnabled(folder);
     if (!folder) view.setMimeTypes('application/json');
-    new google.picker.PickerBuilder()
+    const picker = new google.picker.PickerBuilder()
       .setAppId(config.projectNumber)
       .setDeveloperKey(config.apiKey)
       .setOAuthToken(token)
@@ -378,11 +378,13 @@ export function pickGoogleResource(
       .setLocale('da')
       .addView(view)
       .setCallback((data) => {
-        if (data.action === google.picker.Action.PICKED) resolve(data.docs?.[0]?.id ?? null);
-        if (data.action === google.picker.Action.CANCEL) resolve(null);
+        if (data.action === google.picker.Action.PICKED || data.action === google.picker.Action.CANCEL) {
+          picker.dispose();
+          resolve(data.action === google.picker.Action.PICKED ? (data.docs?.[0]?.id ?? null) : null);
+        }
       })
-      .build()
-      .setVisible(true);
+      .build();
+    picker.setVisible(true);
   });
 }
 export function createBrowserConnection(config: GoogleConfiguration) {

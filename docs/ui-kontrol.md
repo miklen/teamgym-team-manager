@@ -6,7 +6,9 @@ Interaktionerne er korte positionsovergange ved inspektør, nye/flyttede rækker
 
 ## Kontrol 25. oktober 2026
 
-Chromium kontrollerer produktionsbygget med syntetisk Google-/Drive-netværk. Der er ingen skjult demonstrationsfil i produktet. 28 browserchecks bestod ved seneste samlede kørsel. De dækker oprettelse af hold/gymnast, komplet banekæde og element-D, dubletåbning, stabilitet, seks omgange, ekstra først/grænse, gem/genåbn, læseadgang, ukendt pakke, konflikter/eksport, mistet uploadsvar, potentiale 4/6→6/6, regelskift/annullering, IndexedDB og afbrydelse mellem faner.
+Chromium kontrollerer produktionsbygget med syntetisk Google-/Drive-netværk. Der er ingen skjult demonstrationsfil i produktet. 33 browserchecks bestod ved seneste samlede kørsel. De dækker oprettelse af hold/gymnast, komplet banekæde og element-D, dubletåbning, stabilitet, seks omgange, ekstra først/grænse, gem/genåbn, læseadgang, ukendt pakke, konflikter/eksport, mistet uploadsvar, potentiale 4/6→6/6, regelskift/annullering, IndexedDB og afbrydelse mellem faner.
+
+Efter brugerens fejlmelding er Googles SDK-indlæsning automatisk; login kræver fortsat et direkte klik. Appens native modaler lukkes midlertidigt, før Picker åbnes, så de ikke gør Googles iframe og cookievalg inert. Formularen forbliver monteret og bevarer filnavnet ved annullering; Picker fjernes, før appens dialog genåbnes. Fem ekstra browserchecks dækker automatisk indlæsning uden OAuth-kald, genforsøg ved indlæsningsfejl, cookie-/mappevalg og oprettelse ved 1440 og 390 px samt filvalg fra indstillinger. Cookievalget foregår i en separat iframe uden for appdialogerne, så testen rammer den oprindelige native-modal-konflikt. Det er en simulator og ikke en ny faktisk Google-accepttest.
 
 Der er kørt axe med reglerne `wcag2a`, `wcag2aa`, `wcag21aa`, `wcag22aa` på Hold, Gymnaster, Springplan, Rytme, Reglement og vurderingsdialog: ingen fund efter rettelsen. Det er automatiseret kontrol, ikke en påstand om fuld WCAG-certificering eller reel skærmlæserafprøvning.
 
