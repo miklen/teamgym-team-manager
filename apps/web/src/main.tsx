@@ -255,7 +255,7 @@ function App() {
             )}
           </div>
         )}
-        {auth.status === 'expired' && (
+        {(auth.status === 'expired' || (workspace && auth.status === 'error')) && (
           <section className="reconnect">
             <p>Kladden er i denne side. Genforbind for at kontrollere filversion og fortsætte.</p>
             {!ready ? (

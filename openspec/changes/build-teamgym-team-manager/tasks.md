@@ -7,7 +7,7 @@
 - [x] 1.3 Opsæt separate testkommandoer til domæne, Drive-adapterintegration og browserforløb samt lint/typekontrol i CI; verificér at de kan køres uden Google-hemmeligheder og uden lokale parent-filer.
 - [x] 1.4 Dokumentér startkommandoer, miljøvariabler og grænsen mellem offentlige kilde-/testdata og private trænerdata; verificér at miljøeksempler er uden hemmeligheder, og at udviklingsdata kun er syntetiske.
 
-- [ ] 1.5 Opsæt GitHub Actions-checks og Pages-publicering med korrekt artifact, Pages/OIDC-rettigheder, miljø og deployment-concurrency; verificér repo-base `/teamgym-team-manager/`, hash-dyblink, genindlæsning og offentlig konfiguration uden client secret. Ingen backend må være nødvendig ved drift.
+- [x] 1.5 Opsæt GitHub Actions-checks og Pages-publicering med korrekt artifact, Pages/OIDC-rettigheder, miljø og deployment-concurrency; verificér repo-base `/teamgym-team-manager/`, hash-dyblink, genindlæsning og offentlig konfiguration uden client secret. Ingen backend må være nødvendig ved drift.
 - [ ] 1.6 Udfør tilgængelige T01-tests fra reference/github-pages-drive.md med den ene autoriserede konto og en særskilt JSON-testfil: direkte Drive v2 etag/media-If-Match-kandidat, faktisk CORS og samtidige/stale requests. Efter brugerbeslutning 25. oktober 2026 udfører brugeren to-konto-live-test med trænerteamet efter første publicering; denne del forbliver udestående, ikke bestået. Ingen ubetinget upload eller serverfallback, hvis testen fejler.
 
 ## 2. Reproducerbare regelkilder og katalogdækning

@@ -1,6 +1,6 @@
 # Implementeringskontrol · 25. oktober 2026
 
-Change: `build-teamgym-team-manager`, schema `spec-driven`. **108/122 opgaver fuldført.** Domæne, regler, Drive-adapter og centrale arbejdsflader er implementeret. Første Pages-deployment og reel Google-verifikation er fortsat udestående. Se [opgavelisten](../openspec/changes/build-teamgym-team-manager/tasks.md).
+Change: `build-teamgym-team-manager`, schema `spec-driven`. **109/122 opgaver fuldført.** Domæne, regler, Drive-adapter og centrale arbejdsflader er implementeret. Første Pages-deployment er bestået; reel Google-/Drive-verifikation er fortsat udestående. Se [opgavelisten](../openspec/changes/build-teamgym-team-manager/tasks.md).
 
 ## Implementeret
 
@@ -31,11 +31,11 @@ A3/A4 og alle A1.1-sider er visuelt genlæst mod de fastlåste kilder. Teknisk R
 
 ## GitHub og offentlig konfiguration
 
-Arbejdet ligger på `feat/build-teamgym-team-manager` i [målrepoet](https://github.com/miklen/teamgym-team-manager). Main indeholder indtil merge det tidligere planlægningsgrundlag. Den oprindelige [CI-kørsel 40193242920](https://github.com/miklen/teamgym-team-manager/actions/runs/40193242920) er historisk og beviser kun grundlaget ved `53e12a4`; den nye [CI-kørsel 40202101904](https://github.com/miklen/teamgym-team-manager/actions/runs/40202101904) bestod alle trin for den samlede app ved `b4b4b82`, inklusive `npm ci` fra et rent Actions-checkout og samtlige 27 browserchecks.
+Implementeringen er merged gennem [PR #1](https://github.com/miklen/teamgym-team-manager/pull/1) og ligger på `main` i [målrepoet](https://github.com/miklen/teamgym-team-manager). Den oprindelige [CI-kørsel 40193242920](https://github.com/miklen/teamgym-team-manager/actions/runs/40193242920) er historisk og beviser kun grundlaget ved `53e12a4`; den nye [CI-kørsel 40202101904](https://github.com/miklen/teamgym-team-manager/actions/runs/40202101904) bestod alle trin for den samlede app ved `b4b4b82`, inklusive `npm ci` fra et rent Actions-checkout og samtlige 27 browserchecks.
 
-GitHub-pluginets tidligere PR-forsøg blev afvist med `403 Resource not accessible by integration`. Repoets eksisterende Git-login er senere kontrolleret gennem den normale credential-manager uden at udskrive credentials og har adminadgang. De tre offentlige Google-buildværdier er gemt som repository Variables, og Pages er konfigureret med `build_type: workflow`. Koden er leveret som [PR #1](https://github.com/miklen/teamgym-team-manager/pull/1). Pages er opsat, men første deployment er endnu ikke bestået. Ingen client secret eller brugertoken er overført.
+GitHub-pluginets tidligere PR-forsøg blev afvist med `403 Resource not accessible by integration`. Repoets eksisterende Git-login er senere kontrolleret gennem den normale credential-manager uden at udskrive credentials og har adminadgang. De tre offentlige Google-buildværdier er gemt som repository Variables, og Pages er konfigureret med `build_type: workflow`. Koden er leveret som [PR #1](https://github.com/miklen/teamgym-team-manager/pull/1). Første [Pages-deployment 40202795321](https://github.com/miklen/teamgym-team-manager/actions/runs/40202795321) bestod bygning, samtlige checks, artifact og deployment ved `194cb43`. Den [offentlige app](https://miklen.github.io/teamgym-team-manager/) er åbnet over HTTPS; assets, dybt hash-link og genindlæsning virkede. Ingen client secret eller brugertoken er overført.
 
-Den lokale OAuth-webklient angiver korrekt Pages-origin uden repostien og begge localhost-origins. GIS-/Picker-scripts kunne indlæses i appen under den lokale CSP. Et nyt Google-loginvindue står til brugerens login; agenten har ikke gennemført nyt login eller en rigtig skriveprøve i produktionsadapteren.
+Den lokale OAuth-webklient angiver korrekt Pages-origin uden repostien og begge localhost-origins. GIS-/Picker-scripts kunne indlæses under CSP både lokalt og fra den faktiske Pages-origin; appen nåede Fortsæt med Google uden konfigurationsfejl. Et nyt Google-loginvindue står til brugerens login; agenten har ikke gennemført nyt login eller en rigtig skriveprøve i produktionsadapteren. En efterfølgende rettelse bevarer en direkte genforsøgsknap efter et afbrudt Google-popup med eksisterende kladde; alle tre målrettede auth-browserchecks bestod.
 
 ## Udskudt og udestående
 

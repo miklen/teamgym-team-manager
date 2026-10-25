@@ -70,3 +70,39 @@ test('afbrydelse i anden fane lukker arbejdsrummet og isolerer ugemt kladde til 
   await expect(second.getByRole('heading', { name: 'Forbind din Google-konto' })).toBeVisible();
   await expect(second.getByRole('button', { name: /Kun lokal i fane B/ })).toHaveCount(0);
 });
+
+test('afbrudt Google-genforbindelse kan prøves igen uden at miste kladden', async ({ page }) => {
+  const source = await openWorkspace(page);
+  await expect(page.getByRole('heading', { name: 'Hold', exact: true })).toBeVisible();
+  await page.getByRole('button', { name: 'Redigér hold Syntetisk hold A' }).click();
+  await page.getByLabel('Holdnavn').fill('Kladde gennem Google-afbrydelse');
+  await page.getByRole('button', { name: 'Anvend i kladde' }).click();
+  source.deny(401);
+  await page.getByRole('button', { name: /Lokale ændringer/ }).click();
+  await expect(page.getByText('Google-adgang udløbet', { exact: true })).toBeVisible();
+  source.deny(0);
+  await page.route('https://accounts.google.com/gsi/client', (route) =>
+    route.fulfill({
+      contentType: 'application/javascript',
+      body: `let attempts = 0; window.google = { accounts: { oauth2: { initTokenClient: (configuration) => ({ requestAccessToken: () => { attempts++; if (attempts === 1) configuration.error_callback({ type: 'popup_closed' }); else configuration.callback({ access_token: 'synthetic-reconnected-access', expires_in: '3600', scope: 'https://www.googleapis.com/auth/drive.file' }); } }), hasGrantedAllScopes: () => true, revoke: (_, done) => done() } } };`,
+    }),
+  );
+  await page.route('https://apis.google.com/js/api.js', (route) =>
+    route.fulfill({
+      contentType: 'application/javascript',
+      body: 'window.gapi = { load: (_, options) => options.callback() };',
+    }),
+  );
+  await page.getByRole('button', { name: 'Klargør Google', exact: true }).click();
+  await page.getByRole('button', { name: 'Fortsæt med Google', exact: true }).click();
+  await expect(page.getByText(/Google-vinduet blev lukket eller blokeret/)).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Fortsæt med Google', exact: true })).toBeVisible();
+  await page.getByRole('button', { name: 'Fortsæt med Google', exact: true }).click();
+  await expect(page.getByText('Syntetisk træner', { exact: true })).toBeVisible();
+  await expect(page.getByRole('button', { name: /^Kladde gennem Google-afbrydelse/ })).toBeVisible();
+  await page.getByRole('button', { name: 'Fejl · kladde bevaret' }).click();
+  await expect(page.getByRole('button', { name: 'Gemt', exact: true })).toBeVisible();
+  expect(source.puts).toBe(1);
+  expect(source.workspace.teams[0]!.name).toBe('Kladde gennem Google-afbrydelse');
+  expect(source.failures).toEqual([]);
+});
