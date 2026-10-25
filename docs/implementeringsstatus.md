@@ -27,7 +27,11 @@ Alle nedenstående kommandoer er kørt i et nyt Git-checkout under `tmp/clean-ch
 
 Browserchecks dækker den indledende appskal ved 1440×900, 1024×768, 768×1024 og 390×844, ingen side-overflow, et fokuserbart navigationslink, bevaret hash ved genindlæsning og ingen utilsigtede Google-kald. Det er ikke samlet visuel/tilgængelighedsgodkendelse af det kommende produkt. Der er endnu ingen implementerede sportslige beregninger eller beståede facitcases for dem.
 
-På Windows krævede Playwright kørsel uden værktøjssandbox for korrekt afslutning af previewserveren. Den fulde kørsel afsluttede derefter med exitkode 0. CI bruger Linux. Actions-kørslen kontrolleres særskilt på GitHub.
+På Windows krævede Playwright kørsel uden værktøjssandbox for korrekt afslutning af previewserveren. Den fulde kørsel afsluttede derefter med exitkode 0. CI bruger Linux.
+
+[GitHub Actions-kørsel 40193242920](https://github.com/miklen/teamgym-team-manager/actions/runs/40193242920) bestod alle trin for commit `53e12a4`: låst installation, typekontrol/lint, begge Vitest-suiter, produktionsbyg og Chromium-browserchecks. Pages-workflowet er ikke kørt.
+
+Planlægningsgrundlaget og implementeringsbranchen er publiceret til målrepoet uden force-push. [Sammenlign ændringen](https://github.com/miklen/teamgym-team-manager/compare/main...feat/build-teamgym-team-manager). Forsøg på draft-PR blev afvist med `403 Resource not accessible by integration`; browseren havde ingen aktiv GitHub-login. Der er derfor ikke oprettet en PR eller foretaget merge.
 
 ## Åbent før næste trin
 
