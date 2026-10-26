@@ -1,6 +1,6 @@
 # Implementeringskontrol · 26. oktober 2026
 
-Ændringen er implementeret og lokalt afprøvet af brugeren. Den seneste udgave er godkendt 26. oktober 2026 med det udtrykkelige klarsignal: »Meget bedre! Lad os publicere det.« Commit/push/publicering gennemføres på dette grundlag og registreres først som afsluttet efter verificerede resultater. Ingen fælles trænerfil er brugt til skriveprøver.
+Ændringen er implementeret, lokalt afprøvet af brugeren og publiceret. Den seneste udgave er godkendt 26. oktober 2026 med det udtrykkelige klarsignal: »Meget bedre! Lad os publicere det.« Commit `3332a17` er pushet til main, og GitHub Pages har grøn build og deploy. Ingen fælles trænerfil er brugt til skriveprøver.
 
 Første lokale tilbagemelding: Brugeren fandt det rodet, at fundament stod i en separat blok og samtidig kunne vælges fra kataloget. Den nye udgave samler bibliotek, direkte valg og fundament i én liste. En præcis udførelse har én række, også ved delt fundament og ved et tidligere direkte valgt barn. Præciserede dobbeltvarianter erstatter katalogskabelonen. Sikkerhed, fravalg, kilde og skrueafklaring ligger på rækken; Kun valgte afgrænser samme liste. Byggerens ekstra gentagelse af den valgte serie er fjernet. Denne tilbagemelding er ikke et klarsignal til frigivelse; den rettede udgave skal afprøves igen.
 
@@ -59,4 +59,11 @@ Rækkeafstande er reduceret efter visuel gennemgang. En indtoning er ændret til
 
 Den separate lokale udgave er startet med `npm.cmd run preview:local` i `dist-local/` på `http://127.0.0.1:5173/teamgym-team-manager/`. En ny Chromium-kontekst har verificeret HTTP 200, sidetitlen TeamGym Team Manager og appens startoverskrift. Ingen Google-konto blev forbundet i denne kontrol. Serveren bliver stående. Brugeren er bedt om at gemme/eksportere en kladde før genindlæsning; efter aflevering ændres eller genbygges testudgaven ikke under brugerens test.
 
-Der er ikke udført en ny live Google/T01- eller reel to-konto-test, og disse kaldes ikke bestået. Brugerens lokale accept er registreret efter den faktiske tilbagemelding. Udgivelsesresultatet tilføjes efter commit, push og grøn Pages-publicering.
+Der er ikke udført en ny live Google/T01- eller reel to-konto-test, og disse kaldes ikke bestået. Brugerens lokale accept er registreret efter den faktiske tilbagemelding.
+
+## Publicering efter brugerens godkendelse
+
+- Implementeringscommit: [`3332a17`](https://github.com/miklen/teamgym-team-manager/commit/3332a17c7e6fb93bbcded7ddf50df9e910834254), pushet som fast forward til main fra `460d707`.
+- [GitHub Pages-kørsel 40401117894](https://github.com/miklen/teamgym-team-manager/actions/runs/40401117894): build og deploy er afsluttet med success. Loggen dokumenterer 19 grønne domænetestfiler, fire grønne Drive-testfiler, 4/4 fangede regelmutationer og 94 beståede Chromium-prøver på CI, 2,2 minutter til browserprøverne.
+- Offentlig adresse: [TeamGym Team Manager](https://miklen.github.io/teamgym-team-manager/). En isoleret Chromium-kontekst uden Google-login har verificeret HTTP 200, titel/startoverskrift samt de nye arve- og springvalgsfunktioner i den publicerede asset `app-B8NSQXAx.js`.
+- Den separate [Kontrol-kørsel 40401117817](https://github.com/miklen/teamgym-team-manager/actions/runs/40401117817) har ved denne registrering bestået typekontrol, domæne-/Drive-tests, regelmutationer og build; installation af testbrowseren kører fortsat. Den er ikke markeret som bestået på forhånd.

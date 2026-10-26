@@ -60,4 +60,4 @@ Gruppe 1–8 forbereder en lokal testudgave; gruppe 9 kræver brugerens efterfø
 ## 9. Brugerens test og efterfølgende frigivelse
 
 - [x] 9.1 Afvent og registrér brugerens faktiske lokale testresultat; verificér accept ved en udtrykkelig tilbagemelding og forbered en ny lokal testudgave ved eventuelle rettelser frem for at markere testen bestået på forhånd. Brugeren godkendte den seneste udgave 26. oktober 2026: »Meget bedre! Lad os publicere det.«
-- [ ] 9.2 Commit, push og publicér kun efter brugerens udtrykkelige klarsignal efter den lokale test; verificér det konkrete klarsignal og de faktisk gennemførte Git-/publiceringsresultater, ellers behold opgaven åben.
+- [x] 9.2 Commit, push og publicér kun efter brugerens udtrykkelige klarsignal efter den lokale test; verificér det konkrete klarsignal og de faktisk gennemførte Git-/publiceringsresultater, ellers behold opgaven åben. Commit `3332a17` er pushet til main efter godkendelsen. GitHub Pages-kørsel `40401117894` har grøn build og deploy; offentlig HTTP 200, appåbning og de nye funktionsmarkører er verificeret.
