@@ -22,7 +22,15 @@ Kartoteket starter med **Alle hold**, som også viser gymnaster uden hold. Du ka
 
 Åbn gymnasten og vælg **Tilføj færdighed**. Sæt flueben ved flere spring fra den søgbare liste, fx rondat–flik–1/1 og kraft–barani, og angiv sikkerhed 1–5 ud for hvert spring. Fluebenet betyder, at gymnasten kan udføre hele serien uden mellemtrin. Listen rummer 239 færdige banesammensætninger samt selvstændige spring med indgang fra tilløb og trampetspring. Valgene bevares mellem søgninger, grupper og bane/trampet. Vælg vurderingsdato, og registrér alle valgene samlet.
 
-Kortere serier medtages som standard med samme sikkerhed: rondat–flik–1/1 medtager rondat og rondat–flik. Deler flere valgte spring en kortere serie, arves sikkerheden fra springet med lavest sværhed (D). En direkte angivet vurdering af den korte serie har forrang. Arv kan opdatere en tidligere kortere vurdering med bevaret note og id. Du kan gennemgå arven eller fravælge de kortere serier.
+**Medtag fundament automatisk** viser de medfølgende færdigheder i den samme springvælger, også i Byg selv. Hvert spring har én række med sikkerhed, D og ophav; der er ingen ekstra fundamentblok. Rondat–flik–helskrue medtager rondat, rondat–flik og samme indgang med lukket, hoftebøjet og strakt salto uden skrue. Rudy på trampet medtager de tre kropspositioner med 0° og 180°. Hvert barn kan fravælges eller få egen sikkerhed på sin række før registrering. Et personligt fravalg overlever nye kilder og gem/genåbn. Annullerer du formularen, gemmes ingen valg.
+
+En serie med indgangssalto medtager også samme serie uden saltoen, hvis resten selv kan starte fra tilløb. Fx giver Strakt–rondat–flik–helskrue også Rondat–flik–helskrue og dens fundament. Søg `strakt rondat` for at finde serier med denne begyndelse øverst. Ved søgning står de bedste match først, mens tidligere valg stadig er tilgængelige længere nede. **Søg i alle spring** rydder de øvrige filtre uden at ændre søgeteksten. For tidligere registrerede serier gennemgås det udvidede fundament ved et nyt valg af serien; genåbning tilføjer ikke børn automatisk.
+
+Deler flere direkte valgte spring et fundament, vises barnet én gang under kilden med lavest kendt D. Ved samme D bruges den laveste sikkerhed, med Ikke vurderet først. Ukendt D er ikke nul: ved en ny binding skal du vælge kilde, hvis ingen har kendt D. Eksisterende egne vurderinger bevares. Et dobbelt 540° uden skruefordeling viser sit 180°-fundament med **Afklar skruefordeling**. Vælg fordelingen på parenten eller fravælg barnet; appen gætter aldrig.
+
+Gymnastens overblik er samlet i familier med antal unikke færdigheder. **Find færdighed** søger også i lukkede familier og viser matchet med sin sammenhæng. På computer står spring, egen D og sikkerhed/dato i faste kolonner; på mobil samles oplysningerne under navnet. Vælgerens **Minimum-D** inkluderer grænseværdien. **Vis kun ukendt D** giver adgang til uafklarede værdier. Direkte valg og fundament står øverst uden søgetekst og bevares gennem filtre. **Kun valgte** afgrænser den samme liste til valg, fundament og fravalg uden at vise springene igen andre steder.
+
+Et barn viser **Arvet fra** og kildens navn. Ændring af kildens sikkerhed eller vurderingsdato opdaterer straks barnet og planens sikkerhedsoversigt. Vælg **Egen vurdering**, også Ikke vurderet, for at gøre barnet uafhængigt. **Følg igen** genoptager arv fra en aktuel accepteret kilde. Barnets note bevares og arves aldrig. En noteændring alene ændrer ikke ophavet. Forsvinder kilden, bruges en anden gyldig kilde; ellers vises **Mangler arvekilde** med Ikke vurderet. Fjernelsesbekræftelsen viser afhængige børn, og fjernede børn genoprettes ikke automatisk.
 
 Mangler et spring, bruges **Byg selv** med elementer i rækkefølge. En registreret egen serie kan derefter vælges på andre gymnaster i samme arbejdsrum, også efter gem/genåbn. Brug Variant til præcis kropsposition, rotation og skruefordeling. Enkeltkompetencer bliver ikke automatisk sat sammen til en behersket serie, og vurdering eller personlig forbindelsesbekræftelse kopieres ikke mellem gymnaster. En ukendt specialforbindelse kræver konkret trænerbekræftelse; den gør ikke forbudte spring lovlige. Se [springbiblioteket](springbibliotek.md).
 
@@ -42,9 +50,15 @@ DK-profilen tillader seks tællende og højst to ekstra først. Ekstra markeres 
 
 D-grundlaget forklarer oprindelig og justeret D, kendte delresultater og kilde. C viser grundværdi, tillæg, rå fradrag og berørte valg. Uafklarede regler viser deres spørgsmål og eventuelle fortolkningsspor. Flow kræver observation. Stabilitet påvirker ikke D/C og vises med gennemsnit, minimum, lave vurderinger og dækning.
 
+Hver plads viser springets **D-tal** i et lille blåt felt uden ekstra tekst. Sikkerheden vises med fem streger og tallet 1–5: ravfarve ved 1–2, blå ved 3 og grøn ved 4–5. Ikke vurderet har tomme streger og en tankestreg; forklaringen kan læses med skærmlæser og ved at holde markøren over. Farven står aldrig alene. Én af seks pladser med rondat–flik–helskrue kan derfor vise 0,800 og 5/5, mens omgangen stadig er ufuldstændig. Et afvigende eller uafklaret **Bidrag til omgang** vises særskilt med årsag. D 0,800 kan godt have bidrag 0,000 ved afvigelse fra holdomgangens reference. Ekstra viser D og sikkerhed uden at tælle i summen. Ukendt D vises som Uafklaret; ingen anden regelpakke bruges som fallback.
+
+Åbn **Spring** på omgangspladsen for at sammenligne de registrerede muligheder. Navn og saltoretning står samlet; D og sikkerhed har egne kolonner på computer og en separat linje på mobil. Søg efter springnavnet eller retningen. Brug piletaster, Home/End og Enter til at vælge; Escape lukker listen og bevarer dit valg. **Vælg senere** lader pladsen stå uden spring. Skifter du gymnast, nulstilles springvalget, så en anden gymnasts færdighed ikke følger med. Først **Opdater** ændrer planen.
+
 Muligheder bygger kun på registrerede anvendelige færdigheder. »Se konkrete ændringer« viser en fuld vidneopstilling og konsekvenser for D, C og stabilitet. Anvendelse ændrer kladden samlet; annullering gør intet. Forskellige tillægsvidner kan være uforenelige. En afbrudt/begrænset søgning er en dokumenteret undergrænse, ikke et bevist maksimum.
 
 ## Rytme
+
+Ved oprettelse vælges moment og variant fra kataloget samt sikkerhed 1–5 og vurderingsdato i samme handling. **Ikke vurderet** gemmer hverken tal eller dato. Standardforløbet har intet navnefelt; katalogets navn og den valgte variant vises. Eksisterende egne navne bevares. Byg selv til spring har fortsat navnefelt. Rudy/rudi kan søges på begge stavemåder og vises med præcis beskrivelse og gradtegn, fx **Rudy · strakt salto 540° (forlæns)**.
 
 Rytmematricen sammenligner præcise varianter for holdets aktive medlemmer. På mindre skærme kan hver momentrække foldes ud med gymnastnavne. Klik på en vurdering for at ændre den, eller på en manglende færdighed for at registrere momentet. Filtre omfatter kategori, søgning, fælles/delvist og mindste stabilitet **hos hver gymnast**.
 
@@ -52,10 +66,12 @@ Dækning for færdighed og vurdering vises separat. »Se mangler« angiver navne
 
 ## Regelskift og gemning
 
+En ældre format 1-fil viser **Opgradér arbejdsrummet**. Eksportér eventuelt originalen, og vælg **Opgradér lokal kladde** eller **Annuller**. Alle eksisterende vurderinger bliver egne uden ændrede værdier. Originalen på Drive ændres først ved en særskilt **Gem på Drive**, som stadig kontrollerer rettigheder og konkurrerende ændringer. En læser kan eksportere den lokale opgradering. Ældre appudgaver kan ikke åbne format 2. Annullering eller afvisning af en beskadiget/nyere fil bevarer det nuværende arbejdsrum og kladden.
+
 Reglement viser installeret pakke/profil, kilder, algoritmeversioner og kendt tvivl. Et eksplicit skift viser før/efter for begge springdiscipliner, rytme og anvendelighed. Anvend skiftet samlet eller annullér. Ukendte pakker bevares uden fallback. Et nyere filformat afvises uden at ændre filen; filformat og regelversion er forskellige ting.
 
 **Lokale ændringer · Gem på Drive** gemmer en snapshot. Redigerer du videre under upload, står de nye ændringer fortsat som ugemte. »Gemt« vises først efter bekræftet eller genkendt operation. Ved konflikt kan kladden eksporteres, gennemgås eller kasseres bevidst før indlæsning af den nye fil. Der findes ingen automatisk sammenfletning eller »overskriv alligevel«.
 
 Ved udløbet Google-adgang bevares kladden. Forbind til Google Drive og kontrollér den aktuelle fil igen. Afbryd forbindelse rydder lokal adgang; tilbagekaldelse af samtykke er særskilt. Hvis en anden fane afbryder, lukkes arbejdsrummet, og en ugemt kladde tilbydes som isoleret eksport. Luk ikke siden, før ugemt arbejde er gemt eller eksporteret.
 
-Grundspring er ikke en særskilt kategori. Færdige banevalg sorteres efter Forlæns, Baglæns og Blandede. Fx en baglæns salto vælges i en serie med indgang, som rondat-salto. I Byg selv er alle elementer tilgængelige, men tilføj og flyt en indgang til starten, før en hel baneserie registreres.
+Grundspring er ikke en særskilt kategori. Banevalg grupperes efter indgang, og trampet efter redskab og rotation. Fx en baglæns salto vælges i en serie med indgang, som rondat-salto. I Byg selv er alle elementer tilgængelige, men tilføj og flyt en indgang til starten, før en hel baneserie registreres.

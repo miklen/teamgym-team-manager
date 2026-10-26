@@ -18,6 +18,7 @@ import {
 import { registry } from './rules';
 import { usePotentials } from './use-potentials';
 import { springDirectionText } from './spring-library';
+import { PlanDifficulty, PlanSafety, PlanSkillSelect } from './plan-skill-select';
 
 export function SpringPage(props: DataProps & { teamId: string }) {
   const team = props.workspace.teams.find((item) => item.id === props.teamId)!;
@@ -246,16 +247,29 @@ function SpringDisciplineView({
                         )}
                       </button>
                       <span className="entry-value">
-                        {points(participant.adjustedD.value)}
-                        <small
-                          className={`assessment-mark rating-${participant.registration?.stability ?? 'none'}`}
-                        >
-                          {participant.registration?.stability === null || !participant.registration
-                            ? 'Ikke vurderet'
-                            : `${participant.registration.stability}/5`}
-                        </small>
+                        <PlanDifficulty
+                          value={participant.originalD.value ? points(participant.originalD.value) : null}
+                        />
+                        <PlanSafety value={participant.registration?.stability ?? null} />
                       </span>
                     </div>
+                    {(participant.adjustedD.value?.compare(participant.originalD.value ?? 0) !== 0 ||
+                      participant.adjustedD.status !== 'known') && (
+                      <p className="round-contribution">
+                        Bidrag til omgang:{' '}
+                        <strong>
+                          {participant.adjustedD.value
+                            ? points(participant.adjustedD.value)
+                            : statusText[participant.adjustedD.status]}
+                        </strong>{' '}
+                        ·{' '}
+                        {participant.entry.role === 'extra'
+                          ? 'Ekstra indgår ikke i summen.'
+                          : participant.adjustedD.status !== 'known'
+                            ? 'Holdomgangen er ufuldstændig eller kræver afklaring.'
+                            : 'Afvigelse fra holdomgangens reference.'}
+                      </p>
+                    )}
                     <div className="entry-tools">
                       <button
                         className="quiet"
@@ -750,27 +764,24 @@ function EntryForm({
             ))}
           </select>
         </label>
-        <label>
-          Registreret komplet færdighed
-          <select
-            name="skill"
-            key={athleteId}
-            defaultValue={entry?.athleteId === athleteId ? (entry.athleteSkillId ?? '') : ''}
-          >
-            <option value="">Ikke valgt · ufuldstændig plads</option>
-            {skills.map((registration) => {
-              const skill = workspace.skills.find((item) => item.id === registration.skillId)!;
-              const directions = springDirectionText(skill);
-              return (
-                <option key={registration.id} value={registration.id}>
-                  {skill.name}
-                  {directions ? ` · ${directions}` : ''} ·{' '}
-                  {registration.stability === null ? 'Ikke vurderet' : `${registration.stability}/5`}
-                </option>
-              );
-            })}
-          </select>
-        </label>
+        <PlanSkillSelect
+          key={athleteId}
+          initialValue={entry?.athleteId === athleteId ? (entry.athleteSkillId ?? '') : ''}
+          options={skills.map((registration) => {
+            const skill = workspace.skills.find((item) => item.id === registration.skillId)!;
+            const difficulty =
+              skill.discipline === 'rhythm'
+                ? null
+                : rulePackage.evaluateSkill(skill, registration).difficulty.value;
+            return {
+              id: registration.id,
+              name: skill.name,
+              direction: springDirectionText(skill),
+              difficulty: difficulty ? points(difficulty) : null,
+              stability: registration.stability,
+            };
+          })}
+        />
         <label>
           Rolle
           <select name="role" defaultValue={entry?.role ?? 'counting'}>

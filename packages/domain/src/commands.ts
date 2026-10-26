@@ -3,14 +3,17 @@ import { CURRENT_SCHEMA_VERSION, WORKSPACE_FORMAT, athleteSkillSchema, rulesetBi
 import type { Athlete, AthleteSkill, RoundEntry, RulesetBinding, SkillDefinition, SpringDiscipline, Stability, Workspace } from './schema';
 import { validateWorkspace } from './workspace';
 import { aggregateStability } from './stability';
+import { reconcileInheritance } from './inheritance';
+import type { InheritanceContext } from './inheritance';
 
-export interface CommandEnvironment { id: () => string; now: () => string }
+export interface CommandEnvironment { id: () => string; now: () => string; inheritance?: InheritanceContext }
 const defaultEnvironment: CommandEnvironment = { id: newEntityId, now: () => new Date().toISOString() };
 
 function edit(workspace: Workspace, action: (copy: Workspace) => void, environment = defaultEnvironment): Workspace {
   const copy = structuredClone(workspace);
   action(copy);
   copy.updatedAt = environment.now();
+  reconcileInheritance(copy, environment.inheritance, environment.now());
   return validateWorkspace(copy);
 }
 
@@ -22,7 +25,7 @@ function requireItem<T extends { id: string }>(items: T[], id: string): T {
 
 export function createWorkspace(environment = defaultEnvironment): Workspace {
   return validateWorkspace({ format: WORKSPACE_FORMAT, schemaVersion: CURRENT_SCHEMA_VERSION, workspaceId: environment.id(), revision: 0,
-    updatedAt: environment.now(), recentOperations: [], teams: [], athletes: [], skills: [], athleteSkills: [], plans: [] });
+    updatedAt: environment.now(), recentOperations: [], teams: [], athletes: [], skills: [], athleteSkills: [], plans: [], inheritanceRelations: [], inheritanceExclusions: [] });
 }
 
 export function createTeam(workspace: Workspace, name: string, binding: RulesetBinding, environment = defaultEnvironment): Workspace {
@@ -62,7 +65,15 @@ export function moveAthlete(workspace: Workspace, athleteId: string, teamId: str
 }
 
 export function setArchived(workspace: Workspace, collection: 'teams' | 'athletes' | 'skills' | 'athleteSkills', id: string, archived: boolean, environment = defaultEnvironment) {
-  return edit(workspace, (copy) => { requireItem<{ id: string; archived: boolean }>(copy[collection], id).archived = archived; }, environment);
+  return edit(workspace, (copy) => {
+    requireItem<{ id: string; archived: boolean }>(copy[collection], id).archived = archived;
+    if (collection === 'athleteSkills' && archived) {
+      const registration = requireItem(copy.athleteSkills, id);
+      const targetIdentity = skillIdentity(requireItem(copy.skills, registration.skillId));
+      if (!copy.inheritanceExclusions.some((item) => item.athleteId === registration.athleteId && item.targetIdentity === targetIdentity)) copy.inheritanceExclusions.push({ athleteId: registration.athleteId, targetIdentity });
+      registration.assessmentOrigin = { kind: 'own' };
+    }
+  }, environment);
 }
 
 /** Returnerer den eksisterende præcise registrering uden at nulstille vurderingen. */
@@ -80,7 +91,7 @@ export function registerAthleteSkill(workspace: Workspace, athleteId: string, de
     if (registration) { athleteSkillId = registration.id; existed = true; return; }
     athleteSkillId = environment.id();
     copy.athleteSkills.push({ id: athleteSkillId, athleteId, skillId, archived: false, stability: null, assessedAt: null,
-      note: '', updatedAt: environment.now(), connectionConfirmation: null, reviewRequiredFor: [] });
+      note: '', updatedAt: environment.now(), connectionConfirmation: null, reviewRequiredFor: [], assessmentOrigin: { kind: 'own' } });
   }, environment);
   return { workspace: existed ? workspace : result, athleteSkillId, existed };
 }
@@ -88,6 +99,7 @@ export function registerAthleteSkill(workspace: Workspace, athleteId: string, de
 export function updateAssessment(workspace: Workspace, athleteSkillId: string, input: Pick<AthleteSkill, 'stability' | 'assessedAt' | 'note'>, environment = defaultEnvironment) {
   return edit(workspace, (copy) => {
     const registration = requireItem(copy.athleteSkills, athleteSkillId);
+    if (registration.stability !== input.stability || registration.assessedAt !== input.assessedAt) registration.assessmentOrigin = { kind: 'own' };
     Object.assign(registration, input, { updatedAt: environment.now() });
     athleteSkillSchema.parse(registration);
   }, environment);
@@ -106,10 +118,30 @@ export function replaceAthleteSkill(workspace: Workspace, registrationId: string
     if (copy.athleteSkills.some((item) => item.id !== registrationId && item.athleteId === registration.athleteId && item.skillId === targetId)) throw new Error('Gymnasten har allerede den præcise færdighed. Vælg den eksisterende registrering.');
     if (!existing) copy.skills.push(parsed);
     if (skillIdentity(previous) !== identity) {
+      registration.assessmentOrigin = { kind: 'own' };
       registration.stability = null; registration.assessedAt = null; registration.connectionConfirmation = null; registration.reviewRequiredFor = [];
     }
     registration.skillId = targetId; registration.updatedAt = environment.now();
   }, environment);
+}
+
+export function setOwnAssessment(workspace: Workspace, registrationId: string, input: Pick<AthleteSkill, 'stability' | 'assessedAt' | 'note'>, environment = defaultEnvironment) {
+  return edit(workspace, (copy) => {
+    Object.assign(requireItem(copy.athleteSkills, registrationId), input, { assessmentOrigin: { kind: 'own' }, updatedAt: environment.now() });
+  }, environment);
+}
+
+export function followAssessment(workspace: Workspace, registrationId: string, environment: CommandEnvironment = defaultEnvironment, sourceId?: string) {
+  const result = edit(workspace, (copy) => {
+    const registration = requireItem(copy.athleteSkills, registrationId);
+    const targetIdentity = skillIdentity(requireItem(copy.skills, registration.skillId));
+    copy.inheritanceExclusions = copy.inheritanceExclusions.filter((item) => item.athleteId !== registration.athleteId || item.targetIdentity !== targetIdentity);
+    if (sourceId && !copy.inheritanceRelations.some((relation) => relation.targetId === registrationId && relation.sourceId === sourceId)) throw new Error('Vælg en accepteret arvekilde.');
+    registration.assessmentOrigin = { kind: 'inherited', sourceId: null, sourceChoice: sourceId ? { sourceId, context: environment.inheritance?.fingerprint ?? 'explicit' } : null };
+  }, environment);
+  const origin = requireItem(result.athleteSkills, registrationId).assessmentOrigin;
+  if (origin.kind === 'inherited' && origin.sourceId === null) throw new Error('Vælg en gyldig arvekilde. Ukendt D kræver et bevidst kildevalg.');
+  return result;
 }
 
 export function confirmRuleReview(workspace: Workspace, athleteSkillId: string, binding: RulesetBinding, input: Pick<AthleteSkill, 'stability' | 'assessedAt' | 'note'>, environment = defaultEnvironment) {

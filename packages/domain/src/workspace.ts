@@ -1,5 +1,6 @@
 import { canonicalJson, skillIdentity, bindingFingerprint } from './identity';
-import { CURRENT_SCHEMA_VERSION, WORKSPACE_FORMAT, workspaceSchema } from './schema';
+import { CURRENT_SCHEMA_VERSION, WORKSPACE_FORMAT, workspaceSchema, workspaceV1Schema } from './schema';
+import type { WorkspaceV1 } from './schema';
 import type { Workspace } from './schema';
 import type { Diagnostic } from './index';
 
@@ -42,6 +43,48 @@ export function validateWorkspace(input: unknown): Workspace {
     pairs.add(key);
   }
   const planTeams = new Set<string>();
+  const relationKeys = new Set<string>();
+  const edges = new Map<string, string[]>();
+  for (const relation of workspace.inheritanceRelations) {
+    const source = registrations.get(relation.sourceId);
+    const target = registrations.get(relation.targetId);
+    if (!source || !target || source.id === target.id || source.athleteId !== target.athleteId) fail('Arvekilden skal være en anden registrering hos samme gymnast.');
+    const sourceSkill = skills.get(source.skillId)!;
+    const targetSkill = skills.get(target.skillId)!;
+    if (sourceSkill.discipline !== targetSkill.discipline || sourceSkill.discipline === 'rhythm' || skillIdentity(sourceSkill) !== relation.sourceIdentity || skillIdentity(targetSkill) !== relation.targetIdentity) fail('Arverelationen svarer ikke til de præcise udførelser.');
+    const key = canonicalJson(relation);
+    if (relationKeys.has(key)) fail('Arverelationen er gentaget.');
+    relationKeys.add(key);
+    edges.set(source.id, [...edges.get(source.id) ?? [], target.id]);
+  }
+  const visiting = new Set<string>(); const visited = new Set<string>();
+  function visit(id: string) {
+    if (visiting.has(id)) fail('Arverelationer må ikke danne en cyklus.');
+    if (visited.has(id)) return;
+    visiting.add(id); for (const target of edges.get(id) ?? []) visit(target);
+    visiting.delete(id); visited.add(id);
+  }
+  for (const id of edges.keys()) visit(id);
+  const exclusions = new Set<string>();
+  for (const exclusion of workspace.inheritanceExclusions) {
+    const key = canonicalJson(exclusion);
+    if (!athletes.has(exclusion.athleteId) || exclusions.has(key)) fail('Fravalget er ugyldigt eller gentaget.');
+    exclusions.add(key);
+  }
+  for (const registration of workspace.athleteSkills) {
+    if (registration.assessmentOrigin.kind !== 'inherited') continue;
+    const choice = registration.assessmentOrigin.sourceChoice;
+    if (choice && !workspace.inheritanceRelations.some((relation) => relation.sourceId === choice.sourceId && relation.targetId === registration.id)) fail('Det bevidste kildevalg skal henvise til en accepteret relation.');
+    const sourceId = registration.assessmentOrigin.sourceId;
+    if (sourceId === null) {
+      if (registration.stability !== null || registration.assessedAt !== null) fail('Manglende arvekilde skal være Ikke vurderet.');
+      continue;
+    }
+    const source = registrations.get(sourceId);
+    if (!source || source.archived || skills.get(source.skillId)!.archived || !workspace.inheritanceRelations.some((relation) => relation.sourceId === sourceId && relation.targetId === registration.id)) fail('Den aktive arvekilde findes ikke.');
+    if (source.stability !== registration.stability || source.assessedAt !== registration.assessedAt) fail('Den arvede vurdering svarer ikke til kilden.');
+    if (workspace.inheritanceExclusions.some((item) => item.athleteId === registration.athleteId && item.targetIdentity === skillIdentity(skills.get(registration.skillId)!))) fail('Et fravalgt spring kan ikke følge arv.');
+  }
   for (const plan of workspace.plans) {
     if (!teams.has(plan.teamId) || planTeams.has(plan.teamId)) fail('Hvert hold skal have én entydig plan.');
     planTeams.add(plan.teamId);
@@ -74,6 +117,20 @@ export function parseWorkspace(bytes: string): Workspace {
   let value: unknown;
   try { value = JSON.parse(bytes); } catch { throw new WorkspaceFormatError('invalid-json', 'Filen indeholder ugyldig JSON. Originalen ændres ikke.'); }
   return validateWorkspace(value);
+}
+
+/** Strikt læser: version 1 må aldrig acceptere eller tabe version 2-felter. */
+export function validateWorkspaceV1(input: unknown): WorkspaceV1 {
+  const parsed = workspaceV1Schema.safeParse(input);
+  if (!parsed.success) fail('Ugyldige format 1-data. Originalen bevares.');
+  const value = parsed.data;
+  validateWorkspace({ ...value, schemaVersion: 2, athleteSkills: value.athleteSkills.map((item) => ({ ...item, assessmentOrigin: { kind: 'own' } })), inheritanceRelations: [], inheritanceExclusions: [] });
+  return value;
+}
+
+export function migrateWorkspaceV1(input: unknown): Workspace {
+  const original = validateWorkspaceV1(input);
+  return validateWorkspace({ ...original, schemaVersion: 2, athleteSkills: original.athleteSkills.map((item) => ({ ...item, assessmentOrigin: { kind: 'own' } })), inheritanceRelations: [], inheritanceExclusions: [] });
 }
 
 export function serializeWorkspace(workspace: Workspace): string { return canonicalJson(validateWorkspace(workspace)); }

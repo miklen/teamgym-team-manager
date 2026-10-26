@@ -22,6 +22,8 @@ import { RulesPage, Teams } from './teams';
 import { Brand, Icon, WelcomeArtwork } from './ui';
 import type { IconName } from './ui';
 import './style.css';
+import './repertoire.css';
+import { reconcileWorkspace } from './inheritance-context';
 
 const saveLabels = {
   loading: 'Indlæser',
@@ -534,7 +536,7 @@ function App() {
         ) : page === 'arbejdsrum' ? (
           <Teams
             workspace={workspace}
-            change={(next) => workspaceSession.edit(next)}
+            change={(next) => workspaceSession.edit(reconcileWorkspace(next))}
             writable={!!data.loaded?.metadata.writable && auth.status === 'connected'}
             select={(id) => navigate('spring', id)}
           />
@@ -542,7 +544,7 @@ function App() {
           <Athletes
             key={teamId}
             workspace={workspace}
-            change={(next) => workspaceSession.edit(next)}
+            change={(next) => workspaceSession.edit(reconcileWorkspace(next))}
             writable={!!data.loaded?.metadata.writable && auth.status === 'connected'}
           />
         ) : !team ? (
@@ -551,7 +553,7 @@ function App() {
           <RhythmPage
             key={teamId}
             workspace={workspace}
-            change={(next) => workspaceSession.edit(next)}
+            change={(next) => workspaceSession.edit(reconcileWorkspace(next))}
             writable={writable}
             teamId={teamId}
           />
@@ -559,7 +561,7 @@ function App() {
           <RulesPage
             key={teamId}
             workspace={workspace}
-            change={(next) => workspaceSession.edit(next)}
+            change={(next) => workspaceSession.edit(reconcileWorkspace(next))}
             writable={writable}
             teamId={teamId}
           />
@@ -567,7 +569,7 @@ function App() {
           <SpringPage
             key={teamId}
             workspace={workspace}
-            change={(next) => workspaceSession.edit(next)}
+            change={(next) => workspaceSession.edit(reconcileWorkspace(next))}
             writable={writable}
             teamId={teamId}
           />
@@ -584,6 +586,33 @@ function App() {
         )}
       </main>
       <footer className="desktop-footer">{footerContent}</footer>
+      {data.migration && (
+        <Dialog title="Opgradér arbejdsrummet" close={() => workspaceSession.cancelMigration()}>
+          <p>
+            Filen bruger format 1. Opgradér til format 2 for at arbejde med arvet sikkerhed og personlige
+            fravalg.
+          </p>
+          <p>
+            Alle eksisterende vurderinger bevares som egne. Originalen på Drive ændres først, når du vælger
+            Gem på Drive. Ældre appudgaver kan ikke åbne format 2.
+          </p>
+          <div className="actions">
+            <button className="quiet" onClick={() => downloadCopy(workspaceSession.exportOriginal())}>
+              Eksportér original
+            </button>
+            <button className="quiet" onClick={() => workspaceSession.cancelMigration()}>
+              Annuller
+            </button>
+            <button
+              onClick={() => {
+                if (confirmDiscard()) workspaceSession.acceptMigration(true);
+              }}
+            >
+              Opgradér lokal kladde
+            </button>
+          </div>
+        </Dialog>
+      )}
       {settings && (
         <Dialog title="Arbejdsrum og forbindelse" suspended={pickerActive} close={() => setSettings(false)}>
           <p>{auth.account ? `${auth.account.name} · ${auth.account.email}` : 'Ingen konto forbundet.'}</p>

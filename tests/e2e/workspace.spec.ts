@@ -13,11 +13,13 @@ test('tomt arbejdsrum til hold, gymnast, komplet færdighed og vurdering', async
   await page.getByLabel('Navn', { exact: true }).fill('Syntetisk Maja');
   await page.getByRole('button', { name: 'Opdater' }).click();
   await page.getByRole('button', { name: /Syntetisk Maja/ }).click();
+  await page.getByRole('combobox', { name: 'Regelgrundlag for registrering' }).selectOption({ index: 1 });
   await page.getByRole('button', { name: 'Tilføj færdighed' }).click();
   await page.getByRole('combobox', { name: 'Disciplin', exact: true }).selectOption('rhythm');
-  await page.getByLabel('Navn på færdighed').fill('Hovedstand test');
+  await expect(page.getByLabel('Navn på færdighed')).toHaveCount(0);
+  await page.getByRole('combobox', { name: 'Sikkerhed', exact: true }).selectOption('3');
   await page.getByRole('button', { name: 'Registrér færdighed' }).click();
-  await page.getByRole('button', { name: /Hovedstand test/ }).click();
+  await page.getByRole('button', { name: /^Hovedstand/ }).click();
   await page.getByRole('radio', { name: '4', exact: true }).check();
   await page.getByRole('button', { name: 'Opdatér vurdering' }).click();
   await page.getByRole('button', { name: 'Luk dialog' }).click();
@@ -88,15 +90,15 @@ test('bane bygger komplet kæde, viser element-D og åbner eksisterende registre
   for (const [query, name] of [
     ['Rondat', /^Rondat R/],
     ['flic', /^Flik-flak F/],
-    ['Strakt salto 360', /^Strakt salto 360 \(baglæns\)/],
+    ['Strakt salto 360', /^Strakt salto 360° \(baglæns\)/],
   ] as const) {
     await page.getByLabel('Søg spring, kode eller alias').fill(query);
     await page.getByRole('button', { name }).click();
   }
-  await expect(page.getByText('0,800', { exact: true })).toBeVisible();
+  await expect(page.locator('.inline-analysis').getByText('0,800', { exact: true })).toBeVisible();
   await page.getByLabel('Navn på færdighed').fill('Syntetisk R-F-hel');
   await page.getByRole('button', { name: 'Registrér færdighed' }).click();
-  await expect(page.getByRole('button', { name: /Syntetisk R-F-hel/ })).toBeVisible();
+  await expect(page.getByRole('button', { name: /^Syntetisk R-F-hel/ })).toBeVisible();
   await page.getByRole('button', { name: 'Tilføj færdighed' }).click();
   await page.getByRole('combobox', { name: 'Disciplin', exact: true }).selectOption('rhythm');
   await page.getByRole('button', { name: 'Registrér færdighed' }).click();
@@ -104,7 +106,7 @@ test('bane bygger komplet kæde, viser element-D og åbner eksisterende registre
   await page.getByRole('button', { name: 'Luk dialog' }).click();
   await page.getByRole('button', { name: /Lokale ændringer/ }).click();
   await expect(page.getByRole('button', { name: 'Gemt', exact: true })).toBeVisible();
-  expect(source.workspace.athleteSkills).toHaveLength(27);
+  expect(source.workspace.athleteSkills).toHaveLength(30);
   expect(source.failures).toEqual([]);
 });
 
@@ -115,8 +117,13 @@ test('to ekstra først bevarer tællende stabilitet, og niende plads er utilgæn
   for (let index = 0; index < 2; index++) {
     await page.getByRole('button', { name: '+ Tilføj plads' }).first().click();
     await page.getByRole('combobox', { name: 'Rolle', exact: true }).selectOption('extra');
-    const choices = page.getByRole('combobox', { name: 'Registreret komplet færdighed', exact: true });
-    await choices.selectOption({ label: 'Syntetisk baneserie · Salto: baglæns · 5/5' });
+    await page.getByRole('button', { name: 'Spring', exact: true }).click();
+    await page
+      .getByRole('option', {
+        name: 'Syntetisk baneserie, Salto: baglæns, D 0,500, sikkerhed 5/5',
+        exact: true,
+      })
+      .click();
     await page.getByRole('button', { name: 'Opdater' }).click();
   }
   await expect(page.getByRole('button', { name: '+ Tilføj plads' }).first()).toBeDisabled();

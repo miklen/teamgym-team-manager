@@ -231,12 +231,12 @@ describe('springbibliotek', () => {
         { definition: hard, stability: hardRating, confirmed: true },
       ];
       const inherited = springRegistrationPlan(selected, DK_V1, true).filter((item) => !item.explicit);
-      expect(inherited.map((item) => item.stability)).toEqual([easyRating, easyRating]);
+      expect(inherited.map((item) => item.stability)).toEqual([easyRating, easyRating, hardRating, hardRating, hardRating]);
       expect(
         springRegistrationPlan([...selected].reverse(), DK_V1, true)
           .filter((item) => !item.explicit)
           .map((item) => item.stability),
-      ).toEqual([easyRating, easyRating]);
+      ).toEqual([easyRating, easyRating, hardRating, hardRating, hardRating]);
     }
     const explicit = shorterSeries(easy, DK_V1)[1]!;
     const plan = springRegistrationPlan(
@@ -368,8 +368,8 @@ describe('springbibliotek', () => {
       assessedAt: '2026-10-25',
     });
     const added = result.athleteSkills.slice(24);
-    expect(added).toHaveLength(4);
-    expect(added.map((item) => item.stability)).toEqual([2, 2, 2, 5]);
+    expect(added).toHaveLength(7);
+    expect(added.map((item) => item.stability).sort()).toEqual([2, 2, 2, 5, 5, 5, 5]);
     expect(added.every((item) => item.assessedAt === '2026-10-25')).toBe(true);
     expect(result.athleteSkills.filter((item) => item.athleteId === fixture.athleteB.id)).toEqual(
       fixture.workspace.athleteSkills.filter((item) => item.athleteId === fixture.athleteB.id),
@@ -416,7 +416,7 @@ describe('springbibliotek', () => {
       DK_V1,
       { includeShorter: true, assessedAt: '2026-10-25' },
     );
-    expect(inherited.athleteSkills.find((item) => item.id === first.registrationId)?.stability).toBe(2);
+    expect(inherited.athleteSkills.find((item) => item.id === first.registrationId)?.stability).toBe(5);
     const unrated = registerSpringBatch(
       assessed,
       fixture.athleteA.id,

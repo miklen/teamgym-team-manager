@@ -7,6 +7,8 @@ import {
   replaceAthleteSkill,
   skillDefinitionSchema,
   skillIdentity,
+  setOwnAssessment,
+  validateWorkspace,
 } from '@teamgym/domain';
 import type {
   AthleteSkill,
@@ -20,14 +22,15 @@ import type { RhythmCatalogEntry, RulePackage } from '@teamgym/rules';
 import { ActionForm, Decision, SkillBreakdown, SourceLinks, statusText } from './components';
 import {
   registerSpringBatch,
-  shorterSeries,
+  springRegistrationPlan,
   springLibrary,
   springElementName,
   springSeriesName,
-  springDirectionText,
 } from './spring-library';
 import type { SpringSelection } from './spring-library';
 import { SpringPicker } from './spring-picker';
+import { SpringChoiceRows } from './spring-choice-rows';
+import { springPickerRows } from './spring-picker-model';
 import { restoreRemovedSkill } from './restore-skill';
 import {
   canStartFloorSeries,
@@ -105,6 +108,30 @@ export function SkillEditor({
   const [assessedAt, setAssessedAt] = useState(new Date().toISOString().slice(0, 10));
   const batchMode = discipline !== 'rhythm' && !building && !registration;
   const [includeShorter, setIncludeShorter] = useState(true);
+  const [excluded, setExcluded] = useState([
+    ...new Set([
+      ...workspace.inheritanceExclusions
+        .filter((item) => item.athleteId === athleteId)
+        .map((item) => item.targetIdentity),
+      ...workspace.athleteSkills
+        .filter((item) => item.athleteId === athleteId && item.archived)
+        .map((item) => skillIdentity(workspace.skills.find((skill) => skill.id === item.skillId)!)),
+    ]),
+  ]);
+  const [ownAssessments, setOwnAssessments] = useState<Map<string, Stability | null>>(new Map());
+  const [sourceChoices, setSourceChoices] = useState<Map<string, string>>(new Map());
+  const [following, setFollowing] = useState<string[]>([]);
+  const controls = {
+    excluded,
+    setExcluded,
+    ownAssessments,
+    setOwnAssessments,
+    sourceChoices,
+    setSourceChoices,
+    following,
+    setFollowing,
+  };
+  const foundationOptions = { excluded, ownAssessments, sourceChoices, following };
   const library = useMemo(() => springLibrary(rulePackage, workspace), [rulePackage, workspace]);
   const [elements, setElements] = useState<ElementExecution[]>(
     original?.discipline === 'tumbling'
@@ -158,7 +185,7 @@ export function SkillEditor({
     const base = {
       id: newEntityId(),
       name:
-        name.trim() ||
+        (discipline === 'rhythm' ? original?.name : name.trim()) ||
         (discipline === 'rhythm'
           ? (moment?.name ?? 'Ukendt moment')
           : springSeriesName(elements, rulePackage)),
@@ -196,6 +223,7 @@ export function SkillEditor({
     preview && (commonSeries || (custom && confirm))
       ? {
           id: 'preview',
+          assessmentOrigin: { kind: 'own' },
           athleteId,
           skillId: preview.id,
           archived: false,
@@ -214,13 +242,25 @@ export function SkillEditor({
       : undefined;
   const evaluation =
     preview && preview.discipline !== 'rhythm' ? rulePackage.evaluateSkill(preview, confirmedPreview) : null;
-  const shorter = useMemo(
-    () =>
-      preview && preview.discipline === 'tumbling' && !registration
-        ? shorterSeries(preview, rulePackage)
-        : [],
-    [preview, registration, rulePackage],
+  const builderSelections: SpringSelection[] =
+    preview && preview.discipline !== 'rhythm'
+      ? [
+          ...selections,
+          {
+            definition: preview,
+            stability: newStability,
+            confirmed: commonSeries || (custom && confirm),
+            ...(confirmation ? { confirmationNote: confirmation } : {}),
+          },
+        ]
+      : selections;
+  const planned = springRegistrationPlan(
+    batchMode ? selections : builderSelections,
+    rulePackage,
+    includeShorter,
+    { ...foundationOptions, workspace, athleteId },
   );
+  const needsClarification = planned.some((item) => !item.excluded && (item.unresolved || item.needsSource));
   return (
     <ActionForm
       className="skill-editor"
@@ -233,11 +273,12 @@ export function SkillEditor({
               ? `Registrér ${selections.length + 1} spring`
               : 'Registrér færdighed'
       }
-      disabled={batchMode ? selections.length === 0 : !preview || missingEntry}
+      disabled={needsClarification || (batchMode ? selections.length === 0 : !preview || missingEntry)}
       submit={() => {
         if (batchMode) {
           save(
             registerSpringBatch(workspace, athleteId, selections, rulePackage, {
+              ...foundationOptions,
               includeShorter,
               assessedAt,
             }),
@@ -267,7 +308,7 @@ export function SkillEditor({
                   },
                 ],
                 rulePackage,
-                { includeShorter, assessedAt },
+                { ...foundationOptions, includeShorter, assessedAt },
               ),
             );
             return;
@@ -312,7 +353,13 @@ export function SkillEditor({
             confirmation ||
               `Standardserien ${skill.name} er registreret på gymnasten (${CONNECTION_CATALOG_VERSION}).`,
           );
-        save(result);
+        if (skill.discipline === 'rhythm' && !registration)
+          result = setOwnAssessment(result, registrationId, {
+            stability: newStability,
+            assessedAt: newStability === null ? null : assessedAt,
+            note: '',
+          });
+        save(validateWorkspace(result));
       }}
     >
       <label className="discipline-field">
@@ -333,7 +380,7 @@ export function SkillEditor({
           <option value="rhythm">Rytme</option>
         </select>
       </label>
-      {(discipline === 'rhythm' || building) && (
+      {discipline !== 'rhythm' && building && (
         <label>
           Navn på færdighed
           <input
@@ -439,6 +486,7 @@ export function SkillEditor({
           {!building && (
             <SpringPicker
               key={discipline}
+              controls={controls}
               library={library}
               discipline={discipline}
               workspace={workspace}
@@ -463,17 +511,6 @@ export function SkillEditor({
               <h3>
                 {discipline === 'tumbling' ? 'Komplet serie i udførelsesrækkefølge' : 'Komplet trampetspring'}
               </h3>
-              {preview && elements.length > 0 && (
-                <div className="selected-spring" role="status">
-                  <h3>Valgt serie</h3>
-                  <p>
-                    <strong>{preview.name}</strong>
-                  </p>
-                  {preview.discipline !== 'rhythm' && springDirectionText(preview) && (
-                    <small className="spring-directions">{springDirectionText(preview)}</small>
-                  )}
-                </div>
-              )}
               {elements.length === 0 && (
                 <p className="empty">
                   Vælg {discipline === 'tumbling' ? 'seriens første element' : 'et spring'} i kataloget.
@@ -569,37 +606,19 @@ export function SkillEditor({
               </div>
             </>
           )}
-          {building && !registration && (
-            <div className="form-grid">
+          {building &&
+            !registration &&
+            (newStability !== null || [...ownAssessments.values()].some((value) => value !== null)) && (
               <label>
-                Sikkerhed
-                <select
-                  value={newStability ?? ''}
-                  onChange={(event) =>
-                    setNewStability(event.target.value ? (Number(event.target.value) as Stability) : null)
-                  }
-                >
-                  <option value="">Ikke vurderet</option>
-                  {[1, 2, 3, 4, 5].map((number) => (
-                    <option key={number} value={number}>
-                      {number}
-                    </option>
-                  ))}
-                </select>
+                Vurderingsdato
+                <input
+                  type="date"
+                  value={assessedAt}
+                  required
+                  onChange={(event) => setAssessedAt(event.target.value)}
+                />
               </label>
-              {newStability !== null && (
-                <label>
-                  Vurderingsdato
-                  <input
-                    type="date"
-                    value={assessedAt}
-                    required
-                    onChange={(event) => setAssessedAt(event.target.value)}
-                  />
-                </label>
-              )}
-            </div>
-          )}
+            )}
           {building && custom && evaluation?.connection === 'unverified' && (
             <section className="connection-review">
               <p className="notice">
@@ -627,35 +646,34 @@ export function SkillEditor({
               )}
             </section>
           )}
-          {shorter.length > 0 && (
-            <div className="shorter-series">
-              <label className="check">
-                <input
-                  type="checkbox"
-                  checked={includeShorter}
-                  onChange={(event) => setIncludeShorter(event.target.checked)}
-                />
-                Medtag kortere serier med samme sikkerhed
-              </label>
-              {includeShorter && (
-                <details>
-                  <summary>Medtagne kortere serier ({shorter.length})</summary>
-                  <p>Disse registreres også. Dit valgte spring står ovenfor under Valgt serie.</p>
-                  <ul>
-                    {shorter.map((skill) => (
-                      <li key={skill.id}>
-                        {skill.name}
-                        {newStability !== null ? ` · ${newStability}/5` : ''}
-                      </li>
-                    ))}
-                  </ul>
-                </details>
-              )}
-              <small>
-                De kortere serier arver sikkerheden. Vælges en kortere serie også særskilt, bruges dens egen
-                vurdering.
-              </small>
-            </div>
+          {building && !registration && planned.length > 0 && (
+            <section className="unified-picker" aria-label="Springvælger">
+              <div className="spring-selection-toolbar">
+                <h3>Spring i registreringen</h3>
+                <label className="check">
+                  <input
+                    type="checkbox"
+                    checked={includeShorter}
+                    onChange={(event) => setIncludeShorter(event.target.checked)}
+                  />
+                  Medtag fundament automatisk
+                </label>
+              </div>
+              <SpringChoiceRows
+                rows={springPickerRows(library, [], planned)}
+                selections={builderSelections}
+                change={(items) => {
+                  const builder = preview && items.find((item) => item.definition.id === preview.id);
+                  setSelections(items.filter((item) => item.definition.id !== preview?.id));
+                  if (preview && !builder) setElements([]);
+                  else if (builder) {
+                    setNewStability(builder.stability);
+                    if (builder.definition.discipline === 'trampet') setElements([builder.definition.jump]);
+                  }
+                }}
+                {...{ workspace, athleteId, rulePackage, controls }}
+              />
+            </section>
           )}
           {evaluation && (
             <section className="inline-analysis">
@@ -677,6 +695,37 @@ export function SkillEditor({
             </section>
           )}
         </>
+      )}
+      {discipline === 'rhythm' && !registration && (
+        <div className="form-grid">
+          <label>
+            Sikkerhed
+            <select
+              value={newStability ?? ''}
+              onChange={(event) =>
+                setNewStability(event.target.value ? (Number(event.target.value) as Stability) : null)
+              }
+            >
+              <option value="">Ikke vurderet</option>
+              {[1, 2, 3, 4, 5].map((value) => (
+                <option key={value} value={value}>
+                  {value}
+                </option>
+              ))}
+            </select>
+          </label>
+          {newStability !== null && (
+            <label>
+              Vurderingsdato
+              <input
+                type="date"
+                required
+                value={assessedAt}
+                onChange={(event) => setAssessedAt(event.target.value)}
+              />
+            </label>
+          )}
+        </div>
       )}
       {registration && (
         <p className="notice">

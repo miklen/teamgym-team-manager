@@ -23,3 +23,4 @@ export * from './workspace';
 export * from './stability';
 export * from './commands';
 export * from './fraction';
+export * from './inheritance';

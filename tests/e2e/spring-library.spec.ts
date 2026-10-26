@@ -12,14 +12,14 @@ test('ingen Grundspring eller løs baglæns salto i færdige valg, men alle elem
   await page.getByRole('button', { name: /Maja Test Test 1/ }).click();
   await page.getByRole('button', { name: 'Tilføj færdighed' }).click();
   await expect(page.getByRole('option', { name: 'Grundspring', exact: true })).toHaveCount(0);
-  await page.getByRole('combobox', { name: 'Springgruppe', exact: true }).selectOption('Baglæns');
+  await page.getByRole('combobox', { name: 'Springgruppe', exact: true }).selectOption('Rondat direkte');
   await expect(page.getByRole('checkbox', { name: /^Rondat Baglæns/ })).toBeVisible();
   await expect(page.getByRole('checkbox', { name: /^Lukket salto baglæns/ })).toHaveCount(0);
   await expect(page.getByRole('checkbox', { name: /^Flik-flak Baglæns/ })).toHaveCount(0);
   await expect(page.getByRole('checkbox', { name: /^Whipback Baglæns/ })).toHaveCount(0);
   await page.getByRole('button', { name: 'Byg selv', exact: true }).click();
   await page.getByLabel('Søg spring, kode eller alias').fill('baglæns salto');
-  await page.getByRole('button', { name: /^Lukket salto \(baglæns\)/ }).click();
+  await page.getByRole('button', { name: /^Lukket salto 0° \(baglæns\)/ }).click();
   await expect(page.getByText(/Serien mangler en indgang fra tilløb/)).toBeVisible();
   await expect(page.getByRole('button', { name: 'Registrér færdighed', exact: true })).toBeDisabled();
   await page.screenshot({ path: 'tmp/ui-qa/springindgang-390.png' });
@@ -68,14 +68,13 @@ for (const width of [1440, 390]) {
       .getByLabel('Sikkerhed for Rondat – flik – strakt 1/2 (180°)', { exact: true })
       .selectOption('2');
     await page.getByLabel('Vurderingsdato', { exact: true }).fill('2026-10-25');
-    await expect(page.getByText('2 spring valgt · 2 kortere serier medtages', { exact: true })).toBeVisible();
-    await page.getByText('Se sikkerhed på kortere serier', { exact: true }).click();
-    await expect(page.getByText('Rondat · 2/5', { exact: true })).toBeVisible();
-    await expect(page.getByText('Rondat – flik · 2/5', { exact: true })).toBeVisible();
+    await expect(page.getByText('2 spring valgt · 5 fundament medtages', { exact: true })).toBeVisible();
+    await expect(page.getByLabel('Vurdering for Rondat', { exact: true })).toHaveValue('inherit');
+    await expect(page.getByLabel('Vurdering for Rondat – flik', { exact: true })).toContainText(
+      'Arvet · 2/5',
+    );
     await expect(page.getByText(/Jeg har verificeret gymnastens præcise forbindelse/)).toHaveCount(0);
-    await expect(
-      page.getByRole('checkbox', { name: 'Medtag kortere serier med samme sikkerhed' }),
-    ).toBeChecked();
+    await expect(page.getByRole('checkbox', { name: 'Medtag fundament automatisk' })).toBeChecked();
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
     const result = await new AxeBuilder({ page })
       .withTags(['wcag2a', 'wcag2aa', 'wcag21aa', 'wcag22aa'])
@@ -85,12 +84,13 @@ for (const width of [1440, 390]) {
     await page.screenshot({ path: `tmp/ui-qa/springbibliotek-${width}.png` });
     await page.getByRole('button', { name: 'Registrér 2 spring', exact: true }).click();
     await expect(page.getByRole('button', { name: /^Rondat – flik – strakt 1\/1/ })).toBeVisible();
+    await page.getByLabel('Find færdighed').fill('Rondat');
     await expect(page.getByRole('button', { name: /^Rondat D:/ })).toBeVisible();
     await expect(page.getByRole('button', { name: /^Rondat – flik D:/ })).toBeVisible();
     await page.getByRole('button', { name: 'Luk dialog', exact: true }).click();
     await page.getByRole('button', { name: /Lokale ændringer/ }).click();
     await expect(page.getByRole('button', { name: 'Gemt', exact: true })).toBeVisible();
-    expect(source.workspace.athleteSkills).toHaveLength(28);
+    expect(source.workspace.athleteSkills).toHaveLength(31);
     expect(
       source.workspace.athleteSkills
         .slice(24)
@@ -115,13 +115,13 @@ test('byg én gang, genbrug på anden gymnast med et selvstændigt valg af hele 
     ['flic', /^Flik-flak F/],
     ['flic', /^Flik-flak F/],
     ['flic', /^Flik-flak F/],
-    ['Strakt salto 360', /^Strakt salto 360 \(baglæns\)/],
+    ['Strakt salto 360', /^Strakt salto 360° \(baglæns\)/],
   ] as const) {
     await page.getByLabel('Søg spring, kode eller alias').fill(query);
     await page.getByRole('button', { name }).click();
   }
   await page.getByLabel('Navn på færdighed').fill('Syntetisk egen serie');
-  await page.getByRole('checkbox', { name: 'Medtag kortere serier med samme sikkerhed' }).uncheck();
+  await page.getByRole('checkbox', { name: 'Medtag fundament automatisk' }).uncheck();
   await expect(
     page.getByRole('checkbox', { name: 'Gymnasten kan udføre hele serien uden mellemtrin' }),
   ).toHaveCount(0);
@@ -135,13 +135,13 @@ test('byg én gang, genbrug på anden gymnast med et selvstændigt valg af hele 
   await page.reload();
   await page.getByRole('button', { name: /Maja Test Test 2/ }).click();
   await page.getByRole('button', { name: 'Tilføj færdighed' }).click();
-  await page.getByLabel('Springgruppe').selectOption('Egne spring');
+  await page.getByLabel('Springgruppe').selectOption('Rondat-flik');
   await page.getByLabel('Søg sammensat spring eller alias').fill('Syntetisk egen serie');
   await page.getByRole('checkbox', { name: /^Syntetisk egen serie/ }).check();
   await expect(
     page.getByRole('checkbox', { name: 'Gymnasten kan udføre hele serien uden mellemtrin' }),
   ).toHaveCount(0);
-  await page.getByRole('checkbox', { name: 'Medtag kortere serier med samme sikkerhed' }).uncheck();
+  await page.getByRole('checkbox', { name: 'Medtag fundament automatisk' }).uncheck();
   await page.getByRole('button', { name: 'Registrér 1 spring', exact: true }).click();
   await expect(page.getByRole('button', { name: /^Syntetisk egen serie.*Ikke vurderet/ })).toBeVisible();
   await page.getByRole('button', { name: 'Luk dialog', exact: true }).click();
@@ -175,18 +175,20 @@ test('valg bevares mellem grupper og discipliner, og en særskilt kortere vurder
     .getByLabel('Sikkerhed for Strakt – kraftspring – rudy (strakt 540°)', { exact: true })
     .selectOption('3');
   await page.getByLabel('Søg sammensat spring eller alias').fill('strakt kraft');
-  await page.getByRole('checkbox', { name: /^Strakt – kraftspring Salto: forlæns Forlæns/ }).check();
-  await page.getByLabel('Sikkerhed for Strakt – kraftspring', { exact: true }).selectOption('4');
+  await expect(page.getByRole('checkbox', { name: /^Strakt – kraftspring Arvet fra/ })).toBeChecked();
+  await page.getByLabel('Vurdering for Strakt – kraftspring', { exact: true }).selectOption('4');
   await page.getByRole('combobox', { name: 'Disciplin', exact: true }).selectOption('trampet');
-  await page.getByRole('combobox', { name: 'Springgruppe', exact: true }).selectOption('Med redskab');
+  await page
+    .getByRole('combobox', { name: 'Springgruppe', exact: true })
+    .selectOption('Med redskab · Overslag og øvrige spring');
   await page.getByRole('checkbox', { name: /^Overslag Med redskab/ }).check();
   await page.getByLabel('Sikkerhed for Overslag', { exact: true }).selectOption('5');
   await page.getByRole('combobox', { name: 'Disciplin', exact: true }).selectOption('tumbling');
   await expect(page.getByRole('checkbox', { name: /^Strakt – kraftspring – rudy/ })).toBeChecked();
   await expect(
-    page.getByRole('checkbox', { name: /^Strakt – kraftspring Salto: forlæns Forlæns/ }),
+    page.getByRole('checkbox', { name: /^Strakt – kraftspring Fundament · Egen vurdering/ }),
   ).toBeChecked();
-  await page.getByRole('button', { name: 'Registrér 3 spring', exact: true }).click();
+  await page.getByRole('button', { name: 'Registrér 2 spring', exact: true }).click();
   await expect(page.getByRole('button', { name: /^Strakt – kraftspring – rudy/ })).not.toContainText(
     'Forbindelse kræver bekræftelse',
   );

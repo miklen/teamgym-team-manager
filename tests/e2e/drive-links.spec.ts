@@ -8,6 +8,7 @@ async function connectedStart(page: Page) {
   await expect(page.getByRole('heading', { name: 'Hold', exact: true })).toBeVisible();
   await page.getByRole('button', { name: 'Arbejdsrum', exact: true }).click();
   await page.getByRole('button', { name: 'Afbryd forbindelse / skift konto' }).click();
+  await expect(page.getByRole('dialog')).toHaveCount(0);
   await page.goto('./');
   await page.getByRole('button', { name: 'Forbind til Google Drive', exact: true }).click();
   await expect(page.getByRole('heading', { name: 'Åbn holdets arbejdsrum' })).toBeVisible();

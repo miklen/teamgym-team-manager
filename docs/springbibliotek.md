@@ -1,6 +1,6 @@
 # Springbibliotek
 
-Springregistrering starter med **Vælg fra listen**. Biblioteket rummer 239 færdige banesammensætninger, 24 selvstændige spring med indgang fra tilløb og 35 komplette trampetspring i den installerede DK-pakke. Søgningen forstår navne og aliaser som `rondat-flik-1/1`, `flik hel`, `kraft barani` og `rudy`. Vælg Forlæns, Baglæns, Blandede, Med/Uden redskab eller Egne spring for at begrænse listen. D følger altid holdets regelpakke.
+Springregistrering starter med **Vælg fra listen**. Biblioteket rummer 239 færdige banesammensætninger, 24 selvstændige spring med indgang fra tilløb og 35 komplette trampetspring i den installerede DK-pakke. Søgningen forstår navne og aliaser som `rondat-flik-1/1`, `flik hel`, `kraft barani`, `rudy` og `rudi`. Gruppefilteret følger baneindgang og trampettens redskab/familie/rotation. Egne spring placeres efter deres præcise udførelse. D følger altid holdets regelpakke.
 
 Kategorien Grundspring er fjernet. Fx rondat, kraftspring og forlæns salto ligger under deres retning. Løs baglæns salto, flik og whipback tilbydes som dele af komplette serier med indgang. Alle elementer findes fortsat i **Byg selv**, men en ny hel baneserie kan først registreres, når en indgang fra tilløb står først. Det gælder også egne genbrugelige definitioner i listen. Filtreringen ændrer ikke allerede gemte registreringer eller det officielle elementkatalog.
 
@@ -24,21 +24,39 @@ Ingen serie tildeles en gymnast alene ved at findes i biblioteket. Sæt flueben 
 
 Fluebenet under denne forklaring er trænerens personlige angivelse af, at gymnasten kan hele serien. Det erstatter listens tidligere ekstra bekræftelsesfelt. For en egen serie opbygges en ny personlig bekræftelse på den valgte gymnast; en anden gymnasts bekræftelse kopieres ikke. Den frie bygger bruger den konkrete formulering **Gymnasten kan udføre hele serien uden mellemtrin**, når en særlig sammensætning skal bekræftes. Biblioteket ændrer ikke den udgivne regelpakkes algoritmer eller gør forbudte/uafklarede elementer gyldige.
 
-## Kortere begyndelser
+## Fundament og personlige valg
 
-**Medtag kortere serier med samme sikkerhed** er valgt som standard. Rondat–flik–1/1 med sikkerhed 4 medtager rondat og rondat–flik med sikkerhed 4 og samme vurderingsdato. De kan gennemgås før registrering og fravælges. Der udledes kun præcise begyndelser: hverken mindre skrue, anden kropsposition, nye afslutninger eller omvendt sammenbygning af enkeltfærdigheder.
+**Medtag fundament automatisk** er valgt som standard. Direkte valg og deres fundament står øverst i den samme springvælger med sikkerhed, D og ophav. Hvert spring vises én gang, også når et fundament samtidig findes i kataloget. Hvert barn kan fravælges eller få egen vurdering på sin række. **Kun valgte** afgrænser samme liste; valg og fundament bevares gennem søgning, gruppe og **Minimum-D**. Grænseværdien medtages; **Vis kun ukendt D** viser uafklarede værdier uden at kalde dem nul.
+
+Søgningen prioriterer sammenhængende ord og navnets begyndelse. `strakt rondat` viser derfor Strakt–rondat og Strakt–rondat–flik før serier, hvor strakt først står til sidst. Bindestreger, tankestreger og mellemrum sidestilles. Egne serienavne kan også findes via deres præcise elementnavne. Ved søgning står de bedste match først; dine valg og fundamenter bliver i den samme liste. **Søg i alle spring** rydder gruppe-, D- og valgfiltre og bevarer søgeteksten.
+
+Det versionsmærkede trænerkatalog `spring-foundation`, version `2`, har denne afgrænsede matrix:
+
+| Direkte valgt kilde | Medtaget fundament |
+| --- | --- |
+| Komplet baneserie | Alle præcise kortere begyndelser med samme indgang og overgange |
+| Baneserie med en kendt forlæns indgangssalto | Samme serie uden den første salto, når resten har en selvstændig indgang fra tilløb, samt det aftalte fundament til denne serie |
+| Rondat–flik–strakt baglæns helskrue | Samme indgang med lukket, hoftebøjet og strakt baglæns enkeltsalto uden skrue |
+| Rudy · strakt forlæns enkeltsalto 540°, trampet uden redskab | Lukket, hoftebøjet og strakt enkeltsalto med 0° og 180°, samme afsæt/landing |
+| Forlæns dobbelt 540°, trampet uden redskab | Dobbelt 180° med samme kropspositionsforløb: [3,0] og [1,2] → [1,0]; [2,1] og [0,3] → [0,1], målt i halve skruer |
+
+Dobbeltrelationen omfatter alle ni kombinationer af lukket/hoftebøjet/strakt i de to saltoer; fx [hoftebøjet,strakt] og [2,1] giver samme positioner og [0,1]. Mangler 540°-fordelingen, vises 180°-barnet som **Afklar skruefordeling**. Afklar på parenten eller fravælg barnet før registrering. Ingen fordeling opfindes.
+
+Fx medtager Strakt–rondat–flik–helskrue også Rondat–flik–helskrue, rondat, rondat–flik og de tre aftalte afslutninger uden skrue. Den samme regel gælder kendte lukket/hoftebøjet/strakt indgangssaltoer foran rondat eller kraftspring. Elementer, skruer og indbyrdes overgange i resten af serien bevares. En barani foran flik giver ikke en løs flikserie uden indgang. Alle børn følger den direkte valgte kilde. Accepterede relationer fra version `1` virker fortsat; nye version `2`-børn tilføjes først ved et bevidst nyt valg af serien med gennemgang af fundamentet.
+
+Kataloget beskriver praktisk fundament, ikke officielle regler. Det ændrer ingen kildebytes, D-værdier eller gyldighed og krydser ikke retning eller redskab. Der dannes ingen ny forbindelse af løse registreringer. De fem helskruebørns D i juniorpigeeksemplet er håndfastlagt som 0,10, 0,30, 0,50, 0,50 og 0,60; parentens D er 0,80.
 
 **Brugerens regel for fælles begyndelser:** Hvis flere valgte serier deler en kortere serie, arves sikkerheden fra serien med **lavest sværhed (D)**, fordi den er tættest på den korte serie i udførelse. Fx giver en halvskrueserie med D 0,70/sikkerhed 2 og en helskrueserie med D 0,80/sikkerhed 5 sikkerhed 2 til rondat og rondat–flik. Vælges den korte serie særskilt med en anden vurdering, har den direkte vurdering forrang. Ved samme D bruges den laveste sikkerhed; klikrækkefølgen ændrer ikke resultatet.
 
-Arv kan opdatere en eksisterende kortere vurdering, men bevarer id og note. Arkiverede registreringer ændres ikke. Et tomt sikkerhedsfelt på en længere serie sletter ikke en kendt vurdering af en kortere serie. Nedarvning sker i den samlede registrering; der etableres ingen permanent binding mellem efterfølgende individuelle vurderinger. En serie med ekstra flik bevarer elementrækkefølgen, men den gentagne flik giver fortsat ikke ekstra D.
+Nye børn følger sikkerhed og dato løbende. **Egen vurdering**, også null, bevares; **Følg igen** er et bevidst valg. Id og note bevares, og noter arves aldrig. Kun direkte valgte aktive kilder med accepterede relationer rangeres. Automatisk rondat–flik overtager ikke rondats kilde fra den direkte halv-/helskrueserie. Ved ukendt D fastholdes en gyldig eksisterende kilde; en ny binding kræver synligt kildevalg. Fravalg og fjernede børn overlever nye kilder og genåbning. En katalogopdatering tilføjer ikke automatisk børn til eksisterende gymnaster. En serie med ekstra flik bevarer elementrækkefølgen, men gentagelsen giver fortsat ikke ekstra D.
 
 ## Byg én gang, genbrug
 
-Byggeren viser **Valgt serie**, fx *Strakt – rondat – flik – helskrue*. De automatisk medtagne begyndelser ligger særskilt under **Medtagne kortere serier (3)** som *Strakt*, *Strakt – rondat* og *Strakt – rondat – flik*. Oversigten er lukket som standard. Elementvalg viser tydeligt **forlæns** og **baglæns**, og søgning som `baglæns 360` eller `forlæns helskrue` finder den relevante retning.
+Byggeren viser den valgte hele serie, fx *Strakt – rondat – flik – helskrue*, og fundamentet i samme rækkevisning under **Spring i registreringen**. Der er ingen ekstra gentagelse af den valgte serie. Elementvalg viser tydeligt **forlæns** og **baglæns**, og søgning som `baglæns 360` eller `forlæns helskrue` finder den relevante retning.
 
 Det praktiske forbindelseskatalog `coach-connections-2` genkender forlæns salto i alle tre positioner med hele skruer til rondat/kraft og med ulige halve skruer til flik/whipback. Kendte serier vises uden felt om specialforbindelse. Hvis en forlæns salto vælges efter flik, gives en konkret forklaring om den baglæns afslutning til den almindelige serie. Trænerens valg omskrives ikke automatisk.
 
-Genkendelsen er en klientfunktion, som er adskilt fra den fastlåste DK-pakkes pointberegning. Når træneren registrerer den konkrete hele serie på gymnasten, kan en personlig bekræftelse lagres uden at omklassificere udførelsen som en specialserie. Den udgivne DK-pakke kan læse bekræftelsen; dens algoritmer, D/C, binding og filformat ændres ikke. Noter, sikkerhed og revurderingsmarkører nulstilles ikke af selve bekræftelsen.
+Genkendelsen er en klientfunktion, som er adskilt fra den fastlåste DK-pakkes pointberegning. Når træneren registrerer den konkrete hele serie på gymnasten, kan en personlig bekræftelse lagres uden at omklassificere udførelsen som en specialserie. Den udgivne DK-pakke kan læse bekræftelsen; dens algoritmer, D/C og binding ændres ikke. Arbejdsrumsformat 2 gemmer arvevalgene. Noter, sikkerhed og revurderingsmarkører nulstilles ikke af selve bekræftelsen.
 
 **Byg selv** bevarer elementbyggeren og de præcise varianter til spring, som mangler i listen. Giv serien et navn og registrér den; definitionen ligger derefter i det fælles arbejdsrums `skills` og findes i listen på andre gymnaster. Færdighedens navn er også søgbart, når den samme udførelse allerede findes som standardspring.
 
@@ -46,4 +64,4 @@ Gem arbejdsrummet på Drive for at bevare egne spring til næste åbning og dele
 
 ## Kontrol
 
-Elleve domænetests kontrollerer håndregnede D-eksempler, præcise begyndelser, fravalg, dubletter, fælles begyndelser med forskellige D-/sikkerhedsværdier, direkte forrang, dato, bevarede noter/arkivering, atomisk fejl ved ugyldig dato og genbrug efter fil-roundtrip uden kopieret vurdering/bekræftelse. Seks browserprøver dækker flervalg, vurdering og arv ved 1440 og 390 px, genbrug af egne spring og valg mellem grupper/discipliner. Axe kontrollerer bibliotekets tilgængelighed. Testpersoner og Drive-svar er syntetiske; dette er ikke en ny reel Google-/flerbrugertest.
+Domæneprøverne kontrollerer faste relations- og D-eksempler, de fire skruefordelingspar, blandede kropspositioner, løbende arv, egne null-vurderinger, fravalg, id-/notebevaring, kildebortfald og filrundtur. Browserprøverne dækker søgning, minimum-D, registrering, vurdering og mobiloverblik med selvstændigt konstruerede syntetiske repertoirer. Axe og tastaturprøver kontrollerer tilgængeligheden. Resultater registreres i ændringens kontrolnotat; dette er ikke en reel Google-/flerbrugertest.

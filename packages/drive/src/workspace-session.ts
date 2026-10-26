@@ -6,6 +6,7 @@ import { DriveError } from './errors';
 
 export type SaveState = 'loading' | 'unchanged' | 'changed' | 'saving' | 'saved' | 'conflict' | 'error';
 export interface WorkspaceView {
+  migration: LoadedWorkspace | null;
   loaded: LoadedWorkspace | null;
   draft: Workspace | null;
   state: SaveState;
@@ -23,6 +24,7 @@ interface PendingOperation {
 /** Basis, afsendt snapshot og levende kladde har hver sin levetid. Ingen automatisk merge/rebase. */
 export class WorkspaceSession {
   private view: WorkspaceView = {
+    migration: null,
     loaded: null,
     draft: null,
     state: 'loading',
@@ -38,6 +40,7 @@ export class WorkspaceSession {
     private readonly client: WorkspaceClient,
     private readonly now = () => new Date().toISOString(),
     private readonly id = () => crypto.randomUUID(),
+    private readonly prepareDraft: (workspace: Workspace) => Workspace = validateWorkspace,
   ) {}
   snapshot = () => this.view;
   subscribe = (callback: () => void) => {
@@ -51,22 +54,43 @@ export class WorkspaceSession {
     for (const listener of this.listeners) listener();
   }
   adopt(loaded: LoadedWorkspace) {
+    if (loaded.originalBytes !== undefined) {
+      this.publish({ migration: structuredClone(loaded), state: this.dirty() ? 'changed' : 'unchanged' });
+      return;
+    }
+    this.adoptAccepted(loaded);
+  }
+  private adoptAccepted(loaded: LoadedWorkspace) {
+    const draft = this.prepareDraft(structuredClone(loaded.workspace));
     this.generation++;
     this.pending = null;
     this.publish({
+      migration: null,
       loaded: structuredClone(loaded),
-      draft: structuredClone(loaded.workspace),
-      state: 'unchanged',
+      draft,
+      state: loaded.originalBytes !== undefined || workspacePayload(draft) !== workspacePayload(loaded.workspace) ? 'changed' : 'unchanged',
       message: '',
       newer: false,
       operationCompleted: false,
     });
+  }
+  acceptMigration(discard = false) {
+    if (!this.view.migration) return;
+    if (this.dirty() && !discard) throw new DriveError('cancelled', 'Bekræft kassation af kladden, eller eksportér den først.');
+    this.adoptAccepted(this.view.migration);
+  }
+  cancelMigration() { this.publish({ migration: null, state: this.dirty() ? 'changed' : this.view.loaded ? 'unchanged' : 'loading' }); }
+  exportOriginal() {
+    const bytes = this.view.migration?.originalBytes ?? this.view.loaded?.originalBytes;
+    if (bytes === undefined) throw new DriveError('format', 'Ingen format 1-original er indlæst.');
+    return bytes;
   }
   clear() {
     this.generation++;
     this.pending = null;
     this.publish({
       loaded: null,
+      migration: null,
       draft: null,
       state: 'loading',
       message: '',
@@ -78,7 +102,7 @@ export class WorkspaceSession {
     return (
       !!this.view.draft &&
       !!this.view.loaded &&
-      workspacePayload(this.view.draft) !== workspacePayload(this.view.loaded.workspace)
+      (this.view.loaded.originalBytes !== undefined || workspacePayload(this.view.draft) !== workspacePayload(this.view.loaded.workspace))
     );
   }
   edit(workspace: Workspace) {
@@ -93,7 +117,7 @@ export class WorkspaceSession {
         ? 'saving'
         : this.view.state === 'conflict'
           ? 'conflict'
-          : workspacePayload(workspace) === workspacePayload(this.view.loaded.workspace)
+          : this.view.loaded.originalBytes === undefined && workspacePayload(workspace) === workspacePayload(this.view.loaded.workspace)
             ? 'unchanged'
             : 'changed',
     });

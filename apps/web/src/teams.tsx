@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { createTeam, renameTeam } from '@teamgym/domain';
 import type { RulesetBinding } from '@teamgym/domain';
 import { applyVersionChange, previewVersionChange } from '@teamgym/rules';
+import { reconcileVersionPreview } from './inheritance-context';
 import type { VersionChangePreview } from '@teamgym/rules';
 import type { DataProps } from './athletes';
 import { ActionForm, Decision, Dialog, Empty, points, SourceLinks, statusText } from './components';
@@ -201,16 +202,18 @@ export function RulesPage({ workspace, change, writable, teamId }: DataProps & {
               (item) => `${item.ageGroup}:${item.teamType}` === data.get('profile'),
             )!;
             setPreview(
-              previewVersionChange(
-                workspace,
-                teamId,
-                {
-                  rulesetId: selected.manifest.rulesetId,
-                  packageVersion: selected.manifest.packageVersion,
-                  ageGroup: profile.ageGroup,
-                  teamType: profile.teamType,
-                },
-                registry,
+              reconcileVersionPreview(
+                previewVersionChange(
+                  workspace,
+                  teamId,
+                  {
+                    rulesetId: selected.manifest.rulesetId,
+                    packageVersion: selected.manifest.packageVersion,
+                    ageGroup: profile.ageGroup,
+                    teamType: profile.teamType,
+                  },
+                  registry,
+                ),
               ),
             );
           }}

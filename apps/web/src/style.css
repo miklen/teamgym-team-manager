@@ -1814,6 +1814,9 @@ footer {
   font-size: 0.75rem;
   padding: 7px 12px;
   border-radius: 8px;
+  transition:
+    box-shadow 140ms ease,
+    transform 140ms ease;
 }
 .save-state:disabled:is(.state-unchanged, .state-saved) {
   opacity: 1;

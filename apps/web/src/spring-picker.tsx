@@ -1,12 +1,16 @@
-import { useMemo, useState } from 'react';
-import { STABILITY_ANCHORS } from '@teamgym/domain';
-import type { Stability, Workspace } from '@teamgym/domain';
+import { useLayoutEffect, useMemo, useRef, useState } from 'react';
+import { Fraction, STABILITY_ANCHORS } from '@teamgym/domain';
+import type { Workspace } from '@teamgym/domain';
 import type { RulePackage } from '@teamgym/rules';
-import { points, statusText } from './components';
-import { matchesSpring, springDirectionText, springRegistrationPlan } from './spring-library';
+import { matchesSpring, springRegistrationPlan } from './spring-library';
+import { SpringChoiceRows } from './spring-choice-rows';
+import type { FoundationControls } from './spring-choice-rows';
+import { springPickerRowRank, springPickerRows } from './spring-picker-model';
+import { skillFamily } from './skill-overview';
 import type { SpringChoice, SpringSelection } from './spring-library';
 
 export function SpringPicker({
+  controls,
   library,
   discipline,
   workspace,
@@ -19,6 +23,7 @@ export function SpringPicker({
   assessedAt,
   setAssessedAt,
 }: {
+  controls: FoundationControls;
   library: SpringChoice[];
   discipline: 'tumbling' | 'trampet';
   workspace: Workspace;
@@ -32,37 +37,41 @@ export function SpringPicker({
   setAssessedAt: (value: string) => void;
 }) {
   const [query, setQuery] = useState('');
+  const [minimum, setMinimum] = useState('');
+  const [unknown, setUnknown] = useState(false);
+  const evaluations = useMemo(
+    () => new Map(library.map((item) => [item.id, rulePackage.evaluateSkill(item.definition)])),
+    [library, rulePackage],
+  );
   const [group, setGroup] = useState('Alle spring');
-  const selected = new Map(
-    selections.map((item) => [rulePackage.evaluateSkill(item.definition).identity, item]),
-  );
-  const existing = useMemo(
-    () =>
-      new Map(
-        workspace.athleteSkills
-          .filter((item) => item.athleteId === athleteId)
-          .flatMap((registration) => {
-            const skill = workspace.skills.find((item) => item.id === registration.skillId)!;
-            return skill.discipline === 'rhythm'
-              ? []
-              : [[rulePackage.evaluateSkill(skill).identity, registration] as const];
-          }),
-      ),
-    [workspace, athleteId, rulePackage],
-  );
+  const [onlySelected, setOnlySelected] = useState(false);
+  const selectionFilter = useRef<HTMLInputElement>(null);
+  const picker = useRef<HTMLElement>(null);
+  useLayoutEffect(() => {
+    const list = picker.current?.querySelector('.unified-spring-list');
+    if (list) list.scrollTop = 0;
+  }, [query, minimum, unknown, group, onlySelected]);
+  const threshold = /^\d+(?:[.,]\d+)?$/.test(minimum) ? Fraction.from(minimum.replace(',', '.')) : null;
   const choices = library.filter(
     (item) =>
       item.definition.discipline === discipline &&
-      (group === 'Alle spring' || item.group === group) &&
+      (group === 'Alle spring' || skillFamily(item.definition, rulePackage) === group) &&
+      (unknown
+        ? evaluations.get(item.id)!.difficulty.value === null
+        : !threshold || (evaluations.get(item.id)!.difficulty.value?.compare(threshold) ?? -1) >= 0) &&
       matchesSpring(item, query),
   );
   const plan = useMemo(
-    () => springRegistrationPlan(selections, rulePackage, includeShorter),
-    [selections, rulePackage, includeShorter],
+    () =>
+      springRegistrationPlan(selections, rulePackage, includeShorter, { ...controls, workspace, athleteId }),
+    [selections, rulePackage, includeShorter, controls, workspace, athleteId],
   );
-  const inherited = plan.filter((item) => !item.explicit);
+  const inherited = plan.filter((item) => !item.explicit && !item.excluded);
+  const rows = springPickerRows(library, onlySelected ? [] : choices, plan, query);
+  const matches = rows.filter((row) => springPickerRowRank(row, query) !== null).length;
+  const scoped = onlySelected || group !== 'Alle spring' || minimum !== '' || unknown;
   return (
-    <>
+    <section ref={picker} className="unified-picker" aria-label="Springvælger">
       <p className="muted picker-intro">
         Vælg hele serier uden mellemtrin, og angiv sikkerhed fra 1–5 for hvert spring.
       </p>
@@ -83,139 +92,93 @@ export function SpringPicker({
             <option>Alle spring</option>
             {[
               ...new Set(
-                library.filter((item) => item.definition.discipline === discipline).map((item) => item.group),
+                library
+                  .filter((item) => item.definition.discipline === discipline)
+                  .map((item) => skillFamily(item.definition, rulePackage)),
               ),
             ].map((value) => (
               <option key={value}>{value}</option>
             ))}
           </select>
         </label>
+        <label>
+          Minimum-D
+          <input
+            type="text"
+            inputMode="decimal"
+            placeholder="Alle værdier"
+            value={minimum}
+            onChange={(event) => {
+              if (/^\d*(?:[.,]\d*)?$/.test(event.target.value)) setMinimum(event.target.value);
+            }}
+          />
+        </label>
+        <label className="check">
+          <input type="checkbox" checked={unknown} onChange={(event) => setUnknown(event.target.checked)} />
+          Vis kun ukendt D
+        </label>
       </div>
-      <ul className="spring-batch" aria-label="Færdige spring">
-        {choices.map((choice) => {
-          const evaluation = rulePackage.evaluateSkill(choice.definition);
-          const identity = evaluation.identity;
-          const selection = selected.get(identity);
-          const previous = existing.get(identity);
-          return (
-            <li className={selection ? 'spring-batch-row selected' : 'spring-batch-row'} key={choice.id}>
-              <label className="spring-batch-choice">
-                <input
-                  type="checkbox"
-                  checked={!!selection}
-                  onChange={(event) =>
-                    change(
-                      event.target.checked
-                        ? [
-                            ...selections,
-                            {
-                              definition: choice.definition,
-                              stability: previous?.archived ? null : (previous?.stability ?? null),
-                              confirmed: true,
-                            },
-                          ]
-                        : selections.filter(
-                            (item) => rulePackage.evaluateSkill(item.definition).identity !== identity,
-                          ),
-                    )
-                  }
-                />
-                <span>
-                  {choice.definition.name}
-                  {springDirectionText(choice.definition) && (
-                    <small className="spring-directions">{springDirectionText(choice.definition)}</small>
-                  )}
-                  <small>
-                    {choice.group} · D:{' '}
-                    {evaluation.difficulty.value
-                      ? points(evaluation.difficulty.value)
-                      : statusText[evaluation.difficulty.status]}
-                    {previous && !previous.archived ? ' · Allerede registreret' : ''}
-                  </small>
-                </span>
-              </label>
-              <label className="spring-batch-rating">
-                <span>Sikkerhed</span>
-                <select
-                  aria-label={`Sikkerhed for ${choice.definition.name}`}
-                  disabled={!selection}
-                  value={selection?.stability ?? ''}
-                  onChange={(event) =>
-                    change(
-                      selections.map((item) =>
-                        rulePackage.evaluateSkill(item.definition).identity === identity
-                          ? {
-                              ...item,
-                              stability: event.target.value
-                                ? (Number(event.target.value) as Stability)
-                                : null,
-                            }
-                          : item,
-                      ),
-                    )
-                  }
-                >
-                  <option value="">Ikke vurderet</option>
-                  {[1, 2, 3, 4, 5].map((number) => (
-                    <option key={number} value={number}>
-                      {number}
-                    </option>
-                  ))}
-                </select>
-              </label>
-            </li>
-          );
-        })}
-        {choices.length === 0 && <li>Ingen spring matcher. Prøv en anden søgning, eller vælg Byg selv.</li>}
-      </ul>
-      <div className="batch-summary" role="status">
-        {selections.length} spring valgt
-        {inherited.length ? ` · ${inherited.length} kortere serier medtages` : ''}
+      <div className="spring-selection-toolbar">
+        <div className="batch-summary" role="status">
+          {selections.length} spring valgt
+          {inherited.length ? ` · ${inherited.length} fundament medtages` : ''}
+        </div>
+        <label className="check">
+          <input
+            ref={selectionFilter}
+            type="checkbox"
+            checked={onlySelected}
+            onChange={(event) => setOnlySelected(event.target.checked)}
+          />
+          Kun valgte
+        </label>
+        <label className="check">
+          <input
+            type="checkbox"
+            checked={includeShorter}
+            onChange={(event) => setIncludeShorter(event.target.checked)}
+          />
+          Medtag fundament automatisk
+        </label>
       </div>
-      {selections.length > 0 && (
-        <details>
-          <summary>Se valgte spring og sikkerhed</summary>
-          <ul>
-            {selections.map((item) => (
-              <li key={rulePackage.evaluateSkill(item.definition).identity}>
-                {item.definition.name} · {item.stability === null ? 'Ikke vurderet' : `${item.stability}/5`}
-              </li>
-            ))}
-          </ul>
-          <button type="button" className="quiet" onClick={() => change([])}>
-            Ryd valg
-          </button>
-        </details>
+      {query.trim() && (
+        <div className="picker-search-feedback">
+          <span role="status">
+            {matches} spring matcher{plan.length ? ' · dine valg er bevaret' : ''}
+          </span>
+          {scoped && (
+            <button
+              type="button"
+              className="quiet"
+              onClick={() => {
+                setGroup('Alle spring');
+                setMinimum('');
+                setUnknown(false);
+                setOnlySelected(false);
+              }}
+            >
+              Søg i alle spring
+            </button>
+          )}
+        </div>
       )}
-      <label className="check">
-        <input
-          type="checkbox"
-          checked={includeShorter}
-          onChange={(event) => setIncludeShorter(event.target.checked)}
-        />
-        Medtag kortere serier med samme sikkerhed
-      </label>
-      <p className="muted">
-        Kortere serier får samme sikkerhed, også når de allerede er registreret. Deles en kortere serie af
-        flere valgte spring, bruges springet med lavest sværhed (D). Vælger du den korte serie særskilt,
-        bruges dens egen vurdering.
-      </p>
-      {inherited.length > 0 && (
-        <details>
-          <summary>Se sikkerhed på kortere serier</summary>
-          <ul>
-            {inherited.map((item) => (
-              <li key={rulePackage.evaluateSkill(item.definition).identity}>
-                <strong>
-                  {item.definition.name} · {item.stability === null ? 'Ikke vurderet' : `${item.stability}/5`}
-                </strong>
-                <small>Arvet fra {item.sourceName}</small>
-              </li>
-            ))}
-          </ul>
-        </details>
-      )}
-      {selections.some((item) => item.stability !== null) && (
+      <SpringChoiceRows
+        rows={rows}
+        {...{ selections, controls, rulePackage, workspace, athleteId, evaluations }}
+        change={(next) => {
+          change(next);
+          if (onlySelected && next.length < selections.length)
+            requestAnimationFrame(() => {
+              if (
+                document.activeElement === document.body ||
+                document.activeElement instanceof HTMLDialogElement
+              )
+                selectionFilter.current?.focus();
+            });
+        }}
+      />
+      {(selections.some((item) => item.stability !== null) ||
+        [...controls.ownAssessments.values()].some((value) => value !== null)) && (
         <label>
           Vurderingsdato
           <input
@@ -234,6 +197,6 @@ export function SpringPicker({
           ))}
         </ol>
       </details>
-    </>
+    </section>
   );
 }

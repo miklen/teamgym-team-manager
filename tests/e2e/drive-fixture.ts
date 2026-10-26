@@ -57,10 +57,10 @@ export function twentyAthletes() {
 }
 export async function openWorkspace(
   page: Page,
-  input: Workspace = syntheticWorkspace().workspace,
+  input: Workspace | string = syntheticWorkspace().workspace,
   writable = true,
 ) {
-  let bytes = serializeWorkspace(input);
+  let bytes = typeof input === 'string' ? input : serializeWorkspace(input);
   let version = 1;
   let puts = 0;
   let denied = 0;
@@ -209,6 +209,7 @@ export async function openWorkspace(
   await page.reload();
   return {
     failures,
+    replaceBytes(value: string) { bytes = value; version++; },
     get puts() {
       return puts;
     },

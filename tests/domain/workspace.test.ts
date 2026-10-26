@@ -29,7 +29,7 @@ describe('fælles fil og seks vedvarende omgange', () => {
 
   it('afviser nyere og ældre ukendte skemaer og ændrer aldrig originalen', () => {
     const { workspace } = syntheticWorkspace();
-    for (const [version, code] of [[2, 'newer-schema'], [0, 'migration-required']] as const) {
+    for (const [version, code] of [[3, 'newer-schema'], [0, 'migration-required']] as const) {
       const original = JSON.stringify({ ...workspace, schemaVersion: version });
       try { parseWorkspace(original); throw new Error('Skulle afvises'); }
       catch (error) { expect(error).toBeInstanceOf(WorkspaceFormatError); expect((error as WorkspaceFormatError).code).toBe(code); }

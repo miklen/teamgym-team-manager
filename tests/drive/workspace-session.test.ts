@@ -1,5 +1,8 @@
 import { describe, expect, it } from 'vitest';
-import { createTeam, createWorkspace, serializeWorkspace, workspacePayload } from '@teamgym/domain';
+import { createTeam, createWorkspace, serializeWorkspace, skillIdentity, workspacePayload } from '@teamgym/domain';
+import { syntheticWorkspace } from '../fixtures/synthetic-workspace';
+import { registerSpringBatch, springFoundation, springLibrary } from '../../apps/web/src/spring-library';
+import { DK_V1 } from '@teamgym/rules';
 import { DriveClient, WorkspaceSession } from '@teamgym/drive';
 import type { BrowserFetch } from '@teamgym/drive';
 
@@ -54,6 +57,7 @@ function server() {
   };
   const client = () => new DriveClient(() => 'synthetic-token', fetcher);
   return {
+    replaceBytes(value: string) { bytes = value; version++; },
     client,
     conditions,
     get puts() {
@@ -107,6 +111,75 @@ function deferred() {
   });
   return { promise, resolve };
 }
+
+describe('format 1 migration på den faktisk læste basis', () => {
+  function legacy() {
+    const source = server();
+    const fixture = syntheticWorkspace();
+    const { inheritanceRelations: _relations, inheritanceExclusions: _exclusions, ...rest } = fixture.workspace;
+    void _relations; void _exclusions;
+    const original = JSON.stringify({ ...rest, schemaVersion: 1, athleteSkills: rest.athleteSkills.map(({ assessmentOrigin: _origin, ...item }) => { void _origin; return item; }) });
+    source.replaceBytes(original);
+    return { source, original };
+  }
+  it('tilbyder, annullerer og accepterer uden upload; bevarer original, ETag, hash og revision', async () => {
+    const { source, original } = legacy();
+    const session = new WorkspaceSession(source.client());
+    await session.open('file');
+    expect(session.snapshot().draft).toBeNull();
+    expect(session.snapshot().migration?.originalBytes).toBe(original);
+    const basis = session.snapshot().migration!.basis;
+    expect(basis).toMatchObject({ version: '2', etag: '"2"', workspaceRevision: 0 });
+    expect(basis.contentHash).toHaveLength(64);
+    expect(session.exportOriginal()).toBe(original);
+    session.cancelMigration(); expect(session.snapshot().draft).toBeNull();
+    await session.open('file'); session.acceptMigration();
+    expect(session.snapshot().draft?.schemaVersion).toBe(2);
+    expect(session.snapshot().loaded?.basis).toEqual(basis);
+    expect(session.dirty()).toBe(true);
+    expect(source.puts).toBe(0); expect(source.bytes).toBe(original);
+    await session.save();
+    expect(source.conditions).toEqual(['"2"']);
+    expect(JSON.parse(source.bytes).schemaVersion).toBe(2);
+    expect(session.dirty()).toBe(false);
+  });
+  it('annulleret migration og afvist nyere/beskadiget fil bevarer en eksisterende kladde', async () => {
+    const { source, session } = await open(); add(session);
+    const draft = session.exportDraft();
+    const { original } = legacy(); source.replaceBytes(original);
+    await session.open('file', true); session.cancelMigration();
+    expect(session.exportDraft()).toBe(draft);
+    for (const bytes of ['{', JSON.stringify({ ...createWorkspace(), schemaVersion: 99 })]) {
+      source.replaceBytes(bytes); await session.open('file', true); expect(session.exportDraft()).toBe(draft);
+    }
+    expect(source.puts).toBe(0);
+  });
+  it('migration med læseadgang kan eksporteres, men ikke overskrive originalen', async () => {
+    const { source, original } = legacy(); source.setWritable(false);
+    const session = new WorkspaceSession(source.client()); await session.open('file'); session.acceptMigration();
+    expect(JSON.parse(session.exportDraft()).schemaVersion).toBe(2);
+    await session.save(); expect(source.puts).toBe(0); expect(source.bytes).toBe(original);
+  });
+  it('konkurrerende gemning efter migration afviser den gamle basis', async () => {
+    const { source } = legacy(); const session = new WorkspaceSession(source.client()); await session.open('file'); session.acceptMigration();
+    source.replaceBytes(serializeWorkspace(createWorkspace())); const newer = source.bytes;
+    await session.save(); expect(session.snapshot().state).toBe('conflict'); expect(source.bytes).toBe(newer); expect(session.dirty()).toBe(true);
+  });
+  it('mistet uploadsvar og senere lokale ændringer afstemmes uden tab af arv/fravalg', async () => {
+    const { source } = legacy(); const session = new WorkspaceSession(source.client()); await session.open('file'); session.acceptMigration();
+    const draft = session.snapshot().draft!; const full = springLibrary(DK_V1, draft).find((item) => item.id === 'common-rf-full')!.definition;
+    const excluded = [skillIdentity(springFoundation(full, DK_V1)[0]!.definition)];
+    session.edit(registerSpringBatch(draft, draft.athletes[0]!.id, [{ definition: full, stability: 4, confirmed: true }], DK_V1, { includeShorter: true, assessedAt: '2026-10-26', excluded }));
+    source.drop(); await session.save(); expect(session.snapshot().state).toBe('error');
+    add(session, 'Ny lokal ændring'); await session.save();
+    expect(source.puts).toBe(1); expect(session.dirty()).toBe(true);
+    expect(session.snapshot().draft?.inheritanceRelations).toHaveLength(4);
+    await session.save(); expect(source.puts).toBe(2);
+    const reopened = await source.client().read('file'); expect(reopened.workspace.inheritanceRelations).toHaveLength(4);
+    expect(reopened.workspace.inheritanceExclusions).toEqual([{ athleteId: draft.athletes[0]!.id, targetIdentity: excluded[0] }]);
+    expect(reopened.workspace.athleteSkills.some((item) => item.assessmentOrigin.kind === 'inherited')).toBe(true);
+  });
+});
 
 describe('produktionsadapterens konsistente læsning og skrivebetingelse', () => {
   it('kontoskift under rettighedskontrol kan ikke sende gammel kladde med den nye kontos token', async () => {

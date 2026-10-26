@@ -133,7 +133,7 @@ for (const width of [1440, 390]) {
     await page.getByLabel('Søg sammensat spring eller alias').fill('rondat-flik-1/1');
     await page.getByRole('checkbox', { name: /^Rondat – flik – strakt 1\/1/ }).check();
     await page.getByLabel(`Sikkerhed for ${fullName}`, { exact: true }).selectOption('4');
-    await page.getByLabel('Medtag kortere serier med samme sikkerhed').uncheck();
+    await page.getByLabel('Medtag fundament automatisk').uncheck();
     await page.getByRole('button', { name: 'Registrér 1 spring', exact: true }).click();
     await expect(fullRow).toBeVisible();
     await page.getByRole('button', { name: 'Luk dialog', exact: true }).click();
@@ -171,10 +171,10 @@ for (const width of [1440, 390]) {
     await page.screenshot({ path: `tmp/ui-qa/saltoretninger-${width}.png`, animations: 'disabled' });
     await page.getByRole('button', { name: 'Registrér 2 spring', exact: true }).click();
     await expect(
-      page.getByRole('button', { name: new RegExp(`^${backBackName} Saltoer: baglæns → baglæns`) }),
+      page.getByRole('button', { name: new RegExp(`^${backBackName} D:.*Saltoer: baglæns → baglæns`) }),
     ).toBeVisible();
     await expect(
-      page.getByRole('button', { name: new RegExp(`^${backFrontName} Saltoer: baglæns → forlæns`) }),
+      page.getByRole('button', { name: new RegExp(`^${backFrontName} D:.*Saltoer: baglæns → forlæns`) }),
     ).toBeVisible();
     await page.getByRole('button', { name: 'Luk dialog', exact: true }).click();
     await page.getByRole('button', { name: /Lokale ændringer/ }).click();

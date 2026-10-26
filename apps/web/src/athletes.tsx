@@ -3,6 +3,10 @@ import {
   confirmRuleReview,
   createAthlete,
   formatStability,
+  dependentRegistrations,
+  followAssessment,
+  setOwnAssessment,
+  newEntityId,
   moveAthlete,
   setArchived,
   updateAthlete,
@@ -13,16 +17,16 @@ import {
   Decision,
   Dialog,
   Empty,
-  points,
   SkillBreakdown,
   SourceLinks,
   StabilityControl,
-  statusText,
 } from './components';
 import { registry } from './rules';
-import { SkillEditor, variantText } from './skill-editor';
+import type { RulePackage } from '@teamgym/rules';
+import { SkillEditor } from './skill-editor';
 import { Avatar, Icon } from './ui';
-import { springDirectionText } from './spring-library';
+import { springInheritanceContext } from './spring-library';
+import { SkillRepertoire } from './skill-repertoire';
 
 export interface DataProps {
   workspace: Workspace;
@@ -274,7 +278,16 @@ export function AthleteInspector({
   const registrations = workspace.athleteSkills.filter(
     (item) => item.athleteId === athleteId && (!item.archived || item.id === selectedRegistration),
   );
-  const chosenPackage = rulePackage ?? (athlete.teamId === null ? registry.list()[0]! : null);
+  const [registrationContext, setRegistrationContext] = useState('');
+  const chosenPackage =
+    rulePackage ??
+    (athlete.teamId === null
+      ? (registry
+          .list()
+          .find(
+            (item) => `${item.manifest.rulesetId}:${item.manifest.packageVersion}` === registrationContext,
+          ) ?? null)
+      : null);
   return (
     <Dialog wide title={athlete.name} close={close}>
       <div className={`inspector-meta ${mode === 'new' || mode === 'execution' ? 'editor-meta' : ''}`}>
@@ -291,6 +304,25 @@ export function AthleteInspector({
         <p className="notice">
           Gymnasten er fjernet fra gymnastlisten. Vælg en anden gymnast på de berørte pladser i springplanen.
         </p>
+      )}
+      {athlete.teamId === null && (
+        <label>
+          Regelgrundlag for registrering
+          <select
+            value={registrationContext}
+            onChange={(event) => setRegistrationContext(event.target.value)}
+          >
+            <option value="">Vælg regelpakke for D og fundament</option>
+            {registry.list().map((item) => (
+              <option
+                key={`${item.manifest.rulesetId}:${item.manifest.packageVersion}`}
+                value={`${item.manifest.rulesetId}:${item.manifest.packageVersion}`}
+              >
+                {item.manifest.name} · {item.manifest.packageVersion}
+              </option>
+            ))}
+          </select>
+        </label>
       )}
       {mode === 'profile' ? (
         <>
@@ -371,106 +403,80 @@ export function AthleteInspector({
               her.
             </p>
           )}
-          {(['tumbling', 'trampet', 'rhythm'] as const).map((discipline) => (
-            <section key={discipline} className="skill-section">
-              <h3>
-                {discipline === 'tumbling'
-                  ? 'Bane · komplette serier'
-                  : discipline === 'trampet'
-                    ? 'Trampet · komplette spring'
-                    : 'Rytme · individuelle momenter'}
-              </h3>
-              {registrations
-                .filter(
-                  (item) =>
-                    workspace.skills.find((skill) => skill.id === item.skillId)?.discipline === discipline,
-                )
-                .map((item) => {
-                  const skill = workspace.skills.find((skill) => skill.id === item.skillId)!;
-                  const evaluation =
-                    skill.discipline !== 'rhythm' ? chosenPackage?.evaluateSkill(skill, item) : null;
-                  const rhythm = skill.discipline === 'rhythm' ? chosenPackage?.bindRhythm(skill) : null;
-                  return (
-                    <div className="skill-row" key={item.id}>
-                      <button
-                        className="entity-link"
-                        onClick={() =>
-                          setSelectedRegistration(selectedRegistration === item.id ? null : item.id)
-                        }
-                      >
-                        <span>
-                          <strong>{skill.name}</strong>
-                          {skill.discipline !== 'rhythm' && springDirectionText(skill) && (
-                            <small className="spring-directions">{springDirectionText(skill)}</small>
-                          )}
-                          <small>
-                            {rhythm
-                              ? `${rhythm.moment?.officialCode ?? 'Ukendt kode'} · ${variantText(rhythm.variant)}`
-                              : evaluation
-                                ? `${evaluation.connection === 'unverified' ? 'Forbindelse kræver bekræftelse · ' : ''}D: ${evaluation.difficulty.value ? points(evaluation.difficulty.value) : statusText[evaluation.difficulty.status]}`
-                                : 'Regelkobling uafklaret'}
-                          </small>
-                        </span>
-                        <span>
-                          {item.archived
-                            ? 'Fjernet'
-                            : item.stability === null
-                              ? 'Ikke vurderet'
-                              : `${item.stability}/5`}
-                        </span>
-                      </button>
-                      {selectedRegistration === item.id && (
-                        <>
-                          {item.archived && (
-                            <p className="notice">
-                              Færdigheden er fjernet fra gymnasten. Tilføj den igen fra listen for at bruge
-                              den.
-                            </p>
-                          )}
-                          <Assessment
-                            workspace={workspace}
-                            registration={item}
-                            team={team}
-                            writable={writable && !athlete.archived}
-                            save={change}
-                          />
-                          {evaluation && (
-                            <details>
-                              <summary>Beregningsgrundlag</summary>
-                              <Decision value={evaluation.difficulty} />
-                              <SkillBreakdown evaluation={evaluation} />
-                              <SourceLinks
-                                sources={evaluation.explanation.sources}
-                                rulePackage={chosenPackage!}
-                              />
-                              {evaluation.explanation.notes.map((note) => (
-                                <p key={note}>{note}</p>
-                              ))}
-                            </details>
-                          )}
-                          <div className="actions">
-                            <button
-                              className="quiet"
-                              disabled={!writable || !chosenPackage || athlete.archived || item.archived}
-                              onClick={() => setMode('execution')}
-                            >
-                              Redigér præcis udførelse
-                            </button>
-                            <button
-                              className="quiet danger"
-                              disabled={!writable || athlete.archived || item.archived}
-                              onClick={() => setRemoving(item.id)}
-                            >
-                              Fjern færdighed
-                            </button>
-                          </div>
-                        </>
-                      )}
-                    </div>
-                  );
-                })}
+          {registration?.archived && (
+            <section className="unavailable-skill">
+              <button className="repertoire-row" disabled>
+                {workspace.skills.find((item) => item.id === registration.skillId)!.name}
+                <span>Fjernet</span>
+              </button>
+              <p className="notice">
+                Færdigheden er fjernet fra gymnasten. Tilføj den igen fra listen for at bruge den.
+              </p>
+              <Assessment
+                workspace={workspace}
+                registration={registration}
+                team={team}
+                explicitPackage={chosenPackage}
+                writable={false}
+                save={change}
+              />
+              <button className="quiet danger" disabled>
+                Fjern færdighed
+              </button>
             </section>
-          ))}
+          )}
+          <SkillRepertoire
+            workspace={workspace}
+            athleteId={athleteId}
+            rulePackage={chosenPackage}
+            selectedId={selectedRegistration}
+            select={setSelectedRegistration}
+            details={(item) => {
+              const skill = workspace.skills.find((definition) => definition.id === item.skillId)!;
+              const evaluation =
+                skill.discipline !== 'rhythm' ? chosenPackage?.evaluateSkill(skill, item) : null;
+              return (
+                <>
+                  <Assessment
+                    key={`${item.id}:${item.updatedAt}`}
+                    workspace={workspace}
+                    registration={item}
+                    team={team}
+                    explicitPackage={chosenPackage}
+                    writable={writable && !athlete.archived}
+                    save={change}
+                  />
+                  {evaluation && (
+                    <details>
+                      <summary>Beregningsgrundlag</summary>
+                      <Decision value={evaluation.difficulty} />
+                      <SkillBreakdown evaluation={evaluation} />
+                      <SourceLinks sources={evaluation.explanation.sources} rulePackage={chosenPackage!} />
+                      {evaluation.explanation.notes.map((note) => (
+                        <p key={note}>{note}</p>
+                      ))}
+                    </details>
+                  )}
+                  <div className="actions">
+                    <button
+                      className="quiet"
+                      disabled={!writable || !chosenPackage || athlete.archived}
+                      onClick={() => setMode('execution')}
+                    >
+                      Redigér præcis udførelse
+                    </button>
+                    <button
+                      className="quiet danger"
+                      disabled={!writable || athlete.archived}
+                      onClick={() => setRemoving(item.id)}
+                    >
+                      Fjern færdighed
+                    </button>
+                  </div>
+                </>
+              );
+            }}
+          />
           {!registrations.length && (
             <Empty>Ingen færdigheder. Registrér komplette udførelser; stabilitet sættes særskilt.</Empty>
           )}
@@ -520,6 +526,16 @@ export function AthleteInspector({
             </p>
           )}
           <p className="muted">Du kan tilføje færdigheden igen fra listen.</p>
+          {dependentRegistrations(workspace, removedRegistration.id).length > 0 && (
+            <div className="notice">
+              <p>Disse færdigheder følger kilden og får en anden gyldig kilde eller bliver Ikke vurderet:</p>
+              <ul>
+                {dependentRegistrations(workspace, removedRegistration.id).map((item) => (
+                  <li key={item.id}>{workspace.skills.find((skill) => skill.id === item.skillId)!.name}</li>
+                ))}
+              </ul>
+            </div>
+          )}
           <div className="actions">
             <button className="quiet" onClick={() => setRemoving(null)}>
               Annuller
@@ -549,48 +565,129 @@ function Assessment({
   team,
   writable,
   save,
+  explicitPackage,
 }: {
   workspace: Workspace;
   registration: AthleteSkill;
   team: Team | undefined;
   writable: boolean;
   save: (workspace: Workspace) => void;
+  explicitPackage?: RulePackage | null;
 }) {
+  const [own, setOwn] = useState(registration.assessmentOrigin.kind === 'own');
+  const [sourceChoice, setSourceChoice] = useState('');
   const [value, setValue] = useState<Stability | null>(registration.stability);
+  const resolved = team && registry.resolve(team.rulesetBinding);
+  const assessmentPackage =
+    resolved?.status === 'known' ? resolved.rulePackage : !team ? explicitPackage : null;
+  const context = assessmentPackage ? springInheritanceContext(assessmentPackage) : undefined;
+  const sourceId =
+    registration.assessmentOrigin.kind === 'inherited' ? registration.assessmentOrigin.sourceId : null;
+  const source = workspace.athleteSkills.find((item) => item.id === sourceId);
+  const candidates = workspace.inheritanceRelations
+    .filter((item) => item.targetId === registration.id)
+    .flatMap((relation) => {
+      const item = workspace.athleteSkills.find((candidate) => candidate.id === relation.sourceId)!;
+      const definition = workspace.skills.find((skill) => skill.id === item.skillId)!;
+      const target = workspace.skills.find((skill) => skill.id === registration.skillId)!;
+      return !item.archived && context?.accepts(relation, definition, target) ? [{ item, definition }] : [];
+    });
   const [date, setDate] = useState(registration.assessedAt ?? new Date().toISOString().slice(0, 10));
+  const needsSourceChoice =
+    candidates.length > 0 &&
+    candidates.every(({ definition, item }) => context?.difficulty(definition, item) === null);
   return (
     <ActionForm
       disabled={!writable || registration.archived}
       submit={(data) => {
-        const installed = registry.list()[0]!;
+        const installed = explicitPackage ?? registry.list()[0]!;
         const binding = team?.rulesetBinding ?? {
           rulesetId: installed.manifest.rulesetId,
           packageVersion: installed.manifest.packageVersion,
           ageGroup: installed.profiles[0]!.ageGroup,
           teamType: installed.profiles[0]!.teamType,
         };
-        save(
-          confirmRuleReview(workspace, registration.id, binding, {
-            stability: value,
-            assessedAt: value === null ? null : date,
-            note: String(data.get('note')),
-          }),
-        );
+        const input = {
+          stability: value,
+          assessedAt: value === null ? null : date,
+          note: String(data.get('note')),
+        };
+        const environment = {
+          id: newEntityId,
+          now: () => new Date().toISOString(),
+          ...(context ? { inheritance: context } : {}),
+        };
+        const next = own ? setOwnAssessment(workspace, registration.id, input, environment) : workspace;
+        save(confirmRuleReview(next, registration.id, binding, input, environment));
       }}
       label="Opdatér vurdering"
     >
       <fieldset disabled={!writable || registration.archived}>
-        <StabilityControl value={value} onChange={setValue} />
-        <label>
-          Vurderingsdato
-          <input
-            type="date"
-            value={date}
-            required={value !== null}
-            disabled={value === null}
-            onChange={(event) => setDate(event.target.value)}
-          />
-        </label>
+        <div className="assessment-origin">
+          <strong>
+            {registration.assessmentOrigin.kind === 'own'
+              ? 'Egen vurdering'
+              : source
+                ? `Arvet fra ${workspace.skills.find((item) => item.id === source.skillId)!.name}`
+                : 'Mangler arvekilde'}
+          </strong>
+          {registration.assessmentOrigin.kind === 'inherited' && (
+            <button type="button" className="quiet" onClick={() => setOwn(true)} aria-pressed={own}>
+              Egen vurdering
+            </button>
+          )}
+          {candidates.length > 0 && (
+            <>
+              {needsSourceChoice && (
+                <label>
+                  Arvekilde ved ukendt D
+                  <select value={sourceChoice} onChange={(event) => setSourceChoice(event.target.value)}>
+                    <option value="">Automatisk · laveste kendte D</option>
+                    {candidates.map(({ item, definition }) => (
+                      <option key={item.id} value={item.id}>
+                        {definition.name} · {item.stability ?? 'Ikke vurderet'}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+              )}
+              <button
+                type="button"
+                className="quiet"
+                disabled={needsSourceChoice && !sourceChoice}
+                onClick={() =>
+                  save(
+                    followAssessment(
+                      workspace,
+                      registration.id,
+                      {
+                        id: newEntityId,
+                        now: () => new Date().toISOString(),
+                        ...(context ? { inheritance: context } : {}),
+                      },
+                      sourceChoice || undefined,
+                    ),
+                  )
+                }
+              >
+                Følg igen
+              </button>
+            </>
+          )}
+        </div>
+        <fieldset disabled={!own}>
+          <StabilityControl value={value} onChange={setValue} />
+          <label>
+            Vurderingsdato
+            <input
+              type="date"
+              value={date}
+              required={value !== null}
+              disabled={value === null}
+              onChange={(event) => setDate(event.target.value)}
+            />
+          </label>
+        </fieldset>
         <label>
           Trænernote
           <textarea name="note" defaultValue={registration.note} maxLength={2000} />

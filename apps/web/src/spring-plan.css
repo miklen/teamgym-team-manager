@@ -1,0 +1,244 @@
+.plan-difficulty {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.9rem;
+  font-weight: 750;
+  font-variant-numeric: tabular-nums;
+  color: #2945a3;
+  background: #edf1fe;
+  border-radius: 7px;
+  padding: 5px 9px;
+  white-space: nowrap;
+}
+.plan-safety {
+  --safety-color: #3155d9;
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 7px;
+  color: var(--ink);
+  font-size: 0.72rem;
+  font-weight: 650;
+  white-space: nowrap;
+}
+.plan-safety.safety-1,
+.plan-safety.safety-2 {
+  --safety-color: #aa651c;
+}
+.plan-safety.safety-4,
+.plan-safety.safety-5 {
+  --safety-color: #24766b;
+}
+.safety-bars {
+  display: inline-flex;
+  gap: 3px;
+  align-items: flex-end;
+}
+.safety-bars i {
+  width: 5px;
+  height: 13px;
+  background: #dfe5ef;
+  border-radius: 2px;
+}
+.safety-bars i.filled {
+  background: var(--safety-color);
+}
+.entry-value > .plan-safety {
+  display: flex;
+  margin-top: 7px;
+}
+.plan-skill-select {
+  min-width: 0;
+  position: relative;
+}
+.plan-skill-label {
+  display: block;
+  margin-bottom: 7px;
+  font-size: 0.82rem;
+  font-weight: 650;
+}
+.plan-skill-trigger {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  background: white;
+  color: var(--ink);
+  border: 1px solid #cbd5e6;
+  text-align: left;
+  padding: 13px 14px;
+  min-height: 76px;
+  font-weight: 500;
+}
+.plan-skill-trigger:hover:not(:disabled) {
+  background: #f8faff;
+  border-color: #8399e6;
+  box-shadow: none;
+}
+.plan-skill-trigger[aria-expanded='true'] {
+  border-color: var(--accent);
+  background: #f8faff;
+}
+.plan-choice-name {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+  flex: 1;
+}
+.plan-choice-name strong {
+  font-size: 0.82rem;
+  font-weight: 650;
+  overflow-wrap: anywhere;
+  line-height: 1.45;
+}
+.plan-choice-name small {
+  font-size: 0.68rem;
+  color: var(--muted);
+  font-weight: 450;
+  line-height: 1.45;
+}
+.plan-choice-numbers {
+  display: grid;
+  justify-items: end;
+  gap: 7px;
+}
+.plan-select-chevron {
+  font-size: 1.25rem;
+  color: var(--muted);
+  transition: transform 150ms ease;
+}
+.plan-select-chevron.is-open {
+  transform: rotate(180deg);
+}
+.plan-skill-menu {
+  border: 1px solid #cbd5e6;
+  background: white;
+  border-radius: 12px;
+  margin-top: 8px;
+  box-shadow: 0 7px 22px #20345c0c;
+  animation: plan-menu-reveal 140ms ease-out;
+}
+.plan-skill-search {
+  padding: 12px;
+}
+.plan-skill-search input {
+  width: 100%;
+  min-width: 0;
+  background: #f7f9fc;
+}
+.plan-option-columns,
+.plan-skill-option {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 66px 98px 14px;
+  align-items: center;
+  column-gap: 12px;
+}
+.plan-option-columns {
+  padding: 4px 14px 9px;
+  color: var(--muted);
+  font-size: 0.65rem;
+}
+.plan-option-columns > :nth-child(n + 2) {
+  text-align: center;
+}
+.plan-skill-options {
+  list-style: none;
+  padding: 0 5px 5px;
+  margin: 0;
+  max-height: min(36vh, 320px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scroll-padding: 5px;
+}
+.plan-skill-option {
+  padding: 12px 9px;
+  border-radius: 7px;
+  cursor: pointer;
+  min-height: 70px;
+  border-top: 1px solid #edf0f6;
+}
+.plan-skill-option[data-active='true'] {
+  background: #f0f4ff;
+  outline: 1px solid #c5d1f5;
+  outline-offset: -1px;
+}
+.plan-skill-option[aria-selected='true'] .plan-choice-name strong {
+  color: #2945a3;
+}
+.plan-skill-option .plan-difficulty {
+  font-size: 0.8rem;
+  padding: 4px 6px;
+}
+.plan-option-check {
+  color: var(--accent);
+  font-weight: 750;
+}
+.plan-option-placeholder {
+  text-align: center;
+  color: var(--muted);
+  font-size: 0.8rem;
+}
+.plan-options-empty {
+  padding: 4px 14px 18px;
+  color: var(--muted);
+  font-size: 0.8rem;
+}
+@keyframes plan-menu-reveal {
+  from {
+    transform: translateY(-3px);
+  }
+  to {
+    transform: translateY(0);
+  }
+}
+@media (max-width: 650px) {
+  .plan-option-columns {
+    grid-template-columns: minmax(0, 1fr) 64px 94px 10px;
+    gap: 6px;
+    padding-inline: 10px;
+  }
+  .plan-skill-option {
+    grid-template-columns: minmax(0, 1fr) 94px 10px;
+    gap: 8px 6px;
+    padding: 12px 5px;
+  }
+  .plan-skill-option .plan-choice-name {
+    grid-column: 1 / 3;
+  }
+  .plan-skill-option .plan-difficulty {
+    grid-column: 1;
+    justify-self: start;
+  }
+  .plan-skill-option .plan-safety {
+    grid-column: 2;
+  }
+  .plan-skill-option .plan-option-check {
+    grid-column: 3;
+    grid-row: 1 / 3;
+  }
+  .plan-option-columns {
+    display: none;
+  }
+  .plan-skill-trigger {
+    gap: 9px;
+    padding: 12px;
+  }
+  .plan-skill-options {
+    max-height: 34vh;
+  }
+  .plan-skill-option .plan-difficulty::before {
+    content: 'D';
+    font-size: 0.65rem;
+    margin-right: 6px;
+    font-weight: 500;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .plan-skill-menu {
+    animation: none;
+  }
+  .plan-select-chevron {
+    transition: none;
+  }
+}
