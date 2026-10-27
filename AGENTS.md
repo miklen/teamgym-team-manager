@@ -2,6 +2,10 @@
 
 Dansk er arbejds- og produktsprog. Målrepo: `miklen/teamgym-team-manager`.
 
+## Permanent acceptkrav: fælles konflikthåndtering
+
+Alle fremtidige funktioner skal dokumentere deres betydning for fælles data, sammenligning, identiteter, rækkefølge, afhængigheder, afledte værdier og præsentation. Nye gemte felter og ændret betydning kræver eksplicit politik i den fælles flettekontrakt og relevante samtidighedstests, før funktionen markeres færdig. En ren visningsfunktion begrunder i planlægning/verificering, hvorfor fælles data og fletning ikke påvirkes. Formularer må ikke indføre egne fletteregler. Dækningskontrollen er en del af `npm.cmd run check`; strukturel dækning erstatter ikke adfærdstests. Se [vedligeholdelse af fletning](docs/vedligeholdelse-fletning.md).
+
 ## Fast arbejdsgang: lokal brugertest før push
 
 Brugerbeslutning 25. oktober 2026: Ændringer skal fremover afprøves lokalt af brugeren før push til GitHub. Dette erstatter tidligere generel tilladelse til at pushe og publicere automatisk.

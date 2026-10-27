@@ -25,6 +25,8 @@ import type { IconName } from './ui';
 import './style.css';
 import './repertoire.css';
 import { reconcileWorkspace } from './inheritance-context';
+import { ReviewRequestContext } from './review-context';
+import { WorkspaceReview } from './workspace-review';
 
 const saveLabels = {
   loading: 'Indlæser',
@@ -32,7 +34,7 @@ const saveLabels = {
   changed: 'Lokale ændringer',
   saving: 'Gemmer…',
   saved: 'Gemt',
-  conflict: 'Konflikt · kladde bevaret',
+  conflict: 'Nyere fil · kladde bevaret',
   error: 'Fejl · kladde bevaret',
 };
 function App() {
@@ -52,6 +54,53 @@ function App() {
   const [remember, setRemember] = useState(true);
   const [recovery, setRecovery] = useState<string | null>(null);
   const [restoring, setRestoring] = useState(true);
+  const [editorEpoch, setEditorEpoch] = useState(0);
+  const [reviewGuard, setReviewGuard] = useState(false);
+  const [guardError, setGuardError] = useState('');
+  const dirtyForms = useRef(new Set<HTMLFormElement>());
+  const reviewTrigger = useRef<HTMLElement | null>(null);
+  const reviewWasOpen = useRef(false);
+  useEffect(() => {
+    if (reviewWasOpen.current && !data.review)
+      requestAnimationFrame(() => {
+        const trigger = reviewTrigger.current;
+        if (trigger?.isConnected) trigger.focus();
+        else document.querySelector<HTMLButtonElement>('.header-actions > .quiet')?.focus();
+      });
+    reviewWasOpen.current = !!data.review;
+  }, [data.review]);
+  function showReview() {
+    flushSync(() => {
+      setReviewGuard(false);
+      setSettings(false);
+      setEditorEpoch((epoch) => epoch + 1);
+    });
+    dirtyForms.current.clear();
+    void workspaceSession.beginReview();
+  }
+  function requestReview() {
+    reviewTrigger.current = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    if ([...dirtyForms.current].some((form) => form.isConnected)) {
+      setGuardError('');
+      setReviewGuard(true);
+    } else showReview();
+  }
+  function updateForms() {
+    for (const form of [...dirtyForms.current]) {
+      if (!form.isConnected) {
+        dirtyForms.current.delete(form);
+        continue;
+      }
+      const before = workspaceSession.snapshot().draft;
+      flushSync(() => form.requestSubmit());
+      if (form.isConnected && workspaceSession.snapshot().draft === before) {
+        setGuardError('Formularen kunne ikke opdateres. Kontrollér oplysningerne, eller vælg Bliv.');
+        return;
+      }
+      dirtyForms.current.delete(form);
+    }
+    showReview();
+  }
   const observedAccount = useRef<string | null>(null);
   useEffect(() => {
     if (!configured) return;
@@ -272,594 +321,665 @@ function App() {
     </>
   );
   return (
-    <div className={`app-shell ${workspace ? 'has-workspace' : 'welcome-shell'}`}>
-      <a
-        className="skip-link"
-        href="#main-content"
-        onClick={(event) => {
-          event.preventDefault();
-          document.getElementById('main-content')?.focus();
+    <ReviewRequestContext.Provider
+      value={{ available: !!data.newer && !data.review && !reviewGuard, request: requestReview }}
+    >
+      <div
+        className={`app-shell ${workspace ? 'has-workspace' : 'welcome-shell'}`}
+        onChangeCapture={(event) => {
+          const form = (event.target as HTMLElement).closest('form');
+          if (form && !data.review && !reviewGuard) dirtyForms.current.add(form);
+        }}
+        onClickCapture={(event) => {
+          const target = event.target as HTMLElement;
+          const form = target.closest('form');
+          const button = target.closest('button');
+          if (form && button?.type === 'button' && !data.review && !reviewGuard) dirtyForms.current.add(form);
+        }}
+        onSubmitCapture={(event) => {
+          const form = event.target as HTMLFormElement;
+          const before = workspaceSession.snapshot().draft;
+          queueMicrotask(() => {
+            if (!form.isConnected || workspaceSession.snapshot().draft !== before)
+              dirtyForms.current.delete(form);
+          });
         }}
       >
-        Gå til indhold
-      </a>
-      <header className="app-header">
-        {workspace ? (
-          <>
-            <div className="mobile-brand">
-              <Brand href={`#/arbejdsrum/${fileId}`} />
-            </div>
-            <div className="header-location">
-              <span>{page === 'arbejdsrum' ? 'Arbejdsrum' : team?.name}</span>
-              <span aria-hidden="true" className="location-divider">
-                /
-              </span>
-              <strong>{navigation.find((item) => item.key === page)?.label ?? 'Springplan'}</strong>
-            </div>
-          </>
-        ) : (
-          <Brand href="#/arbejdsrum" />
-        )}
-        <div className="header-actions">
-          <span className="connection-state">
-            {starting
-              ? 'Forbinder til Google Drive…'
-              : auth.status === 'connected'
-                ? auth.account?.name
-                : auth.status === 'expired'
-                  ? 'Google-adgang udløbet'
-                  : 'Intet arbejdsrum åbent'}
-          </span>
-          {workspace && (
-            <button
-              className={`save-state state-${data.state}`}
-              disabled={
-                data.state === 'saving' ||
-                !data.loaded?.metadata.writable ||
-                auth.status !== 'connected' ||
-                (!workspaceSession.dirty() && data.state !== 'error')
-              }
-              onClick={() => void workspaceSession.save()}
-            >
-              <Icon name={data.state === 'saved' || data.state === 'unchanged' ? 'check' : 'cloud'} />
-              {saveLabels[data.state]}
-              {data.state === 'changed' ? ' · Gem på Drive' : ''}
-            </button>
-          )}
-          <button className="quiet" disabled={starting} onClick={() => setSettings(true)}>
-            <Icon name="settings" />
-            <span>Arbejdsrum</span>
-          </button>
-        </div>
-      </header>
-      {workspace && (
-        <aside className="workspace-bar">
-          <Brand href={`#/arbejdsrum/${fileId}`} />
-          <label className="team-switcher">
-            Aktuelt hold
-            <select
-              value={teamId}
-              onChange={(event) => navigate(page === 'arbejdsrum' ? 'spring' : page, event.target.value)}
-            >
-              {!teamId && <option value="">Intet hold</option>}
-              {workspace.teams
-                .filter((item) => !item.archived || item.id === teamId)
-                .map((item) => (
-                  <option key={item.id} value={item.id}>
-                    {item.name}
-                    {item.archived ? ' · ikke aktivt' : ''}
-                  </option>
-                ))}
-            </select>
-          </label>
-          <nav aria-label="Hovednavigation">
-            {navigation.map(({ key, label, icon }) => (
-              <a
-                key={key}
-                aria-current={page === key ? 'page' : undefined}
-                onClick={(event) => {
-                  if (event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey)
-                    return;
-                  event.preventDefault();
-                  navigate(key);
-                }}
-                href={
-                  key === 'arbejdsrum'
-                    ? `#/arbejdsrum/${fileId}`
-                    : `#/arbejdsrum/${fileId}/hold/${teamId}/${key}`
-                }
-              >
-                <Icon name={icon} />
-                {label}
-              </a>
-            ))}
-          </nav>
-          <div className="rail-context">
-            <Icon name="rules" />
-            <div>
-              <strong>
-                {binding?.status === 'known'
-                  ? binding.profile.label
-                  : team
-                    ? 'Ukendt regelpakke'
-                    : 'Intet hold endnu'}
-              </strong>
-              <small>
-                {binding?.status === 'known'
-                  ? `${team?.rulesetBinding.rulesetId} ${team?.rulesetBinding.packageVersion}`
-                  : team
-                    ? 'Data er bevaret'
-                    : 'Opret dit første hold'}
-              </small>
-            </div>
-          </div>
-          <div className="rail-file">
-            <Icon name="cloud" />
-            <span>
-              {data.loaded?.metadata.name}
-              <small>Fælles arbejdsrum på Drive</small>
-            </span>
-          </div>
-        </aside>
-      )}
-      <main id="main-content" tabIndex={-1}>
-        {googleLoading && !ready && !workspace && !starting && (
-          <p className="muted" role="status">
-            Indlæser Google…
-          </p>
-        )}
-        {googleError && (
-          <div className="notice" role="status">
-            <p>{googleError}</p>
-            <button disabled={googleLoading} onClick={() => void loadScripts()}>
-              Prøv Google igen
-            </button>
-          </div>
-        )}
-        {(error || data.message || auth.message) && (
-          <div className="notice" role="status">
-            {error && <p>{error}</p>}
-            {auth.message && <p>{auth.message}</p>}
-            {data.message && <p>{data.message}</p>}
-            {workspace && (
-              <div className="actions">
-                <button className="quiet" onClick={downloadDraft}>
-                  Eksportér lokal kladde
-                </button>
-                {data.loaded && (
-                  <button
-                    className="quiet"
-                    disabled={busy || data.state === 'saving' || auth.status !== 'connected'}
-                    onClick={() => {
-                      if (confirmDiscard()) void workspaceSession.open(data.loaded!.basis.fileId, true);
-                    }}
-                  >
-                    Indlæs nyeste fil
-                  </button>
-                )}
+        <a
+          className="skip-link"
+          href="#main-content"
+          onClick={(event) => {
+            event.preventDefault();
+            document.getElementById('main-content')?.focus();
+          }}
+        >
+          Gå til indhold
+        </a>
+        <header className="app-header">
+          {workspace ? (
+            <>
+              <div className="mobile-brand">
+                <Brand href={`#/arbejdsrum/${fileId}`} />
               </div>
+              <div className="header-location">
+                <span>{page === 'arbejdsrum' ? 'Arbejdsrum' : team?.name}</span>
+                <span aria-hidden="true" className="location-divider">
+                  /
+                </span>
+                <strong>{navigation.find((item) => item.key === page)?.label ?? 'Springplan'}</strong>
+              </div>
+            </>
+          ) : (
+            <Brand href="#/arbejdsrum" />
+          )}
+          <div className="header-actions">
+            <span className="connection-state">
+              {starting
+                ? 'Forbinder til Google Drive…'
+                : auth.status === 'connected'
+                  ? auth.account?.name
+                  : auth.status === 'expired'
+                    ? 'Google-adgang udløbet'
+                    : 'Intet arbejdsrum åbent'}
+            </span>
+            {workspace && (
+              <button
+                className="quiet"
+                disabled={busy || data.state === 'saving' || !!data.review || auth.status !== 'connected'}
+                onClick={requestReview}
+              >
+                Gennemgå ændringer
+              </button>
             )}
-          </div>
-        )}
-        {workspace && (auth.status === 'expired' || auth.status === 'error') && (
-          <section className="reconnect">
-            <p>Kladden er i denne side. Genforbind for at kontrollere filversion og fortsætte.</p>
-            <button
-              disabled={!ready || busy || !configured}
-              onClick={() => void connection.connect(remember)}
-            >
-              Forbind til Google Drive
+            {workspace && (
+              <button
+                className={`save-state state-${data.state}`}
+                disabled={
+                  data.state === 'saving' ||
+                  !data.loaded?.metadata.writable ||
+                  auth.status !== 'connected' ||
+                  !!data.review ||
+                  (!workspaceSession.dirty() && data.state !== 'error')
+                }
+                onClick={() => void workspaceSession.save()}
+              >
+                <Icon name={data.state === 'saved' || data.state === 'unchanged' ? 'check' : 'cloud'} />
+                {saveLabels[data.state]}
+                {data.state === 'changed' ? ' · Gem på Drive' : ''}
+              </button>
+            )}
+            <button className="quiet" disabled={starting} onClick={() => setSettings(true)}>
+              <Icon name="settings" />
+              <span>Arbejdsrum</span>
             </button>
-          </section>
-        )}
-        {starting ? (
-          <section className="startup-loading" aria-busy="true" aria-label="Indlæser arbejdsrum">
-            <div className="startup-emblem" aria-hidden="true">
+          </div>
+        </header>
+        {workspace && (
+          <aside className="workspace-bar">
+            <Brand href={`#/arbejdsrum/${fileId}`} />
+            <label className="team-switcher">
+              Aktuelt hold
+              <select
+                value={teamId}
+                onChange={(event) => navigate(page === 'arbejdsrum' ? 'spring' : page, event.target.value)}
+              >
+                {!teamId && <option value="">Intet hold</option>}
+                {workspace.teams
+                  .filter((item) => !item.archived || item.id === teamId)
+                  .map((item) => (
+                    <option key={item.id} value={item.id}>
+                      {item.name}
+                      {item.archived ? ' · ikke aktivt' : ''}
+                    </option>
+                  ))}
+              </select>
+            </label>
+            <nav aria-label="Hovednavigation">
+              {navigation.map(({ key, label, icon }) => (
+                <a
+                  key={key}
+                  aria-current={page === key ? 'page' : undefined}
+                  onClick={(event) => {
+                    if (
+                      event.button !== 0 ||
+                      event.metaKey ||
+                      event.ctrlKey ||
+                      event.shiftKey ||
+                      event.altKey
+                    )
+                      return;
+                    event.preventDefault();
+                    navigate(key);
+                  }}
+                  href={
+                    key === 'arbejdsrum'
+                      ? `#/arbejdsrum/${fileId}`
+                      : `#/arbejdsrum/${fileId}/hold/${teamId}/${key}`
+                  }
+                >
+                  <Icon name={icon} />
+                  {label}
+                </a>
+              ))}
+            </nav>
+            <div className="rail-context">
+              <Icon name="rules" />
+              <div>
+                <strong>
+                  {binding?.status === 'known'
+                    ? binding.profile.label
+                    : team
+                      ? 'Ukendt regelpakke'
+                      : 'Intet hold endnu'}
+                </strong>
+                <small>
+                  {binding?.status === 'known'
+                    ? `${team?.rulesetBinding.rulesetId} ${team?.rulesetBinding.packageVersion}`
+                    : team
+                      ? 'Data er bevaret'
+                      : 'Opret dit første hold'}
+                </small>
+              </div>
+            </div>
+            <div className="rail-file">
               <Icon name="cloud" />
+              <span>
+                {data.loaded?.metadata.name}
+                <small>Fælles arbejdsrum på Drive</small>
+              </span>
             </div>
-            <div role="status">
-              <h1>{auth.status === 'connected' ? 'Åbner dit arbejdsrum' : 'Forbinder til Google Drive'}</h1>
-              <p>
-                {auth.status === 'connected'
-                  ? 'Henter hold og færdigheder fra din Drive-fil…'
-                  : 'Kontrollerer din forbindelse…'}
-              </p>
+          </aside>
+        )}
+        <main id="main-content" tabIndex={-1}>
+          {googleLoading && !ready && !workspace && !starting && (
+            <p className="muted" role="status">
+              Indlæser Google…
+            </p>
+          )}
+          {googleError && (
+            <div className="notice" role="status">
+              <p>{googleError}</p>
+              <button disabled={googleLoading} onClick={() => void loadScripts()}>
+                Prøv Google igen
+              </button>
             </div>
-          </section>
-        ) : !workspace ? (
-          <div className="welcome-layout">
-            <div className="welcome-content">
-              <h1>
-                Holdets fælles <br />
-                planlægning
-              </h1>
-              <p className="intro">Hold, gymnaster og opstillinger i én fælles fil på Google Drive.</p>
-              <section className="connect-surface">
-                <h2>{auth.status === 'connected' ? 'Åbn holdets arbejdsrum' : 'Forbind din Google-konto'}</h2>
-                <p>
-                  {auth.status === 'connected'
-                    ? 'Vælg den fælles JSON-fil, eller opret et nyt arbejdsrum i en mappe, du vælger.'
-                    : 'Du vælger selv, hvilken fil appen får adgang til. Hver træner bruger sin egen konto.'}
-                </p>
-                {!configured && (
-                  <p className="notice">
-                    Google-konfiguration mangler i denne udgave. Konfigurér det offentlige client-id,
-                    projektnummer og browsernøglen ved bygning.
-                  </p>
-                )}
-                {auth.status === 'connected' ? (
-                  <div className="actions">
-                    <button disabled={busy || !ready} onClick={() => void chooseFile()}>
-                      Vælg eksisterende arbejdsrum
-                    </button>
+          )}
+          {(error || data.message || auth.message) && (
+            <div className="notice" role="status">
+              {error && <p>{error}</p>}
+              {auth.message && <p>{auth.message}</p>}
+              {data.message && <p>{data.message}</p>}
+              {workspace && (
+                <div className="actions">
+                  <button className="quiet" onClick={downloadDraft}>
+                    Eksportér lokal kladde
+                  </button>
+                  {data.loaded && (
                     <button
-                      disabled={busy || !ready}
                       className="quiet"
+                      disabled={busy || data.state === 'saving' || auth.status !== 'connected'}
                       onClick={() => {
-                        setError('');
-                        setOpeningLink(true);
+                        if (confirmDiscard()) void workspaceSession.open(data.loaded!.basis.fileId, true);
                       }}
                     >
-                      Åbn fra link
+                      Indlæs nyeste fil
                     </button>
-                    <button disabled={busy || !ready} className="quiet" onClick={() => setCreating(true)}>
-                      Opret arbejdsrum
-                    </button>
-                  </div>
-                ) : (
-                  <>
-                    <label className="check">
-                      <input
-                        type="checkbox"
-                        checked={remember}
-                        onChange={(event) => setRemember(event.target.checked)}
-                      />
-                      Husk Google-forbindelsen på denne enhed
-                    </label>
-                    <button
-                      disabled={!ready || !configured || busy || auth.status === 'connecting'}
-                      onClick={() => void connection.connect(remember)}
-                    >
-                      <svg className="google-mark" viewBox="0 0 24 24" aria-hidden="true">
-                        <path
-                          fill="currentColor"
-                          d="M21.8 12.2c0-.7-.1-1.4-.2-2.1H12v4h5.5a4.7 4.7 0 0 1-2.1 3.1v2.6h3.4c2-1.8 3-4.5 3-7.6ZM12 22c2.7 0 5-.9 6.8-2.5l-3.4-2.6c-.9.6-2 1-3.4 1a6 6 0 0 1-5.7-4.2H2.8v2.7A10 10 0 0 0 12 22ZM6.3 13.7a6 6 0 0 1 0-3.4V7.6H2.8a10 10 0 0 0 0 8.8l3.5-2.7ZM12 6.1c1.5 0 2.8.5 3.8 1.5l3-2.9A10 10 0 0 0 2.8 7.6l3.5 2.7A6 6 0 0 1 12 6.1Z"
-                        />
-                      </svg>
-                      Forbind til Google Drive
-                    </button>
-                  </>
-                )}
+                  )}
+                </div>
+              )}
+            </div>
+          )}
+          {workspace && (auth.status === 'expired' || auth.status === 'error') && (
+            <section className="reconnect">
+              <p>Kladden er i denne side. Genforbind for at kontrollere filversion og fortsætte.</p>
+              <button
+                disabled={!ready || busy || !configured}
+                onClick={() => void connection.connect(remember)}
+              >
+                Forbind til Google Drive
+              </button>
+            </section>
+          )}
+          <div key={editorEpoch}>
+            {starting ? (
+              <section className="startup-loading" aria-busy="true" aria-label="Indlæser arbejdsrum">
+                <div className="startup-emblem" aria-hidden="true">
+                  <Icon name="cloud" />
+                </div>
+                <div role="status">
+                  <h1>
+                    {auth.status === 'connected' ? 'Åbner dit arbejdsrum' : 'Forbinder til Google Drive'}
+                  </h1>
+                  <p>
+                    {auth.status === 'connected'
+                      ? 'Henter hold og færdigheder fra din Drive-fil…'
+                      : 'Kontrollerer din forbindelse…'}
+                  </p>
+                </div>
               </section>
-            </div>
-            <WelcomeArtwork />
-          </div>
-        ) : page === 'arbejdsrum' ? (
-          <Teams
-            workspace={workspace}
-            change={(next) => workspaceSession.edit(reconcileWorkspace(next))}
-            writable={!!data.loaded?.metadata.writable && auth.status === 'connected'}
-            select={(id) => navigate('spring', id)}
-          />
-        ) : page === 'gymnaster' ? (
-          <Athletes
-            key={teamId}
-            workspace={workspace}
-            change={(next) => workspaceSession.edit(reconcileWorkspace(next))}
-            writable={!!data.loaded?.metadata.writable && auth.status === 'connected'}
-          />
-        ) : !team ? (
-          <Empty>Vælg eller opret et hold først.</Empty>
-        ) : page === 'rytme' ? (
-          <RhythmPage
-            key={teamId}
-            workspace={workspace}
-            change={(next) => workspaceSession.edit(reconcileWorkspace(next))}
-            writable={writable}
-            teamId={teamId}
-          />
-        ) : page === 'reglement' ? (
-          <RulesPage
-            key={teamId}
-            workspace={workspace}
-            change={(next) => workspaceSession.edit(reconcileWorkspace(next))}
-            writable={writable}
-            teamId={teamId}
-          />
-        ) : (
-          <SpringPage
-            key={teamId}
-            workspace={workspace}
-            change={(next) => workspaceSession.edit(reconcileWorkspace(next))}
-            writable={writable}
-            teamId={teamId}
-          />
-        )}
-        {workspace && !data.loaded?.metadata.writable && (
-          <p className="notice">
-            Læsetilstand · denne konto må se og analysere filen, men kan ikke redigere.
-          </p>
-        )}
-        {workspace && (
-          <footer className="mobile-footer" role="contentinfo">
-            {footerContent}
-          </footer>
-        )}
-      </main>
-      <footer className="desktop-footer">{footerContent}</footer>
-      {data.migration && (
-        <Dialog title="Opgradér arbejdsrummet" close={() => workspaceSession.cancelMigration()}>
-          <p>
-            Filen bruger format {data.migration.sourceSchemaVersion}. Opgradér til format 3 for at arbejde med
-            scenarier og reserver.
-          </p>
-          <p>
-            Eksisterende planer bevares som Plan A i hver disciplin. Vurderinger, arv og fravalg bevares.
-            Originalen på Drive ændres først, når du vælger Gem på Drive. Ældre appudgaver kan ikke åbne
-            format 3.
-          </p>
-          <div className="actions">
-            <button className="quiet" onClick={() => downloadCopy(workspaceSession.exportOriginal())}>
-              Eksportér original
-            </button>
-            <button className="quiet" onClick={() => workspaceSession.cancelMigration()}>
-              Annuller
-            </button>
-            <button
-              onClick={() => {
-                if (confirmDiscard()) workspaceSession.acceptMigration(true);
-              }}
-            >
-              Opgradér lokal kladde
-            </button>
-          </div>
-        </Dialog>
-      )}
-      {settings && (
-        <Dialog title="Arbejdsrum og forbindelse" suspended={pickerActive} close={() => setSettings(false)}>
-          <p>{auth.account ? `${auth.account.name} · ${auth.account.email}` : 'Ingen konto forbundet.'}</p>
-          <p>
-            {auth.remembered
-              ? 'Forbindelsen huskes indtil Googles token udløber.'
-              : 'Forbindelsen huskes ikke efter lukning.'}
-          </p>
-          {data.loaded && (
-            <>
-              <p>
-                <strong>{data.loaded.metadata.name}</strong>
-              </p>
-              <p>
-                Fil-id: <code>{data.loaded.basis.fileId}</code>
-              </p>
-              <p>
-                Mappe:{' '}
-                {data.loaded.metadata.folderIds.map((id) => (
-                  <a
-                    key={id}
-                    href={`https://drive.google.com/drive/folders/${id}`}
-                    target="_blank"
-                    rel="noreferrer"
-                  >
-                    {id}
-                  </a>
-                ))}
-              </p>
-              <p>
-                Version: {data.loaded.basis.version} ·{' '}
-                {data.loaded.metadata.writable ? 'Skriveadgang' : 'Læseadgang'}
-              </p>
-              <label>
-                Link til arbejdsrummet
-                <input
-                  readOnly
-                  value={`${location.origin}${location.pathname}#/arbejdsrum/${fileId}`}
-                  onFocus={(event) => event.target.select()}
-                />
-              </label>
-              <p className="muted">
-                Linket giver ingen adgang i sig selv. Brug et Drive-link eller Google-filvælgeren for at åbne
-                filen med din egen konto.
-              </p>
-              <button className="quiet" onClick={downloadDraft}>
-                Eksportér kladden
-              </button>
-            </>
-          )}
-          {auth.status === 'connected' && (
-            <div className="actions">
-              <button disabled={!ready || busy || data.state === 'saving'} onClick={() => void chooseFile()}>
-                Vælg anden fil
-              </button>
-              <button
-                disabled={!ready || busy || data.state === 'saving'}
-                className="quiet"
-                onClick={() => {
-                  setError('');
-                  setOpeningLink(true);
-                }}
-              >
-                Åbn fra link
-              </button>
-              <button
-                disabled={!ready || busy || data.state === 'saving'}
-                onClick={() => {
-                  if (confirmDiscard()) setCreating(true);
-                }}
-              >
-                Opret arbejdsrum
-              </button>
-            </div>
-          )}
-          <div className="actions">
-            <button
-              className="quiet"
-              disabled={busy}
-              onClick={() => {
-                if (confirmDiscard())
-                  void run(async () => {
-                    workspaceSession.clear();
-                    await connection.disconnect();
-                    setSettings(false);
-                  });
-              }}
-            >
-              Afbryd forbindelse / skift konto
-            </button>
-            <button
-              className="quiet"
-              disabled={busy || auth.status !== 'connected'}
-              onClick={() => {
-                if (
-                  confirmDiscard() &&
-                  window.confirm('Tilbagekald appens Google-adgang? Nyt samtykke kan blive nødvendigt.')
-                )
-                  void run(async () => {
-                    workspaceSession.clear();
-                    await connection.disconnect(true);
-                    setSettings(false);
-                  });
-              }}
-            >
-              Tilbagekald Google-adgang
-            </button>
-          </div>
-          <p className="muted">
-            Afbrydelse rydder lokal adgang og arbejdsdata i appens faner. En allerede afsendt upload kan
-            stadig være gennemført.
-          </p>
-        </Dialog>
-      )}
-      {recovery && (
-        <Dialog title="Kladde fra afbrudt forbindelse" close={() => {}} dismissible={false}>
-          <p>
-            Forbindelsen blev afbrudt eller kontoen ændret. Arbejdsrummet er lukket, og kladden er isoleret i
-            denne side. Eksportér den før kassation, hvis arbejdet skal bevares.
-          </p>
-          <div className="actions">
-            <button
-              onClick={() => {
-                downloadCopy(recovery);
-                setRecovery(null);
-              }}
-            >
-              Eksportér og luk kladden
-            </button>
-            <button className="quiet" onClick={() => setRecovery(null)}>
-              Kassér kladden
-            </button>
-          </div>
-        </Dialog>
-      )}
-      {creating && (
-        <Dialog
-          title="Opret arbejdsrum på Drive"
-          suspended={pickerActive}
-          dismissible={!busy}
-          close={() => setCreating(false)}
-        >
-          <ActionForm
-            disabled={busy}
-            label={folderLink.trim() ? 'Opret arbejdsrum i mappen' : 'Vælg mappe og opret JSON-fil'}
-            submit={(form) => {
-              const name = String(form.get('name'));
-              const pasted = String(form.get('folderLink') ?? '').trim();
-              const link = pasted ? parseDriveLink(pasted) : null;
-              if (link?.kind === 'file')
-                throw new Error(
-                  'Indsæt et link til mappen. Brug Åbn fra link for at åbne en eksisterende fil.',
-                );
-              void run(async () => {
-                let folder: string | null;
-                if (link) {
-                  const metadata = await linkedMetadata(link, true);
-                  if (!metadata) return;
-                  if (metadata.mimeType !== 'application/vnd.google-apps.folder')
-                    throw new Error('Linket skal pege på en Google Drive-mappe.');
-                  folder = metadata.id;
-                } else {
-                  folder = await chooseGoogleResource(true);
-                }
-                if (!folder) return;
-                const loaded = await connection.client().create(folder, name, createWorkspace());
-                workspaceSession.adopt(loaded);
-                await connection.rememberFile(loaded.metadata);
-                location.hash = `#/arbejdsrum/${loaded.basis.fileId}`;
-                setCreating(false);
-                setSettings(false);
-              });
-            }}
-          >
-            <fieldset disabled={busy}>
-              <label>
-                Arbejdsrummets navn
-                <input name="name" required maxLength={160} placeholder="Fx TeamGym sæson 2026" />
-              </label>
-              <label>
-                Link til mappe (valgfrit)
-                <input
-                  name="folderLink"
-                  type="url"
-                  value={folderLink}
-                  onChange={(event) => setFolderLink(event.target.value)}
-                  placeholder="https://drive.google.com/drive/folders/…"
-                />
-              </label>
-              <p className="muted">
-                Indsæt et mappelink, eller lad feltet være tomt for at vælge mappen i Google.
-              </p>
-            </fieldset>
-            <p className="muted">
-              Der oprettes én ny JSON-fil i den valgte mappe. Eksisterende dokumenter ændres ikke.
-            </p>
-            {busy && <p role="status">Opretter arbejdsrum…</p>}
-            {error && (
-              <p role="alert" className="notice">
-                {error}
-              </p>
-            )}
-          </ActionForm>
-        </Dialog>
-      )}
-      {openingLink && (
-        <Dialog
-          title="Åbn fra Google Drive-link"
-          suspended={pickerActive}
-          close={() => {
-            if (!busy) setOpeningLink(false);
-          }}
-          dismissible={!busy}
-        >
-          <p>Et fillink åbner arbejdsrummet. Et mappelink viser filerne i mappen.</p>
-          <ActionForm
-            label={busy ? 'Åbner…' : 'Åbn link'}
-            disabled={busy || auth.status !== 'connected'}
-            submit={(form) => {
-              const link = parseDriveLink(String(form.get('driveLink')));
-              void openDriveLink(link);
-            }}
-          >
-            <label>
-              Link til fil eller mappe
-              <input
-                name="driveLink"
-                type="url"
-                required
-                autoFocus
-                disabled={busy}
-                placeholder="https://drive.google.com/…"
+            ) : !workspace ? (
+              <div className="welcome-layout">
+                <div className="welcome-content">
+                  <h1>
+                    Holdets fælles <br />
+                    planlægning
+                  </h1>
+                  <p className="intro">Hold, gymnaster og opstillinger i én fælles fil på Google Drive.</p>
+                  <section className="connect-surface">
+                    <h2>
+                      {auth.status === 'connected' ? 'Åbn holdets arbejdsrum' : 'Forbind din Google-konto'}
+                    </h2>
+                    <p>
+                      {auth.status === 'connected'
+                        ? 'Vælg den fælles JSON-fil, eller opret et nyt arbejdsrum i en mappe, du vælger.'
+                        : 'Du vælger selv, hvilken fil appen får adgang til. Hver træner bruger sin egen konto.'}
+                    </p>
+                    {!configured && (
+                      <p className="notice">
+                        Google-konfiguration mangler i denne udgave. Konfigurér det offentlige client-id,
+                        projektnummer og browsernøglen ved bygning.
+                      </p>
+                    )}
+                    {auth.status === 'connected' ? (
+                      <div className="actions">
+                        <button disabled={busy || !ready} onClick={() => void chooseFile()}>
+                          Vælg eksisterende arbejdsrum
+                        </button>
+                        <button
+                          disabled={busy || !ready}
+                          className="quiet"
+                          onClick={() => {
+                            setError('');
+                            setOpeningLink(true);
+                          }}
+                        >
+                          Åbn fra link
+                        </button>
+                        <button disabled={busy || !ready} className="quiet" onClick={() => setCreating(true)}>
+                          Opret arbejdsrum
+                        </button>
+                      </div>
+                    ) : (
+                      <>
+                        <label className="check">
+                          <input
+                            type="checkbox"
+                            checked={remember}
+                            onChange={(event) => setRemember(event.target.checked)}
+                          />
+                          Husk Google-forbindelsen på denne enhed
+                        </label>
+                        <button
+                          disabled={!ready || !configured || busy || auth.status === 'connecting'}
+                          onClick={() => void connection.connect(remember)}
+                        >
+                          <svg className="google-mark" viewBox="0 0 24 24" aria-hidden="true">
+                            <path
+                              fill="currentColor"
+                              d="M21.8 12.2c0-.7-.1-1.4-.2-2.1H12v4h5.5a4.7 4.7 0 0 1-2.1 3.1v2.6h3.4c2-1.8 3-4.5 3-7.6ZM12 22c2.7 0 5-.9 6.8-2.5l-3.4-2.6c-.9.6-2 1-3.4 1a6 6 0 0 1-5.7-4.2H2.8v2.7A10 10 0 0 0 12 22ZM6.3 13.7a6 6 0 0 1 0-3.4V7.6H2.8a10 10 0 0 0 0 8.8l3.5-2.7ZM12 6.1c1.5 0 2.8.5 3.8 1.5l3-2.9A10 10 0 0 0 2.8 7.6l3.5 2.7A6 6 0 0 1 12 6.1Z"
+                            />
+                          </svg>
+                          Forbind til Google Drive
+                        </button>
+                      </>
+                    )}
+                  </section>
+                </div>
+                <WelcomeArtwork />
+              </div>
+            ) : page === 'arbejdsrum' ? (
+              <Teams
+                workspace={workspace}
+                change={(next) => workspaceSession.edit(reconcileWorkspace(next))}
+                writable={!!data.loaded?.metadata.writable && auth.status === 'connected'}
+                select={(id) => navigate('spring', id)}
               />
-            </label>
-            <p className="muted">Google kan bede dig bekræfte adgangen til filen eller mappen.</p>
-            {busy && <p role="status">Åbner linket fra Google Drive…</p>}
-            {error && (
-              <p role="alert" className="notice">
-                {error}
-              </p>
+            ) : page === 'gymnaster' ? (
+              <Athletes
+                key={teamId}
+                workspace={workspace}
+                change={(next) => workspaceSession.edit(reconcileWorkspace(next))}
+                writable={!!data.loaded?.metadata.writable && auth.status === 'connected'}
+              />
+            ) : !team ? (
+              <Empty>Vælg eller opret et hold først.</Empty>
+            ) : page === 'rytme' ? (
+              <RhythmPage
+                key={teamId}
+                workspace={workspace}
+                change={(next) => workspaceSession.edit(reconcileWorkspace(next))}
+                writable={writable}
+                teamId={teamId}
+              />
+            ) : page === 'reglement' ? (
+              <RulesPage
+                key={teamId}
+                workspace={workspace}
+                change={(next) => workspaceSession.edit(reconcileWorkspace(next))}
+                writable={writable}
+                teamId={teamId}
+              />
+            ) : (
+              <SpringPage
+                key={teamId}
+                workspace={workspace}
+                change={(next) => workspaceSession.edit(reconcileWorkspace(next))}
+                writable={writable}
+                teamId={teamId}
+              />
             )}
-          </ActionForm>
-        </Dialog>
-      )}
-    </div>
+          </div>
+          {workspace && !data.loaded?.metadata.writable && (
+            <p className="notice">
+              Læsetilstand · denne konto må se og analysere filen, men kan ikke redigere.
+            </p>
+          )}
+          {workspace && (
+            <footer className="mobile-footer" role="contentinfo">
+              {footerContent}
+            </footer>
+          )}
+        </main>
+        <footer className="desktop-footer">{footerContent}</footer>
+        {reviewGuard && (
+          <Dialog title="Formularændringer før gennemgang" close={() => setReviewGuard(false)}>
+            <p>Du har ændret oplysninger i en formular. Vil du beholde dem, før du fortsætter?</p>
+            {guardError && <p role="alert">{guardError}</p>}
+            <div className="actions">
+              <button onClick={updateForms}>Behold mine ændringer</button>
+              <button className="quiet" onClick={showReview}>
+                Kassér formularændringer
+              </button>
+              <button className="quiet" onClick={() => setReviewGuard(false)}>
+                Bliv
+              </button>
+            </div>
+          </Dialog>
+        )}
+        {data.review && (
+          <WorkspaceReview
+            applied={() => {
+              setEditorEpoch((epoch) => epoch + 1);
+            }}
+          />
+        )}
+        {data.migration && (
+          <Dialog title="Opgradér arbejdsrummet" close={() => workspaceSession.cancelMigration()}>
+            <p>
+              Filen bruger format {data.migration.sourceSchemaVersion}. Opgradér til format 3 for at arbejde
+              med scenarier og reserver.
+            </p>
+            <p>
+              Eksisterende planer bevares som Plan A i hver disciplin. Vurderinger, arv og fravalg bevares.
+              Originalen på Drive ændres først, når du vælger Gem på Drive. Ældre appudgaver kan ikke åbne
+              format 3.
+            </p>
+            <div className="actions">
+              <button className="quiet" onClick={() => downloadCopy(workspaceSession.exportOriginal())}>
+                Eksportér original
+              </button>
+              <button className="quiet" onClick={() => workspaceSession.cancelMigration()}>
+                Annuller
+              </button>
+              <button
+                onClick={() => {
+                  if (confirmDiscard()) workspaceSession.acceptMigration(true);
+                }}
+              >
+                Opgradér lokal kladde
+              </button>
+            </div>
+          </Dialog>
+        )}
+        {settings && (
+          <Dialog title="Arbejdsrum og forbindelse" suspended={pickerActive} close={() => setSettings(false)}>
+            <p>{auth.account ? `${auth.account.name} · ${auth.account.email}` : 'Ingen konto forbundet.'}</p>
+            <p>
+              {auth.remembered
+                ? 'Forbindelsen huskes indtil Googles token udløber.'
+                : 'Forbindelsen huskes ikke efter lukning.'}
+            </p>
+            {data.loaded && (
+              <>
+                <p>
+                  <strong>{data.loaded.metadata.name}</strong>
+                </p>
+                <p>
+                  Fil-id: <code>{data.loaded.basis.fileId}</code>
+                </p>
+                <p>
+                  Mappe:{' '}
+                  {data.loaded.metadata.folderIds.map((id) => (
+                    <a
+                      key={id}
+                      href={`https://drive.google.com/drive/folders/${id}`}
+                      target="_blank"
+                      rel="noreferrer"
+                    >
+                      {id}
+                    </a>
+                  ))}
+                </p>
+                <p>
+                  Version: {data.loaded.basis.version} ·{' '}
+                  {data.loaded.metadata.writable ? 'Skriveadgang' : 'Læseadgang'}
+                </p>
+                <label>
+                  Link til arbejdsrummet
+                  <input
+                    readOnly
+                    value={`${location.origin}${location.pathname}#/arbejdsrum/${fileId}`}
+                    onFocus={(event) => event.target.select()}
+                  />
+                </label>
+                <p className="muted">
+                  Linket giver ingen adgang i sig selv. Brug et Drive-link eller Google-filvælgeren for at
+                  åbne filen med din egen konto.
+                </p>
+                <button className="quiet" onClick={downloadDraft}>
+                  Eksportér kladden
+                </button>
+              </>
+            )}
+            {auth.status === 'connected' && (
+              <div className="actions">
+                <button
+                  disabled={!ready || busy || data.state === 'saving'}
+                  onClick={() => void chooseFile()}
+                >
+                  Vælg anden fil
+                </button>
+                <button
+                  disabled={!ready || busy || data.state === 'saving'}
+                  className="quiet"
+                  onClick={() => {
+                    setError('');
+                    setOpeningLink(true);
+                  }}
+                >
+                  Åbn fra link
+                </button>
+                <button
+                  disabled={!ready || busy || data.state === 'saving'}
+                  onClick={() => {
+                    if (confirmDiscard()) setCreating(true);
+                  }}
+                >
+                  Opret arbejdsrum
+                </button>
+              </div>
+            )}
+            <div className="actions">
+              <button
+                className="quiet"
+                disabled={busy}
+                onClick={() => {
+                  if (confirmDiscard())
+                    void run(async () => {
+                      workspaceSession.clear();
+                      await connection.disconnect();
+                      setSettings(false);
+                    });
+                }}
+              >
+                Afbryd forbindelse / skift konto
+              </button>
+              <button
+                className="quiet"
+                disabled={busy || auth.status !== 'connected'}
+                onClick={() => {
+                  if (
+                    confirmDiscard() &&
+                    window.confirm('Tilbagekald appens Google-adgang? Nyt samtykke kan blive nødvendigt.')
+                  )
+                    void run(async () => {
+                      workspaceSession.clear();
+                      await connection.disconnect(true);
+                      setSettings(false);
+                    });
+                }}
+              >
+                Tilbagekald Google-adgang
+              </button>
+            </div>
+            <p className="muted">
+              Afbrydelse rydder lokal adgang og arbejdsdata i appens faner. En allerede afsendt upload kan
+              stadig være gennemført.
+            </p>
+          </Dialog>
+        )}
+        {recovery && (
+          <Dialog title="Kladde fra afbrudt forbindelse" close={() => {}} dismissible={false}>
+            <p>
+              Forbindelsen blev afbrudt eller kontoen ændret. Arbejdsrummet er lukket, og kladden er isoleret
+              i denne side. Eksportér den før kassation, hvis arbejdet skal bevares.
+            </p>
+            <div className="actions">
+              <button
+                onClick={() => {
+                  downloadCopy(recovery);
+                  setRecovery(null);
+                }}
+              >
+                Eksportér og luk kladden
+              </button>
+              <button className="quiet" onClick={() => setRecovery(null)}>
+                Kassér kladden
+              </button>
+            </div>
+          </Dialog>
+        )}
+        {creating && (
+          <Dialog
+            title="Opret arbejdsrum på Drive"
+            suspended={pickerActive}
+            dismissible={!busy}
+            close={() => setCreating(false)}
+          >
+            <ActionForm
+              disabled={busy}
+              label={folderLink.trim() ? 'Opret arbejdsrum i mappen' : 'Vælg mappe og opret JSON-fil'}
+              submit={(form) => {
+                const name = String(form.get('name'));
+                const pasted = String(form.get('folderLink') ?? '').trim();
+                const link = pasted ? parseDriveLink(pasted) : null;
+                if (link?.kind === 'file')
+                  throw new Error(
+                    'Indsæt et link til mappen. Brug Åbn fra link for at åbne en eksisterende fil.',
+                  );
+                void run(async () => {
+                  let folder: string | null;
+                  if (link) {
+                    const metadata = await linkedMetadata(link, true);
+                    if (!metadata) return;
+                    if (metadata.mimeType !== 'application/vnd.google-apps.folder')
+                      throw new Error('Linket skal pege på en Google Drive-mappe.');
+                    folder = metadata.id;
+                  } else {
+                    folder = await chooseGoogleResource(true);
+                  }
+                  if (!folder) return;
+                  const loaded = await connection.client().create(folder, name, createWorkspace());
+                  workspaceSession.adopt(loaded);
+                  await connection.rememberFile(loaded.metadata);
+                  location.hash = `#/arbejdsrum/${loaded.basis.fileId}`;
+                  setCreating(false);
+                  setSettings(false);
+                });
+              }}
+            >
+              <fieldset disabled={busy}>
+                <label>
+                  Arbejdsrummets navn
+                  <input name="name" required maxLength={160} placeholder="Fx TeamGym sæson 2026" />
+                </label>
+                <label>
+                  Link til mappe (valgfrit)
+                  <input
+                    name="folderLink"
+                    type="url"
+                    value={folderLink}
+                    onChange={(event) => setFolderLink(event.target.value)}
+                    placeholder="https://drive.google.com/drive/folders/…"
+                  />
+                </label>
+                <p className="muted">
+                  Indsæt et mappelink, eller lad feltet være tomt for at vælge mappen i Google.
+                </p>
+              </fieldset>
+              <p className="muted">
+                Der oprettes én ny JSON-fil i den valgte mappe. Eksisterende dokumenter ændres ikke.
+              </p>
+              {busy && <p role="status">Opretter arbejdsrum…</p>}
+              {error && (
+                <p role="alert" className="notice">
+                  {error}
+                </p>
+              )}
+            </ActionForm>
+          </Dialog>
+        )}
+        {openingLink && (
+          <Dialog
+            title="Åbn fra Google Drive-link"
+            suspended={pickerActive}
+            close={() => {
+              if (!busy) setOpeningLink(false);
+            }}
+            dismissible={!busy}
+          >
+            <p>Et fillink åbner arbejdsrummet. Et mappelink viser filerne i mappen.</p>
+            <ActionForm
+              label={busy ? 'Åbner…' : 'Åbn link'}
+              disabled={busy || auth.status !== 'connected'}
+              submit={(form) => {
+                const link = parseDriveLink(String(form.get('driveLink')));
+                void openDriveLink(link);
+              }}
+            >
+              <label>
+                Link til fil eller mappe
+                <input
+                  name="driveLink"
+                  type="url"
+                  required
+                  autoFocus
+                  disabled={busy}
+                  placeholder="https://drive.google.com/…"
+                />
+              </label>
+              <p className="muted">Google kan bede dig bekræfte adgangen til filen eller mappen.</p>
+              {busy && <p role="status">Åbner linket fra Google Drive…</p>}
+              {error && (
+                <p role="alert" className="notice">
+                  {error}
+                </p>
+              )}
+            </ActionForm>
+          </Dialog>
+        )}
+      </div>
+    </ReviewRequestContext.Provider>
   );
 }
 

@@ -1,6 +1,7 @@
 import { createBrowserConnection, WorkspaceSession } from '@teamgym/drive';
 import type { GoogleConfiguration } from '@teamgym/drive';
 import { reconcileWorkspace } from './inheritance-context';
+import { registry } from './rules';
 export const googleConfig: GoogleConfiguration = {
   clientId: import.meta.env.VITE_GOOGLE_CLIENT_ID ?? '',
   projectNumber: import.meta.env.VITE_GOOGLE_PROJECT_NUMBER ?? '',
@@ -8,7 +9,22 @@ export const googleConfig: GoogleConfiguration = {
 };
 export const configured = Object.values(googleConfig).every(Boolean);
 export const connection = createBrowserConnection(googleConfig);
-export const workspaceSession = new WorkspaceSession(connection.client(), undefined, undefined, reconcileWorkspace);
+export const workspaceSession = new WorkspaceSession(
+  connection.client(),
+  undefined,
+  undefined,
+  reconcileWorkspace,
+  () => ({
+    fingerprint: JSON.stringify(registry.list(false).map((pkg) => pkg.manifest)),
+    reconcile: (workspace) => reconcileWorkspace(workspace, workspace.updatedAt),
+  }),
+  () =>
+    JSON.stringify([
+      connection.snapshot().generation,
+      connection.snapshot().status,
+      connection.snapshot().account?.permissionId,
+    ]),
+);
 let restoration: Promise<void> | undefined;
 export function restoreConnection() {
   return (restoration ??= connection.restore());

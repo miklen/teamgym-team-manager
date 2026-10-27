@@ -14,7 +14,7 @@ test('konflikt bevarer eksportérbar kladde og kræver bevidst genindlæsning', 
   await rename(page);
   source.external(createTeam(source.workspace, 'Ekstern ændring', binding));
   await page.getByRole('button', { name: /Lokale ændringer/ }).click();
-  await expect(page.getByRole('button', { name: /Konflikt · kladde bevaret/ })).toBeVisible();
+  await expect(page.getByRole('button', { name: /Nyere fil · kladde bevaret/ })).toBeVisible();
   expect(source.workspace.teams[0]!.name).toBe('Syntetisk hold A');
   expect(source.puts).toBe(0);
   const download = page.waitForEvent('download');

@@ -24,3 +24,5 @@ export * from './stability';
 export * from './commands';
 export * from './fraction';
 export * from './inheritance';
+export * from './merge-policy';
+export * from './workspace-merge';

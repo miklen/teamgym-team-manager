@@ -17,7 +17,7 @@ export function reconcileVersionPreview(preview: VersionChangePreview): VersionC
 }
 
 /** Den aktuelle holdbinding styrer rangering; en manglende pakke får ingen fallback. */
-export function reconcileWorkspace(workspace: Workspace): Workspace {
+export function reconcileWorkspace(workspace: Workspace, now = new Date().toISOString()): Workspace {
   const copy = structuredClone(workspace);
   const contexts = new Map(
     copy.athletes.map((athlete) => {
@@ -52,7 +52,7 @@ export function reconcileWorkspace(workspace: Workspace): Workspace {
             );
       },
     },
-    new Date().toISOString(),
+    now,
   );
   return validateWorkspace(copy);
 }

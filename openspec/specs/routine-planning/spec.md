@@ -83,6 +83,17 @@ En tom plads eller et manglende valg SHALL vises som en planlægningsmangel og M
 - **WHEN** kun fem tællende gymnaster er valgt
 - **THEN** viser appen de kendte værdier og den manglende plads og bruger ikke en skjult antagelse om den sjette gymnasts udførelse.
 
+### Requirement: Søgbart visuelt springvalg
+Springvalget på en omgangsplads SHALL vise registrerede muligheder i adskilte rækker med navn, saltoretning, D og sikkerhed som særskilte visuelle oplysninger. Desktop SHALL bruge faste sammenlignelige kolonner, og mobil SHALL bevare oplysningerne uden vandret overflow. Sikkerhed SHALL bruge fem trin og en talværdi med tilgængelig forklaring ved Ikke vurderet. Listen SHALL kunne søges, betjenes med pile/Home/End/Enter og lukkes med Escape uden at lukke omgangspladsens dialog. Valg SHALL bevares ved lukning af listen, og et gymnastskift SHALL nulstille springvalget. Vælg senere SHALL tillade en plads uden spring. Planen MUST NOT ændres før Opdater.
+
+#### Scenario: Søg og vælg med tastatur
+- **WHEN** træneren søger en registreret variant, flytter det aktive valg og trykker Enter
+- **THEN** lukkes listen med fokus på springfeltet, og feltet viser valgt navn, D og sikkerhed uden en lang sammenhængende optiontekst.
+
+#### Scenario: Skift gymnast og annullér
+- **WHEN** træneren vælger et spring, skifter til en anden gymnast og lukker dialogen
+- **THEN** viser listen kun den nye gymnasts anvendelige spring, det tidligere valg er nulstillet, og den gemte plan er uændret.
+
 ### Requirement: Opret, navngiv og omdøb scenarier
 Træneren SHALL kunne oprette et tomt scenarie og omdøbe et eksisterende. Et nyt scenarie SHALL have tre tomme omgange og tomme reservelister og åbnes efter oprettelse. Navne SHALL trimmes, indeholde 1–200 tegn efter trimning og være entydige uden forskel på store og små bogstaver inden for samme holds disciplin. Samme navn SHALL være tilladt i andre discipliner og på andre hold. Ugyldige navne SHALL give fejl ved feltet uden delvis oprettelse eller tab af indtastning. Nye scenarier SHALL placeres efter det scenarie, handlingen startede fra. Annullering MUST NOT ændre data.
 

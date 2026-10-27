@@ -1,5 +1,16 @@
 # Lokal test før GitHub
 
+## Afprøvning: gennemgang af samtidige ændringer
+
+Gem eller eksportér en eksisterende kladde før genindlæsning. Brug to faner med samme separate syntetiske testfil; eksisterende fælles trænerfiler må ikke bruges til skriveprøver.
+
+1. Åbn samme testfil i begge faner. Ændr et holdnavn i den første, og en anden gymnasts vurdering i den anden. Gem kun den anden fane. Vælg **Gennemgå ændringer** i den første: begge ændringer skal kunne kombineres uden konfliktvalg. **Annuller** skal bevare kladden; **Brug disse ændringer** skal stadig kræve særskilt **Gem på Drive**.
+2. Genåbn fælles basis i begge faner. Ændr samme vurdering forskelligt, og gem den anden fane. Gennemgå i den første. Før, Min udgave og Filens udgave skal vise sikkerhed, dato og ophav samlet. Prøv begge valg, filtre og Find uafgjorte konflikter. Ved flere konflikter skal du kunne vælge forskellige sider.
+3. Lad en gennemgang stå åben i første fane. Gem en yderligere ændring i anden fane. Anvendelse i første fane skal afvises som forældet med bevaret kladde; **Gennemgå igen** skal hente det nye grundlag.
+4. Åbn en ændret formular før gennemgang. Afprøv **Bliv**, **Behold mine ændringer** og **Kassér formularændringer**. Efter anvendelse må den gamle formular ikke kunne aflevere data over resultatet. Prøv også mobilbredde, tastatur, 200 % zoom, eksport og gem/genåbn på den syntetiske testfil.
+
+Se [brugervejledningen](gennemgaa-aendringer.md). Denne ændrings lokale test og klarsignal registreres først efter faktisk tilbagemelding.
+
 Hver ændring afprøves lokalt af brugeren, før den committes, pushes eller publiceres. Agenten gør ændringen klar, kører relevante automatiske kontroller, starter den lokale visning og afleverer linket. Derefter afventes brugerens klarsignal. Denne arbejdsgang erstatter den tidligere automatiske publicering efter grønne tests.
 
 ## Start

@@ -66,6 +66,7 @@ export async function openWorkspace(
   let denied = 0;
   let drop = false;
   let afterUpload: (() => Promise<void>) | undefined;
+  let beforeRead: (() => Promise<void>) | undefined;
   let created: { bytes: string; name: string } | null = null;
   let creates = 0;
   const failures: string[] = [];
@@ -154,6 +155,7 @@ export async function openWorkspace(
       return;
     }
     if (url.searchParams.get('alt') === 'media') {
+      await beforeRead?.();
       await route.fulfill({ body: bytes, contentType: 'application/json' });
       return;
     }
@@ -211,6 +213,7 @@ export async function openWorkspace(
   await page.reload();
   return {
     failures,
+    beforeRead(action: () => Promise<void>) { beforeRead = action; },
     replaceBytes(value: string) { bytes = value; version++; },
     afterPut(action: () => Promise<void>) { afterUpload = action; },
     get puts() {

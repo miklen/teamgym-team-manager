@@ -1,4 +1,5 @@
-import { useId, useLayoutEffect, useRef, useState } from 'react';
+import { useContext, useId, useLayoutEffect, useRef, useState } from 'react';
+import { ReviewRequestContext } from './review-context';
 import type { ReactNode, RefObject } from 'react';
 import { formatPoints, STABILITY_ANCHORS } from '@teamgym/domain';
 import type { SourceReference, Stability } from '@teamgym/domain';
@@ -107,6 +108,7 @@ export function Dialog({
   wide = false,
   dismissible = true,
   suspended = false,
+  className = '',
 }: {
   title: string;
   children: ReactNode;
@@ -114,8 +116,10 @@ export function Dialog({
   wide?: boolean;
   dismissible?: boolean;
   suspended?: boolean;
+  className?: string;
 }) {
   const titleId = useId();
+  const review = useContext(ReviewRequestContext);
   const ref = useRef<HTMLDialogElement>(null);
   useLayoutEffect(() => {
     const previous = document.activeElement;
@@ -132,7 +136,7 @@ export function Dialog({
   }, [suspended]);
   return (
     <dialog
-      className={wide ? 'wide' : ''}
+      className={`${wide ? 'wide ' : ''}${className}`}
       ref={ref}
       aria-labelledby={titleId}
       onCancel={(event) => {
@@ -149,6 +153,13 @@ export function Dialog({
         )}
       </header>
       <div className="dialog-body">{children}</div>
+      {review.available && (
+        <div className="dialog-body">
+          <button className="quiet" onClick={review.request}>
+            Gennemgå ændringer
+          </button>
+        </div>
+      )}
     </dialog>
   );
 }
