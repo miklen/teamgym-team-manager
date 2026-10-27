@@ -67,7 +67,7 @@ test('minimum-D, direkte fravalg, egen sikkerhed og valg på tværs af disciplin
   await review.getByLabel('Vurdering for Rondat – flik', { exact: true }).selectOption('2');
   await page.getByRole('combobox', { name: 'Disciplin', exact: true }).selectOption('trampet');
   await page.getByLabel('Søg sammensat spring eller alias').fill('rudi');
-  await page.getByRole('checkbox', { name: /^Rudy · strakt salto 540°/ }).check();
+  await page.getByRole('checkbox', { name: /^Rudy · strakt 540°/ }).check();
   await expect(review).toContainText('Rondat – flik – strakt 1/1');
   await expect(review).toContainText('Fravalgt');
   await page.getByRole('checkbox', { name: 'Kun valgte', exact: true }).check();

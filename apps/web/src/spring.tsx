@@ -17,7 +17,7 @@ import {
 } from './components';
 import { registry } from './rules';
 import { usePotentials } from './use-potentials';
-import { springDirectionText } from './spring-library';
+import { springDirectionText, springDisplayName } from './spring-library';
 import { PlanDifficulty, PlanSafety, PlanSkillSelect } from './plan-skill-select';
 
 export function SpringPage(props: DataProps & { teamId: string }) {
@@ -238,7 +238,9 @@ function SpringDisciplineView({
                         </small>
                         <small>
                           {participant.entry.role === 'extra' ? 'EKSTRA · ' : ''}
-                          {participant.skill?.name ?? 'Vælg registreret færdighed'}
+                          {participant.skill
+                            ? springDisplayName(participant.skill, rulePackage)
+                            : 'Vælg registreret færdighed'}
                         </small>
                         {participant.skill && springDirectionText(participant.skill) && (
                           <small className="spring-directions">
@@ -534,8 +536,12 @@ function SpringDisciplineView({
                 const participant = round.entries.find((item) => item.entry.id === id)!;
                 return (
                   <li key={id}>
-                    {participant.athleteName} · {participant.skill?.name ?? 'Færdighed mangler'} · fra plads{' '}
-                    {round.entries.indexOf(participant) + 1} · D {points(participant.originalD.value)}
+                    {participant.athleteName} ·{' '}
+                    {participant.skill
+                      ? springDisplayName(participant.skill, rulePackage)
+                      : 'Færdighed mangler'}{' '}
+                    · fra plads {round.entries.indexOf(participant) + 1} · D{' '}
+                    {points(participant.originalD.value)}
                   </li>
                 );
               })}
@@ -775,7 +781,7 @@ function EntryForm({
                 : rulePackage.evaluateSkill(skill, registration).difficulty.value;
             return {
               id: registration.id,
-              name: skill.name,
+              name: springDisplayName(skill, rulePackage),
               direction: springDirectionText(skill),
               difficulty: difficulty ? points(difficulty) : null,
               stability: registration.stability,

@@ -1,7 +1,7 @@
 import { chooseInheritanceSource, skillIdentity } from '@teamgym/domain';
 import type { AthleteSkill, Fraction, SkillDefinition, Workspace } from '@teamgym/domain';
 import type { RulePackage } from '@teamgym/rules';
-import { springInheritanceContext } from './spring-library';
+import { springDisplayName, springInheritanceContext } from './spring-library';
 
 export function skillFamily(skill: SkillDefinition, rulePackage?: RulePackage | null): string {
   if (skill.discipline === 'rhythm')
@@ -58,7 +58,8 @@ export function skillOverview(
   );
   const context = rulePackage && springInheritanceContext(rulePackage);
   const rows = registrations.map((registration): SkillOverviewRow => {
-    const definition = skills.get(registration.skillId)!;
+    const stored = skills.get(registration.skillId)!;
+    const definition = rulePackage ? { ...stored, name: springDisplayName(stored, rulePackage) } : stored;
     return {
       identity: skillIdentity(definition),
       registration,

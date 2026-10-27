@@ -1,6 +1,62 @@
 import AxeBuilder from '@axe-core/playwright';
 import { expect, test } from './test';
 import { openWorkspace } from './drive-fixture';
+import { registerAthleteSkill } from '@teamgym/domain';
+import { salto, syntheticWorkspace } from '../fixtures/synthetic-workspace';
+
+test('trampetnavne har grader i listen og efter registrering fra Byg selv, og Miller kan søges på bane', async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 1280, height: 1150 });
+  const fixture = syntheticWorkspace();
+  const registered = registerAthleteSkill(fixture.workspace, fixture.athleteA.id, {
+    id: 'synthetic-old-rudy',
+    name: 'Strakt salto 540',
+    archived: false,
+    discipline: 'trampet',
+    jump: {
+      ...salto,
+      direction: 'forward',
+      apparatus: 'trampet',
+      twistsHalfTurns: 3,
+      twistDistribution: [3],
+    },
+  });
+  const source = await openWorkspace(page, registered.workspace);
+  await page.getByRole('link', { name: 'Gymnaster', exact: true }).click();
+  await page.getByRole('button', { name: /Maja Test Test 1/ }).click();
+  await expect(page.getByRole('button', { name: /^Rudy · strakt 540°/ })).toBeVisible();
+  await page.getByRole('button', { name: 'Tilføj færdighed' }).click();
+  await page.getByRole('combobox', { name: 'Disciplin', exact: true }).selectOption('trampet');
+  for (const [query, name] of [
+    ['rudy', /^Rudy · strakt 540°/],
+    ['overslag rudy', /^Overslag rudy · strakt 540°/],
+    ['randy', /^Randy · strakt 900°/],
+  ] as const) {
+    await page.getByLabel('Søg sammensat spring eller alias').fill(query);
+    await expect(page.getByRole('checkbox', { name })).toBeVisible();
+  }
+  await page.getByLabel('Søg sammensat spring eller alias').fill('rudy');
+  await expect(page.getByRole('checkbox', { name: /dobbelt/i })).toHaveCount(0);
+  await expect(page.getByRole('checkbox', { name: /^Strakt salto 540(?:\s|$)/ })).toHaveCount(0);
+  await page.getByRole('checkbox', { name: /^Rudy · strakt 540°/ }).scrollIntoViewIfNeeded();
+  await page.screenshot({ path: 'tmp/ui-qa/springnavne-rettet.png', fullPage: true });
+  await page.getByRole('button', { name: 'Byg selv', exact: true }).click();
+  await page.getByLabel('Søg spring, kode eller alias').fill('randy');
+  await page.getByRole('button', { name: /^Randy · strakt 900°/ }).click();
+  await page.getByRole('checkbox', { name: 'Medtag fundament automatisk' }).uncheck();
+  await expect(page.getByRole('checkbox', { name: /^Randy · strakt 900°/ })).toBeChecked();
+  await page.getByRole('button', { name: 'Registrér færdighed', exact: true }).click();
+  await expect(page.getByRole('button', { name: /^Randy · strakt 900°/ })).toBeVisible();
+  await page.getByRole('button', { name: 'Tilføj færdighed' }).click();
+  await page.getByRole('combobox', { name: 'Disciplin', exact: true }).selectOption('tumbling');
+  await page.getByRole('button', { name: 'Byg selv', exact: true }).click();
+  await page.getByLabel('Søg spring, kode eller alias').fill('miller');
+  await expect(
+    page.getByRole('button', { name: /^Miller · dobbelt strakt → strakt salto 1080° \(baglæns\)/ }),
+  ).toBeVisible();
+  expect(source.failures).toEqual([]);
+});
 
 test('ingen Grundspring eller løs baglæns salto i færdige valg, men alle elementer er tilgængelige i Byg selv', async ({
   page,

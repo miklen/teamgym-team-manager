@@ -185,7 +185,7 @@ describe('versionsmærket, afgrænset fundament', () => {
           item.definition.jump.direction === 'forward',
       ),
     ).toBe(true);
-    expect(rudy.name).toContain('Rudy · strakt salto 540°');
+    expect(rudy.name).toContain('Rudy · strakt 540°');
     expect(
       library
         .filter((choice) => choice.definition.discipline === 'trampet' && matchesSpring(choice, 'rudi'))

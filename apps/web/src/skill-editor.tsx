@@ -25,6 +25,7 @@ import {
   springRegistrationPlan,
   springLibrary,
   springElementName,
+  springDisplayName,
   springSeriesName,
 } from './spring-library';
 import type { SpringSelection } from './spring-library';
@@ -161,7 +162,7 @@ export function SkillEditor({
   const custom = discipline === 'tumbling' && elements.length > 1 && !commonSeries;
   const [confirm, setConfirm] = useState(false);
   const [confirmation, setConfirmation] = useState('');
-  const [name, setName] = useState(original?.name ?? '');
+  const [name, setName] = useState(original ? springDisplayName(original, rulePackage) : '');
   const [advanced, setAdvanced] = useState<number | null>(null);
   const catalog = rulePackage.springCatalog.filter((item) => {
     if (
@@ -169,7 +170,7 @@ export function SkillEditor({
     )
       return false;
     const searchable =
-      `${springElementName(item.execution, rulePackage, item.name)} ${springSeriesName([item.execution], rulePackage)} ${item.officialCode} ${item.aliases.join(' ')}`.toLocaleLowerCase(
+      `${springElementName(item.execution, rulePackage, item.name)} ${item.name} ${springSeriesName([item.execution], rulePackage)} ${item.officialCode} ${item.aliases.join(' ')}`.toLocaleLowerCase(
         'da-DK',
       );
     return query
@@ -188,7 +189,9 @@ export function SkillEditor({
         (discipline === 'rhythm' ? original?.name : name.trim()) ||
         (discipline === 'rhythm'
           ? (moment?.name ?? 'Ukendt moment')
-          : springSeriesName(elements, rulePackage)),
+          : discipline === 'trampet' && elements[0]
+            ? springElementName(elements[0], rulePackage)
+            : springSeriesName(elements, rulePackage)),
       archived: false,
     };
     return skillDefinitionSchema.parse(

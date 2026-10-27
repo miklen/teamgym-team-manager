@@ -18,6 +18,7 @@ import {
   springLibrary,
   springSeriesName,
   springElementName,
+  springDisplayName,
   springDirectionText,
 } from '../../apps/web/src/spring-library';
 import type { SpringDefinition } from '../../apps/web/src/spring-library';
@@ -31,6 +32,76 @@ function choice(query: string) {
 const fullName = 'Rondat – flik – strakt 1/1 (360°)';
 
 describe('springbibliotek', () => {
+  it('navngiver enkeltsaltoer og overslag efter saltoens skruer og bevarer graderne', () => {
+    const library = springLibrary(DK_V1, createWorkspace());
+    for (const [referenceId, nickname, degrees] of [
+      ['a4-f-08', 'Rudy', '540°'],
+      ['a4-f-10', 'Randy', '900°'],
+      ['a4-v-14', 'Overslag rudy', '540°'],
+      ['a4-v-15', 'Overslag randy', '900°'],
+    ] as const) {
+      const found = library.find((item) => item.id === `common-${referenceId}`)!;
+      expect(found.definition.name).toMatch(new RegExp(`^${nickname} · `));
+      expect(found.definition.name).toContain(degrees);
+      expect(matchesSpring(found, nickname)).toBe(true);
+    }
+    const single = DK_V1.springCatalog.find((entry) => entry.referenceId === 'a4-f-08')!.execution;
+    expect(springElementName(single, DK_V1)).toBe('Rudy · strakt 540° (forlæns)');
+    expect(springElementName({ ...single, twistsHalfTurns: 7, twistDistribution: [7] }, DK_V1)).toBe(
+      'Addy · strakt 1260° (forlæns)',
+    );
+    for (const id of ['a4-f-16', 'a4-f-18', 'a4-f-19', 'a4-f-20']) {
+      expect(library.find((entry) => entry.id === `common-${id}`)!.definition.name).not.toMatch(
+        /Rudy|Randy|Addy/i,
+      );
+    }
+    for (const entry of DK_V1.springCatalog.filter((item) => item.execution.apparatus !== 'floor')) {
+      const name = springElementName(entry.execution, DK_V1, entry.name);
+      if (entry.execution.twistsHalfTurns) {
+        expect(name).toContain(`${entry.execution.twistsHalfTurns * 180}°`);
+      }
+      expect(name).not.toMatch(/\b(?:180|360|540|720|900|1080|1260|1440)(?!\d|°)/);
+    }
+  });
+
+  it('viser gamle gemte katalognavne med korrekt navn og grader uden at ændre data eller egne navne', () => {
+    const rudy = springLibrary(DK_V1, createWorkspace()).find(
+      (item) => item.id === 'common-a4-f-08',
+    )!.definition;
+    for (const oldName of [
+      'Strakt salto 540',
+      'Strakt salto 540°',
+      'Rudy · strakt salto 540° (forlæns)',
+      'Rudy',
+    ]) {
+      const workspace = { ...createWorkspace(), skills: [{ ...rudy, name: oldName }] };
+      const before = serializeWorkspace(workspace);
+      const displayed = springLibrary(DK_V1, workspace).find((item) => item.definition.id === rudy.id)!;
+      expect(displayed.definition.name).toBe('Rudy · strakt 540° (forlæns)');
+      expect(serializeWorkspace(workspace)).toBe(before);
+    }
+    expect(springDisplayName({ ...rudy, name: 'Syntetisk eget favoritnavn' }, DK_V1)).toBe(
+      'Syntetisk eget favoritnavn',
+    );
+  });
+
+  it('kalder dobbelt baglæns med tre skruer Miller og bevarer udførelsesdetaljerne', () => {
+    const miller = DK_V1.springCatalog.find((item) => item.referenceId === 'a3-b-22')!.execution;
+    expect(springElementName(miller, DK_V1)).toBe('Miller · dobbelt strakt → strakt salto 1080° (baglæns)');
+    const roundoff = DK_V1.springCatalog.find((item) => item.referenceId === 'a3-b-01')!.execution;
+    expect(springSeriesName([roundoff, miller], DK_V1)).toContain('Miller');
+    expect(springElementName({ ...miller, twistDistribution: [2, 4] }, DK_V1)).toContain(
+      '1080° (baglæns) · 360° + 720°',
+    );
+    for (const other of [
+      { ...miller, twistsHalfTurns: 3 },
+      { ...miller, rotationQuarterTurns: 4 },
+      { ...miller, direction: 'forward' as const },
+    ]) {
+      expect(springElementName(other, DK_V1)).not.toContain('Miller');
+    }
+  });
+
   it('klassificerer selvstændige indgange efter retning og holder afslutningselementer ude af færdige banevalg', () => {
     const fixture = syntheticWorkspace();
     const before = serializeWorkspace(fixture.workspace);
@@ -231,7 +302,13 @@ describe('springbibliotek', () => {
         { definition: hard, stability: hardRating, confirmed: true },
       ];
       const inherited = springRegistrationPlan(selected, DK_V1, true).filter((item) => !item.explicit);
-      expect(inherited.map((item) => item.stability)).toEqual([easyRating, easyRating, hardRating, hardRating, hardRating]);
+      expect(inherited.map((item) => item.stability)).toEqual([
+        easyRating,
+        easyRating,
+        hardRating,
+        hardRating,
+        hardRating,
+      ]);
       expect(
         springRegistrationPlan([...selected].reverse(), DK_V1, true)
           .filter((item) => !item.explicit)

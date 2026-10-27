@@ -48,6 +48,30 @@ export function springElementName(
   rulePackage: RulePackage,
   catalogName?: string,
 ): string {
+  const technical = springElementTechnicalName(element, rulePackage, catalogName);
+  const nickname = ({ 3: 'Rudy', 5: 'Randy', 7: 'Addy' } as Record<number, string>)[element.twistsHalfTurns];
+  if (nickname && element.direction === 'forward' && element.bodyPositions.length === 1) {
+    if (element.family === 'salto' && element.rotationQuarterTurns === 4) {
+      const detail = technical.replace(/ (?:start)?salto /, ' ');
+      return `${nickname} · ${detail.charAt(0).toLocaleLowerCase('da-DK')}${detail.slice(1)}`;
+    }
+    if (element.family === 'overslag-salto' && element.rotationQuarterTurns === 8) {
+      return technical.replace(/^Overslag salto /, `Overslag ${nickname.toLocaleLowerCase('da-DK')} · `);
+    }
+  }
+  return element.family === 'salto' &&
+    element.direction === 'backward' &&
+    element.rotationQuarterTurns === 8 &&
+    element.twistsHalfTurns === 6
+    ? `Miller · ${technical.charAt(0).toLocaleLowerCase('da-DK')}${technical.slice(1)}`
+    : technical;
+}
+
+function springElementTechnicalName(
+  element: ElementExecution,
+  rulePackage: RulePackage,
+  catalogName?: string,
+): string {
   const record = rulePackage.springCatalog.find(
     (item) => JSON.stringify(item.execution) === JSON.stringify(element),
   );
@@ -59,18 +83,35 @@ export function springElementName(
       .join(' → ');
     const rotation =
       element.rotationQuarterTurns === 8 ? 'dobbelt ' : element.rotationQuarterTurns === 12 ? 'trippel ' : '';
-    const rudy =
-      element.direction === 'forward' &&
-      element.rotationQuarterTurns === 4 &&
-      body === 'strakt' &&
-      element.twistsHalfTurns === 3;
     const salto = record?.startRole || catalogName?.endsWith(' start') ? 'startsalto' : 'salto';
-    const name = `${rudy ? 'Rudy · ' : ''}${rotation}${body} ${salto} ${element.twistsHalfTurns * 180}° (${direction})${element.twistDistribution.length > 1 ? ` · ${element.twistDistribution.map((value) => `${value * 180}°`).join(' + ')}` : ''}`;
+    const name = `${rotation}${body} ${salto} ${element.twistsHalfTurns * 180}° (${direction})${element.twistDistribution.length > 1 ? ` · ${element.twistDistribution.map((value) => `${value * 180}°`).join(' + ')}` : ''}`;
     return name.charAt(0).toLocaleUpperCase('da-DK') + name.slice(1);
   }
   return record
     ? `${(catalogName ?? record.name).replace(/\b(180|360|540|720|900|1080|1260|1440)(?!\d|°)/g, '$1°')}${['overslag-salto', 'tsukahara'].includes(element.family) ? ` (${direction})` : ''}`
     : `${element.family} · ${direction} · ${element.rotationQuarterTurns / 4} rotation · ${element.twistsHalfTurns * 180}°`;
+}
+
+/** Ret kun kendte tidligere standardnavne ved visning; bevar egne navne og de gemte data. */
+export function springDisplayName(
+  skill: SkillDefinition,
+  rulePackage: RulePackage | null | undefined,
+): string {
+  if (skill.discipline !== 'trampet' || !rulePackage) return skill.name;
+  const technical = springElementTechnicalName(skill.jump, rulePackage);
+  const previousNames = [technical, springSeriesName([skill.jump], rulePackage)];
+  const record = rulePackage.springCatalog.find(
+    (entry) => canonicalJson(entry.execution) === canonicalJson(skill.jump),
+  );
+  if (record) {
+    previousNames.push(record.name, record.name.replace(/\b(\d+)(?!\d|°)/g, '$1°'));
+  }
+  for (const nickname of ['Rudy', 'Randy', 'Addy']) previousNames.push(`${nickname} · ${technical}`);
+  return previousNames.some(
+    (name) => name.toLocaleLowerCase('da-DK') === skill.name.toLocaleLowerCase('da-DK'),
+  )
+    ? springElementName(skill.jump, rulePackage)
+    : skill.name;
 }
 
 export function springSeriesName(elements: readonly ElementExecution[], rulePackage: RulePackage): string {
@@ -101,6 +142,7 @@ export function springSeriesName(elements: readonly ElementExecution[], rulePack
                 3: 'rudy',
                 4: 'forlæns dobbeltskrue',
                 5: 'randy',
+                7: 'addy',
               } as Record<number, string>
             )[element.twistsHalfTurns] ?? springElementName(element, rulePackage)
           );
@@ -349,12 +391,15 @@ export function springLibrary(
     const previous = seen.get(identity);
     if (previous) {
       previous.aliases.push(previous.definition.name, definition.name);
-      previous.definition = structuredClone(definition);
+      previous.definition = {
+        ...structuredClone(definition),
+        name: springDisplayName(definition, rulePackage),
+      };
       continue;
     }
     add({
       id: `own-${definition.id}`,
-      definition: structuredClone(definition),
+      definition: { ...structuredClone(definition), name: springDisplayName(definition, rulePackage) },
       group: 'Egne spring',
       aliases: [],
       own: true,
@@ -772,7 +817,7 @@ export function springRegistrationPlan(
       ...(explicit ?? entry?.selection ?? { definition: row.definition, stability: null, confirmed: false }),
       definition: explicit?.definition ?? row.definition,
       explicit: !!explicit,
-      sourceName: source?.selection.definition.name ?? '',
+      sourceName: source ? springDisplayName(source.selection.definition, rulePackage) : '',
       sourceIdentity: source?.identity ?? null,
       stability: explicit
         ? explicit.stability

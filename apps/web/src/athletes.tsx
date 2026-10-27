@@ -25,7 +25,7 @@ import { registry } from './rules';
 import type { RulePackage } from '@teamgym/rules';
 import { SkillEditor } from './skill-editor';
 import { Avatar, Icon } from './ui';
-import { springInheritanceContext } from './spring-library';
+import { springDisplayName, springInheritanceContext } from './spring-library';
 import { SkillRepertoire } from './skill-repertoire';
 
 export interface DataProps {
@@ -406,7 +406,10 @@ export function AthleteInspector({
           {registration?.archived && (
             <section className="unavailable-skill">
               <button className="repertoire-row" disabled>
-                {workspace.skills.find((item) => item.id === registration.skillId)!.name}
+                {springDisplayName(
+                  workspace.skills.find((item) => item.id === registration.skillId)!,
+                  chosenPackage,
+                )}
                 <span>Fjernet</span>
               </button>
               <p className="notice">
@@ -517,7 +520,7 @@ export function AthleteInspector({
       {removedRegistration && removedDefinition && (
         <Dialog title="Fjern færdighed" close={() => setRemoving(null)}>
           <p>
-            Fjern <strong>{removedDefinition.name}</strong> fra {athlete.name}?
+            Fjern <strong>{springDisplayName(removedDefinition, chosenPackage)}</strong> fra {athlete.name}?
           </p>
           {usedPlaces > 0 && (
             <p className="notice">
@@ -531,7 +534,12 @@ export function AthleteInspector({
               <p>Disse færdigheder følger kilden og får en anden gyldig kilde eller bliver Ikke vurderet:</p>
               <ul>
                 {dependentRegistrations(workspace, removedRegistration.id).map((item) => (
-                  <li key={item.id}>{workspace.skills.find((skill) => skill.id === item.skillId)!.name}</li>
+                  <li key={item.id}>
+                    {springDisplayName(
+                      workspace.skills.find((skill) => skill.id === item.skillId)!,
+                      chosenPackage,
+                    )}
+                  </li>
                 ))}
               </ul>
             </div>
@@ -547,7 +555,9 @@ export function AthleteInspector({
                 change(setArchived(workspace, 'athleteSkills', removedRegistration.id, true));
                 setRemoving(null);
                 setSelectedRegistration(null);
-                setFeedback(`${removedDefinition.name} er fjernet fra gymnasten.`);
+                setFeedback(
+                  `${springDisplayName(removedDefinition, chosenPackage)} er fjernet fra gymnasten.`,
+                );
               }}
             >
               Fjern færdighed
@@ -628,7 +638,10 @@ function Assessment({
             {registration.assessmentOrigin.kind === 'own'
               ? 'Egen vurdering'
               : source
-                ? `Arvet fra ${workspace.skills.find((item) => item.id === source.skillId)!.name}`
+                ? `Arvet fra ${springDisplayName(
+                    workspace.skills.find((item) => item.id === source.skillId)!,
+                    assessmentPackage,
+                  )}`
                 : 'Mangler arvekilde'}
           </strong>
           {registration.assessmentOrigin.kind === 'inherited' && (
@@ -645,7 +658,8 @@ function Assessment({
                     <option value="">Automatisk · laveste kendte D</option>
                     {candidates.map(({ item, definition }) => (
                       <option key={item.id} value={item.id}>
-                        {definition.name} · {item.stability ?? 'Ikke vurderet'}
+                        {springDisplayName(definition, assessmentPackage)} ·{' '}
+                        {item.stability ?? 'Ikke vurderet'}
                       </option>
                     ))}
                   </select>

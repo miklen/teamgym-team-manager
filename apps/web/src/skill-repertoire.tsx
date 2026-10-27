@@ -3,7 +3,7 @@ import type { ReactNode } from 'react';
 import type { AthleteSkill, Workspace } from '@teamgym/domain';
 import type { RulePackage } from '@teamgym/rules';
 import { points } from './components';
-import { springDirectionText } from './spring-library';
+import { springDirectionText, springDisplayName } from './spring-library';
 import { skillOverview } from './skill-overview';
 import type { SkillOverviewRow } from './skill-overview';
 import { variantText } from './skill-editor';
@@ -51,7 +51,8 @@ export function SkillRepertoire({
       origin.kind === 'inherited'
         ? workspace.athleteSkills.find((candidate) => candidate.id === origin.sourceId)
         : undefined;
-    const sourceName = source && workspace.skills.find((skill) => skill.id === source.skillId)?.name;
+    const sourceDefinition = source && workspace.skills.find((skill) => skill.id === source.skillId);
+    const sourceName = sourceDefinition && springDisplayName(sourceDefinition, rulePackage);
     return (
       <li key={item.id} className={depth ? 'repertoire-item is-child' : 'repertoire-item'}>
         <div className="repertoire-line">
