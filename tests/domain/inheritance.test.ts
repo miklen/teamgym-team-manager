@@ -70,6 +70,7 @@ function v1(workspace: Workspace) {
   void _exclusions;
   return {
     ...rest,
+    plans: rest.plans.map((plan) => ({ ...plan, tumbling: plan.tumbling[0]!.rounds.map(({ reserves: _reserves, ...round }) => { void _reserves; return round; }), trampet: plan.trampet[0]!.rounds.map(({ reserves: _reserves, ...round }) => { void _reserves; return round; }) })),
     schemaVersion: 1,
     athleteSkills: workspace.athleteSkills.map(({ assessmentOrigin: _origin, ...item }) => {
       void _origin;

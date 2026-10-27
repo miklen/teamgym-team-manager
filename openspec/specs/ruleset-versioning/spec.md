@@ -14,11 +14,11 @@ Hver regelpakke SHALL have stabil reglementsidentitet, uforanderlig pakkeversion
 - **THEN** udgives en ny pakkeversion, og den gamle findes fortsat med sit oprindelige resultat og kildegrundlag.
 
 ### Requirement: Bindingen tilhører holdet
-Hvert hold SHALL referere til én præcis regelpakke og profil. Holdets opstilling SHALL anvende denne binding og fastholde det kendte beregningsgrundlag indtil et eksplicit skift. Et arbejdsrum SHALL kunne indeholde forskellige reglementer og versioner samtidig.
+Hvert hold SHALL referere til én præcis regelpakke og profil. Alle holdets scenarier i begge springdiscipliner SHALL anvende denne binding og fastholde det kendte beregningsgrundlag indtil et eksplicit skift. Et arbejdsrum SHALL kunne indeholde forskellige reglementer og versioner samtidig. Scenarier MUST NOT oprette egne skjulte regelbindinger eller ændre bindingen ved et almindeligt scenarieskift.
 
 #### Scenario: To hold på forskellige versioner
 - **WHEN** hold A opgraderer til ny DK-pakkeversion og hold B fortsat bruger den gamle
-- **THEN** bruger A den nye og B den gamle, også efter genindlæsning af datafilen.
+- **THEN** bruger alle A's scenarier den nye og alle B's scenarier den gamle, også efter genindlæsning af datafilen.
 
 ### Requirement: Udvidelse uden ændret kartotek
 Tilføjelse af Regionsrækken eller Liga SHALL kunne ske ved at tilføje regeldata, katalogkoblinger og afgrænsede beregningsmoduler gennem det eksisterende regelsnit. Fælles kartotek, stabilitetsmodel og generelle arbejdsgange MUST NOT kræve omlægning eller en global rækkevariabel. Første produktleverance SHALL indeholde Danmarksserien, mens en separat testpakke SHALL bevise kontrakten uden at foregive produktionsgodkendt REG/Liga-understøttelse.
@@ -35,15 +35,23 @@ Færdigheders interne identiteter SHALL overleve ændret navn, officiel kode og 
 - **THEN** bevares færdighedsregistreringer og stabilitet, mens den viste kode følger holdets valgte version.
 
 ### Requirement: Versionsskift har konsekvensvisning
-Før et skift SHALL træneren kunne se ændrede elementværdier, tillæg, fradrag, gyldighed, rytmefællesnævnere og registreringer, som kræver revurdering. Skiftet SHALL kunne annulleres uden ændring af data og SHALL anvendes samlet på det valgte hold efter bekræftelse. Andre hold MUST NOT påvirkes.
+Før et skift SHALL træneren kunne se ændrede elementværdier, tillæg, fradrag, gyldighed, rytmefællesnævnere og registreringer, som kræver revurdering. Visningen SHALL omfatte alle holdets scenarier i begge springdiscipliner, identificeret ved disciplin og navn, og også vise berørte reservevalg; den MUST NOT begrænses til det aktuelt viste scenarie. Skiftet SHALL kunne annulleres uden ændring af data og SHALL anvendes samlet på det valgte hold efter bekræftelse. Alle scenariers og pladsers identiteter, navne, rækkefølger og valgte referencer SHALL bevares, mens berørte valg markeres til gennemgang under den nye binding. En forældet konsekvensvisning MUST NOT overskrive nyere lokale ændringer. Andre hold MUST NOT påvirkes.
 
 #### Scenario: Annuller opgradering
 - **WHEN** træneren ser en konsekvensvisning og annullerer
-- **THEN** forbliver holdets regelversion, opstilling og registreringer uændrede.
+- **THEN** forbliver holdets regelversion, alle scenarier med reserver og registreringer uændrede.
 
 #### Scenario: Gennemfør opgradering
 - **WHEN** træneren accepterer konsekvenserne af et versionsskift
-- **THEN** ændres holdbindingen samlet, berørte valg markeres til rettelse, og ændringen følger normal konfliktbeskyttet gemning.
+- **THEN** ændres holdbindingen samlet for alle holdets scenarier, berørte valg markeres til rettelse, og ændringen følger normal konfliktbeskyttet gemning.
+
+#### Scenario: Alternativet er ikke åbent
+- **WHEN** holdet har bane Plan A, bane Plan B og trampet Sikker, og træneren starter versionsskift fra Plan A
+- **THEN** viser konsekvensvisningen særskilt før/efter for alle tre scenarier og relevante reservevalg uden at blande reserver ind i de udførendes pointgrundlag.
+
+#### Scenario: Data ændres under gennemgang
+- **WHEN** der er foretaget en lokal ændring efter beregning af konsekvenser og før bekræftelse
+- **THEN** afvises den gamle konsekvensvisning med mulighed for at beregne igen, og den nyere lokale ændring bevares.
 
 ### Requirement: Ukendt regelpakke giver ingen skjult fallback
 Ved åbning af data med en ikke-installeret pakkeversion SHALL systemet bevare binding og data og forklare manglen. Det MUST NOT beregne med den nyeste, nærmeste eller en anden rækkes regler. Hold med kendte pakker SHALL fortsat kunne bruges.

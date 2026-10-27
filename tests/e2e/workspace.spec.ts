@@ -27,7 +27,7 @@ test('tomt arbejdsrum til hold, gymnast, komplet færdighed og vurdering', async
   await expect(page.getByRole('button', { name: 'Gemt', exact: true })).toBeVisible();
   expect(source.workspace.teams).toHaveLength(1);
   expect(source.workspace.athleteSkills[0]!.stability).toBe(4);
-  expect(source.workspace.plans[0]!.trampet).toHaveLength(3);
+  expect(source.workspace.plans[0]!.trampet[0]!.rounds).toHaveLength(3);
   await page.reload();
   await expect(page.getByRole('button', { name: /Syntetisk Maja/ })).toBeVisible();
   expect(source.failures).toEqual([]);
@@ -51,8 +51,8 @@ test('seks omgange, hurtig vurdering, bevidst sortering og gem/genåbn', async (
   await expect(page.getByRole('button', { name: 'Gemt', exact: true })).toBeVisible();
   await page.reload();
   await expect(page.getByRole('heading', { name: 'Springplan', exact: true })).toBeVisible();
-  expect(source.workspace.plans[0]!.tumbling.every((round) => round.entries.length === 6)).toBe(true);
-  expect(source.workspace.plans[0]!.trampet.every((round) => round.entries.length === 6)).toBe(true);
+  expect(source.workspace.plans[0]!.tumbling[0]!.rounds.every((round) => round.entries.length === 6)).toBe(true);
+  expect(source.workspace.plans[0]!.trampet[0]!.rounds.every((round) => round.entries.length === 6)).toBe(true);
   expect(source.failures).toEqual([]);
 });
 
@@ -130,7 +130,7 @@ test('to ekstra først bevarer tællende stabilitet, og niende plads er utilgæn
   await expect(page.getByText('4,3/5', { exact: true })).toHaveCount(3);
   await page.getByRole('button', { name: /Lokale ændringer/ }).click();
   await expect(page.getByRole('button', { name: 'Gemt', exact: true })).toBeVisible();
-  expect(source.workspace.plans[0]!.tumbling[0].entries.map((entry) => entry.role)).toEqual([
+  expect(source.workspace.plans[0]!.tumbling[0]!.rounds[0].entries.map((entry) => entry.role)).toEqual([
     'extra',
     'extra',
     'counting',

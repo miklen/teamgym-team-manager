@@ -3,6 +3,7 @@ import type { Workspace } from '@teamgym/domain';
 import { registry } from './rules';
 import { springInheritanceContext } from './spring-library';
 import type { VersionChangePreview } from '@teamgym/rules';
+import { analyzeVersionScenarios } from '@teamgym/rules';
 
 export function reconcileVersionPreview(preview: VersionChangePreview): VersionChangePreview {
   const workspace = reconcileWorkspace(preview.workspace);
@@ -11,11 +12,7 @@ export function reconcileVersionPreview(preview: VersionChangePreview): VersionC
   return {
     ...preview,
     workspace,
-    after: {
-      tumbling: resolved.rulePackage.analyze(workspace, preview.teamId, 'tumbling'),
-      trampet: resolved.rulePackage.analyze(workspace, preview.teamId, 'trampet'),
-      rhythm: resolved.rulePackage.rhythm(workspace, preview.teamId),
-    },
+    after: analyzeVersionScenarios(workspace, preview.teamId, resolved.rulePackage),
   };
 }
 

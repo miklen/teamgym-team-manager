@@ -1,5 +1,5 @@
 import { useId, useLayoutEffect, useRef, useState } from 'react';
-import type { ReactNode } from 'react';
+import type { ReactNode, RefObject } from 'react';
 import { formatPoints, STABILITY_ANCHORS } from '@teamgym/domain';
 import type { SourceReference, Stability } from '@teamgym/domain';
 import type { Fraction } from '@teamgym/domain';
@@ -201,16 +201,19 @@ export function ActionForm({
   label = 'Opdater',
   disabled = false,
   className,
+  formRef,
 }: {
   children: ReactNode;
   submit: (data: FormData) => void;
   label?: string;
   disabled?: boolean;
   className?: string;
+  formRef?: RefObject<HTMLFormElement | null> | undefined;
 }) {
   const [error, setError] = useState('');
   return (
     <form
+      ref={formRef}
       className={className}
       onSubmit={(event) => {
         event.preventDefault();

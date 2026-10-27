@@ -30,7 +30,7 @@ export function fourOfSix() {
       assessedAt: '2026-10-25',
       note: 'Syntetisk',
     });
-    for (const round of workspace.plans[0]!.tumbling)
+    for (const round of workspace.plans[0]!.tumbling[0]!.rounds)
       round.entries.find((entry) => entry.athleteId === athlete.id)!.athleteSkillId = added.athleteSkillId;
   }
   return workspace;
@@ -65,6 +65,7 @@ export async function openWorkspace(
   let puts = 0;
   let denied = 0;
   let drop = false;
+  let afterUpload: (() => Promise<void>) | undefined;
   let created: { bytes: string; name: string } | null = null;
   let creates = 0;
   const failures: string[] = [];
@@ -143,6 +144,7 @@ export async function openWorkspace(
       }
       bytes = request.postData()!;
       version++;
+      await afterUpload?.();
       if (drop) {
         drop = false;
         await route.abort('failed');
@@ -210,6 +212,7 @@ export async function openWorkspace(
   return {
     failures,
     replaceBytes(value: string) { bytes = value; version++; },
+    afterPut(action: () => Promise<void>) { afterUpload = action; },
     get puts() {
       return puts;
     },

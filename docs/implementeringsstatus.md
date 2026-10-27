@@ -1,3 +1,11 @@
+# Aktuel lokal udviklingsudgave · 27. oktober 2026
+
+`add-discipline-scenarios-and-reserves` indfører format 3 med flere navngivne scenarier pr. springdisciplin, separate prioriterede reserver, samlet indsættelse, eksplicit scenarie i beregninger/forslag og lokal migration fra format 1 og 2. Referencegennemgang og regelversionsvisning omfatter også lukkede planer og reserver. Alle scenarier gemmes og eksporteres samlet.
+
+Kontrolleret: `npm.cmd ci`, check, 249 domænetests, 69 Drive-tests, build med intakte otte PDF-kilder, 123 Chromium-prøver og 4/4 fangede regelmutationer. De afsluttende justeringer af navneliste og fokus er efterprøvet med 15 scenarieprøver; synlig label og fejl ved alle tre bredder er yderligere bekræftet i 3 målrettede prøver. [Verifikation og afgrænsning](../openspec/changes/archive/2026-10-27-add-discipline-scenarios-and-reserves/verification.md) og [billedkontrol](ui-kontrol.md) dokumenterer det faktiske grundlag. 29/29 opgaver er færdige. Brugeren godkendte den lokale udgave 27. oktober 2026 og bad om synkronisering, arkivering og lokalt commit. Den separate lokale testserver på port 5173 bevares. Push og publicering er ikke bestilt. Reel Google-/Drive-/to-konto-accept er fortsat særskilt udestående.
+
+Nedenstående er den historiske rapport for den første implementering.
+
 # Implementeringskontrol · 25. oktober 2026
 
 Change: `build-teamgym-team-manager`, schema `spec-driven`, arkiveret 25. oktober 2026 efter brugerens udtrykkelige godkendelse. **138/151 opgaver fuldført; 13 udestående testopgaver er bevaret som uafsluttede.** Domæne, regler, Drive-adapter, UI-overhaling og efterfølgende brugerrettelser er implementeret og publiceret. Reel Google-/Drive-/flerbrugerverifikation er fortsat udestående. Se den [arkiverede opgaveliste](../openspec/changes/archive/2026-10-25-build-teamgym-team-manager/tasks.md).

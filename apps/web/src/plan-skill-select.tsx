@@ -45,9 +45,11 @@ export interface PlanSkillOption {
 export function PlanSkillSelect({
   options,
   initialValue,
+  onChange,
 }: {
   options: PlanSkillOption[];
   initialValue: string;
+  onChange?: (() => void) | undefined;
 }) {
   const id = useId();
   const root = useRef<HTMLDivElement>(null);
@@ -68,6 +70,7 @@ export function PlanSkillSelect({
   const activeIndex = Math.min(active, rows.length - 1);
   const choose = (option: PlanSkillOption | null) => {
     setValue(option?.id ?? '');
+    onChange?.();
     setOpen(false);
     trigger.current?.focus();
   };

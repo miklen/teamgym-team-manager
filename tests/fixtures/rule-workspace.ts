@@ -27,7 +27,7 @@ export function workspaceBuilder() {
     const athletes = workspace.athletes.filter((athlete) => athlete.teamId === teamId);
     const entries = definitions.map((definition, index) => ({ id: environment.id(), athleteId: athletes[index]!.id, athleteSkillId: register(athletes[index]!.id, definition), role: 'counting' as const }));
     const plan = workspace.plans.find((item) => item.teamId === teamId)!;
-    workspace = setRoundEntries(workspace, plan.id, discipline, plan[discipline][roundIndex]!.id, entries, { counting, extra: 2 }, environment);
+    workspace = setRoundEntries(workspace, plan.id, discipline, plan[discipline][0]!.id, plan[discipline][0]!.rounds[roundIndex]!.id, entries, { counting, extra: 2 }, environment);
   }
   return { get workspace() { return workspace; }, set workspace(value: Workspace) { workspace = value; }, environment, team, register, fill };
 }

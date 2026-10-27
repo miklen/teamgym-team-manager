@@ -29,16 +29,16 @@ it('to flyttede gymnaster kan fjernes en ad gangen, og kan ikke vælges på ny s
   let workspace = moveAthlete(fixture.workspace, fixture.athleteA.id, fixture.teamB.id);
   workspace = moveAthlete(workspace, fixture.athleteB.id, fixture.teamB.id);
   const plan = workspace.plans[0]!;
-  const original = plan.tumbling[0].entries;
-  workspace = setRoundEntries(workspace, plan.id, 'tumbling', plan.tumbling[0].id, original.slice(1), limits);
-  expect(workspace.plans[0]!.tumbling[0].entries).toHaveLength(5);
+  const original = plan.tumbling[0]!.rounds[0].entries;
+  workspace = setRoundEntries(workspace, plan.id, 'tumbling', plan.tumbling[0]!.id, plan.tumbling[0]!.rounds[0].id, original.slice(1), limits);
+  expect(workspace.plans[0]!.tumbling[0]!.rounds[0].entries).toHaveLength(5);
   expect(() =>
     setRoundEntries(
       workspace,
       plan.id,
       'tumbling',
-      plan.tumbling[0].id,
-      [...workspace.plans[0]!.tumbling[0].entries, { ...original[0]!, id: 'new-invalid-entry' }],
+      plan.tumbling[0]!.id, plan.tumbling[0]!.rounds[0].id,
+      [...workspace.plans[0]!.tumbling[0]!.rounds[0].entries, { ...original[0]!, id: 'new-invalid-entry' }],
       limits,
     ),
   ).toThrow('aktiv gymnast');

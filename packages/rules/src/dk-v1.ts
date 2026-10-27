@@ -46,7 +46,7 @@ export function createDKFamilyPackage(options: DKPackageOptions = {}): RulePacka
     const evaluation = evaluateSpringSkill(skill, registration?.connectionConfirmation);
     return { ...evaluation, difficulty: scaled(evaluation.difficulty) };
   };
-  const analyze = (workspace: Workspace, teamId: string, discipline: SpringDiscipline) => evaluateDiscipline(workspace, teamId, discipline, profileFor(workspace, teamId), settings);
+  const analyze = (workspace: Workspace, teamId: string, discipline: SpringDiscipline, scenarioId: string) => evaluateDiscipline(workspace, teamId, discipline, scenarioId, profileFor(workspace, teamId), settings);
   function bonuses(profile: TeamProfile, discipline: SpringDiscipline): BonusDefinition[] {
     const maximum = Fraction.from(settings.bonusRate ?? '0.10').multiply(profile.counting);
     return discipline === 'tumbling' ? [
@@ -68,10 +68,10 @@ export function createDKFamilyPackage(options: DKPackageOptions = {}): RulePacka
     manifest: packageManifest, profiles, springCatalog: DK_SPRING_CATALOG, rhythmCatalog, knownIssues: DK_KNOWN_ISSUES,
     evaluateSkill, analyze, bindRhythm: (skill) => bindRhythmSkill(skill, rhythmCatalog),
     rhythm: (workspace, teamId, threshold = null) => { profileFor(workspace, teamId); return rhythmCommonality(workspace, teamId, rhythmCatalog, threshold); },
-    potentials: (workspace, teamId, discipline, searchOptions = {}) => {
+    potentials: (workspace, teamId, discipline, scenarioId, searchOptions = {}) => {
       const profile = profileFor(workspace, teamId);
-      return searchBonusPotentials(workspace, teamId, discipline, {
-        profile, bonuses: bonuses(profile, discipline), analyze: (candidate) => analyze(candidate, teamId, discipline),
+      return searchBonusPotentials(workspace, teamId, discipline, scenarioId, {
+        profile, bonuses: bonuses(profile, discipline), analyze: (candidate) => analyze(candidate, teamId, discipline, scenarioId),
         evaluate: (candidate, registration) => {
           const skill = candidate.skills.find((item) => item.id === registration.skillId);
           return skill && skill.discipline === discipline ? evaluateSkill(skill, registration) : null;

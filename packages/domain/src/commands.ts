@@ -1,7 +1,7 @@
 import { bindingFingerprint, newEntityId, skillIdentity } from './identity';
 import { CURRENT_SCHEMA_VERSION, WORKSPACE_FORMAT, athleteSkillSchema, rulesetBindingSchema, skillDefinitionSchema } from './schema';
-import type { Athlete, AthleteSkill, RoundEntry, RulesetBinding, SkillDefinition, SpringDiscipline, Stability, Workspace } from './schema';
-import { validateWorkspace } from './workspace';
+import type { Athlete, AthleteSkill, RoundEntry, ReserveEntry, Scenario, RulesetBinding, SkillDefinition, SpringDiscipline, Stability, Workspace } from './schema';
+import { validateWorkspace, workspacePayload } from './workspace';
 import { aggregateStability } from './stability';
 import { reconcileInheritance } from './inheritance';
 import type { InheritanceContext } from './inheritance';
@@ -33,9 +33,8 @@ export function createTeam(workspace: Workspace, name: string, binding: RulesetB
     const teamId = environment.id();
     const rulesetBinding = rulesetBindingSchema.parse(binding);
     copy.teams.push({ id: teamId, name, archived: false, rulesetBinding });
-    const round = () => ({ id: environment.id(), entries: [] });
     copy.plans.push({ id: environment.id(), teamId, bindingFingerprint: bindingFingerprint(rulesetBinding),
-      tumbling: [round(), round(), round()], trampet: [round(), round(), round()] });
+      tumbling: [emptyScenario('Plan A', environment)], trampet: [emptyScenario('Plan A', environment)] });
   }, environment);
 }
 
@@ -165,10 +164,79 @@ export function confirmConnection(workspace: Workspace, athleteSkillId: string, 
 
 export interface ParticipantLimits { counting: number; extra: number }
 
-export function setRoundEntries(workspace: Workspace, planId: string, discipline: SpringDiscipline, roundId: string, entries: RoundEntry[], limits: ParticipantLimits, environment = defaultEnvironment) {
+function emptyScenario(name: string, environment: CommandEnvironment): Scenario {
+  const round = () => ({ id: environment.id(), entries: [], reserves: [] });
+  return { id: environment.id(), name, rounds: [round(), round(), round()] };
+}
+
+export function requireScenario(workspace: Workspace, planId: string, discipline: SpringDiscipline, scenarioId: string): Scenario {
+  return requireItem(requireItem(workspace.plans, planId)[discipline], scenarioId);
+}
+
+function scenarioName(scenarios: Scenario[], name: string, exceptId?: string): string {
+  const trimmed = name.trim();
+  if (!trimmed || trimmed.length > 200) throw new Error('Skriv et navn på 1–200 tegn.');
+  if (scenarios.some((item) => item.id !== exceptId && item.name.toLocaleLowerCase('da') === trimmed.toLocaleLowerCase('da'))) throw new Error('Der findes allerede et scenarie med dette navn.');
+  return trimmed;
+}
+
+export function suggestScenarioCopyName(scenarios: Scenario[], sourceId: string): string {
+  const source = requireItem(scenarios, sourceId);
+  for (let index = 1; ; index++) {
+    const suffix = index === 1 ? ' - kopi' : ` - kopi ${index}`;
+    const name = source.name.slice(0, 200 - suffix.length).trimEnd() + suffix;
+    if (!scenarios.some((item) => item.name.toLocaleLowerCase('da') === name.toLocaleLowerCase('da'))) return name;
+  }
+}
+
+export function createScenario(workspace: Workspace, planId: string, discipline: SpringDiscipline, afterId: string, name: string, environment = defaultEnvironment) {
+  return edit(workspace, (copy) => {
+    const plan = requireItem(copy.plans, planId);
+    if (requireItem(copy.teams, plan.teamId).archived) throw new Error('Genaktivér holdet før redigering.');
+    requireItem(plan[discipline], afterId);
+    const created = emptyScenario(scenarioName(plan[discipline], name), environment);
+    plan[discipline].splice(plan[discipline].findIndex((item) => item.id === afterId) + 1, 0, created);
+  }, environment);
+}
+
+export function duplicateScenario(workspace: Workspace, planId: string, discipline: SpringDiscipline, sourceId: string, name: string, environment = defaultEnvironment) {
+  return edit(workspace, (copy) => {
+    const plan = requireItem(copy.plans, planId);
+    if (requireItem(copy.teams, plan.teamId).archived) throw new Error('Genaktivér holdet før redigering.');
+    const source = requireItem(plan[discipline], sourceId);
+    const created = structuredClone(source);
+    created.id = environment.id(); created.name = scenarioName(plan[discipline], name);
+    for (const round of created.rounds) {
+      round.id = environment.id();
+      for (const entry of [...round.entries, ...round.reserves]) entry.id = environment.id();
+    }
+    plan[discipline].splice(plan[discipline].indexOf(source) + 1, 0, created);
+  }, environment);
+}
+
+export function renameScenario(workspace: Workspace, planId: string, discipline: SpringDiscipline, scenarioId: string, name: string, environment = defaultEnvironment) {
+  return edit(workspace, (copy) => {
+    const plan = requireItem(copy.plans, planId);
+    if (requireItem(copy.teams, plan.teamId).archived) throw new Error('Genaktivér holdet før redigering.');
+    requireItem(plan[discipline], scenarioId).name = scenarioName(plan[discipline], name, scenarioId);
+  }, environment);
+}
+
+export function deleteScenario(workspace: Workspace, planId: string, discipline: SpringDiscipline, scenarioId: string, environment = defaultEnvironment) {
+  return edit(workspace, (copy) => {
+    const plan = requireItem(copy.plans, planId);
+    if (requireItem(copy.teams, plan.teamId).archived) throw new Error('Genaktivér holdet før redigering.');
+    requireItem(plan[discipline], scenarioId);
+    if (plan[discipline].length === 1) throw new Error('Bevar mindst ét scenarie i hver disciplin.');
+    plan[discipline] = plan[discipline].filter((item) => item.id !== scenarioId);
+  }, environment);
+}
+
+export function setRoundEntries(workspace: Workspace, planId: string, discipline: SpringDiscipline, scenarioId: string, roundId: string, entries: RoundEntry[], limits: ParticipantLimits, environment = defaultEnvironment) {
   return edit(workspace, (copy) => {
     const plan = requireItem(copy.plans, planId);
     const team = requireItem(copy.teams, plan.teamId);
+    const scenario = requireScenario(copy, planId, discipline, scenarioId);
     if (team.archived) throw new Error('Genaktivér holdet før redigering.');
     const counting = entries.filter((entry) => entry.role === 'counting').length;
     const extras = entries.length - counting;
@@ -176,7 +244,7 @@ export function setRoundEntries(workspace: Workspace, planId: string, discipline
     let countingStarted = false;
     for (const entry of entries) {
       const athlete = requireItem(copy.athletes, entry.athleteId);
-        const previous = requireItem(plan[discipline], roundId).entries.find((item) => item.id === entry.id);
+        const previous = requireItem(scenario.rounds, roundId).entries.find((item) => item.id === entry.id);
         const retained = previous?.athleteId === entry.athleteId && previous.athleteSkillId === entry.athleteSkillId;
         if (!retained && (athlete.archived || athlete.teamId !== team.id)) throw new Error('Vælg en aktiv gymnast på holdet.');
       if (entry.role === 'counting') countingStarted = true;
@@ -186,19 +254,54 @@ export function setRoundEntries(workspace: Workspace, planId: string, discipline
           if (!retained && (registration.archived || requireItem(copy.skills, registration.skillId).archived)) throw new Error('Vælg en aktiv færdighed.');
       }
     }
-    requireItem(plan[discipline], roundId).entries = structuredClone(entries);
+    requireItem(scenario.rounds, roundId).entries = structuredClone(entries);
   }, environment);
 }
 
-export function moveRoundFirst(workspace: Workspace, planId: string, discipline: SpringDiscipline, roundId: string, environment = defaultEnvironment) {
+export function moveRoundFirst(workspace: Workspace, planId: string, discipline: SpringDiscipline, scenarioId: string, roundId: string, environment = defaultEnvironment) {
   return edit(workspace, (copy) => {
     const plan = requireItem(copy.plans, planId);
-    const rounds = plan[discipline];
+    if (requireItem(copy.teams, plan.teamId).archived) throw new Error('Genaktivér holdet før redigering.');
+    const rounds = requireScenario(copy, planId, discipline, scenarioId).rounds;
     const index = rounds.findIndex((round) => round.id === roundId);
     if (index < 0) throw new Error('Omgangen findes ikke.');
     const [round] = rounds.splice(index, 1);
     rounds.unshift(round!);
   }, environment);
+}
+
+function checkReserve(workspace: Workspace, teamId: string, discipline: SpringDiscipline, entry: ReserveEntry) {
+  const athlete = requireItem(workspace.athletes, entry.athleteId);
+  if (athlete.archived || athlete.teamId !== teamId) throw new Error('Vælg en aktiv gymnast på holdet.');
+  if (entry.athleteSkillId !== null) {
+    const registration = requireItem(workspace.athleteSkills, entry.athleteSkillId);
+    const skill = requireItem(workspace.skills, registration.skillId);
+    if (registration.athleteId !== entry.athleteId || registration.archived || skill.archived || skill.discipline !== discipline) throw new Error('Vælg gymnastens aktive færdighed i denne disciplin.');
+  }
+}
+
+export function setRoundReserves(workspace: Workspace, planId: string, discipline: SpringDiscipline, scenarioId: string, roundId: string, reserves: ReserveEntry[], environment = defaultEnvironment) {
+  return edit(workspace, (copy) => {
+    const plan = requireItem(copy.plans, planId);
+    if (requireItem(copy.teams, plan.teamId).archived) throw new Error('Genaktivér holdet før redigering.');
+    const round = requireItem(requireScenario(copy, planId, discipline, scenarioId).rounds, roundId);
+    for (const reserve of reserves) {
+      const previous = round.reserves.find((item) => item.id === reserve.id);
+      if (previous?.athleteId !== reserve.athleteId || previous.athleteSkillId !== reserve.athleteSkillId) checkReserve(copy, plan.teamId, discipline, reserve);
+    }
+    round.reserves = structuredClone(reserves);
+  }, environment);
+}
+
+export function insertReserve(workspace: Workspace, planId: string, discipline: SpringDiscipline, scenarioId: string, roundId: string, reserveId: string, entryId: string, basisPayload: string, limits: ParticipantLimits, environment = defaultEnvironment) {
+  if (workspacePayload(workspace) !== basisPayload) throw new Error('Data er ændret siden forhåndsvisningen. Beregn igen.');
+  const plan = requireItem(workspace.plans, planId);
+  const round = requireItem(requireScenario(workspace, planId, discipline, scenarioId).rounds, roundId);
+  const reserve = requireItem(round.reserves, reserveId);
+  checkReserve(workspace, plan.teamId, discipline, reserve);
+  requireItem(round.entries, entryId);
+  const removed = setRoundReserves(workspace, planId, discipline, scenarioId, roundId, round.reserves.filter((item) => item.id !== reserveId), environment);
+  return setRoundEntries(removed, planId, discipline, scenarioId, roundId, round.entries.map((entry) => entry.id === entryId ? { ...entry, athleteId: reserve.athleteId, athleteSkillId: reserve.athleteSkillId } : entry), limits, environment);
 }
 
 export function roundStability(workspace: Workspace, entries: readonly RoundEntry[], limits: ParticipantLimits, teamId: string) {

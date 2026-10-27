@@ -1,3 +1,4 @@
+import { ScenarioProvider } from './scenario-context';
 import { useEffect, useRef, useState, useSyncExternalStore } from 'react';
 import { createRoot } from 'react-dom/client';
 import { flushSync } from 'react-dom';
@@ -589,12 +590,13 @@ function App() {
       {data.migration && (
         <Dialog title="Opgradér arbejdsrummet" close={() => workspaceSession.cancelMigration()}>
           <p>
-            Filen bruger format 1. Opgradér til format 2 for at arbejde med arvet sikkerhed og personlige
-            fravalg.
+            Filen bruger format {data.migration.sourceSchemaVersion}. Opgradér til format 3 for at arbejde med
+            scenarier og reserver.
           </p>
           <p>
-            Alle eksisterende vurderinger bevares som egne. Originalen på Drive ændres først, når du vælger
-            Gem på Drive. Ældre appudgaver kan ikke åbne format 2.
+            Eksisterende planer bevares som Plan A i hver disciplin. Vurderinger, arv og fravalg bevares.
+            Originalen på Drive ændres først, når du vælger Gem på Drive. Ældre appudgaver kan ikke åbne
+            format 3.
           </p>
           <div className="actions">
             <button className="quiet" onClick={() => downloadCopy(workspaceSession.exportOriginal())}>
@@ -863,4 +865,8 @@ function App() {
 
 const root = document.getElementById('root');
 if (!root) throw new Error('Appens rod mangler.');
-createRoot(root).render(<App />);
+createRoot(root).render(
+  <ScenarioProvider>
+    <App />
+  </ScenarioProvider>,
+);

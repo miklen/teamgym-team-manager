@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import {
   confirmRuleReview,
+  planReferences,
   createAthlete,
   formatStability,
   dependentRegistrations,
@@ -223,8 +224,8 @@ function AthleteForm({
       </label>
       {athlete && (
         <p className="muted">
-          Færdigheder bevares ved flytning. Eksisterende omgangspladser bliver stående med en advarsel.
-          Rytmeoverblikket følger straks medlemsændringen i kladden.
+          Færdigheder bevares ved flytning. Eksisterende omgangspladser og reserver bliver stående med en
+          advarsel. Rytmeoverblikket følger straks medlemsændringen i kladden.
         </p>
       )}
     </ActionForm>
@@ -262,18 +263,11 @@ export function AthleteInspector({
   }, [feedback]);
   const removedRegistration = workspace.athleteSkills.find((item) => item.id === removing);
   const removedDefinition = workspace.skills.find((item) => item.id === removedRegistration?.skillId);
-  const usedPlaces = removing
-    ? workspace.plans
-        .flatMap((plan) => [...plan.tumbling, ...plan.trampet])
-        .flatMap((round) => round.entries)
-        .filter((entry) => entry.athleteSkillId === removing).length
-    : 0;
-  const athletePlaces = removingAthlete
-    ? workspace.plans
-        .flatMap((plan) => [...plan.tumbling, ...plan.trampet])
-        .flatMap((round) => round.entries)
-        .filter((entry) => entry.athleteId === athleteId).length
-    : 0;
+  const references = planReferences(workspace);
+  const usedReferences = references.filter((item) => item.entry.athleteSkillId === removing);
+  const athleteReferences = references.filter((item) => item.entry.athleteId === athleteId);
+  const usedPlaces = removing ? usedReferences.length : 0;
+  const athletePlaces = removingAthlete ? athleteReferences.length : 0;
   const registration = workspace.athleteSkills.find((item) => item.id === selectedRegistration);
   const registrations = workspace.athleteSkills.filter(
     (item) => item.athleteId === athleteId && (!item.archived || item.id === selectedRegistration),
@@ -326,6 +320,7 @@ export function AthleteInspector({
       )}
       {mode === 'profile' ? (
         <>
+          <ReferenceSummary workspace={workspace} references={athleteReferences} />
           <button className="quiet" onClick={() => setMode('list')}>
             ← Tilbage til færdigheder
           </button>
@@ -497,6 +492,7 @@ export function AthleteInspector({
               springplanen. Der skal vælges en anden gymnast på disse pladser.
             </p>
           )}
+          <ReferenceSummary workspace={workspace} references={athleteReferences} />
           <p className="muted">
             Gymnastens registrerede færdigheder bevares, og holdets aktive overblik opdateres.
           </p>
@@ -528,6 +524,7 @@ export function AthleteInspector({
               skal vælges en anden færdighed på disse pladser.
             </p>
           )}
+          <ReferenceSummary workspace={workspace} references={usedReferences} />
           <p className="muted">Du kan tilføje færdigheden igen fra listen.</p>
           {dependentRegistrations(workspace, removedRegistration.id).length > 0 && (
             <div className="notice">
@@ -718,5 +715,34 @@ function Assessment({
         </p>
       </fieldset>
     </ActionForm>
+  );
+}
+
+function ReferenceSummary({
+  workspace,
+  references,
+}: {
+  workspace: Workspace;
+  references: ReturnType<typeof planReferences>;
+}) {
+  if (!references.length) return null;
+  const reserves = references.filter((item) => item.kind === 'reserve').length;
+  const executing = references.length - reserves;
+  return (
+    <div className="reference-summary">
+      <p>
+        {executing} udførende {executing === 1 ? 'plads' : 'pladser'} og {reserves}{' '}
+        {reserves === 1 ? 'reserveplads' : 'reservepladser'}. Referencerne bevares.
+      </p>
+      <ul>
+        {references.map((item) => (
+          <li key={item.entry.id}>
+            {workspace.teams.find((team) => team.id === item.teamId)?.name} ·{' '}
+            {item.discipline === 'tumbling' ? 'Bane' : 'Trampet'} · {item.scenarioName} ·{' '}
+            {item.roundIndex + 1}. omgang · {item.kind === 'reserve' ? 'Reserve' : 'Udførende'}
+          </li>
+        ))}
+      </ul>
+    </div>
   );
 }

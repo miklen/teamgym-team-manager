@@ -80,7 +80,7 @@ for (const width of [1440, 390]) {
         item.athleteId === fixture.athleteA.id &&
         workspace.skills.find((skill) => skill.id === item.skillId)?.name === fullName,
     )!;
-    for (const round of workspace.plans[0]!.tumbling) round.entries[0]!.athleteSkillId = original.id;
+    for (const round of workspace.plans[0]!.tumbling[0]!.rounds) round.entries[0]!.athleteSkillId = original.id;
     const source = await openWorkspace(page, workspace);
     await expect(page.getByRole('heading', { name: 'Hold', exact: true })).toBeVisible();
     await page.getByRole('link', { name: 'Gymnaster', exact: true }).click();

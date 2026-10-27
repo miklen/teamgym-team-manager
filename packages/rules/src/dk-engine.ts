@@ -1,5 +1,5 @@
 import { Fraction, bindingFingerprint, roundStability, sumFractions } from '@teamgym/domain';
-import type { AthleteSkill, Diagnostic, EvaluationStatus, RoundEntry, SkillDefinition, SourceReference, SpringDiscipline, Workspace } from '@teamgym/domain';
+import type { AthleteSkill, Diagnostic, EvaluationStatus, RoundEntry, ReserveEntry, SkillDefinition, SourceReference, SpringDiscipline, Workspace } from '@teamgym/domain';
 import type { TeamProfile } from './dk-data';
 import type { NumericDecision } from './dk-numeric';
 import { apparatusDeduction, bestBonus, combineStatus, compositionTotal, divideDecision, elementBonus, holdRound, known, mixQuotaCheck, orderCheck, participantStructure,
@@ -28,11 +28,13 @@ export interface ParticipantEvaluation {
 
 export interface RoundEvaluation {
   id: string; entries: readonly ParticipantEvaluation[]; counting: readonly ParticipantEvaluation[];
+  reserves: readonly ReserveEvaluation[];
   difficulty: NumericDecision; panelD: Fraction | null; status: EvaluationStatus;
   compositionReady: boolean;
   holdDeduction: NumericDecision; order: ReturnType<typeof orderCheck>; sortedEntryIds: readonly string[];
   stability: ReturnType<typeof roundStability>;
 }
+export type ReserveEvaluation = Omit<ParticipantEvaluation, 'entry'> & { entry: ReserveEntry };
 
 export interface DisciplineEvaluation {
   discipline: SpringDiscipline; status: EvaluationStatus; rounds: readonly RoundEvaluation[];
@@ -58,7 +60,7 @@ function diagnostic(code: string, message: string, affectedIds: string[], status
   return { code, message, affectedIds, status, sources: [] };
 }
 
-export function evaluateDiscipline(workspace: Workspace, teamId: string, discipline: SpringDiscipline, profile: TeamProfile, settings: EngineSettings = {}): DisciplineEvaluation {
+export function evaluateDiscipline(workspace: Workspace, teamId: string, discipline: SpringDiscipline, scenarioId: string, profile: TeamProfile, settings: EngineSettings = {}): DisciplineEvaluation {
   const team = workspace.teams.find((item) => item.id === teamId);
   const plan = workspace.plans.find((item) => item.teamId === teamId);
   if (!team || !plan) throw new Error('Holdets plan findes ikke.');
@@ -68,9 +70,11 @@ export function evaluateDiscipline(workspace: Workspace, teamId: string, discipl
   const diagnostics: Diagnostic[] = [];
   const contributions: RuleContribution[] = [];
   const bonusRate = settings.bonusRate ?? '0.10';
-  const rawRounds = plan[discipline];
+  const scenario = plan[discipline].find((item) => item.id === scenarioId);
+  if (!scenario) throw new Error('Scenariet findes ikke i holdets disciplin.');
+  const rawRounds = scenario.rounds;
 
-  function evaluateEntry(entry: RoundEntry): ParticipantEvaluation {
+  function evaluateEntry<T extends RoundEntry | ReserveEntry>(entry: T): Omit<ParticipantEvaluation, 'entry'> & { entry: T } {
     const athlete = athletes.get(entry.athleteId);
     const registration = entry.athleteSkillId ? registrations.get(entry.athleteSkillId) : undefined;
     const definition = registration ? definitions.get(registration.skillId) : undefined;
@@ -123,7 +127,7 @@ export function evaluateDiscipline(workspace: Workspace, teamId: string, discipl
       (a.evaluation?.rotationCategory ?? Number.MAX_SAFE_INTEGER) - (b.evaluation?.rotationCategory ?? Number.MAX_SAFE_INTEGER) ||
       (a.originalD.value && b.originalD.value ? a.originalD.value.compare(b.originalD.value) : 0));
     diagnostics.push(...entries.flatMap((item) => item.diagnostics));
-    return { id: round.id, entries, counting, difficulty, panelD: difficulty.value?.panelFloor() ?? null, status, compositionReady,
+    return { id: round.id, entries, counting, reserves: round.reserves.map((entry) => evaluateEntry(entry)), difficulty, panelD: difficulty.value?.panelFloor() ?? null, status, compositionReady,
       holdDeduction, order, sortedEntryIds: sorted.map((item) => item.entry.id), stability: roundStability(workspace, round.entries, profile, teamId) };
   });
 

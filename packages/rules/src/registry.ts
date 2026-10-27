@@ -22,9 +22,9 @@ export interface RulePackage {
   knownIssues: readonly KnownIssue[];
   evaluateSkill: (skill: Exclude<SkillDefinition, { discipline: 'rhythm' }>, registration?: AthleteSkill) => SpringSkillEvaluation;
   bindRhythm: (skill: Extract<SkillDefinition, { discipline: 'rhythm' }>) => RhythmBinding;
-  analyze: (workspace: Workspace, teamId: string, discipline: SpringDiscipline) => DisciplineEvaluation;
+  analyze: (workspace: Workspace, teamId: string, discipline: SpringDiscipline, scenarioId: string) => DisciplineEvaluation;
   rhythm: (workspace: Workspace, teamId: string, threshold?: 1 | 2 | 3 | 4 | 5 | null) => RhythmRow[];
-  potentials: (workspace: Workspace, teamId: string, discipline: SpringDiscipline, options?: PotentialOptions) => Promise<BonusPotential[]>;
+  potentials: (workspace: Workspace, teamId: string, discipline: SpringDiscipline, scenarioId: string, options?: PotentialOptions) => Promise<BonusPotential[]>;
 }
 
 const behaviorKeys = ['evaluateSkill', 'bindRhythm', 'analyze', 'rhythm', 'potentials'] as const;

@@ -13,9 +13,17 @@ function requirementFingerprint(binding: RhythmBinding): string | null {
 export interface VersionChangePreview {
   teamId: string; basisPayload: string; oldBinding: RulesetBinding; newBinding: RulesetBinding;
   workspace: Workspace; reviews: readonly string[];
-  before: { tumbling: ReturnType<RulePackage['analyze']>; trampet: ReturnType<RulePackage['analyze']>; rhythm: ReturnType<RulePackage['rhythm']> };
+  before: { tumbling: ScenarioEvaluation[]; trampet: ScenarioEvaluation[]; rhythm: ReturnType<RulePackage['rhythm']> };
   after: VersionChangePreview['before'];
   applicability: readonly { registrationId: string; before: string; after: string }[];
+}
+
+export interface ScenarioEvaluation { scenarioId: string; name: string; evaluation: ReturnType<RulePackage['analyze']> }
+export function analyzeVersionScenarios(workspace: Workspace, teamId: string, rulePackage: RulePackage): VersionChangePreview['before'] {
+  const plan = workspace.plans.find((item) => item.teamId === teamId);
+  if (!plan) throw new Error('Holdets plan findes ikke.');
+  return { tumbling: plan.tumbling.map((scenario) => ({ scenarioId: scenario.id, name: scenario.name, evaluation: rulePackage.analyze(workspace, teamId, 'tumbling', scenario.id) })),
+    trampet: plan.trampet.map((scenario) => ({ scenarioId: scenario.id, name: scenario.name, evaluation: rulePackage.analyze(workspace, teamId, 'trampet', scenario.id) })), rhythm: rulePackage.rhythm(workspace, teamId) };
 }
 
 export function previewVersionChange(workspace: Workspace, teamId: string, newBinding: RulesetBinding, registry: RuleRegistry): VersionChangePreview {
@@ -47,8 +55,8 @@ export function previewVersionChange(workspace: Workspace, teamId: string, newBi
   });
   validateWorkspace(copy);
   return { teamId, basisPayload: workspacePayload(workspace), oldBinding: structuredClone(team.rulesetBinding), newBinding: structuredClone(newBinding), workspace: copy, reviews, applicability,
-    before: { tumbling: previous.rulePackage.analyze(workspace, teamId, 'tumbling'), trampet: previous.rulePackage.analyze(workspace, teamId, 'trampet'), rhythm: previous.rulePackage.rhythm(workspace, teamId) },
-    after: { tumbling: next.rulePackage.analyze(copy, teamId, 'tumbling'), trampet: next.rulePackage.analyze(copy, teamId, 'trampet'), rhythm: next.rulePackage.rhythm(copy, teamId) } };
+    before: analyzeVersionScenarios(workspace, teamId, previous.rulePackage),
+    after: analyzeVersionScenarios(copy, teamId, next.rulePackage) };
 }
 
 export function applyVersionChange(workspace: Workspace, preview: VersionChangePreview): Workspace {

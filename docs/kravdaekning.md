@@ -22,3 +22,16 @@ Q01–Q06 og K01/K02 er produkttilstande med kildehenvisning, ikke manglende fun
 Faktisk Google-medieupload skal stadig bevise afvisning af gammel/forkert etag, samtidig upload og CORS. Der må ikke bruges ubetinget upload eller backend, hvis kandidaten fejler. Brugeren har udtrykkeligt valgt én konto nu og live test med trænerteamet i produktion; den undtagelse er dokumenteret, og testene forbliver åbne. Se [beslutningen](testbeslutning-2026-10-25.md).
 
 Reglementet kan genåbnes uden netværk fra de medfølgende, hashkontrollerede PDF-assets. Google-adgang og arbejdsdata kræver netværk. Der er ingen offline-datasynkronisering eller vedvarende gymnastcache.
+
+## Scenarier og reserver · lokal format 3-udgave
+
+| Område | Implementering og bevis |
+| --- | --- |
+| Strikt format og migration | Selvstændige format 1-/2-skemaer, format 3-scenarier/reserver, validering af hele samlingen og bevarende migration. `scenarios.test.ts`, faste legacy-filer og validerede format 3-eksempler. |
+| Plankommandoer og regler | Selvstændige id’er ved kopi, lokale navne, eksplicit målscenarie, separat reserveprioritet og bekræftet indsættelse med uændret basis. Eksisterende uafhængige facitcases og fire mutationer bevares. |
+| Forslag og session | Scenarie i pakke-, cache- og workergrænser; sent Plan A-svar kan ikke blive Plan B’s forslag. Visningsvalg er sessionstilstand, og rent skift uploader ikke. `scenario-integrity` og `scenarios` browserprøver. |
+| Referencer og regelskift | `planReferences` gennemgår udførende og reserver i alle scenarier. Fjernelse/flytning viser steder og bevarer referencer. Før/efter pr. scenarie og reservevalg samt kontrol af forældet versionsbasis i domænet. |
+| Gemning og tilgængelighed | 69 Drive-tests, 123 samlede browserprøver, særskilt billedkontrol ved 390/768/1440, tastatur, stor tekst, skaleret kort viewport, reduceret bevægelse og axe. Simulatorerne beviser ikke faktisk Google/CORS. |
+| Udestående | Lokal test er godkendt 27. oktober 2026 med klarsignal til sync, arkivering og lokalt commit. Push/publicering og den eksisterende live Google-/to-konto-accept er fortsat særskilte; liveprøverne er ikke markeret bestået. |
+
+Se ændringens [verifikation](../openspec/changes/archive/2026-10-27-add-discipline-scenarios-and-reserves/verification.md) og [lokale prøvevejledning](lokal-test.md).

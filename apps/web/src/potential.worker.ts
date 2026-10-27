@@ -10,6 +10,7 @@ self.onmessage = (
     workspace: Workspace;
     teamId: string;
     discipline: SpringDiscipline;
+    scenarioId: string;
     cancel?: boolean;
   }>,
 ) => {
@@ -20,21 +21,21 @@ self.onmessage = (
   controller?.abort();
   const search = new AbortController();
   controller = search;
-  const { id, workspace, teamId, discipline } = event.data;
+  const { id, workspace, teamId, discipline, scenarioId } = event.data;
   const team = workspace.teams.find((item) => item.id === teamId);
   const resolved = team && registry.resolve(team.rulesetBinding);
   if (!resolved || resolved.status !== 'known') {
     self.postMessage({ id, error: 'Holdets regelpakke er ikke installeret.' });
     return;
   }
-  const key = cache.key(workspace, teamId, discipline);
+  const key = cache.key(workspace, teamId, discipline, scenarioId);
   const hit = cache.get(key);
   if (hit) {
     self.postMessage({ id, result: hit });
     return;
   }
   void resolved.rulePackage
-    .potentials(workspace, teamId, discipline, { signal: search.signal, candidateBudget: 20000 })
+    .potentials(workspace, teamId, discipline, scenarioId, { signal: search.signal, candidateBudget: 20000 })
     .then((result) => {
       if (!search.signal.aborted) cache.set(key, result);
       self.postMessage({ id, result });

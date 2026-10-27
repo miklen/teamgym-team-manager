@@ -1,4 +1,5 @@
-import { useLayoutEffect, useRef, useState } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState } from 'react';
+import type { RefObject } from 'react';
 import { formatStability, moveRoundFirst, newEntityId, setRoundEntries } from '@teamgym/domain';
 import type { Round, RoundEntry, SpringDiscipline, Workspace } from '@teamgym/domain';
 import { applyPotentialPreview } from '@teamgym/rules';
@@ -18,12 +19,22 @@ import {
 import { registry } from './rules';
 import { usePotentials } from './use-potentials';
 import { springDirectionText, springDisplayName } from './spring-library';
+import { ScenarioBar } from './scenario-bar';
+import { useScenarioSelection } from './scenario-context';
+import { ReserveList } from './reserves';
 import { PlanDifficulty, PlanSafety, PlanSkillSelect } from './plan-skill-select';
 
 export function SpringPage(props: DataProps & { teamId: string }) {
   const team = props.workspace.teams.find((item) => item.id === props.teamId)!;
   const resolved = registry.resolve(team.rulesetBinding);
   const [discipline, setDiscipline] = useState<SpringDiscipline>('tumbling');
+  const plan = props.workspace.plans.find((item) => item.teamId === props.teamId)!;
+  const [scenarioId, selectScenario] = useScenarioSelection(
+    `${props.workspace.workspaceId}:${props.teamId}:${discipline}`,
+    plan[discipline].map((item) => item.id),
+  );
+  const leave = useRef<((action: () => void) => void) | null>(null);
+  const request = (action: () => void) => (leave.current ? leave.current(action) : action());
   return (
     <>
       <div className="page-title spring-title">
@@ -32,27 +43,76 @@ export function SpringPage(props: DataProps & { teamId: string }) {
           <p className="page-description">{team.name}. Tre omgange i hver disciplin.</p>
         </div>
         <div className="tabs" aria-label="Springdisciplin">
-          <button aria-pressed={discipline === 'tumbling'} onClick={() => setDiscipline('tumbling')}>
+          <button
+            aria-pressed={discipline === 'tumbling'}
+            onClick={() => request(() => setDiscipline('tumbling'))}
+          >
             Bane
           </button>
-          <button aria-pressed={discipline === 'trampet'} onClick={() => setDiscipline('trampet')}>
+          <button
+            aria-pressed={discipline === 'trampet'}
+            onClick={() => request(() => setDiscipline('trampet'))}
+          >
             Trampet
           </button>
         </div>
       </div>
-      {resolved.status === 'known' ? (
-        <SpringDisciplineView
-          key={`${props.teamId}:${discipline}`}
-          {...props}
-          discipline={discipline}
-          rulePackage={resolved.rulePackage}
-          profile={resolved.profile}
-        />
-      ) : (
-        <Empty>Holdets præcise regelpakke er ikke installeret. Opstillinger bevares; se Reglement.</Empty>
-      )}
+      <ScenarioBar
+        {...props}
+        planId={plan.id}
+        discipline={discipline}
+        scenarioId={scenarioId}
+        select={(id) => request(() => selectScenario(id))}
+      />
+      <div
+        role="tabpanel"
+        id={`scenario-panel-${plan.id}-${discipline}`}
+        aria-labelledby={`scenario-tab-${scenarioId}`}
+      >
+        {resolved.status === 'known' ? (
+          <SpringDisciplineView
+            key={`${props.workspace.workspaceId}:${props.teamId}:${discipline}:${scenarioId}`}
+            {...props}
+            discipline={discipline}
+            scenarioId={scenarioId}
+            registerLeave={(handler) => {
+              leave.current = handler;
+            }}
+            selectScenario={selectScenario}
+            rulePackage={resolved.rulePackage}
+            profile={resolved.profile}
+          />
+        ) : (
+          <>
+            <Empty>Holdets præcise regelpakke er ikke installeret. Opstillinger bevares; se Reglement.</Empty>
+            {plan[discipline]
+              .find((item) => item.id === scenarioId)!
+              .rounds.map((round, index) => (
+                <section key={round.id} className="round">
+                  <h2>{index + 1}. omgang</h2>
+                  {[...round.entries, ...round.reserves].map((entry) => (
+                    <p key={entry.id}>
+                      {workspaceName(props.workspace, entry.athleteId)} ·{' '}
+                      {props.workspace.skills.find(
+                        (skill) =>
+                          skill.id ===
+                          props.workspace.athleteSkills.find((item) => item.id === entry.athleteSkillId)
+                            ?.skillId,
+                      )?.name ?? 'Vælg senere'}{' '}
+                      · {'role' in entry ? 'Udførende' : 'Reserve'}
+                    </p>
+                  ))}
+                </section>
+              ))}
+          </>
+        )}
+      </div>
     </>
   );
+}
+function workspaceName(workspace: Workspace, id: string) {
+  const athlete = workspace.athletes.find((item) => item.id === id);
+  return `${athlete?.name ?? 'Ukendt gymnast'} ${athlete?.discriminator ?? ''}`;
 }
 function SpringDisciplineView({
   workspace,
@@ -62,14 +122,21 @@ function SpringDisciplineView({
   discipline,
   rulePackage,
   profile,
+  scenarioId,
+  registerLeave,
+  selectScenario,
 }: DataProps & {
   teamId: string;
   discipline: SpringDiscipline;
   rulePackage: RulePackage;
   profile: TeamProfile;
+  scenarioId: string;
+  registerLeave: (handler: ((action: () => void) => void) | null) => void;
+  selectScenario: (id: string) => void;
 }) {
   const plan = workspace.plans.find((item) => item.teamId === teamId)!;
-  const evaluation = rulePackage.analyze(workspace, teamId, discipline);
+  const scenario = plan[discipline].find((item) => item.id === scenarioId)!;
+  const evaluation = rulePackage.analyze(workspace, teamId, discipline, scenarioId);
   const [activeRound, setActiveRound] = useState(0);
   const rowNodes = useRef(new Map<string, HTMLLIElement>());
   const rowPositions = useRef(new Map<string, { x: number; y: number }>());
@@ -95,17 +162,44 @@ function SpringDisciplineView({
     rowPositions.current = next;
   }, [workspace, discipline, activeRound]);
   const [entryDialog, setEntryDialog] = useState<{ round: Round; entry?: RoundEntry } | null>(null);
+  const dirty = useRef(false);
+  const entryForm = useRef<HTMLFormElement>(null);
+  const pending = useRef<(() => void) | null>(null);
+  const reserveLeave = useRef<((action: () => void) => void) | null>(null);
+  const [leaving, setLeaving] = useState(false);
+  function requestLeave(action: () => void) {
+    if (reserveLeave.current) {
+      reserveLeave.current(action);
+      return;
+    }
+    if (entryDialog && dirty.current) {
+      pending.current = action;
+      setLeaving(true);
+    } else {
+      setEntryDialog(null);
+      action();
+    }
+  }
+  useEffect(() => {
+    registerLeave(requestLeave);
+    return () => registerLeave(null);
+  });
+  function openEntry(value: { round: Round; entry?: RoundEntry }) {
+    dirty.current = false;
+    setEntryDialog(value);
+  }
   const [athlete, setAthlete] = useState<{ id: string; registrationId: string | undefined } | null>(null);
   const [preview, setPreview] = useState<BonusPotential | null>(null);
   const [sortRoundId, setSortRoundId] = useState<string | null>(null);
   const [entryError, setEntryError] = useState('');
   const [entryStatus, setEntryStatus] = useState('');
-  const potentials = usePotentials(workspace, teamId, discipline);
+  const [insertedEntryId, setInsertedEntryId] = useState<string | null>(null);
+  const potentials = usePotentials(workspace, teamId, discipline, scenarioId);
   function entries(round: Round, next: RoundEntry[]) {
-    change(setRoundEntries(workspace, plan.id, discipline, round.id, next, profile));
+    change(setRoundEntries(workspace, plan.id, discipline, scenarioId, round.id, next, profile));
     setEntryError('');
     setEntryStatus(
-      `${plan[discipline].findIndex((item) => item.id === round.id) + 1}. omgang opdateret: ${next.map((entry) => workspace.athletes.find((athlete) => athlete.id === entry.athleteId)?.name).join(', ')}.`,
+      `${scenario.rounds.findIndex((item) => item.id === round.id) + 1}. omgang opdateret: ${next.map((entry) => workspace.athletes.find((athlete) => athlete.id === entry.athleteId)?.name).join(', ')}.`,
     );
   }
   function shift(round: Round, index: number, delta: number) {
@@ -158,14 +252,14 @@ function SpringDisciplineView({
         </div>
       </div>
       <div className="round-tabs" aria-label="Vælg omgang">
-        {plan[discipline].map((round, index) => (
+        {scenario.rounds.map((round, index) => (
           <button key={round.id} aria-pressed={activeRound === index} onClick={() => setActiveRound(index)}>
             {index + 1}. {index === 0 ? 'Holdomgang' : 'Omgang'}
           </button>
         ))}
       </div>
       <div className="round-grid">
-        {plan[discipline].map((round, roundIndex) => {
+        {scenario.rounds.map((round, roundIndex) => {
           const result = evaluation.rounds[roundIndex]!;
           return (
             <section
@@ -182,7 +276,7 @@ function SpringDisciplineView({
                     className="quiet"
                     disabled={!writable}
                     onClick={() => {
-                      change(moveRoundFirst(workspace, plan.id, discipline, round.id));
+                      change(moveRoundFirst(workspace, plan.id, discipline, scenarioId, round.id));
                       setActiveRound(0);
                     }}
                   >
@@ -201,7 +295,10 @@ function SpringDisciplineView({
                       if (node) rowNodes.current.set(participant.entry.id, node);
                       else rowNodes.current.delete(participant.entry.id);
                     }}
-                    className={participant.entry.role === 'extra' ? 'extra-entry' : ''}
+                    className={`${participant.entry.role === 'extra' ? 'extra-entry' : ''}${insertedEntryId === participant.entry.id ? ' reserve-inserted' : ''}`}
+                    onAnimationEnd={() => {
+                      if (insertedEntryId === participant.entry.id) setInsertedEntryId(null);
+                    }}
                     draggable={writable}
                     onDragStart={() => setDrag({ roundId: round.id, entryId: participant.entry.id })}
                     onDragOver={(event) => {
@@ -227,7 +324,7 @@ function SpringDisciplineView({
                     <div className="entry-main">
                       <button
                         className="entry-name"
-                        onClick={() => setEntryDialog({ round, entry: participant.entry })}
+                        onClick={() => openEntry({ round, entry: participant.entry })}
                       >
                         <strong>{participant.athleteName}</strong>
                         <small>
@@ -340,10 +437,28 @@ function SpringDisciplineView({
               <button
                 className="add-entry"
                 disabled={!writable || round.entries.length >= profile.counting + profile.extra}
-                onClick={() => setEntryDialog({ round })}
+                onClick={() => openEntry({ round })}
               >
                 + Tilføj plads
               </button>
+              <ReserveList
+                inserted={setInsertedEntryId}
+                workspace={workspace}
+                change={change}
+                writable={writable}
+                teamId={teamId}
+                planId={plan.id}
+                discipline={discipline}
+                scenario={scenario}
+                round={round}
+                result={result}
+                rulePackage={rulePackage}
+                profile={profile}
+                registerLeave={(handler) => {
+                  reserveLeave.current = handler;
+                }}
+                selectScenario={selectScenario}
+              />
               <StabilitySummary value={result.stability.counting} />
               <details>
                 <summary>D-grundlag og rækkefølge</summary>
@@ -495,9 +610,29 @@ function SpringDisciplineView({
       {entryDialog && (
         <Dialog
           title={entryDialog.entry ? 'Redigér omgangsplads' : 'Tilføj omgangsplads'}
-          close={() => setEntryDialog(null)}
+          close={() => requestLeave(() => {})}
         >
+          <label>
+            Vis scenarie
+            <select
+              value={scenarioId}
+              onChange={(event) => {
+                const id = event.target.value;
+                requestLeave(() => selectScenario(id));
+              }}
+            >
+              {plan[discipline].map((item) => (
+                <option key={item.id} value={item.id}>
+                  {item.name}
+                </option>
+              ))}
+            </select>
+          </label>
           <EntryForm
+            formRef={entryForm}
+            onDirty={() => {
+              dirty.current = true;
+            }}
             workspace={workspace}
             teamId={teamId}
             discipline={discipline}
@@ -518,8 +653,55 @@ function SpringDisciplineView({
                 ...changed.filter((item) => item.role === 'counting'),
               ]);
               setEntryDialog(null);
+              dirty.current = false;
+              const action = pending.current;
+              pending.current = null;
+              action?.();
             }}
           />
+        </Dialog>
+      )}
+      {leaving && (
+        <Dialog
+          title="Gem formularændringer?"
+          close={() => {
+            setLeaving(false);
+            pending.current = null;
+          }}
+        >
+          <p>Formularen i {scenario.name} har ændringer. Opdater ændrer kun den lokale kladde.</p>
+          <div className="actions">
+            <button
+              onClick={() => {
+                setLeaving(false);
+                entryForm.current?.requestSubmit();
+              }}
+            >
+              Opdater
+            </button>
+            <button
+              className="quiet"
+              onClick={() => {
+                const action = pending.current;
+                pending.current = null;
+                dirty.current = false;
+                setLeaving(false);
+                setEntryDialog(null);
+                action?.();
+              }}
+            >
+              Kassér
+            </button>
+            <button
+              className="quiet"
+              onClick={() => {
+                setLeaving(false);
+                pending.current = null;
+              }}
+            >
+              Bliv
+            </button>
+          </div>
         </Dialog>
       )}
       {sortRoundId && (
@@ -550,7 +732,7 @@ function SpringDisciplineView({
             disabled={!writable}
             label="Anvend rækkefølgen"
             submit={() => {
-              const round = plan[discipline].find((item) => item.id === sortRoundId)!;
+              const round = scenario.rounds.find((item) => item.id === sortRoundId)!;
               entries(
                 round,
                 evaluation.rounds
@@ -579,6 +761,9 @@ function SpringDisciplineView({
       )}
       {preview?.preview && (
         <Dialog wide title={preview.label} close={() => setPreview(null)}>
+          <p>
+            <strong>{scenario.name}</strong> · {discipline === 'tumbling' ? 'Bane' : 'Trampet'}
+          </p>
           <p>
             Dokumenteret {points(preview.documentedValue)}. Hele den nødvendige vidneopstilling anvendes
             samlet.
@@ -653,6 +838,18 @@ function SpringDisciplineView({
               );
             })}
           </ul>
+          {preview.preview.reserveChanges.length > 0 && (
+            <p>
+              Bliver udførende og fjernes fra reservelisten:{' '}
+              {preview.preview.reserveChanges
+                .map(
+                  (item) =>
+                    `${scenario.rounds.findIndex((round) => round.id === item.roundId) + 1}. omgang · ${workspaceName(workspace, item.athleteId)}`,
+                )
+                .join('; ')}
+              .
+            </p>
+          )}
           <div className="comparison">
             <div>
               <h3>Stabilitet før</h3>
@@ -671,6 +868,8 @@ function SpringDisciplineView({
             disabled={!writable}
             label="Opdater"
             submit={() => {
+              if (preview.preview!.scenarioId !== scenarioId)
+                throw new Error('Forslaget tilhører et andet scenarie. Beregn igen.');
               change(applyPotentialPreview(workspace, preview.preview!));
               setPreview(null);
             }}
@@ -687,7 +886,7 @@ function SpringDisciplineView({
     </>
   );
 }
-function StabilitySummary({ value }: { value: RoundEvaluation['stability']['counting'] }) {
+export function StabilitySummary({ value }: { value: RoundEvaluation['stability']['counting'] }) {
   return (
     <div className="stability-summary">
       <strong>
@@ -704,7 +903,7 @@ function StabilitySummary({ value }: { value: RoundEvaluation['stability']['coun
     </div>
   );
 }
-function EntryForm({
+export function EntryForm({
   workspace,
   teamId,
   discipline,
@@ -714,6 +913,9 @@ function EntryForm({
   writable,
   submit,
   inspect,
+  reserve = false,
+  formRef,
+  onDirty,
 }: {
   workspace: Workspace;
   teamId: string;
@@ -724,12 +926,16 @@ function EntryForm({
   writable: boolean;
   submit: (entry: RoundEntry) => void;
   inspect: (athleteId: string) => void;
+  reserve?: boolean;
+  formRef?: RefObject<HTMLFormElement | null>;
+  onDirty?: () => void;
 }) {
   const athletes = workspace.athletes.filter(
     (athlete) =>
       athlete.teamId === teamId &&
       !athlete.archived &&
-      (!round.entries.some((item) => item.athleteId === athlete.id) || entry?.athleteId === athlete.id),
+      (![...round.entries, ...round.reserves].some((item) => item.athleteId === athlete.id) ||
+        entry?.athleteId === athlete.id),
   );
   const [athleteId, setAthleteId] = useState(
     athletes.find((athlete) => athlete.id === entry?.athleteId)?.id ?? athletes[0]?.id ?? '',
@@ -747,6 +953,7 @@ function EntryForm({
   });
   return (
     <ActionForm
+      formRef={formRef}
       disabled={!writable || !athleteId}
       submit={(data) =>
         submit({
@@ -757,7 +964,7 @@ function EntryForm({
         })
       }
     >
-      <fieldset disabled={!writable}>
+      <fieldset disabled={!writable} onChange={onDirty}>
         <label>
           Gymnast
           <select value={athleteId} onChange={(event) => setAthleteId(event.target.value)}>
@@ -771,6 +978,7 @@ function EntryForm({
           </select>
         </label>
         <PlanSkillSelect
+          onChange={onDirty}
           key={athleteId}
           initialValue={entry?.athleteId === athleteId ? (entry.athleteSkillId ?? '') : ''}
           options={skills.map((registration) => {
@@ -788,13 +996,15 @@ function EntryForm({
             };
           })}
         />
-        <label>
-          Rolle
-          <select name="role" defaultValue={entry?.role ?? 'counting'}>
-            <option value="counting">Tællende</option>
-            <option value="extra">Ekstra · først · indgår ikke i D/C/stabilitet</option>
-          </select>
-        </label>
+        {!reserve && (
+          <label>
+            Rolle
+            <select name="role" defaultValue={entry?.role ?? 'counting'}>
+              <option value="counting">Tællende</option>
+              <option value="extra">Ekstra · først · indgår ikke i D/C/stabilitet</option>
+            </select>
+          </label>
+        )}
       </fieldset>
       <button type="button" className="quiet" disabled={!athleteId} onClick={() => inspect(athleteId)}>
         Åbn gymnastens færdigheder
@@ -802,6 +1012,9 @@ function EntryForm({
       <p className="muted">
         Kun holdets egne aktive gymnaster og deres registrerede komplette udførelser kan vælges.
       </p>
+      {!writable && (
+        <p className="notice">Arbejdsrummet har læseadgang. Du kan gennemse valgene, men ikke ændre dem.</p>
+      )}
     </ActionForm>
   );
 }

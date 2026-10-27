@@ -1,6 +1,6 @@
-import { canonicalJson, skillIdentity, bindingFingerprint } from './identity';
-import { CURRENT_SCHEMA_VERSION, WORKSPACE_FORMAT, workspaceSchema, workspaceV1Schema } from './schema';
-import type { WorkspaceV1 } from './schema';
+import { canonicalJson, skillIdentity, bindingFingerprint, newEntityId } from './identity';
+import { CURRENT_SCHEMA_VERSION, WORKSPACE_FORMAT, workspaceSchema, workspaceV1Schema, workspaceV2Schema } from './schema';
+import type { WorkspaceV1, WorkspaceV2, SpringDiscipline, ReserveEntry, RoundEntry } from './schema';
 import type { Workspace } from './schema';
 import type { Diagnostic } from './index';
 
@@ -88,10 +88,17 @@ export function validateWorkspace(input: unknown): Workspace {
   for (const plan of workspace.plans) {
     if (!teams.has(plan.teamId) || planTeams.has(plan.teamId)) fail('Hvert hold skal have én entydig plan.');
     planTeams.add(plan.teamId);
-    for (const discipline of ['tumbling', 'trampet'] as const) for (const round of plan[discipline]) {
+    for (const discipline of ['tumbling', 'trampet'] as const) {
+      const names = new Set<string>();
+      for (const scenario of plan[discipline]) {
+        unique(scenario.id);
+        const name = scenario.name.toLocaleLowerCase('da');
+        if (names.has(name)) fail('Scenarienavne skal være entydige inden for disciplinen.');
+        names.add(name);
+        for (const round of scenario.rounds) {
       unique(round.id);
       const participants = new Set<string>();
-      for (const entry of round.entries) {
+      for (const entry of [...round.entries, ...round.reserves]) {
         unique(entry.id);
         if (!athletes.has(entry.athleteId)) fail('Omgangens gymnastreference findes ikke.');
         if (participants.has(entry.athleteId)) fail('Samme gymnast må ikke stå to gange i en omgang.');
@@ -101,6 +108,8 @@ export function validateWorkspace(input: unknown): Workspace {
           if (!registration || registration.athleteId !== entry.athleteId) fail('Pladsens færdighed tilhører ikke den valgte gymnast.');
           if (skills.get(registration.skillId)?.discipline !== discipline) fail('Pladsens færdighed har forkert disciplin.');
         }
+      }
+    }
       }
     }
   }
@@ -124,13 +133,51 @@ export function validateWorkspaceV1(input: unknown): WorkspaceV1 {
   const parsed = workspaceV1Schema.safeParse(input);
   if (!parsed.success) fail('Ugyldige format 1-data. Originalen bevares.');
   const value = parsed.data;
-  validateWorkspace({ ...value, schemaVersion: 2, athleteSkills: value.athleteSkills.map((item) => ({ ...item, assessmentOrigin: { kind: 'own' } })), inheritanceRelations: [], inheritanceExclusions: [] });
+  migrateWorkspaceV2({ ...value, schemaVersion: 2, athleteSkills: value.athleteSkills.map((item) => ({ ...item, assessmentOrigin: { kind: 'own' } })), inheritanceRelations: [], inheritanceExclusions: [] });
   return value;
 }
 
 export function migrateWorkspaceV1(input: unknown): Workspace {
   const original = validateWorkspaceV1(input);
-  return validateWorkspace({ ...original, schemaVersion: 2, athleteSkills: original.athleteSkills.map((item) => ({ ...item, assessmentOrigin: { kind: 'own' } })), inheritanceRelations: [], inheritanceExclusions: [] });
+  return migrateWorkspaceV2({ ...original, schemaVersion: 2, athleteSkills: original.athleteSkills.map((item) => ({ ...item, assessmentOrigin: { kind: 'own' } })), inheritanceRelations: [], inheritanceExclusions: [] });
+}
+
+function upgradeV2(original: WorkspaceV2): Workspace {
+  const used = new Set<string>();
+  const collect = (value: unknown): void => {
+    if (!value || typeof value !== 'object') return;
+    if ('id' in value && typeof value.id === 'string') used.add(value.id);
+    for (const child of Object.values(value)) collect(child);
+  };
+  collect(original); used.add(original.workspaceId);
+  const id = () => { let value: string; do { value = newEntityId(); } while (used.has(value)); used.add(value); return value; };
+  return validateWorkspace({ ...structuredClone(original), schemaVersion: 3, plans: original.plans.map((plan) => ({ ...plan,
+    ...Object.fromEntries((['tumbling', 'trampet'] as const).map((discipline) => [discipline, [{ id: id(), name: 'Plan A', rounds: plan[discipline].map((round) => ({ ...structuredClone(round), reserves: [] })) }]])),
+  })) });
+}
+
+export function validateWorkspaceV2(input: unknown): WorkspaceV2 {
+  const parsed = workspaceV2Schema.safeParse(input);
+  if (!parsed.success) fail('Ugyldige format 2-data. Originalen bevares.');
+  upgradeV2(parsed.data);
+  return parsed.data;
+}
+
+export function migrateWorkspaceV2(input: unknown): Workspace {
+  const parsed = workspaceV2Schema.safeParse(input);
+  if (!parsed.success) fail('Ugyldige format 2-data. Originalen bevares.');
+  return upgradeV2(parsed.data);
+}
+
+/** Fælles referencegrundlag for kartotek, konsekvenser og diagnoser. */
+export function planReferences(workspace: Workspace) {
+  const result: { teamId: string; planId: string; discipline: SpringDiscipline; scenarioId: string; scenarioName: string; roundId: string; roundIndex: number; kind: 'entry' | 'reserve'; entry: RoundEntry | ReserveEntry }[] = [];
+  for (const plan of workspace.plans) for (const discipline of ['tumbling', 'trampet'] as const) for (const scenario of plan[discipline]) {
+    for (const [roundIndex, round] of scenario.rounds.entries()) for (const kind of ['entry', 'reserve'] as const) {
+      for (const entry of kind === 'entry' ? round.entries : round.reserves) result.push({ teamId: plan.teamId, planId: plan.id, discipline, scenarioId: scenario.id, scenarioName: scenario.name, roundId: round.id, roundIndex, kind, entry });
+    }
+  }
+  return result;
 }
 
 export function serializeWorkspace(workspace: Workspace): string { return canonicalJson(validateWorkspace(workspace)); }
@@ -152,21 +199,21 @@ export function diagnoseWorkspace(workspace: Workspace): Diagnostic[] {
     const team = teams.get(plan.teamId)!;
     if (team.archived) add('team-archived', 'Holdet er arkiveret.', [team.id, plan.id]);
     if (bindingFingerprint(team.rulesetBinding) !== plan.bindingFingerprint) add('binding-changed', 'Planens regelgrundlag kræver gennemgang.', [team.id, plan.id], 'unresolved');
-    for (const discipline of ['tumbling', 'trampet'] as const) for (const round of plan[discipline]) {
-      for (const entry of round.entries) {
-        const athlete = athletes.get(entry.athleteId)!;
-        const registration = entry.athleteSkillId ? registrations.get(entry.athleteSkillId) : undefined;
-        const skill = registration ? skills.get(registration.skillId) : undefined;
-        const affected = [team.id, plan.id, round.id, entry.id, athlete.id];
-        if (athlete.archived) add('athlete-archived', 'Gymnasten er arkiveret.', affected);
-        if (athlete.teamId !== team.id) add('athlete-moved', 'Gymnasten er ikke længere på holdet.', affected);
-        if (!registration) add('skill-missing', 'Vælg en registreret færdighed.', affected, 'incomplete');
-        if (registration?.archived || skill?.archived) add('skill-archived', 'Færdigheden er arkiveret.', affected);
-        if (registration?.connectionConfirmation && skill && registration.connectionConfirmation.executionIdentity !== skillIdentity(skill)) {
-          add('confirmation-outdated', 'Forbindelsen er ændret siden trænerbekræftelsen.', affected, 'unresolved');
-        }
-      }
-    }
+  }
+  for (const reference of planReferences(workspace)) {
+    const { entry, teamId, planId, scenarioId, scenarioName, roundId, roundIndex, discipline, kind } = reference;
+    const team = teams.get(teamId)!;
+    const athlete = athletes.get(entry.athleteId)!;
+    const registration = entry.athleteSkillId ? registrations.get(entry.athleteSkillId) : undefined;
+    const skill = registration ? skills.get(registration.skillId) : undefined;
+    const affected = [teamId, planId, scenarioId, roundId, entry.id, athlete.id];
+    const context = `${team.name} · ${discipline === 'tumbling' ? 'Bane' : 'Trampet'} · ${scenarioName} · ${roundIndex + 1}. omgang · ${kind === 'reserve' ? 'Reserve' : 'Udførende'}`;
+    const local = (code: string, message: string, status: Diagnostic['status'] = 'invalid') => add(code, `${context}: ${message}`, affected, status);
+    if (athlete.archived) local('athlete-archived', 'Gymnasten er arkiveret.');
+    if (athlete.teamId !== teamId) local('athlete-moved', 'Gymnasten er ikke længere på holdet.');
+    if (!registration) local('skill-missing', 'Vælg en registreret færdighed.', 'incomplete');
+    if (registration?.archived || skill?.archived) local('skill-archived', 'Færdigheden er arkiveret.');
+    if (registration?.connectionConfirmation && skill && registration.connectionConfirmation.executionIdentity !== skillIdentity(skill)) local('confirmation-outdated', 'Forbindelsen er ændret siden trænerbekræftelsen.', 'unresolved');
   }
   return diagnostics;
 }

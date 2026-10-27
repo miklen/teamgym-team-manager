@@ -1,0 +1,2463 @@
+{
+  "format": "teamgym-team-manager",
+  "workspaceId": "test-1",
+  "revision": 0,
+  "updatedAt": "2026-10-25T12:00:00.000Z",
+  "recentOperations": [],
+  "teams": [
+    {
+      "id": "test-2",
+      "name": "Syntetisk hold A",
+      "archived": false,
+      "rulesetBinding": {
+        "rulesetId": "dk",
+        "packageVersion": "1.0.0",
+        "ageGroup": "junior",
+        "teamType": "girls"
+      }
+    },
+    {
+      "id": "test-12",
+      "name": "Syntetisk hold B",
+      "archived": false,
+      "rulesetBinding": {
+        "rulesetId": "test-only",
+        "packageVersion": "2.0.0",
+        "ageGroup": "test",
+        "teamType": "test"
+      }
+    }
+  ],
+  "athletes": [
+    {
+      "id": "test-22",
+      "name": "Maja Test",
+      "discriminator": "Test 1",
+      "teamId": "test-2",
+      "archived": false,
+      "mixCategory": null
+    },
+    {
+      "id": "test-23",
+      "name": "Maja Test",
+      "discriminator": "Test 2",
+      "teamId": "test-2",
+      "archived": false,
+      "mixCategory": null
+    },
+    {
+      "id": "test-24",
+      "name": "Syntetisk gymnast 3",
+      "discriminator": "Test 3",
+      "teamId": "test-2",
+      "archived": false,
+      "mixCategory": null
+    },
+    {
+      "id": "test-25",
+      "name": "Syntetisk gymnast 4",
+      "discriminator": "Test 4",
+      "teamId": "test-2",
+      "archived": false,
+      "mixCategory": null
+    },
+    {
+      "id": "test-26",
+      "name": "Syntetisk gymnast 5",
+      "discriminator": "Test 5",
+      "teamId": "test-2",
+      "archived": false,
+      "mixCategory": null
+    },
+    {
+      "id": "test-27",
+      "name": "Syntetisk gymnast 6",
+      "discriminator": "Test 6",
+      "teamId": "test-2",
+      "archived": false,
+      "mixCategory": null
+    },
+    {
+      "id": "test-28",
+      "name": "Syntetisk gymnast 7",
+      "discriminator": "Test 7",
+      "teamId": "test-2",
+      "archived": false,
+      "mixCategory": null
+    },
+    {
+      "id": "test-29",
+      "name": "Syntetisk gymnast 8",
+      "discriminator": "Test 8",
+      "teamId": "test-2",
+      "archived": false,
+      "mixCategory": null
+    },
+    {
+      "id": "test-358",
+      "name": "Syntetisk reserve",
+      "discriminator": "Test 9",
+      "teamId": "test-2",
+      "archived": false,
+      "mixCategory": null
+    }
+  ],
+  "skills": [
+    {
+      "id": "skill-tumbling",
+      "name": "Syntetisk baneserie",
+      "archived": false,
+      "discipline": "tumbling",
+      "elements": [
+        {
+          "family": "salto",
+          "direction": "backward",
+          "rotationQuarterTurns": 4,
+          "bodyPositions": [
+            "straight"
+          ],
+          "twistsHalfTurns": 2,
+          "twistDistribution": [
+            2
+          ],
+          "apparatus": "floor",
+          "takeoff": "two-feet",
+          "landing": "feet",
+          "variant": {}
+        }
+      ],
+      "connection": {
+        "kind": "standard",
+        "transitions": []
+      }
+    },
+    {
+      "id": "skill-trampet",
+      "name": "Syntetisk trampetspring",
+      "archived": false,
+      "discipline": "trampet",
+      "jump": {
+        "family": "salto",
+        "direction": "backward",
+        "rotationQuarterTurns": 4,
+        "bodyPositions": [
+          "straight"
+        ],
+        "twistsHalfTurns": 2,
+        "twistDistribution": [
+          2
+        ],
+        "apparatus": "trampet",
+        "takeoff": "two-feet",
+        "landing": "feet",
+        "variant": {}
+      }
+    },
+    {
+      "id": "skill-rhythm",
+      "name": "Syntetisk hovedstand",
+      "archived": false,
+      "discipline": "rhythm",
+      "momentId": "rh-hb-headstand",
+      "variant": {
+        "legs": "together"
+      }
+    }
+  ],
+  "plans": [
+    {
+      "id": "test-3",
+      "teamId": "test-2",
+      "bindingFingerprint": "{\"ageGroup\":\"junior\",\"packageVersion\":\"1.0.0\",\"rulesetId\":\"dk\",\"teamType\":\"girls\"}",
+      "tumbling": [
+        {
+          "id": "test-4",
+          "name": "Plan A",
+          "rounds": [
+            {
+              "id": "test-5",
+              "entries": [
+                {
+                  "id": "test-54",
+                  "athleteId": "test-22",
+                  "athleteSkillId": "test-30",
+                  "role": "counting"
+                },
+                {
+                  "id": "test-55",
+                  "athleteId": "test-23",
+                  "athleteSkillId": "test-33",
+                  "role": "counting"
+                },
+                {
+                  "id": "test-56",
+                  "athleteId": "test-24",
+                  "athleteSkillId": "test-36",
+                  "role": "counting"
+                },
+                {
+                  "id": "test-57",
+                  "athleteId": "test-25",
+                  "athleteSkillId": "test-39",
+                  "role": "counting"
+                },
+                {
+                  "id": "test-58",
+                  "athleteId": "test-26",
+                  "athleteSkillId": "test-42",
+                  "role": "counting"
+                },
+                {
+                  "id": "test-59",
+                  "athleteId": "test-27",
+                  "athleteSkillId": "test-45",
+                  "role": "counting"
+                }
+              ],
+              "reserves": [
+                {
+                  "id": "synthetic-reserve-6",
+                  "athleteId": "test-28",
+                  "athleteSkillId": "test-48"
+                },
+                {
+                  "id": "synthetic-reserve-7",
+                  "athleteId": "test-29",
+                  "athleteSkillId": null
+                }
+              ]
+            },
+            {
+              "id": "test-6",
+              "entries": [
+                {
+                  "id": "test-60",
+                  "athleteId": "test-22",
+                  "athleteSkillId": "test-30",
+                  "role": "counting"
+                },
+                {
+                  "id": "test-61",
+                  "athleteId": "test-23",
+                  "athleteSkillId": "test-33",
+                  "role": "counting"
+                },
+                {
+                  "id": "test-62",
+                  "athleteId": "test-24",
+                  "athleteSkillId": "test-36",
+                  "role": "counting"
+                },
+                {
+                  "id": "test-63",
+                  "athleteId": "test-25",
+                  "athleteSkillId": "test-39",
+                  "role": "counting"
+                },
+                {
+                  "id": "test-64",
+                  "athleteId": "test-26",
+                  "athleteSkillId": "test-42",
+                  "role": "counting"
+                },
+                {
+                  "id": "test-65",
+                  "athleteId": "test-27",
+                  "athleteSkillId": "test-45",
+                  "role": "counting"
+                }
+              ],
+              "reserves": []
+            },
+            {
+              "id": "test-7",
+              "entries": [
+                {
+                  "id": "test-66",
+                  "athleteId": "test-22",
+                  "athleteSkillId": "test-30",
+                  "role": "counting"
+                },
+                {
+                  "id": "test-67",
+                  "athleteId": "test-23",
+                  "athleteSkillId": "test-33",
+                  "role": "counting"
+                },
+                {
+                  "id": "test-68",
+                  "athleteId": "test-24",
+                  "athleteSkillId": "test-36",
+                  "role": "counting"
+                },
+                {
+                  "id": "test-69",
+                  "athleteId": "test-25",
+                  "athleteSkillId": "test-39",
+                  "role": "counting"
+                },
+                {
+                  "id": "test-70",
+                  "athleteId": "test-26",
+                  "athleteSkillId": "test-42",
+                  "role": "counting"
+                },
+                {
+                  "id": "test-71",
+                  "athleteId": "test-27",
+                  "athleteSkillId": "test-45",
+                  "role": "counting"
+                }
+              ],
+              "reserves": []
+            }
+          ]
+        },
+        {
+          "id": "test-90",
+          "name": "Plan B",
+          "rounds": [
+            {
+              "id": "test-91",
+              "entries": [
+                {
+                  "id": "test-92",
+                  "athleteId": "test-22",
+                  "athleteSkillId": "test-30",
+                  "role": "counting"
+                },
+                {
+                  "id": "test-93",
+                  "athleteId": "test-23",
+                  "athleteSkillId": "test-33",
+                  "role": "counting"
+                },
+                {
+                  "id": "test-94",
+                  "athleteId": "test-24",
+                  "athleteSkillId": "test-36",
+                  "role": "counting"
+                },
+                {
+                  "id": "test-95",
+                  "athleteId": "test-25",
+                  "athleteSkillId": "test-39",
+                  "role": "counting"
+                },
+                {
+                  "id": "test-96",
+                  "athleteId": "test-26",
+                  "athleteSkillId": "test-42",
+                  "role": "counting"
+                },
+                {
+                  "id": "test-97",
+                  "athleteId": "test-27",
+                  "athleteSkillId": "test-45",
+                  "role": "counting"
+                }
+              ],
+              "reserves": [
+                {
+                  "id": "test-98",
+                  "athleteId": "test-28",
+                  "athleteSkillId": "test-48"
+                },
+                {
+                  "id": "test-99",
+                  "athleteId": "test-29",
+                  "athleteSkillId": null
+                }
+              ]
+            },
+            {
+              "id": "test-100",
+              "entries": [
+                {
+                  "id": "test-101",
+                  "athleteId": "test-22",
+                  "athleteSkillId": "test-30",
+                  "role": "counting"
+                },
+                {
+                  "id": "test-102",
+                  "athleteId": "test-23",
+                  "athleteSkillId": "test-33",
+                  "role": "counting"
+                },
+                {
+                  "id": "test-103",
+                  "athleteId": "test-24",
+                  "athleteSkillId": "test-36",
+                  "role": "counting"
+                },
+                {
+                  "id": "test-104",
+                  "athleteId": "test-25",
+                  "athleteSkillId": "test-39",
+                  "role": "counting"
+                },
+                {
+                  "id": "test-105",
+                  "athleteId": "test-26",
+                  "athleteSkillId": "test-42",
+                  "role": "counting"
+                },
+                {
+                  "id": "test-106",
+                  "athleteId": "test-27",
+                  "athleteSkillId": "test-45",
+                  "role": "counting"
+                }
+              ],
+              "reserves": []
+            },
+            {
+              "id": "test-107",
+              "entries": [
+                {
+                  "id": "test-108",
+                  "athleteId": "test-22",
+                  "athleteSkillId": "test-30",
+                  "role": "counting"
+                },
+                {
+                  "id": "test-109",
+                  "athleteId": "test-23",
+                  "athleteSkillId": "test-33",
+                  "role": "counting"
+                },
+                {
+                  "id": "test-110",
+                  "athleteId": "test-24",
+                  "athleteSkillId": "test-36",
+                  "role": "counting"
+                },
+                {
+                  "id": "test-111",
+                  "athleteId": "test-25",
+                  "athleteSkillId": "test-39",
+                  "role": "counting"
+                },
+                {
+                  "id": "test-112",
+                  "athleteId": "test-26",
+                  "athleteSkillId": "test-42",
+                  "role": "counting"
+                },
+                {
+                  "id": "test-113",
+                  "athleteId": "test-27",
+                  "athleteSkillId": "test-45",
+                  "role": "counting"
+                }
+              ],
+              "reserves": []
+            }
+          ]
+        },
+        {
+          "id": "test-114",
+          "name": "3. Alternativ Langt navn Langt navn Langt navn Langt navn Langt navn Langt navn Langt navn Langt navn Langt navn Langt navn Langt navn Langt navn Langt navn Langt navn Langt navn Langt navn Langt navn",
+          "rounds": [
+            {
+              "id": "test-115",
+              "entries": [
+                {
+                  "id": "test-116",
+                  "athleteId": "test-22",
+                  "athleteSkillId": "test-30",
+                  "role": "counting"
+                },
+                {
+                  "id": "test-117",
+                  "athleteId": "test-23",
+                  "athleteSkillId": "test-33",
+                  "role": "counting"
+                },
+                {
+                  "id": "test-118",
+                  "athleteId": "test-24",
+                  "athleteSkillId": "test-36",
+                  "role": "counting"
+                },
+                {
+                  "id": "test-119",
+                  "athleteId": "test-25",
+                  "athleteSkillId": "test-39",
+                  "role": "counting"
+                },
+                {
+                  "id": "test-120",
+                  "athleteId": "test-26",
+                  "athleteSkillId": "test-42",
+                  "role": "counting"
+                },
+                {
+                  "id": "test-121",
+                  "athleteId": "test-27",
+                  "athleteSkillId": "test-45",
+                  "role": "counting"
+                }
+              ],
+              "reserves": [
+                {
+                  "id": "test-122",
+                  "athleteId": "test-28",
+                  "athleteSkillId": "test-48"
+                },
+                {
+                  "id": "test-123",
+                  "athleteId": "test-29",
+                  "athleteSkillId": null
+                }
+              ]
+            },
+            {
+              "id": "test-124",
+              "entries": [
+                {
+                  "id": "test-125",
+                  "athleteId": "test-22",
+                  "athleteSkillId": "test-30",
+                  "role": "counting"
+                },
+                {
+                  "id": "test-126",
+                  "athleteId": "test-23",
+                  "athleteSkillId": "test-33",
+                  "role": "counting"
+                },
+                {
+                  "id": "test-127",
+                  "athleteId": "test-24",
+                  "athleteSkillId": "test-36",
+                  "role": "counting"
+                },
+                {
+                  "id": "test-128",
+                  "athleteId": "test-25",
+                  "athleteSkillId": "test-39",
+                  "role": "counting"
+                },
+                {
+                  "id": "test-129",
+                  "athleteId": "test-26",
+                  "athleteSkillId": "test-42",
+                  "role": "counting"
+                },
+                {
+                  "id": "test-130",
+                  "athleteId": "test-27",
+                  "athleteSkillId": "test-45",
+                  "role": "counting"
+                }
+              ],
+              "reserves": []
+            },
+            {
+              "id": "test-131",
+              "entries": [
+                {
+                  "id": "test-132",
+                  "athleteId": "test-22",
+                  "athleteSkillId": "test-30",
+                  "role": "counting"
+                },
+                {
+                  "id": "test-133",
+                  "athleteId": "test-23",
+                  "athleteSkillId": "test-33",
+                  "role": "counting"
+                },
+                {
+                  "id": "test-134",
+                  "athleteId": "test-24",
+                  "athleteSkillId": "test-36",
+                  "role": "counting"
+                },
+                {
+                  "id": "test-135",
+                  "athleteId": "test-25",
+                  "athleteSkillId": "test-39",
+                  "role": "counting"
+                },
+                {
+                  "id": "test-136",
+                  "athleteId": "test-26",
+                  "athleteSkillId": "test-42",
+                  "role": "counting"
+                },
+                {
+                  "id": "test-137",
+                  "athleteId": "test-27",
+                  "athleteSkillId": "test-45",
+                  "role": "counting"
+                }
+              ],
+              "reserves": []
+            }
+          ]
+        },
+        {
+          "id": "test-138",
+          "name": "4. Alternativ Langt navn Langt navn Langt navn Langt navn Langt navn Langt navn Langt navn Langt navn Langt navn Langt navn Langt navn Langt navn Langt navn Langt navn Langt navn Langt navn Langt navn",
+          "rounds": [
+            {
+              "id": "test-139",
+              "entries": [
+                {
+                  "id": "test-140",
+                  "athleteId": "test-22",
+                  "athleteSkillId": "test-30",
+                  "role": "counting"
+                },
+                {
+                  "id": "test-141",
+                  "athleteId": "test-23",
+                  "athleteSkillId": "test-33",
+                  "role": "counting"
+                },
+                {
+                  "id": "test-142",
+                  "athleteId": "test-24",
+                  "athleteSkillId": "test-36",
+                  "role": "counting"
+                },
+                {
+                  "id": "test-143",
+                  "athleteId": "test-25",
+                  "athleteSkillId": "test-39",
+                  "role": "counting"
+                },
+                {
+                  "id": "test-144",
+                  "athleteId": "test-26",
+                  "athleteSkillId": "test-42",
+                  "role": "counting"
+                },
+                {
+                  "id": "test-145",
+                  "athleteId": "test-27",
+                  "athleteSkillId": "test-45",
+                  "role": "counting"
+                }
+              ],
+              "reserves": [
+                {
+                  "id": "test-146",
+                  "athleteId": "test-28",
+                  "athleteSkillId": "test-48"
+                },
+                {
+                  "id": "test-147",
+                  "athleteId": "test-29",
+                  "athleteSkillId": null
+                }
+              ]
+            },
+            {
+              "id": "test-148",
+              "entries": [
+                {
+                  "id": "test-149",
+                  "athleteId": "test-22",
+                  "athleteSkillId": "test-30",
+                  "role": "counting"
+                },
+                {
+                  "id": "test-150",
+                  "athleteId": "test-23",
+                  "athleteSkillId": "test-33",
+                  "role": "counting"
+                },
+                {
+                  "id": "test-151",
+                  "athleteId": "test-24",
+                  "athleteSkillId": "test-36",
+                  "role": "counting"
+                },
+                {
+                  "id": "test-152",
+                  "athleteId": "test-25",
+                  "athleteSkillId": "test-39",
+                  "role": "counting"
+                },
+                {
+                  "id": "test-153",
+                  "athleteId": "test-26",
+                  "athleteSkillId": "test-42",
+                  "role": "counting"
+                },
+                {
+                  "id": "test-154",
+                  "athleteId": "test-27",
+                  "athleteSkillId": "test-45",
+                  "role": "counting"
+                }
+              ],
+              "reserves": []
+            },
+            {
+              "id": "test-155",
+              "entries": [
+                {
+                  "id": "test-156",
+                  "athleteId": "test-22",
+                  "athleteSkillId": "test-30",
+                  "role": "counting"
+                },
+                {
+                  "id": "test-157",
+                  "athleteId": "test-23",
+                  "athleteSkillId": "test-33",
+                  "role": "counting"
+                },
+                {
+                  "id": "test-158",
+                  "athleteId": "test-24",
+                  "athleteSkillId": "test-36",
+                  "role": "counting"
+                },
+                {
+                  "id": "test-159",
+                  "athleteId": "test-25",
+                  "athleteSkillId": "test-39",
+                  "role": "counting"
+                },
+                {
+                  "id": "test-160",
+                  "athleteId": "test-26",
+                  "athleteSkillId": "test-42",
+                  "role": "counting"
+                },
+                {
+                  "id": "test-161",
+                  "athleteId": "test-27",
+                  "athleteSkillId": "test-45",
+                  "role": "counting"
+                }
+              ],
+              "reserves": []
+            }
+          ]
+        },
+        {
+          "id": "test-162",
+          "name": "5. Alternativ Langt navn Langt navn Langt navn Langt navn Langt navn Langt navn Langt navn Langt navn Langt navn Langt navn Langt navn Langt navn Langt navn Langt navn Langt navn Langt navn Langt navn",
+          "rounds": [
+            {
+              "id": "test-163",
+              "entries": [
+                {
+                  "id": "test-164",
+                  "athleteId": "test-22",
+                  "athleteSkillId": "test-30",
+                  "role": "counting"
+                },
+                {
+                  "id": "test-165",
+                  "athleteId": "test-23",
+                  "athleteSkillId": "test-33",
+                  "role": "counting"
+                },
+                {
+                  "id": "test-166",
+                  "athleteId": "test-24",
+                  "athleteSkillId": "test-36",
+                  "role": "counting"
+                },
+                {
+                  "id": "test-167",
+                  "athleteId": "test-25",
+                  "athleteSkillId": "test-39",
+                  "role": "counting"
+                },
+                {
+                  "id": "test-168",
+                  "athleteId": "test-26",
+                  "athleteSkillId": "test-42",
+                  "role": "counting"
+                },
+                {
+                  "id": "test-169",
+                  "athleteId": "test-27",
+                  "athleteSkillId": "test-45",
+                  "role": "counting"
+                }
+              ],
+              "reserves": [
+                {
+                  "id": "test-170",
+                  "athleteId": "test-28",
+                  "athleteSkillId": "test-48"
+                },
+                {
+                  "id": "test-171",
+                  "athleteId": "test-29",
+                  "athleteSkillId": null
+                }
+              ]
+            },
+            {
+              "id": "test-172",
+              "entries": [
+                {
+                  "id": "test-173",
+                  "athleteId": "test-22",
+                  "athleteSkillId": "test-30",
+                  "role": "counting"
+                },
+                {
+                  "id": "test-174",
+                  "athleteId": "test-23",
+                  "athleteSkillId": "test-33",
+                  "role": "counting"
+                },
+                {
+                  "id": "test-175",
+                  "athleteId": "test-24",
+                  "athleteSkillId": "test-36",
+                  "role": "counting"
+                },
+                {
+                  "id": "test-176",
+                  "athleteId": "test-25",
+                  "athleteSkillId": "test-39",
+                  "role": "counting"
+                },
+                {
+                  "id": "test-177",
+                  "athleteId": "test-26",
+                  "athleteSkillId": "test-42",
+                  "role": "counting"
+                },
+                {
+                  "id": "test-178",
+                  "athleteId": "test-27",
+                  "athleteSkillId": "test-45",
+                  "role": "counting"
+                }
+              ],
+              "reserves": []
+            },
+            {
+              "id": "test-179",
+              "entries": [
+                {
+                  "id": "test-180",
+                  "athleteId": "test-22",
+                  "athleteSkillId": "test-30",
+                  "role": "counting"
+                },
+                {
+                  "id": "test-181",
+                  "athleteId": "test-23",
+                  "athleteSkillId": "test-33",
+                  "role": "counting"
+                },
+                {
+                  "id": "test-182",
+                  "athleteId": "test-24",
+                  "athleteSkillId": "test-36",
+                  "role": "counting"
+                },
+                {
+                  "id": "test-183",
+                  "athleteId": "test-25",
+                  "athleteSkillId": "test-39",
+                  "role": "counting"
+                },
+                {
+                  "id": "test-184",
+                  "athleteId": "test-26",
+                  "athleteSkillId": "test-42",
+                  "role": "counting"
+                },
+                {
+                  "id": "test-185",
+                  "athleteId": "test-27",
+                  "athleteSkillId": "test-45",
+                  "role": "counting"
+                }
+              ],
+              "reserves": []
+            }
+          ]
+        },
+        {
+          "id": "test-186",
+          "name": "6. Alternativ Langt navn Langt navn Langt navn Langt navn Langt navn Langt navn Langt navn Langt navn Langt navn Langt navn Langt navn Langt navn Langt navn Langt navn Langt navn Langt navn Langt navn",
+          "rounds": [
+            {
+              "id": "test-187",
+              "entries": [
+                {
+                  "id": "test-188",
+                  "athleteId": "test-22",
+                  "athleteSkillId": "test-30",
+                  "role": "counting"
+                },
+                {
+                  "id": "test-189",
+                  "athleteId": "test-23",
+                  "athleteSkillId": "test-33",
+                  "role": "counting"
+                },
+                {
+                  "id": "test-190",
+                  "athleteId": "test-24",
+                  "athleteSkillId": "test-36",
+                  "role": "counting"
+                },
+                {
+                  "id": "test-191",
+                  "athleteId": "test-25",
+                  "athleteSkillId": "test-39",
+                  "role": "counting"
+                },
+                {
+                  "id": "test-192",
+                  "athleteId": "test-26",
+                  "athleteSkillId": "test-42",
+                  "role": "counting"
+                },
+                {
+                  "id": "test-193",
+                  "athleteId": "test-27",
+                  "athleteSkillId": "test-45",
+                  "role": "counting"
+                }
+              ],
+              "reserves": [
+                {
+                  "id": "test-194",
+                  "athleteId": "test-28",
+                  "athleteSkillId": "test-48"
+                },
+                {
+                  "id": "test-195",
+                  "athleteId": "test-29",
+                  "athleteSkillId": null
+                }
+              ]
+            },
+            {
+              "id": "test-196",
+              "entries": [
+                {
+                  "id": "test-197",
+                  "athleteId": "test-22",
+                  "athleteSkillId": "test-30",
+                  "role": "counting"
+                },
+                {
+                  "id": "test-198",
+                  "athleteId": "test-23",
+                  "athleteSkillId": "test-33",
+                  "role": "counting"
+                },
+                {
+                  "id": "test-199",
+                  "athleteId": "test-24",
+                  "athleteSkillId": "test-36",
+                  "role": "counting"
+                },
+                {
+                  "id": "test-200",
+                  "athleteId": "test-25",
+                  "athleteSkillId": "test-39",
+                  "role": "counting"
+                },
+                {
+                  "id": "test-201",
+                  "athleteId": "test-26",
+                  "athleteSkillId": "test-42",
+                  "role": "counting"
+                },
+                {
+                  "id": "test-202",
+                  "athleteId": "test-27",
+                  "athleteSkillId": "test-45",
+                  "role": "counting"
+                }
+              ],
+              "reserves": []
+            },
+            {
+              "id": "test-203",
+              "entries": [
+                {
+                  "id": "test-204",
+                  "athleteId": "test-22",
+                  "athleteSkillId": "test-30",
+                  "role": "counting"
+                },
+                {
+                  "id": "test-205",
+                  "athleteId": "test-23",
+                  "athleteSkillId": "test-33",
+                  "role": "counting"
+                },
+                {
+                  "id": "test-206",
+                  "athleteId": "test-24",
+                  "athleteSkillId": "test-36",
+                  "role": "counting"
+                },
+                {
+                  "id": "test-207",
+                  "athleteId": "test-25",
+                  "athleteSkillId": "test-39",
+                  "role": "counting"
+                },
+                {
+                  "id": "test-208",
+                  "athleteId": "test-26",
+                  "athleteSkillId": "test-42",
+                  "role": "counting"
+                },
+                {
+                  "id": "test-209",
+                  "athleteId": "test-27",
+                  "athleteSkillId": "test-45",
+                  "role": "counting"
+                }
+              ],
+              "reserves": []
+            }
+          ]
+        },
+        {
+          "id": "test-210",
+          "name": "7. Alternativ Langt navn Langt navn Langt navn Langt navn Langt navn Langt navn Langt navn Langt navn Langt navn Langt navn Langt navn Langt navn Langt navn Langt navn Langt navn Langt navn Langt navn",
+          "rounds": [
+            {
+              "id": "test-211",
+              "entries": [
+                {
+                  "id": "test-212",
+                  "athleteId": "test-22",
+                  "athleteSkillId": "test-30",
+                  "role": "counting"
+                },
+                {
+                  "id": "test-213",
+                  "athleteId": "test-23",
+                  "athleteSkillId": "test-33",
+                  "role": "counting"
+                },
+                {
+                  "id": "test-214",
+                  "athleteId": "test-24",
+                  "athleteSkillId": "test-36",
+                  "role": "counting"
+                },
+                {
+                  "id": "test-215",
+                  "athleteId": "test-25",
+                  "athleteSkillId": "test-39",
+                  "role": "counting"
+                },
+                {
+                  "id": "test-216",
+                  "athleteId": "test-26",
+                  "athleteSkillId": "test-42",
+                  "role": "counting"
+                },
+                {
+                  "id": "test-217",
+                  "athleteId": "test-27",
+                  "athleteSkillId": "test-45",
+                  "role": "counting"
+                }
+              ],
+              "reserves": [
+                {
+                  "id": "test-218",
+                  "athleteId": "test-28",
+                  "athleteSkillId": "test-48"
+                },
+                {
+                  "id": "test-219",
+                  "athleteId": "test-29",
+                  "athleteSkillId": null
+                }
+              ]
+            },
+            {
+              "id": "test-220",
+              "entries": [
+                {
+                  "id": "test-221",
+                  "athleteId": "test-22",
+                  "athleteSkillId": "test-30",
+                  "role": "counting"
+                },
+                {
+                  "id": "test-222",
+                  "athleteId": "test-23",
+                  "athleteSkillId": "test-33",
+                  "role": "counting"
+                },
+                {
+                  "id": "test-223",
+                  "athleteId": "test-24",
+                  "athleteSkillId": "test-36",
+                  "role": "counting"
+                },
+                {
+                  "id": "test-224",
+                  "athleteId": "test-25",
+                  "athleteSkillId": "test-39",
+                  "role": "counting"
+                },
+                {
+                  "id": "test-225",
+                  "athleteId": "test-26",
+                  "athleteSkillId": "test-42",
+                  "role": "counting"
+                },
+                {
+                  "id": "test-226",
+                  "athleteId": "test-27",
+                  "athleteSkillId": "test-45",
+                  "role": "counting"
+                }
+              ],
+              "reserves": []
+            },
+            {
+              "id": "test-227",
+              "entries": [
+                {
+                  "id": "test-228",
+                  "athleteId": "test-22",
+                  "athleteSkillId": "test-30",
+                  "role": "counting"
+                },
+                {
+                  "id": "test-229",
+                  "athleteId": "test-23",
+                  "athleteSkillId": "test-33",
+                  "role": "counting"
+                },
+                {
+                  "id": "test-230",
+                  "athleteId": "test-24",
+                  "athleteSkillId": "test-36",
+                  "role": "counting"
+                },
+                {
+                  "id": "test-231",
+                  "athleteId": "test-25",
+                  "athleteSkillId": "test-39",
+                  "role": "counting"
+                },
+                {
+                  "id": "test-232",
+                  "athleteId": "test-26",
+                  "athleteSkillId": "test-42",
+                  "role": "counting"
+                },
+                {
+                  "id": "test-233",
+                  "athleteId": "test-27",
+                  "athleteSkillId": "test-45",
+                  "role": "counting"
+                }
+              ],
+              "reserves": []
+            }
+          ]
+        },
+        {
+          "id": "test-234",
+          "name": "8. Alternativ Langt navn Langt navn Langt navn Langt navn Langt navn Langt navn Langt navn Langt navn Langt navn Langt navn Langt navn Langt navn Langt navn Langt navn Langt navn Langt navn Langt navn",
+          "rounds": [
+            {
+              "id": "test-235",
+              "entries": [
+                {
+                  "id": "test-236",
+                  "athleteId": "test-22",
+                  "athleteSkillId": "test-30",
+                  "role": "counting"
+                },
+                {
+                  "id": "test-237",
+                  "athleteId": "test-23",
+                  "athleteSkillId": "test-33",
+                  "role": "counting"
+                },
+                {
+                  "id": "test-238",
+                  "athleteId": "test-24",
+                  "athleteSkillId": "test-36",
+                  "role": "counting"
+                },
+                {
+                  "id": "test-239",
+                  "athleteId": "test-25",
+                  "athleteSkillId": "test-39",
+                  "role": "counting"
+                },
+                {
+                  "id": "test-240",
+                  "athleteId": "test-26",
+                  "athleteSkillId": "test-42",
+                  "role": "counting"
+                },
+                {
+                  "id": "test-241",
+                  "athleteId": "test-27",
+                  "athleteSkillId": "test-45",
+                  "role": "counting"
+                }
+              ],
+              "reserves": [
+                {
+                  "id": "test-242",
+                  "athleteId": "test-28",
+                  "athleteSkillId": "test-48"
+                },
+                {
+                  "id": "test-243",
+                  "athleteId": "test-29",
+                  "athleteSkillId": null
+                }
+              ]
+            },
+            {
+              "id": "test-244",
+              "entries": [
+                {
+                  "id": "test-245",
+                  "athleteId": "test-22",
+                  "athleteSkillId": "test-30",
+                  "role": "counting"
+                },
+                {
+                  "id": "test-246",
+                  "athleteId": "test-23",
+                  "athleteSkillId": "test-33",
+                  "role": "counting"
+                },
+                {
+                  "id": "test-247",
+                  "athleteId": "test-24",
+                  "athleteSkillId": "test-36",
+                  "role": "counting"
+                },
+                {
+                  "id": "test-248",
+                  "athleteId": "test-25",
+                  "athleteSkillId": "test-39",
+                  "role": "counting"
+                },
+                {
+                  "id": "test-249",
+                  "athleteId": "test-26",
+                  "athleteSkillId": "test-42",
+                  "role": "counting"
+                },
+                {
+                  "id": "test-250",
+                  "athleteId": "test-27",
+                  "athleteSkillId": "test-45",
+                  "role": "counting"
+                }
+              ],
+              "reserves": []
+            },
+            {
+              "id": "test-251",
+              "entries": [
+                {
+                  "id": "test-252",
+                  "athleteId": "test-22",
+                  "athleteSkillId": "test-30",
+                  "role": "counting"
+                },
+                {
+                  "id": "test-253",
+                  "athleteId": "test-23",
+                  "athleteSkillId": "test-33",
+                  "role": "counting"
+                },
+                {
+                  "id": "test-254",
+                  "athleteId": "test-24",
+                  "athleteSkillId": "test-36",
+                  "role": "counting"
+                },
+                {
+                  "id": "test-255",
+                  "athleteId": "test-25",
+                  "athleteSkillId": "test-39",
+                  "role": "counting"
+                },
+                {
+                  "id": "test-256",
+                  "athleteId": "test-26",
+                  "athleteSkillId": "test-42",
+                  "role": "counting"
+                },
+                {
+                  "id": "test-257",
+                  "athleteId": "test-27",
+                  "athleteSkillId": "test-45",
+                  "role": "counting"
+                }
+              ],
+              "reserves": []
+            }
+          ]
+        },
+        {
+          "id": "test-258",
+          "name": "9. Alternativ Langt navn Langt navn Langt navn Langt navn Langt navn Langt navn Langt navn Langt navn Langt navn Langt navn Langt navn Langt navn Langt navn Langt navn Langt navn Langt navn Langt navn",
+          "rounds": [
+            {
+              "id": "test-259",
+              "entries": [
+                {
+                  "id": "test-260",
+                  "athleteId": "test-22",
+                  "athleteSkillId": "test-30",
+                  "role": "counting"
+                },
+                {
+                  "id": "test-261",
+                  "athleteId": "test-23",
+                  "athleteSkillId": "test-33",
+                  "role": "counting"
+                },
+                {
+                  "id": "test-262",
+                  "athleteId": "test-24",
+                  "athleteSkillId": "test-36",
+                  "role": "counting"
+                },
+                {
+                  "id": "test-263",
+                  "athleteId": "test-25",
+                  "athleteSkillId": "test-39",
+                  "role": "counting"
+                },
+                {
+                  "id": "test-264",
+                  "athleteId": "test-26",
+                  "athleteSkillId": "test-42",
+                  "role": "counting"
+                },
+                {
+                  "id": "test-265",
+                  "athleteId": "test-27",
+                  "athleteSkillId": "test-45",
+                  "role": "counting"
+                }
+              ],
+              "reserves": [
+                {
+                  "id": "test-266",
+                  "athleteId": "test-28",
+                  "athleteSkillId": "test-48"
+                },
+                {
+                  "id": "test-267",
+                  "athleteId": "test-29",
+                  "athleteSkillId": null
+                }
+              ]
+            },
+            {
+              "id": "test-268",
+              "entries": [
+                {
+                  "id": "test-269",
+                  "athleteId": "test-22",
+                  "athleteSkillId": "test-30",
+                  "role": "counting"
+                },
+                {
+                  "id": "test-270",
+                  "athleteId": "test-23",
+                  "athleteSkillId": "test-33",
+                  "role": "counting"
+                },
+                {
+                  "id": "test-271",
+                  "athleteId": "test-24",
+                  "athleteSkillId": "test-36",
+                  "role": "counting"
+                },
+                {
+                  "id": "test-272",
+                  "athleteId": "test-25",
+                  "athleteSkillId": "test-39",
+                  "role": "counting"
+                },
+                {
+                  "id": "test-273",
+                  "athleteId": "test-26",
+                  "athleteSkillId": "test-42",
+                  "role": "counting"
+                },
+                {
+                  "id": "test-274",
+                  "athleteId": "test-27",
+                  "athleteSkillId": "test-45",
+                  "role": "counting"
+                }
+              ],
+              "reserves": []
+            },
+            {
+              "id": "test-275",
+              "entries": [
+                {
+                  "id": "test-276",
+                  "athleteId": "test-22",
+                  "athleteSkillId": "test-30",
+                  "role": "counting"
+                },
+                {
+                  "id": "test-277",
+                  "athleteId": "test-23",
+                  "athleteSkillId": "test-33",
+                  "role": "counting"
+                },
+                {
+                  "id": "test-278",
+                  "athleteId": "test-24",
+                  "athleteSkillId": "test-36",
+                  "role": "counting"
+                },
+                {
+                  "id": "test-279",
+                  "athleteId": "test-25",
+                  "athleteSkillId": "test-39",
+                  "role": "counting"
+                },
+                {
+                  "id": "test-280",
+                  "athleteId": "test-26",
+                  "athleteSkillId": "test-42",
+                  "role": "counting"
+                },
+                {
+                  "id": "test-281",
+                  "athleteId": "test-27",
+                  "athleteSkillId": "test-45",
+                  "role": "counting"
+                }
+              ],
+              "reserves": []
+            }
+          ]
+        },
+        {
+          "id": "test-282",
+          "name": "10. Alternativ Langt navn Langt navn Langt navn Langt navn Langt navn Langt navn Langt navn Langt navn Langt navn Langt navn Langt navn Langt navn Langt navn Langt navn Langt navn Langt navn Langt nav",
+          "rounds": [
+            {
+              "id": "test-283",
+              "entries": [
+                {
+                  "id": "test-284",
+                  "athleteId": "test-22",
+                  "athleteSkillId": "test-30",
+                  "role": "counting"
+                },
+                {
+                  "id": "test-285",
+                  "athleteId": "test-23",
+                  "athleteSkillId": "test-33",
+                  "role": "counting"
+                },
+                {
+                  "id": "test-286",
+                  "athleteId": "test-24",
+                  "athleteSkillId": "test-36",
+                  "role": "counting"
+                },
+                {
+                  "id": "test-287",
+                  "athleteId": "test-25",
+                  "athleteSkillId": "test-39",
+                  "role": "counting"
+                },
+                {
+                  "id": "test-288",
+                  "athleteId": "test-26",
+                  "athleteSkillId": "test-42",
+                  "role": "counting"
+                },
+                {
+                  "id": "test-289",
+                  "athleteId": "test-27",
+                  "athleteSkillId": "test-45",
+                  "role": "counting"
+                }
+              ],
+              "reserves": [
+                {
+                  "id": "test-290",
+                  "athleteId": "test-28",
+                  "athleteSkillId": "test-48"
+                },
+                {
+                  "id": "test-291",
+                  "athleteId": "test-29",
+                  "athleteSkillId": null
+                }
+              ]
+            },
+            {
+              "id": "test-292",
+              "entries": [
+                {
+                  "id": "test-293",
+                  "athleteId": "test-22",
+                  "athleteSkillId": "test-30",
+                  "role": "counting"
+                },
+                {
+                  "id": "test-294",
+                  "athleteId": "test-23",
+                  "athleteSkillId": "test-33",
+                  "role": "counting"
+                },
+                {
+                  "id": "test-295",
+                  "athleteId": "test-24",
+                  "athleteSkillId": "test-36",
+                  "role": "counting"
+                },
+                {
+                  "id": "test-296",
+                  "athleteId": "test-25",
+                  "athleteSkillId": "test-39",
+                  "role": "counting"
+                },
+                {
+                  "id": "test-297",
+                  "athleteId": "test-26",
+                  "athleteSkillId": "test-42",
+                  "role": "counting"
+                },
+                {
+                  "id": "test-298",
+                  "athleteId": "test-27",
+                  "athleteSkillId": "test-45",
+                  "role": "counting"
+                }
+              ],
+              "reserves": []
+            },
+            {
+              "id": "test-299",
+              "entries": [
+                {
+                  "id": "test-300",
+                  "athleteId": "test-22",
+                  "athleteSkillId": "test-30",
+                  "role": "counting"
+                },
+                {
+                  "id": "test-301",
+                  "athleteId": "test-23",
+                  "athleteSkillId": "test-33",
+                  "role": "counting"
+                },
+                {
+                  "id": "test-302",
+                  "athleteId": "test-24",
+                  "athleteSkillId": "test-36",
+                  "role": "counting"
+                },
+                {
+                  "id": "test-303",
+                  "athleteId": "test-25",
+                  "athleteSkillId": "test-39",
+                  "role": "counting"
+                },
+                {
+                  "id": "test-304",
+                  "athleteId": "test-26",
+                  "athleteSkillId": "test-42",
+                  "role": "counting"
+                },
+                {
+                  "id": "test-305",
+                  "athleteId": "test-27",
+                  "athleteSkillId": "test-45",
+                  "role": "counting"
+                }
+              ],
+              "reserves": []
+            }
+          ]
+        },
+        {
+          "id": "test-306",
+          "name": "11. Alternativ Langt navn Langt navn Langt navn Langt navn Langt navn Langt navn Langt navn Langt navn Langt navn Langt navn Langt navn Langt navn Langt navn Langt navn Langt navn Langt navn Langt nav",
+          "rounds": [
+            {
+              "id": "test-307",
+              "entries": [
+                {
+                  "id": "test-308",
+                  "athleteId": "test-22",
+                  "athleteSkillId": "test-30",
+                  "role": "counting"
+                },
+                {
+                  "id": "test-309",
+                  "athleteId": "test-23",
+                  "athleteSkillId": "test-33",
+                  "role": "counting"
+                },
+                {
+                  "id": "test-310",
+                  "athleteId": "test-24",
+                  "athleteSkillId": "test-36",
+                  "role": "counting"
+                },
+                {
+                  "id": "test-311",
+                  "athleteId": "test-25",
+                  "athleteSkillId": "test-39",
+                  "role": "counting"
+                },
+                {
+                  "id": "test-312",
+                  "athleteId": "test-26",
+                  "athleteSkillId": "test-42",
+                  "role": "counting"
+                },
+                {
+                  "id": "test-313",
+                  "athleteId": "test-27",
+                  "athleteSkillId": "test-45",
+                  "role": "counting"
+                }
+              ],
+              "reserves": [
+                {
+                  "id": "test-314",
+                  "athleteId": "test-28",
+                  "athleteSkillId": "test-48"
+                },
+                {
+                  "id": "test-315",
+                  "athleteId": "test-29",
+                  "athleteSkillId": null
+                }
+              ]
+            },
+            {
+              "id": "test-316",
+              "entries": [
+                {
+                  "id": "test-317",
+                  "athleteId": "test-22",
+                  "athleteSkillId": "test-30",
+                  "role": "counting"
+                },
+                {
+                  "id": "test-318",
+                  "athleteId": "test-23",
+                  "athleteSkillId": "test-33",
+                  "role": "counting"
+                },
+                {
+                  "id": "test-319",
+                  "athleteId": "test-24",
+                  "athleteSkillId": "test-36",
+                  "role": "counting"
+                },
+                {
+                  "id": "test-320",
+                  "athleteId": "test-25",
+                  "athleteSkillId": "test-39",
+                  "role": "counting"
+                },
+                {
+                  "id": "test-321",
+                  "athleteId": "test-26",
+                  "athleteSkillId": "test-42",
+                  "role": "counting"
+                },
+                {
+                  "id": "test-322",
+                  "athleteId": "test-27",
+                  "athleteSkillId": "test-45",
+                  "role": "counting"
+                }
+              ],
+              "reserves": []
+            },
+            {
+              "id": "test-323",
+              "entries": [
+                {
+                  "id": "test-324",
+                  "athleteId": "test-22",
+                  "athleteSkillId": "test-30",
+                  "role": "counting"
+                },
+                {
+                  "id": "test-325",
+                  "athleteId": "test-23",
+                  "athleteSkillId": "test-33",
+                  "role": "counting"
+                },
+                {
+                  "id": "test-326",
+                  "athleteId": "test-24",
+                  "athleteSkillId": "test-36",
+                  "role": "counting"
+                },
+                {
+                  "id": "test-327",
+                  "athleteId": "test-25",
+                  "athleteSkillId": "test-39",
+                  "role": "counting"
+                },
+                {
+                  "id": "test-328",
+                  "athleteId": "test-26",
+                  "athleteSkillId": "test-42",
+                  "role": "counting"
+                },
+                {
+                  "id": "test-329",
+                  "athleteId": "test-27",
+                  "athleteSkillId": "test-45",
+                  "role": "counting"
+                }
+              ],
+              "reserves": []
+            }
+          ]
+        },
+        {
+          "id": "test-330",
+          "name": "12. Alternativ Langt navn Langt navn Langt navn Langt navn Langt navn Langt navn Langt navn Langt navn Langt navn Langt navn Langt navn Langt navn Langt navn Langt navn Langt navn Langt navn Langt nav",
+          "rounds": [
+            {
+              "id": "test-331",
+              "entries": [
+                {
+                  "id": "test-332",
+                  "athleteId": "test-22",
+                  "athleteSkillId": "test-30",
+                  "role": "counting"
+                },
+                {
+                  "id": "test-333",
+                  "athleteId": "test-23",
+                  "athleteSkillId": "test-33",
+                  "role": "counting"
+                },
+                {
+                  "id": "test-334",
+                  "athleteId": "test-24",
+                  "athleteSkillId": "test-36",
+                  "role": "counting"
+                },
+                {
+                  "id": "test-335",
+                  "athleteId": "test-25",
+                  "athleteSkillId": "test-39",
+                  "role": "counting"
+                },
+                {
+                  "id": "test-336",
+                  "athleteId": "test-26",
+                  "athleteSkillId": "test-42",
+                  "role": "counting"
+                },
+                {
+                  "id": "test-337",
+                  "athleteId": "test-27",
+                  "athleteSkillId": "test-45",
+                  "role": "counting"
+                }
+              ],
+              "reserves": [
+                {
+                  "id": "test-338",
+                  "athleteId": "test-28",
+                  "athleteSkillId": "test-48"
+                },
+                {
+                  "id": "test-339",
+                  "athleteId": "test-29",
+                  "athleteSkillId": null
+                }
+              ]
+            },
+            {
+              "id": "test-340",
+              "entries": [
+                {
+                  "id": "test-341",
+                  "athleteId": "test-22",
+                  "athleteSkillId": "test-30",
+                  "role": "counting"
+                },
+                {
+                  "id": "test-342",
+                  "athleteId": "test-23",
+                  "athleteSkillId": "test-33",
+                  "role": "counting"
+                },
+                {
+                  "id": "test-343",
+                  "athleteId": "test-24",
+                  "athleteSkillId": "test-36",
+                  "role": "counting"
+                },
+                {
+                  "id": "test-344",
+                  "athleteId": "test-25",
+                  "athleteSkillId": "test-39",
+                  "role": "counting"
+                },
+                {
+                  "id": "test-345",
+                  "athleteId": "test-26",
+                  "athleteSkillId": "test-42",
+                  "role": "counting"
+                },
+                {
+                  "id": "test-346",
+                  "athleteId": "test-27",
+                  "athleteSkillId": "test-45",
+                  "role": "counting"
+                }
+              ],
+              "reserves": []
+            },
+            {
+              "id": "test-347",
+              "entries": [
+                {
+                  "id": "test-348",
+                  "athleteId": "test-22",
+                  "athleteSkillId": "test-30",
+                  "role": "counting"
+                },
+                {
+                  "id": "test-349",
+                  "athleteId": "test-23",
+                  "athleteSkillId": "test-33",
+                  "role": "counting"
+                },
+                {
+                  "id": "test-350",
+                  "athleteId": "test-24",
+                  "athleteSkillId": "test-36",
+                  "role": "counting"
+                },
+                {
+                  "id": "test-351",
+                  "athleteId": "test-25",
+                  "athleteSkillId": "test-39",
+                  "role": "counting"
+                },
+                {
+                  "id": "test-352",
+                  "athleteId": "test-26",
+                  "athleteSkillId": "test-42",
+                  "role": "counting"
+                },
+                {
+                  "id": "test-353",
+                  "athleteId": "test-27",
+                  "athleteSkillId": "test-45",
+                  "role": "counting"
+                }
+              ],
+              "reserves": []
+            }
+          ]
+        }
+      ],
+      "trampet": [
+        {
+          "id": "test-8",
+          "name": "Plan A",
+          "rounds": [
+            {
+              "id": "test-9",
+              "entries": [
+                {
+                  "id": "test-72",
+                  "athleteId": "test-22",
+                  "athleteSkillId": "test-31",
+                  "role": "counting"
+                },
+                {
+                  "id": "test-73",
+                  "athleteId": "test-23",
+                  "athleteSkillId": "test-34",
+                  "role": "counting"
+                },
+                {
+                  "id": "test-74",
+                  "athleteId": "test-24",
+                  "athleteSkillId": "test-37",
+                  "role": "counting"
+                },
+                {
+                  "id": "test-75",
+                  "athleteId": "test-25",
+                  "athleteSkillId": "test-40",
+                  "role": "counting"
+                },
+                {
+                  "id": "test-76",
+                  "athleteId": "test-26",
+                  "athleteSkillId": "test-43",
+                  "role": "counting"
+                },
+                {
+                  "id": "test-77",
+                  "athleteId": "test-27",
+                  "athleteSkillId": "test-46",
+                  "role": "counting"
+                }
+              ],
+              "reserves": []
+            },
+            {
+              "id": "test-10",
+              "entries": [
+                {
+                  "id": "test-78",
+                  "athleteId": "test-22",
+                  "athleteSkillId": "test-31",
+                  "role": "counting"
+                },
+                {
+                  "id": "test-79",
+                  "athleteId": "test-23",
+                  "athleteSkillId": "test-34",
+                  "role": "counting"
+                },
+                {
+                  "id": "test-80",
+                  "athleteId": "test-24",
+                  "athleteSkillId": "test-37",
+                  "role": "counting"
+                },
+                {
+                  "id": "test-81",
+                  "athleteId": "test-25",
+                  "athleteSkillId": "test-40",
+                  "role": "counting"
+                },
+                {
+                  "id": "test-82",
+                  "athleteId": "test-26",
+                  "athleteSkillId": "test-43",
+                  "role": "counting"
+                },
+                {
+                  "id": "test-83",
+                  "athleteId": "test-27",
+                  "athleteSkillId": "test-46",
+                  "role": "counting"
+                }
+              ],
+              "reserves": []
+            },
+            {
+              "id": "test-11",
+              "entries": [
+                {
+                  "id": "test-84",
+                  "athleteId": "test-22",
+                  "athleteSkillId": "test-31",
+                  "role": "counting"
+                },
+                {
+                  "id": "test-85",
+                  "athleteId": "test-23",
+                  "athleteSkillId": "test-34",
+                  "role": "counting"
+                },
+                {
+                  "id": "test-86",
+                  "athleteId": "test-24",
+                  "athleteSkillId": "test-37",
+                  "role": "counting"
+                },
+                {
+                  "id": "test-87",
+                  "athleteId": "test-25",
+                  "athleteSkillId": "test-40",
+                  "role": "counting"
+                },
+                {
+                  "id": "test-88",
+                  "athleteId": "test-26",
+                  "athleteSkillId": "test-43",
+                  "role": "counting"
+                },
+                {
+                  "id": "test-89",
+                  "athleteId": "test-27",
+                  "athleteSkillId": "test-46",
+                  "role": "counting"
+                }
+              ],
+              "reserves": []
+            }
+          ]
+        },
+        {
+          "id": "test-354",
+          "name": "Sikker",
+          "rounds": [
+            {
+              "id": "test-355",
+              "entries": [],
+              "reserves": []
+            },
+            {
+              "id": "test-356",
+              "entries": [],
+              "reserves": []
+            },
+            {
+              "id": "test-357",
+              "entries": [],
+              "reserves": []
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "test-13",
+      "teamId": "test-12",
+      "bindingFingerprint": "{\"ageGroup\":\"test\",\"packageVersion\":\"2.0.0\",\"rulesetId\":\"test-only\",\"teamType\":\"test\"}",
+      "tumbling": [
+        {
+          "id": "test-14",
+          "name": "Plan A",
+          "rounds": [
+            {
+              "id": "test-15",
+              "entries": [],
+              "reserves": []
+            },
+            {
+              "id": "test-16",
+              "entries": [],
+              "reserves": []
+            },
+            {
+              "id": "test-17",
+              "entries": [],
+              "reserves": []
+            }
+          ]
+        }
+      ],
+      "trampet": [
+        {
+          "id": "test-18",
+          "name": "Plan A",
+          "rounds": [
+            {
+              "id": "test-19",
+              "entries": [],
+              "reserves": []
+            },
+            {
+              "id": "test-20",
+              "entries": [],
+              "reserves": []
+            },
+            {
+              "id": "test-21",
+              "entries": [],
+              "reserves": []
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "schemaVersion": 3,
+  "athleteSkills": [
+    {
+      "id": "test-30",
+      "athleteId": "test-22",
+      "skillId": "skill-tumbling",
+      "archived": false,
+      "stability": 1,
+      "assessedAt": "2026-10-25",
+      "updatedAt": "2026-10-25T12:00:00.000Z",
+      "note": "Kun syntetiske testdata.",
+      "connectionConfirmation": null,
+      "reviewRequiredFor": [],
+      "assessmentOrigin": {
+        "kind": "own"
+      }
+    },
+    {
+      "id": "test-31",
+      "athleteId": "test-22",
+      "skillId": "skill-trampet",
+      "archived": false,
+      "stability": 1,
+      "assessedAt": "2026-10-25",
+      "updatedAt": "2026-10-25T12:00:00.000Z",
+      "note": "Kun syntetiske testdata.",
+      "connectionConfirmation": null,
+      "reviewRequiredFor": [],
+      "assessmentOrigin": {
+        "kind": "own"
+      }
+    },
+    {
+      "id": "test-32",
+      "athleteId": "test-22",
+      "skillId": "skill-rhythm",
+      "archived": false,
+      "stability": 1,
+      "assessedAt": "2026-10-25",
+      "updatedAt": "2026-10-25T12:00:00.000Z",
+      "note": "Kun syntetiske testdata.",
+      "connectionConfirmation": null,
+      "reviewRequiredFor": [],
+      "assessmentOrigin": {
+        "kind": "own"
+      }
+    },
+    {
+      "id": "test-33",
+      "athleteId": "test-23",
+      "skillId": "skill-tumbling",
+      "archived": false,
+      "stability": 5,
+      "assessedAt": "2026-10-25",
+      "updatedAt": "2026-10-25T12:00:00.000Z",
+      "note": "Kun syntetiske testdata.",
+      "connectionConfirmation": null,
+      "reviewRequiredFor": [],
+      "assessmentOrigin": {
+        "kind": "own"
+      }
+    },
+    {
+      "id": "test-34",
+      "athleteId": "test-23",
+      "skillId": "skill-trampet",
+      "archived": false,
+      "stability": 5,
+      "assessedAt": "2026-10-25",
+      "updatedAt": "2026-10-25T12:00:00.000Z",
+      "note": "Kun syntetiske testdata.",
+      "connectionConfirmation": null,
+      "reviewRequiredFor": [],
+      "assessmentOrigin": {
+        "kind": "own"
+      }
+    },
+    {
+      "id": "test-35",
+      "athleteId": "test-23",
+      "skillId": "skill-rhythm",
+      "archived": false,
+      "stability": 5,
+      "assessedAt": "2026-10-25",
+      "updatedAt": "2026-10-25T12:00:00.000Z",
+      "note": "Kun syntetiske testdata.",
+      "connectionConfirmation": null,
+      "reviewRequiredFor": [],
+      "assessmentOrigin": {
+        "kind": "own"
+      }
+    },
+    {
+      "id": "test-36",
+      "athleteId": "test-24",
+      "skillId": "skill-tumbling",
+      "archived": false,
+      "stability": 5,
+      "assessedAt": "2026-10-25",
+      "updatedAt": "2026-10-25T12:00:00.000Z",
+      "note": "Kun syntetiske testdata.",
+      "connectionConfirmation": null,
+      "reviewRequiredFor": [],
+      "assessmentOrigin": {
+        "kind": "own"
+      }
+    },
+    {
+      "id": "test-37",
+      "athleteId": "test-24",
+      "skillId": "skill-trampet",
+      "archived": false,
+      "stability": 5,
+      "assessedAt": "2026-10-25",
+      "updatedAt": "2026-10-25T12:00:00.000Z",
+      "note": "Kun syntetiske testdata.",
+      "connectionConfirmation": null,
+      "reviewRequiredFor": [],
+      "assessmentOrigin": {
+        "kind": "own"
+      }
+    },
+    {
+      "id": "test-38",
+      "athleteId": "test-24",
+      "skillId": "skill-rhythm",
+      "archived": false,
+      "stability": 5,
+      "assessedAt": "2026-10-25",
+      "updatedAt": "2026-10-25T12:00:00.000Z",
+      "note": "Kun syntetiske testdata.",
+      "connectionConfirmation": null,
+      "reviewRequiredFor": [],
+      "assessmentOrigin": {
+        "kind": "own"
+      }
+    },
+    {
+      "id": "test-39",
+      "athleteId": "test-25",
+      "skillId": "skill-tumbling",
+      "archived": false,
+      "stability": 5,
+      "assessedAt": "2026-10-25",
+      "updatedAt": "2026-10-25T12:00:00.000Z",
+      "note": "Kun syntetiske testdata.",
+      "connectionConfirmation": null,
+      "reviewRequiredFor": [],
+      "assessmentOrigin": {
+        "kind": "own"
+      }
+    },
+    {
+      "id": "test-40",
+      "athleteId": "test-25",
+      "skillId": "skill-trampet",
+      "archived": false,
+      "stability": 5,
+      "assessedAt": "2026-10-25",
+      "updatedAt": "2026-10-25T12:00:00.000Z",
+      "note": "Kun syntetiske testdata.",
+      "connectionConfirmation": null,
+      "reviewRequiredFor": [],
+      "assessmentOrigin": {
+        "kind": "own"
+      }
+    },
+    {
+      "id": "test-41",
+      "athleteId": "test-25",
+      "skillId": "skill-rhythm",
+      "archived": false,
+      "stability": 5,
+      "assessedAt": "2026-10-25",
+      "updatedAt": "2026-10-25T12:00:00.000Z",
+      "note": "Kun syntetiske testdata.",
+      "connectionConfirmation": null,
+      "reviewRequiredFor": [],
+      "assessmentOrigin": {
+        "kind": "own"
+      }
+    },
+    {
+      "id": "test-42",
+      "athleteId": "test-26",
+      "skillId": "skill-tumbling",
+      "archived": false,
+      "stability": 5,
+      "assessedAt": "2026-10-25",
+      "updatedAt": "2026-10-25T12:00:00.000Z",
+      "note": "Kun syntetiske testdata.",
+      "connectionConfirmation": null,
+      "reviewRequiredFor": [],
+      "assessmentOrigin": {
+        "kind": "own"
+      }
+    },
+    {
+      "id": "test-43",
+      "athleteId": "test-26",
+      "skillId": "skill-trampet",
+      "archived": false,
+      "stability": 5,
+      "assessedAt": "2026-10-25",
+      "updatedAt": "2026-10-25T12:00:00.000Z",
+      "note": "Kun syntetiske testdata.",
+      "connectionConfirmation": null,
+      "reviewRequiredFor": [],
+      "assessmentOrigin": {
+        "kind": "own"
+      }
+    },
+    {
+      "id": "test-44",
+      "athleteId": "test-26",
+      "skillId": "skill-rhythm",
+      "archived": false,
+      "stability": 5,
+      "assessedAt": "2026-10-25",
+      "updatedAt": "2026-10-25T12:00:00.000Z",
+      "note": "Kun syntetiske testdata.",
+      "connectionConfirmation": null,
+      "reviewRequiredFor": [],
+      "assessmentOrigin": {
+        "kind": "own"
+      }
+    },
+    {
+      "id": "test-45",
+      "athleteId": "test-27",
+      "skillId": "skill-tumbling",
+      "archived": false,
+      "stability": 5,
+      "assessedAt": "2026-10-25",
+      "updatedAt": "2026-10-25T12:00:00.000Z",
+      "note": "Kun syntetiske testdata.",
+      "connectionConfirmation": null,
+      "reviewRequiredFor": [],
+      "assessmentOrigin": {
+        "kind": "own"
+      }
+    },
+    {
+      "id": "test-46",
+      "athleteId": "test-27",
+      "skillId": "skill-trampet",
+      "archived": false,
+      "stability": 5,
+      "assessedAt": "2026-10-25",
+      "updatedAt": "2026-10-25T12:00:00.000Z",
+      "note": "Kun syntetiske testdata.",
+      "connectionConfirmation": null,
+      "reviewRequiredFor": [],
+      "assessmentOrigin": {
+        "kind": "own"
+      }
+    },
+    {
+      "id": "test-47",
+      "athleteId": "test-27",
+      "skillId": "skill-rhythm",
+      "archived": false,
+      "stability": 5,
+      "assessedAt": "2026-10-25",
+      "updatedAt": "2026-10-25T12:00:00.000Z",
+      "note": "Kun syntetiske testdata.",
+      "connectionConfirmation": null,
+      "reviewRequiredFor": [],
+      "assessmentOrigin": {
+        "kind": "own"
+      }
+    },
+    {
+      "id": "test-48",
+      "athleteId": "test-28",
+      "skillId": "skill-tumbling",
+      "archived": false,
+      "stability": 5,
+      "assessedAt": "2026-10-25",
+      "updatedAt": "2026-10-25T12:00:00.000Z",
+      "note": "Kun syntetiske testdata.",
+      "connectionConfirmation": null,
+      "reviewRequiredFor": [],
+      "assessmentOrigin": {
+        "kind": "own"
+      }
+    },
+    {
+      "id": "test-49",
+      "athleteId": "test-28",
+      "skillId": "skill-trampet",
+      "archived": false,
+      "stability": 5,
+      "assessedAt": "2026-10-25",
+      "updatedAt": "2026-10-25T12:00:00.000Z",
+      "note": "Kun syntetiske testdata.",
+      "connectionConfirmation": null,
+      "reviewRequiredFor": [],
+      "assessmentOrigin": {
+        "kind": "own"
+      }
+    },
+    {
+      "id": "test-50",
+      "athleteId": "test-28",
+      "skillId": "skill-rhythm",
+      "archived": false,
+      "stability": 5,
+      "assessedAt": "2026-10-25",
+      "updatedAt": "2026-10-25T12:00:00.000Z",
+      "note": "Kun syntetiske testdata.",
+      "connectionConfirmation": null,
+      "reviewRequiredFor": [],
+      "assessmentOrigin": {
+        "kind": "own"
+      }
+    },
+    {
+      "id": "test-51",
+      "athleteId": "test-29",
+      "skillId": "skill-tumbling",
+      "archived": false,
+      "stability": 5,
+      "assessedAt": "2026-10-25",
+      "updatedAt": "2026-10-25T12:00:00.000Z",
+      "note": "Kun syntetiske testdata.",
+      "connectionConfirmation": null,
+      "reviewRequiredFor": [],
+      "assessmentOrigin": {
+        "kind": "own"
+      }
+    },
+    {
+      "id": "test-52",
+      "athleteId": "test-29",
+      "skillId": "skill-trampet",
+      "archived": false,
+      "stability": 5,
+      "assessedAt": "2026-10-25",
+      "updatedAt": "2026-10-25T12:00:00.000Z",
+      "note": "Kun syntetiske testdata.",
+      "connectionConfirmation": null,
+      "reviewRequiredFor": [],
+      "assessmentOrigin": {
+        "kind": "own"
+      }
+    },
+    {
+      "id": "test-53",
+      "athleteId": "test-29",
+      "skillId": "skill-rhythm",
+      "archived": false,
+      "stability": 5,
+      "assessedAt": "2026-10-25",
+      "updatedAt": "2026-10-25T12:00:00.000Z",
+      "note": "Kun syntetiske testdata.",
+      "connectionConfirmation": null,
+      "reviewRequiredFor": [],
+      "assessmentOrigin": {
+        "kind": "own"
+      }
+    }
+  ],
+  "inheritanceRelations": [],
+  "inheritanceExclusions": []
+}

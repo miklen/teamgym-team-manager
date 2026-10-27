@@ -29,7 +29,7 @@ Gem eller eksportér en eventuel kladde, før du genindlæser en ny testudgave. 
 3. Vælg rondat–flik–helskrue med sikkerhed 3. Ændr parenten til 5 med en ny dato. Børn med arv skal følge med; et barn med egen 2 eller egen Ikke vurderet skal beholde valget. Følg igen skal genoptage arv. Fjern en kilde og kontrollér beskeden om afhængige børn.
 4. Søg `strakt rondat`. Strakt–rondat og Strakt–rondat–flik skal ligge først. Vælg Strakt–rondat–flik–helskrue med sikkerhed 3: Rondat–flik–helskrue og dens fundament skal medtages én gang hver. Skift til 5, prøv fravalg og egen vurdering. Prøv **Søg i alle spring**, hvis andre filtre afgrænser resultatet.
 5. Gennemgå gymnastens familier på computer og mobil. Søg efter en færdighed i en lukket familie, og redigér vurderingen. Prøv minimum-D 0,80 i vælgeren; valgte spring og fundamenter under grænsen skal fortsat stå i samme liste, uden en ekstra katalogrække. Uden søgetekst står valgene øverst; med søgetekst står de bedste match først.
-6. Åbn en separat syntetisk format 1-testfil, eksportér originalen, og prøv Annuller. Åbn igen, og opgradér lokalt. Drive-originalen må først skifte til format 2 ved Gem på Drive; ældre apps kan derefter ikke åbne filen.
+6. Åbn en separat syntetisk format 1-testfil, eksportér originalen, og prøv Annuller. Åbn igen, og opgradér lokalt. Drive-originalen må først skifte til format 3 ved Gem på Drive; ældre apps kan derefter ikke åbne filen.
 7. Sæt én gymnast med rondat–flik–helskrue og sikkerhed 5 på første omgang. D-tallet 0,800 skal stå uden teksten Egen D, sammen med fem udfyldte sikkerhedsstreger og 5/5, mens bidrag og omgangssum fortsat er ufuldstændige. Åbn **Spring**, og sammenlign navn, D og sikkerhed på separate pladser i listen. Prøv søgning, piletaster/Enter, Escape, **Vælg senere** og skift af gymnast, på computer og mobil.
 8. Gem testfilen og genåbn. Arv, egen vurdering og fravalg skal være bevaret.
 
@@ -38,3 +38,17 @@ Gem eller eksportér en eventuel kladde, før du genindlæser en ny testudgave. 
 De automatiske Playwright-prøver bruger fortsat `dist/` og port 4173 med syntetisk Google/Drive. Det separate lokale build undgår, at disse prøver erstatter brugerens manuelle testudgave.
 
 Efter godkendt lokal test og et udtrykkeligt klarsignal kan agenten committe og pushe. GitHub Actions kontrollerer og publicerer derefter som hidtil. Hvis brugeren finder en fejl, rettes den lokalt og afprøves igen inden push. Kravet gælder hver gang og er skrevet i projektets `AGENTS.md`, så det også følges i senere sessioner.
+
+## Afprøvning: scenarier og reserver
+
+Gem eller eksportér en eksisterende kladde før genindlæsning af denne udgave. Brug et særskilt syntetisk arbejdsrum, eksempelvis [testfilen med 12 banescenarier og reserver](../examples/scenarier-og-reserver-v3.json), som kan uploades til en separat testmappe på Drive og åbnes fra appen. Eksisterende fælles trænerfiler må ikke bruges til skriveprøver.
+
+1. Åbn Springplan. Skift mellem Plan A, Plan B, bane og trampet Sikker samt mellem sider og hold. Valgene huskes i den åbne app, uden at et rent planskift gør filen ugemt. Efter genindlæsning vises første scenarie.
+2. Opret et tomt scenarie, duplikér Plan A, omdøb og slet kopien. Prøv et eksisterende navn, Escape/Annuller, et langt navn og Alle scenarier med søgning. Kontrollér, at de andre planer er uændrede.
+3. Redigér en plads og vælg Vis scenarie. Afprøv Opdater, Kassér og Bliv. Opdater skal ændre den lokale kladde uden Drive-upload; fejl skal blive i formularen.
+4. Tilføj en reserve med og uden spring. Flyt prioritet op/ned med knapper eller tastatur, og fjern en reserve igen. Reservelisten må ikke ændre de udførendes D, C eller sikkerhed. Kontrollér navn/kendetegn, D og fem sikkerhedstrin på mobil og computer.
+5. Åbn Sæt ind. Vælg en tællende eller ekstra gymnast, læs før/efter, prøv Annuller og bekræft derefter. Rolle og position skal bevares. Kun den indsatte reserve fjernes fra listen; den udgående gymnast bliver ikke automatisk reserve.
+6. Redigér to planer, stå på en anden plan og gem testfilen. Genåbn den, og kontrollér alle planer og reserveprioriteter. Prøv også en separat gammel format 1- eller 2-testfil: eksportér originalen, annullér, og opgradér derefter lokalt før en bevidst gemning.
+7. Prøv tastatur, 200 % zoom og smal skærm. Nyt, menu, Alle scenarier og dialogernes primære handling/Annuller skal være tilgængelige uden afklipning.
+
+Denne lokale udgave blev godkendt af brugeren 27. oktober 2026 med klarsignal til sync, arkivering og lokalt commit. Push og publicering er ikke bestilt. Testserveren bliver stående med den godkendte udgave.

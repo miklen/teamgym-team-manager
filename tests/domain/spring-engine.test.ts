@@ -27,9 +27,9 @@ function setup() {
       return { id: environment.id(), athleteId: athlete.id, athleteSkillId: registration.athleteSkillId, role: 'counting' as const };
     });
     const plan = workspace.plans[0]!;
-    workspace = setRoundEntries(workspace, plan.id, discipline, plan[discipline][roundIndex]!.id, entries, profile, environment);
+    workspace = setRoundEntries(workspace, plan.id, discipline, plan[discipline][0]!.id, plan[discipline][0]!.rounds[roundIndex]!.id, entries, profile, environment);
   }
-  function analyze(discipline: 'tumbling' | 'trampet', candidate: Workspace = workspace) { return evaluateDiscipline(candidate, candidate.teams[0]!.id, discipline, profile); }
+  function analyze(discipline: 'tumbling' | 'trampet', candidate: Workspace = workspace) { return evaluateDiscipline(candidate, candidate.teams[0]!.id, discipline, candidate.plans[0]![discipline][0]!.id, profile); }
   return { get workspace() { return workspace; }, environment, fill, analyze };
 }
 

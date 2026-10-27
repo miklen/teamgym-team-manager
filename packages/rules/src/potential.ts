@@ -24,8 +24,9 @@ export interface PlannedChange {
   roundId: string; athleteId: string; athleteName: string; beforeRegistrationId: string | null; afterRegistrationId: string | null;
 }
 export interface PotentialPreview {
-  teamId: string; discipline: SpringDiscipline; basisPayload: string; bindingFingerprint: string;
+  teamId: string; discipline: SpringDiscipline; scenarioId: string; basisPayload: string; bindingFingerprint: string;
   workspace: Workspace; before: DisciplineEvaluation; after: DisciplineEvaluation; changes: readonly PlannedChange[];
+  reserveChanges: readonly { roundId: string; reserveId: string; athleteId: string }[];
 }
 export interface BonusPotential {
   id: string; label: string; selected: Fraction | null; selectedKnownSubtotal: Fraction;
@@ -62,12 +63,14 @@ function witnessEntries(candidates: readonly PotentialCandidate[], current: read
     }));
 }
 
-export async function searchBonusPotentials(workspace: Workspace, teamId: string, discipline: SpringDiscipline, kernel: PotentialKernel, options: PotentialOptions = {}): Promise<BonusPotential[]> {
+export async function searchBonusPotentials(workspace: Workspace, teamId: string, discipline: SpringDiscipline, scenarioId: string, kernel: PotentialKernel, options: PotentialOptions = {}): Promise<BonusPotential[]> {
   const budget = options.candidateBudget ?? 20000;
   if (!Number.isInteger(budget) || budget < 1) throw new Error('Søgebudgettet skal være et positivt heltal.');
   const team = workspace.teams.find((item) => item.id === teamId);
   const plan = workspace.plans.find((item) => item.teamId === teamId);
   if (!team || !plan || team.archived) return [];
+  const scenario = plan[discipline].find((item) => item.id === scenarioId);
+  if (!scenario) throw new Error('Scenariet findes ikke i holdets disciplin.');
   const athletes = new Map(workspace.athletes.filter((item) => item.teamId === teamId && !item.archived).map((item) => [item.id, item]));
   const candidates: PotentialCandidate[] = [];
   const definitions = new Map(workspace.skills.map((item) => [item.id, item]));
@@ -114,13 +117,15 @@ export async function searchBonusPotentials(workspace: Workspace, teamId: string
     for (const roundIndex of [1, 2]) {
       const copy = structuredClone(workspace);
       const copyPlan = copy.plans.find((item) => item.id === plan.id)!;
-      if (!firstIsIdentical) copyPlan[discipline][0].entries = witnessEntries(uniform!, copyPlan[discipline][0].entries, copyPlan[discipline][0].id);
+      const copyScenario = copyPlan[discipline].find((item) => item.id === scenarioId)!;
+      if (!firstIsIdentical) copyScenario.rounds[0].entries = witnessEntries(uniform!, copyScenario.rounds[0].entries, copyScenario.rounds[0].id);
       for (const index of [1, 2]) {
         if (index === roundIndex || !before.rounds[index]?.compositionReady) {
-          const round = copyPlan[discipline][index]!;
+          const round = copyScenario.rounds[index]!;
           round.entries = witnessEntries(optimal, round.entries, round.id);
         }
       }
+      for (const round of copyScenario.rounds) round.reserves = round.reserves.filter((reserve) => !round.entries.some((entry) => entry.athleteId === reserve.athleteId));
       copyPlan.bindingFingerprint = fingerprint;
       validateWorkspace(copy);
       const after = kernel.analyze(copy);
@@ -129,8 +134,8 @@ export async function searchBonusPotentials(workspace: Workspace, teamId: string
       const amount = result?.value ?? result?.alternatives.literal ?? null;
       if (amount === null) continue;
       const changes: PlannedChange[] = [];
-      for (const [index, round] of copyPlan[discipline].entries()) {
-        const previous = plan[discipline][index]!;
+      for (const [index, round] of copyScenario.rounds.entries()) {
+        const previous = scenario.rounds[index]!;
         const affected = new Set([...previous.entries, ...round.entries].map((entry) => entry.athleteId));
         for (const athleteId of affected) {
           const oldEntry = previous.entries.find((entry) => entry.athleteId === athleteId);
@@ -140,7 +145,8 @@ export async function searchBonusPotentials(workspace: Workspace, teamId: string
           });
         }
       }
-      const preview = { teamId, discipline, basisPayload, bindingFingerprint: fingerprint, workspace: copy, before, after, changes };
+      const reserveChanges = scenario.rounds.flatMap((round, index) => round.reserves.filter((reserve) => !copyScenario.rounds[index]!.reserves.some((item) => item.id === reserve.id)).map((reserve) => ({ roundId: round.id, reserveId: reserve.id, athleteId: reserve.athleteId })));
+      const preview = { teamId, discipline, scenarioId, basisPayload, bindingFingerprint: fingerprint, workspace: copy, before, after, changes, reserveChanges };
       if (best === null || amount.compare(best) > 0 || amount.compare(best) === 0 && changes.length < chosen!.changes.length) { chosen = preview; best = amount; }
     }
     return { ...base, status: bonus.unresolvedIssue ? 'unresolved' : chosen ? truncated ? 'lower-bound' : 'proven' : base.status,
@@ -158,8 +164,8 @@ export function applyPotentialPreview(workspace: Workspace, preview: PotentialPr
 
 export class PotentialCache {
   private readonly values = new Map<string, BonusPotential[]>();
-  key(workspace: Workspace, teamId: string, discipline: SpringDiscipline): string {
-    return canonicalJson({ teamId, discipline, payload: workspacePayload(workspace) });
+  key(workspace: Workspace, teamId: string, discipline: SpringDiscipline, scenarioId: string): string {
+    return canonicalJson({ teamId, discipline, scenarioId, payload: workspacePayload(workspace) });
   }
   get(key: string) { return this.values.get(key); }
   set(key: string, value: BonusPotential[]) {

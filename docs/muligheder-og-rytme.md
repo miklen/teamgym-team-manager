@@ -2,15 +2,19 @@
 
 ## Valgt værdi, dokumenteret mulighed og regelmaksimum
 
-Valgt værdi følger den aktuelle plan. En dokumenteret mulighed kræver aktive holdmedlemmer, deres registrerede komplette færdigheder, en kendt gyldig variant, seks forskellige tællende gymnaster og holdprofilens krav. En fuld vidneopstilling bevarer en korrekt første holdomgang eller finder en registreret identisk serie til den. Andre holds gymnaster, enkeltelementer uden registreret forbindelse, forbudte spring og ukendte værdier skaber ingen sikker mulighed.
+Valgt værdi følger det viste scenarie i den valgte disciplin. En dokumenteret mulighed kræver aktive holdmedlemmer, deres registrerede komplette færdigheder, en kendt gyldig variant, seks forskellige tællende gymnaster og holdprofilens krav. En fuld vidneopstilling bevarer en korrekt første holdomgang eller finder en registreret identisk serie til den. Andre holds gymnaster, enkeltelementer uden registreret forbindelse, forbudte spring og ukendte værdier skaber ingen sikker mulighed.
 
 Regelmaksimum er separat. At reglerne tillader 0,60 betyder ikke, at det aktuelle hold kan opnå det. Færre end seks sikre kandidater kan derfor give ingen fuld dokumenteret opstilling, mens regelmaksimum stadig vises. Stabilitet 1 er en registreret mulighed og skal fremhæves frem for at blive filtreret bort.
 
 Hvert tillæg får sit eget vidne og sin egen før/efter-analyse med konkrete gymnast-/færdighedsændringer, D, C-forhold og stabilitet. En forbedring i ét tillæg kan give nyt gentagelses- eller redskabsfradrag. To individuelle muligheder må ikke summeres til en sikker samlet forbedring uden en fælles gennemførlig opstilling. Produktet lover ikke global optimal udtagelse eller maksimal samlet C+D+E.
 
-Forhåndsvisning anvender ikke ændringer. Anvendelse er en eksplicit handling og afvises, hvis arbejdsdata eller binding er ændret siden beregningen. En afbrudt eller budgetbegrænset søgning mærkes som dokumenteret undergrænse, ikke bevist maksimum. Cache-nøglen omfatter hold, disciplin, binding og relevante arbejdsdata; dataændring kræver en ny beregning.
+Forhåndsvisning anvender ikke ændringer. Anvendelse er en eksplicit handling og afvises, hvis arbejdsdata eller binding er ændret siden beregningen. En afbrudt eller budgetbegrænset søgning mærkes som dokumenteret undergrænse, ikke bevist maksimum. Cache- og workerbeskeder omfatter arbejdsrum, hold, disciplin, scenarie og arbejdsrumsbasis inklusive binding; dataændring kræver en ny beregning.
 
 Q01's elementtillæg har ingen enkelt sikker mulighedsværdi eller opdigtet regelmaksimum. De to fortolkningsspor vises på vidnet, og den uafklarede status bevares.
+
+Forslaget navngiver målscenariet og ændrer kun dette scenaries udførende opstillinger. Andre scenarier og fælles vurderinger bevares. Hvis en af omgangens reserver bliver udførende, vises fjernelsen fra netop den reserveliste i forhåndsvisningen. Den udgående gymnast bliver ikke automatisk reserve. Reserver bidrager først til beregningen, når de bliver udførende.
+
+Skifter du scenarie under søgningen, vises den nye plans ventetilstand. Sene svar fra den gamle plan kan ikke vises eller anvendes som den nye plans forslag. Browserprøven `scenario-integrity` sender bevidst Plan A's svar efter Plan B's og kontrollerer denne isolation.
 
 ## Rytmefællesnævnere
 

@@ -1,0 +1,115 @@
+{
+  "format": "teamgym-team-manager",
+  "schemaVersion": 3,
+  "workspaceId": "example-workspace",
+  "revision": 0,
+  "updatedAt": "2026-10-25T12:00:00.000Z",
+  "recentOperations": [],
+  "teams": [
+    {
+      "id": "example-team",
+      "name": "Syntetisk juniorhold",
+      "archived": false,
+      "rulesetBinding": {
+        "rulesetId": "dk",
+        "packageVersion": "1.0.0",
+        "ageGroup": "junior",
+        "teamType": "girls"
+      }
+    }
+  ],
+  "athletes": [
+    {
+      "id": "example-athlete",
+      "name": "Syntetisk gymnast",
+      "discriminator": "Eksempel",
+      "teamId": "example-team",
+      "archived": false,
+      "mixCategory": null
+    }
+  ],
+  "skills": [
+    {
+      "id": "example-skill",
+      "name": "Hovedstand",
+      "archived": false,
+      "discipline": "rhythm",
+      "momentId": "rh-hb-headstand",
+      "variant": {
+        "legs": "together"
+      }
+    }
+  ],
+  "athleteSkills": [
+    {
+      "id": "example-registration",
+      "athleteId": "example-athlete",
+      "skillId": "example-skill",
+      "archived": false,
+      "stability": null,
+      "assessedAt": null,
+      "updatedAt": "2026-10-25T12:00:00.000Z",
+      "note": "Registreret, men endnu ikke vurderet.",
+      "connectionConfirmation": null,
+      "reviewRequiredFor": [],
+      "assessmentOrigin": {
+        "kind": "own"
+      }
+    }
+  ],
+  "plans": [
+    {
+      "id": "example-plan",
+      "teamId": "example-team",
+      "bindingFingerprint": "{\"ageGroup\":\"junior\",\"packageVersion\":\"1.0.0\",\"rulesetId\":\"dk\",\"teamType\":\"girls\"}",
+      "tumbling": [
+        {
+          "id": "example-plan-scenario-tumbling",
+          "name": "Plan A",
+          "rounds": [
+            {
+              "id": "example-bane-1",
+              "entries": [],
+              "reserves": []
+            },
+            {
+              "id": "example-bane-2",
+              "entries": [],
+              "reserves": []
+            },
+            {
+              "id": "example-bane-3",
+              "entries": [],
+              "reserves": []
+            }
+          ]
+        }
+      ],
+      "trampet": [
+        {
+          "id": "example-plan-scenario-trampet",
+          "name": "Plan A",
+          "rounds": [
+            {
+              "id": "example-trampet-1",
+              "entries": [],
+              "reserves": []
+            },
+            {
+              "id": "example-trampet-2",
+              "entries": [],
+              "reserves": []
+            },
+            {
+              "id": "example-trampet-3",
+              "entries": [],
+              "reserves": []
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "inheritanceRelations": [],
+  "inheritanceExclusions": []
+}

@@ -10,15 +10,15 @@ describe('fælles fil og seks vedvarende omgange', () => {
     expect(reopened).toEqual(workspace);
     expect(reopened.teams[0]?.rulesetBinding).toEqual(binding);
     expect(reopened.teams[1]?.rulesetBinding.rulesetId).toBe('test-only');
-    expect(reopened.plans[0]?.tumbling.map((round) => round.entries.length)).toEqual([6, 6, 6]);
-    expect(reopened.plans[0]?.trampet.map((round) => round.entries.length)).toEqual([6, 6, 6]);
+    expect(reopened.plans[0]?.tumbling[0]!.rounds.map((round) => round.entries.length)).toEqual([6, 6, 6]);
+    expect(reopened.plans[0]?.trampet[0]!.rounds.map((round) => round.entries.length)).toEqual([6, 6, 6]);
     expect(reopened.athleteSkills).toHaveLength(24);
     expect(reopened.athleteSkills[0]?.note).toBe('Kun syntetiske testdata.');
   });
 
   it('tillader tomme holdplaner og en gymnast med manglende springvalg som kladde', () => {
     const { workspace } = syntheticWorkspace();
-    workspace.plans[0]!.tumbling[0].entries = [{ ...workspace.plans[0]!.tumbling[0].entries[0]!, athleteSkillId: null }];
+    workspace.plans[0]!.tumbling[0]!.rounds[0].entries = [{ ...workspace.plans[0]!.tumbling[0]!.rounds[0].entries[0]!, athleteSkillId: null }];
     expect(parseWorkspace(serializeWorkspace(workspace))).toEqual(workspace);
     expect(diagnoseWorkspace(workspace)).toContainEqual(expect.objectContaining({ code: 'skill-missing', status: 'incomplete' }));
   });
@@ -29,7 +29,7 @@ describe('fælles fil og seks vedvarende omgange', () => {
 
   it('afviser nyere og ældre ukendte skemaer og ændrer aldrig originalen', () => {
     const { workspace } = syntheticWorkspace();
-    for (const [version, code] of [[3, 'newer-schema'], [0, 'migration-required']] as const) {
+    for (const [version, code] of [[4, 'newer-schema'], [0, 'migration-required']] as const) {
       const original = JSON.stringify({ ...workspace, schemaVersion: version });
       try { parseWorkspace(original); throw new Error('Skulle afvises'); }
       catch (error) { expect(error).toBeInstanceOf(WorkspaceFormatError); expect((error as WorkspaceFormatError).code).toBe(code); }
@@ -56,10 +56,10 @@ describe('fælles fil og seks vedvarende omgange', () => {
   it('afviser færdighed fra en anden gymnast eller forkert disciplin i en omgang', () => {
     const { workspace, athleteB } = syntheticWorkspace();
     const wrongOwner = structuredClone(workspace);
-    wrongOwner.plans[0]!.tumbling[0].entries[0]!.athleteSkillId = workspace.athleteSkills.find((item) => item.athleteId === athleteB.id)!.id;
+    wrongOwner.plans[0]!.tumbling[0]!.rounds[0].entries[0]!.athleteSkillId = workspace.athleteSkills.find((item) => item.athleteId === athleteB.id)!.id;
     expect(() => validateWorkspace(wrongOwner)).toThrow('tilhører ikke');
     const wrongDiscipline = structuredClone(workspace);
-    wrongDiscipline.plans[0]!.tumbling[0].entries[0]!.athleteSkillId = workspace.athleteSkills.find((item) => item.athleteId === workspace.athletes[0]!.id && item.skillId === rhythmSkill.id)!.id;
+    wrongDiscipline.plans[0]!.tumbling[0]!.rounds[0].entries[0]!.athleteSkillId = workspace.athleteSkills.find((item) => item.athleteId === workspace.athletes[0]!.id && item.skillId === rhythmSkill.id)!.id;
     expect(() => validateWorkspace(wrongDiscipline)).toThrow('forkert disciplin');
   });
 
@@ -119,22 +119,22 @@ describe('identiteter, medlemskab og arkivering', () => {
   it('samme gymnast kan deltage på tværs af omgange, men ikke to gange i én', () => {
     const { workspace, environment } = syntheticWorkspace();
     const plan = workspace.plans[0]!;
-    const entries = plan.tumbling[0].entries;
-    expect(entries[0]?.athleteId).toBe(plan.tumbling[2].entries[0]?.athleteId);
-    expect(() => setRoundEntries(workspace, plan.id, 'tumbling', plan.tumbling[0].id, [entries[0]!, { ...entries[0]!, id: 'duplicate-entry' }], limits, environment)).toThrow('to gange');
+    const entries = plan.tumbling[0]!.rounds[0].entries;
+    expect(entries[0]?.athleteId).toBe(plan.tumbling[0]!.rounds[2].entries[0]?.athleteId);
+    expect(() => setRoundEntries(workspace, plan.id, 'tumbling', plan.tumbling[0]!.id, plan.tumbling[0]!.rounds[0].id, [entries[0]!, { ...entries[0]!, id: 'duplicate-entry' }], limits, environment)).toThrow('to gange');
   });
 
   it('flytter holdomgangen med hele dens indhold', () => {
     const { workspace, environment } = syntheticWorkspace();
     const plan = workspace.plans[0]!;
-    const moved = moveRoundFirst(workspace, plan.id, 'tumbling', plan.tumbling[2].id, environment);
-    expect(moved.plans[0]?.tumbling).toEqual([plan.tumbling[2], plan.tumbling[0], plan.tumbling[1]]);
+    const moved = moveRoundFirst(workspace, plan.id, 'tumbling', plan.tumbling[0]!.id, plan.tumbling[0]!.rounds[2].id, environment);
+    expect(moved.plans[0]?.tumbling[0]!.rounds).toEqual([plan.tumbling[0]!.rounds[2], plan.tumbling[0]!.rounds[0], plan.tumbling[0]!.rounds[1]]);
     expect(moved.plans[0]?.trampet).toEqual(plan.trampet);
   });
 
   it('ekstra ændrer ikke tællende stabilitet, og flyttede gymnaster giver ufuldstændighed', () => {
     const { workspace, teamA, teamB, athleteA, environment } = syntheticWorkspace();
-    const entries = workspace.plans[0]!.tumbling[0].entries;
+    const entries = workspace.plans[0]!.tumbling[0]!.rounds[0].entries;
     const extraAthlete = workspace.athletes[7]!;
     const extra: typeof entries[number] = { id: 'extra-entry', athleteId: extraAthlete.id, role: 'extra', athleteSkillId: workspace.athleteSkills.find((item) => item.athleteId === extraAthlete.id && item.skillId === tumblingSkill.id)!.id };
     expect(roundStability(workspace, [extra, ...entries], limits, teamA.id).counting).toEqual(roundStability(workspace, entries, limits, teamA.id).counting);
@@ -144,7 +144,7 @@ describe('identiteter, medlemskab og arkivering', () => {
 
   it('ændret vurdering slår igennem på en allerede valgt omgang', () => {
     const { workspace, teamA, environment } = syntheticWorkspace();
-    const entries = workspace.plans[0]!.tumbling[0].entries;
+    const entries = workspace.plans[0]!.tumbling[0]!.rounds[0].entries;
     const changed = updateAssessment(workspace, entries[0]!.athleteSkillId!, { stability: 4, assessedAt: '2026-10-25', note: 'Opdateret test' }, environment);
     expect(roundStability(workspace, entries, limits, teamA.id).counting.minimum).toBe(1);
     expect(roundStability(changed, entries, limits, teamA.id).counting.minimum).toBe(4);

@@ -166,6 +166,7 @@ test('migration er et bevidst valg med eksport af original, annullering og separ
   const workspace = repertoire(1);
   const legacy = JSON.parse(JSON.stringify(workspace)) as Record<string, unknown>;
   legacy.schemaVersion = 1;
+  legacy.plans = workspace.plans.map((plan) => ({ ...plan, ...Object.fromEntries((['tumbling', 'trampet'] as const).map((discipline) => [discipline, plan[discipline][0]!.rounds.map(({ reserves: _reserves, ...round }) => { void _reserves; return round; })])) }));
   delete legacy.inheritanceRelations;
   delete legacy.inheritanceExclusions;
   for (const registration of legacy.athleteSkills as Record<string, unknown>[])
@@ -185,7 +186,7 @@ test('migration er et bevidst valg med eksport af original, annullering og separ
   expect(source.workspace.schemaVersion).toBe(1);
   await page.getByRole('button', { name: /Lokale ændringer/ }).click();
   await expect(page.getByRole('button', { name: 'Gemt', exact: true })).toBeVisible();
-  expect(source.workspace.schemaVersion).toBe(2);
+  expect(source.workspace.schemaVersion).toBe(3);
   expect(source.workspace.athleteSkills[0]!.assessmentOrigin.kind).toBe('own');
   expect(source.failures).toEqual([]);
 });
@@ -211,7 +212,7 @@ test('en af seks: egen D og sikkerhed er synlig, mens omgangsbidraget er ufuldst
     workspace,
     plan.id,
     'tumbling',
-    plan.tumbling[0].id,
+    plan.tumbling[0]!.id, plan.tumbling[0]!.rounds[0].id,
     [
       {
         id: 'synthetic-entry',
@@ -313,7 +314,7 @@ test('arvet planplads følger parentens sikkerhed og dato, men beholder D; fjern
     validateWorkspace(workspace),
     plan.id,
     'tumbling',
-    plan.tumbling[0].id,
+    plan.tumbling[0]!.id, plan.tumbling[0]!.rounds[0].id,
     [
       {
         id: 'synthetic-child-slot',
@@ -372,8 +373,8 @@ test('kendt egen D 0,80 med bidrag 0,00 samt ekstra og ukendt egen D', async ({ 
     note: '',
   });
   const plan = workspace.plans[0]!;
-  plan.tumbling[0].entries[0]!.athleteSkillId = first.athleteSkillId;
-  plan.tumbling[0].entries.unshift({
+  plan.tumbling[0]!.rounds[0].entries[0]!.athleteSkillId = first.athleteSkillId;
+  plan.tumbling[0]!.rounds[0].entries.unshift({
     id: 'synthetic-extra-slot',
     athleteId: extra.id,
     athleteSkillId: extraSkill.athleteSkillId,
@@ -398,7 +399,7 @@ test('kendt egen D 0,80 med bidrag 0,00 samt ekstra og ukendt egen D', async ({ 
   };
   const added = registerAthleteSkill(workspace, athlete.id, unknown);
   workspace = added.workspace;
-  workspace.plans[0]!.tumbling[1].entries[0]!.athleteSkillId = added.athleteSkillId;
+  workspace.plans[0]!.tumbling[0]!.rounds[1].entries[0]!.athleteSkillId = added.athleteSkillId;
   const source = await openWorkspace(page, validateWorkspace(workspace));
   await expect(page.getByRole('heading', { name: 'Hold', exact: true })).toBeVisible();
   await page.getByRole('link', { name: 'Springplan', exact: true }).click();

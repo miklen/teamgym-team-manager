@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
-import { createTeam, createWorkspace, serializeWorkspace, skillIdentity, workspacePayload } from '@teamgym/domain';
+import { createTeam, createWorkspace, serializeWorkspace, skillIdentity, workspacePayload, renameScenario, setRoundReserves } from '@teamgym/domain';
 import { syntheticWorkspace } from '../fixtures/synthetic-workspace';
+import { scenarioWorkspace } from '../fixtures/scenario-workspace';
 import { registerSpringBatch, springFoundation, springLibrary } from '../../apps/web/src/spring-library';
 import { DK_V1 } from '@teamgym/rules';
 import { DriveClient, WorkspaceSession } from '@teamgym/drive';
@@ -112,13 +113,14 @@ function deferred() {
   return { promise, resolve };
 }
 
-describe('format 1 migration på den faktisk læste basis', () => {
+describe.each([1, 2])('format %i migration på den faktisk læste basis', (version) => {
   function legacy() {
     const source = server();
     const fixture = syntheticWorkspace();
     const { inheritanceRelations: _relations, inheritanceExclusions: _exclusions, ...rest } = fixture.workspace;
     void _relations; void _exclusions;
-    const original = JSON.stringify({ ...rest, schemaVersion: 1, athleteSkills: rest.athleteSkills.map(({ assessmentOrigin: _origin, ...item }) => { void _origin; return item; }) });
+    const legacyV1 = { ...rest, plans: rest.plans.map((plan) => ({ ...plan, tumbling: plan.tumbling[0]!.rounds.map(({ reserves: _reserves, ...round }) => { void _reserves; return round; }), trampet: plan.trampet[0]!.rounds.map(({ reserves: _reserves, ...round }) => { void _reserves; return round; }) })), schemaVersion: 1, athleteSkills: rest.athleteSkills.map(({ assessmentOrigin: _origin, ...item }) => { void _origin; return item; }) };
+    const original = JSON.stringify(version === 1 ? legacyV1 : { ...fixture.workspace, schemaVersion: 2, plans: legacyV1.plans });
     source.replaceBytes(original);
     return { source, original };
   }
@@ -134,13 +136,13 @@ describe('format 1 migration på den faktisk læste basis', () => {
     expect(session.exportOriginal()).toBe(original);
     session.cancelMigration(); expect(session.snapshot().draft).toBeNull();
     await session.open('file'); session.acceptMigration();
-    expect(session.snapshot().draft?.schemaVersion).toBe(2);
+    expect(session.snapshot().draft?.schemaVersion).toBe(3);
     expect(session.snapshot().loaded?.basis).toEqual(basis);
     expect(session.dirty()).toBe(true);
     expect(source.puts).toBe(0); expect(source.bytes).toBe(original);
     await session.save();
     expect(source.conditions).toEqual(['"2"']);
-    expect(JSON.parse(source.bytes).schemaVersion).toBe(2);
+    expect(JSON.parse(source.bytes).schemaVersion).toBe(3);
     expect(session.dirty()).toBe(false);
   });
   it('annulleret migration og afvist nyere/beskadiget fil bevarer en eksisterende kladde', async () => {
@@ -157,7 +159,7 @@ describe('format 1 migration på den faktisk læste basis', () => {
   it('migration med læseadgang kan eksporteres, men ikke overskrive originalen', async () => {
     const { source, original } = legacy(); source.setWritable(false);
     const session = new WorkspaceSession(source.client()); await session.open('file'); session.acceptMigration();
-    expect(JSON.parse(session.exportDraft()).schemaVersion).toBe(2);
+    expect(JSON.parse(session.exportDraft()).schemaVersion).toBe(3);
     await session.save(); expect(source.puts).toBe(0); expect(source.bytes).toBe(original);
   });
   it('konkurrerende gemning efter migration afviser den gamle basis', async () => {
@@ -363,5 +365,42 @@ describe('basis, snapshot, kladde og uklart svar', () => {
     await save;
     expect(session.snapshot().draft).toBeNull();
     expect(JSON.parse(source.bytes).teams).toHaveLength(1);
+  });
+});
+
+
+describe('samlet scenariesamling med reserver', () => {
+  async function scenarios() {
+    const source = server(); source.replaceBytes(serializeWorkspace(scenarioWorkspace()));
+    const session = new WorkspaceSession(source.client()); await session.open('file');
+    return { source, session };
+  }
+  it('gemmer, eksporterer og genåbner hele samlingen med prioriterede reserver', async () => {
+    const { source, session } = await scenarios(); const workspace = session.snapshot().draft!;
+    const plan = workspace.plans[0]!; const scenario = plan.tumbling[0]!; const round = scenario.rounds[0];
+    session.edit(setRoundReserves(workspace, plan.id, 'tumbling', scenario.id, round.id, [...round.reserves].reverse()));
+    const expected = session.snapshot().draft!;
+    expect(JSON.parse(session.exportDraft()).plans).toEqual(expected.plans);
+    await session.save(); const reopened = await source.client().read('file');
+    expect(reopened.workspace.plans).toEqual(expected.plans); expect(reopened.workspace.athleteSkills).toEqual(expected.athleteSkills);
+  });
+  it('bevarer nyere Plan B-redigering under upload af Plan A og genkender tabt svar', async () => {
+    const { source, session } = await scenarios(); const workspace = session.snapshot().draft!; const plan = workspace.plans[0]!;
+    session.edit(renameScenario(workspace, plan.id, 'tumbling', plan.tumbling[0]!.id, 'A ændret'));
+    const held = deferred(); const entered = deferred();
+    source.afterPut(async () => { entered.resolve(); await held.promise; });
+    const save = session.save(); await entered.promise;
+    session.edit(renameScenario(session.snapshot().draft!, plan.id, 'tumbling', plan.tumbling[1]!.id, 'B ændret'));
+    held.resolve(); await save;
+    expect(session.dirty()).toBe(true); expect(JSON.parse(source.bytes).plans[0].tumbling[1].name).toBe('Plan B');
+    source.drop(); await session.save(); expect(session.snapshot().state).toBe('error');
+    const count = source.puts; await session.save(); expect(source.puts).toBe(count);
+    expect(session.dirty()).toBe(false); expect((await source.client().read('file')).workspace.plans[0]!.tumbling.map((item) => item.name)).toEqual(['A ændret', 'B ændret']);
+  });
+  it('nyere fil giver konflikt uden tab af kladdens scenarier og reserver', async () => {
+    const { source, session } = await scenarios(); const workspace = session.snapshot().draft!; const plan = workspace.plans[0]!;
+    session.edit(renameScenario(workspace, plan.id, 'tumbling', plan.tumbling[1]!.id, 'B lokalt'));
+    const draft = session.exportDraft(); source.external(); const newer = source.bytes;
+    await session.save(); expect(session.snapshot().state).toBe('conflict'); expect(session.exportDraft()).toBe(draft); expect(source.bytes).toBe(newer);
   });
 });

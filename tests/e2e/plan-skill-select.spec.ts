@@ -101,7 +101,7 @@ for (const width of [1440, 390]) {
     await expect(row).toContainText('Vælg registreret færdighed');
     await page.getByRole('button', { name: /Lokale ændringer/ }).click();
     await expect(page.getByRole('button', { name: 'Gemt', exact: true })).toBeVisible();
-    expect(source.workspace.plans[0]!.tumbling[0].entries[0]!.athleteSkillId).toBeNull();
+    expect(source.workspace.plans[0]!.tumbling[0]!.rounds[0].entries[0]!.athleteSkillId).toBeNull();
     expect(source.failures).toEqual([]);
   });
 }
@@ -125,7 +125,7 @@ test('springvalget nulstilles ved skift af gymnast og bevarer kladden ved luknin
   await expect(trigger).toHaveAttribute('aria-expanded', 'false');
   await expect(trigger).toContainText('2/1');
   await page.getByRole('button', { name: 'Luk dialog', exact: true }).click();
-  expect(source.workspace.plans[0]!.tumbling[0].entries).toHaveLength(0);
+  expect(source.workspace.plans[0]!.tumbling[0]!.rounds[0].entries).toHaveLength(0);
   expect(source.failures).toEqual([]);
 });
 

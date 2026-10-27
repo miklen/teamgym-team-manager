@@ -1,0 +1,313 @@
+.scenario-bar {
+  min-width: 0;
+  margin: 0.25rem 0 1.5rem;
+  padding: 0.75rem 0;
+  border-block: 1px solid var(--line, #dbe1e4);
+}
+.scenario-heading,
+.scenario-context,
+.reserve-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+.scenario-heading {
+  color: var(--muted, #52636b);
+  font-size: 0.75rem;
+  font-weight: 650;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+.scenario-heading small {
+  letter-spacing: 0;
+  text-transform: none;
+}
+.scenario-navigation {
+  display: flex;
+  align-items: center;
+  min-width: 0;
+  gap: 0.4rem;
+}
+.scenario-scroll {
+  display: flex;
+  gap: 0.25rem;
+  flex: 1;
+  min-width: 0;
+  overflow-x: auto;
+  scrollbar-width: thin;
+  padding: 0.5rem 0;
+  scroll-padding-inline: 0.5rem;
+}
+.scenario-scroll [role='tab'] {
+  flex: 0 0 auto;
+  max-width: 15rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  background: transparent;
+  color: var(--ink, #183c3c);
+  border: 0;
+  border-radius: 0.35rem 0.35rem 0 0;
+  box-shadow: inset 0 -2px transparent;
+  transition:
+    background 150ms ease,
+    box-shadow 150ms ease;
+}
+.scenario-scroll [aria-selected='true'] {
+  background: #edf1ff;
+  box-shadow: inset 0 -3px var(--accent, #245e50);
+  font-weight: 700;
+}
+.scenario-fixed {
+  display: flex;
+  flex: 0 0 auto;
+}
+.scenario-fixed button,
+.scenario-context button,
+.scenario-name-form button,
+.reserve-section button {
+  min-width: 44px;
+  min-height: 44px;
+}
+.scenario-context {
+  align-items: start;
+  min-width: 0;
+}
+.scenario-context > strong {
+  padding-top: 0.65rem;
+  font-size: 0.9rem;
+  overflow-wrap: anywhere;
+  min-width: 0;
+}
+.scenario-context > button {
+  flex: 0 0 auto;
+  font-size: 0.75rem;
+}
+.scenario-menu {
+  position: relative;
+}
+.scenario-menu-items {
+  position: absolute;
+  right: 0;
+  top: 100%;
+  width: min(19rem, calc(100vw - 3rem));
+  background: var(--paper, #fff);
+  border: 1px solid var(--line, #dbe1e4);
+  box-shadow: 0 8px 24px #173a361a;
+  border-radius: 0.6rem;
+  z-index: 5;
+  padding: 0.5rem;
+  animation: scenario-reveal 150ms ease-out;
+}
+.scenario-menu-items strong,
+.scenario-menu-items small {
+  display: block;
+  padding: 0.5rem;
+  overflow-wrap: anywhere;
+}
+.scenario-menu-items button {
+  display: block;
+  width: 100%;
+  text-align: left;
+  border: 0;
+  background: transparent;
+  color: inherit;
+}
+.scenario-menu-items button:hover {
+  background: #edf1ff;
+}
+.scenario-name-form {
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--line, #dbe1e4);
+  animation: scenario-reveal 150ms ease-out;
+}
+.scenario-name-controls {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+.scenario-name-controls input {
+  flex: 1;
+  min-width: 10rem;
+}
+.scenario-name-form [role='alert'] {
+  color: #873d2f;
+}
+.all-scenarios {
+  list-style: none;
+  padding: 0;
+  max-height: 55vh;
+  overflow: auto;
+}
+.all-scenarios button {
+  width: 100%;
+  text-align: left;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  min-height: 44px;
+}
+.all-scenarios li > button {
+  display: flex;
+  gap: 0.5rem;
+  align-items: start;
+  background: transparent;
+  color: var(--ink);
+  border-radius: 0;
+  border-bottom: 1px solid var(--line);
+  font-weight: 500;
+}
+.all-scenarios li > button:hover,
+.all-scenarios li > button[aria-pressed='true'] {
+  background: #edf1ff;
+}
+.scenario-list-check {
+  width: 1rem;
+  flex: 0 0 1rem;
+  color: var(--accent);
+}
+.all-scenarios li > button > span:last-child {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.reserve-section {
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--line, #dbe1e4);
+  min-width: 0;
+}
+.reserve-heading h3 {
+  font-size: 0.9rem;
+  margin: 0;
+}
+.reserve-heading > span,
+.reserve-priority {
+  color: var(--muted, #52636b);
+  font-size: 0.75rem;
+}
+.reserve-list {
+  list-style: none;
+  margin: 0.5rem 0;
+  padding: 0;
+}
+.reserve-list > li {
+  position: relative;
+  padding: 0.75rem 0;
+  border-bottom: 1px solid var(--line, #dbe1e4);
+}
+.reserve-edit {
+  display: block;
+  width: 100%;
+  text-align: left;
+  padding: 0.25rem 0;
+}
+.reserve-list .reserve-edit small {
+  display: block;
+  overflow-wrap: anywhere;
+}
+.reserve-metrics {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  padding: 0.35rem 0;
+}
+.reserve-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+  align-items: center;
+}
+.reserve-warning {
+  font-size: 0.75rem;
+  color: #873d2f;
+  overflow-wrap: anywhere;
+}
+.reserve-section .add-reserve {
+  width: 100%;
+  text-align: left;
+}
+.reserve-section .muted {
+  font-size: 0.8rem;
+}
+.comparison > div {
+  min-width: 0;
+}
+@keyframes scenario-reveal {
+  from {
+    transform: translateY(-4px);
+  }
+  to {
+    transform: translateY(0);
+  }
+}
+.has-workspace .round-entries li.reserve-inserted {
+  animation: reserve-insert 160ms ease-out;
+}
+@keyframes reserve-insert {
+  from {
+    background: #edf1ff;
+    transform: translateY(4px);
+  }
+  to {
+    background: transparent;
+    transform: translateY(0);
+  }
+}
+@media (max-width: 600px) {
+  .scenario-scroll [role='tab'] {
+    max-width: 9rem;
+  }
+  .scenario-context {
+    flex-wrap: wrap;
+    gap: 0;
+  }
+  .scenario-context > strong {
+    width: 100%;
+  }
+  .scenario-name-controls input {
+    flex-basis: 100%;
+  }
+}
+@media (max-width: 780px) {
+  .has-workspace .app-header {
+    flex-wrap: wrap;
+  }
+  .has-workspace .spring-title {
+    flex-wrap: wrap;
+  }
+  .has-workspace .analysis-strip {
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 5.5rem), 1fr));
+  }
+  .has-workspace .analysis-strip > div {
+    min-width: 0;
+    overflow-wrap: anywhere;
+  }
+  .workspace-bar nav a {
+    min-width: 44px;
+    flex: 1 1 0;
+    overflow-wrap: anywhere;
+    text-align: center;
+  }
+  .has-workspace main {
+    margin-bottom: calc(4rem + 36px + env(safe-area-inset-bottom, 0px));
+  }
+  .has-workspace .round-heading,
+  .has-workspace .round-totals {
+    flex-wrap: wrap;
+  }
+  .has-workspace .contribution-list summary {
+    flex-wrap: wrap;
+    overflow-wrap: anywhere;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .scenario-bar *,
+  .reserve-section * {
+    animation: none !important;
+    transition: none !important;
+    scroll-behavior: auto !important;
+  }
+}

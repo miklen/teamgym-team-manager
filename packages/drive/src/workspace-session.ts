@@ -82,7 +82,7 @@ export class WorkspaceSession {
   cancelMigration() { this.publish({ migration: null, state: this.dirty() ? 'changed' : this.view.loaded ? 'unchanged' : 'loading' }); }
   exportOriginal() {
     const bytes = this.view.migration?.originalBytes ?? this.view.loaded?.originalBytes;
-    if (bytes === undefined) throw new DriveError('format', 'Ingen format 1-original er indlæst.');
+    if (bytes === undefined) throw new DriveError('format', 'Ingen original fra format 1 eller 2 er indlæst.');
     return bytes;
   }
   clear() {

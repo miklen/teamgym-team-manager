@@ -326,21 +326,40 @@ export function RulesPage({ workspace, change, writable, teamId }: DataProps & {
             Kun {team.name} ændres. Gymnaster og færdigheder bevares. {preview.reviews.length} vurderinger
             kræver gennemgang.
           </p>
-          {(['tumbling', 'trampet'] as const).map((discipline) => (
-            <section key={discipline}>
-              <h3>{discipline === 'tumbling' ? 'Bane' : 'Trampet'}</h3>
-              <div className="comparison">
-                <div>
-                  Før · D <Decision value={preview.before[discipline].difficulty} />
-                  <p>C {points(preview.before[discipline].composition.panel)}</p>
-                </div>
-                <div>
-                  Efter · D <Decision value={preview.after[discipline].difficulty} />
-                  <p>C {points(preview.after[discipline].composition.panel)}</p>
-                </div>
-              </div>
-            </section>
-          ))}
+          {(['tumbling', 'trampet'] as const).flatMap((discipline) =>
+            preview.before[discipline].map((before, index) => {
+              const after = preview.after[discipline][index]!;
+              return (
+                <section key={before.scenarioId}>
+                  <h3>
+                    {discipline === 'tumbling' ? 'Bane' : 'Trampet'} · {before.name}
+                  </h3>
+                  <div className="comparison">
+                    <div>
+                      Før · D <Decision value={before.evaluation.difficulty} />
+                      <p>C {points(before.evaluation.composition.panel)}</p>
+                    </div>
+                    <div>
+                      Efter · D <Decision value={after.evaluation.difficulty} />
+                      <p>C {points(after.evaluation.composition.panel)}</p>
+                    </div>
+                  </div>
+                  {before.evaluation.rounds.flatMap((round, roundIndex) =>
+                    round.reserves.map((reserve, reserveIndex) => {
+                      const next = after.evaluation.rounds[roundIndex]!.reserves[reserveIndex]!;
+                      return (
+                        <p key={reserve.entry.id}>
+                          {roundIndex + 1}. omgang · {reserveIndex + 1}. reserve · {reserve.athleteName}: D{' '}
+                          {points(reserve.originalD.value)} → {points(next.originalD.value)} ·{' '}
+                          {statusText[reserve.status]} → {statusText[next.status]}
+                        </p>
+                      );
+                    }),
+                  )}
+                </section>
+              );
+            }),
+          )}
           <p>
             Fælles rytmemomenter: {preview.before.rhythm.filter((row) => row.summary.common).length} →{' '}
             {preview.after.rhythm.filter((row) => row.summary.common).length}

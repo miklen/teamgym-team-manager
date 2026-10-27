@@ -16,11 +16,11 @@ function revive(value: unknown): unknown {
   }
   return value;
 }
-export function usePotentials(workspace: Workspace, teamId: string, discipline: SpringDiscipline) {
+export function usePotentials(workspace: Workspace, teamId: string, discipline: SpringDiscipline, scenarioId: string) {
   const worker = useRef<Worker | null>(null);
   const [result, setResult] = useState<BonusPotential[] | null>(null);
   const [error, setError] = useState('');
-  const key = `${teamId}:${discipline}:${workspacePayload(workspace)}`;
+  const key = `${teamId}:${discipline}:${scenarioId}:${workspacePayload(workspace)}`;
   const [current, setCurrent] = useState('');
   useEffect(() => {
     const instance = new Worker(new URL('./potential.worker.ts', import.meta.url), { type: 'module' });
@@ -41,12 +41,12 @@ export function usePotentials(workspace: Workspace, teamId: string, discipline: 
       setError(event.data.error ?? '');
     };
     instance.addEventListener('message', handler);
-    instance.postMessage({ id, workspace, teamId, discipline });
+    instance.postMessage({ id, workspace, teamId, discipline, scenarioId });
     return () => {
       instance.removeEventListener('message', handler);
       instance.postMessage({ cancel: true });
     };
-  }, [key, workspace, teamId, discipline]);
+  }, [key, workspace, teamId, discipline, scenarioId]);
   return {
     result: current === key ? result : null,
     error: current === key ? error : '',

@@ -41,12 +41,12 @@ describe('uforanderlige pakker og forskellige reglementer i samme arbejdsrum', (
     expect(dk.status).toBe('known'); expect(other.status).toBe('known');
     if (dk.status !== 'known' || other.status !== 'known') throw new Error('Pakkerne skal findes');
     expect(dk.profile.counting).toBe(6); expect(other.profile.counting).toBe(4);
-    expect(dk.rulePackage.analyze(builder.workspace, teamA.id, 'tumbling').difficulty.value?.toString()).toBe('18/5');
-    expect(other.rulePackage.analyze(builder.workspace, teamB.id, 'tumbling').difficulty.value?.toString()).toBe('24/5');
+    expect(dk.rulePackage.analyze(builder.workspace, teamA.id, 'tumbling', builder.workspace.plans.find((plan) => plan.teamId === teamA.id)!.tumbling[0]!.id).difficulty.value?.toString()).toBe('18/5');
+    expect(other.rulePackage.analyze(builder.workspace, teamB.id, 'tumbling', builder.workspace.plans.find((plan) => plan.teamId === teamB.id)!.tumbling[0]!.id).difficulty.value?.toString()).toBe('24/5');
     expect(dk.rulePackage.rhythm(builder.workspace, teamA.id).filter((row) => row.moment.id === 'rh-hb-headstand').some((row) => row.summary.common)).toBe(true);
     expect(other.rulePackage.rhythm(builder.workspace, teamB.id).filter((row) => row.moment.id === 'rh-hb-headstand').some((row) => row.summary.common)).toBe(false);
-    const dkPotential = await dk.rulePackage.potentials(builder.workspace, teamA.id, 'tumbling');
-    const otherPotential = await other.rulePackage.potentials(builder.workspace, teamB.id, 'tumbling');
+    const dkPotential = await dk.rulePackage.potentials(builder.workspace, teamA.id, 'tumbling', builder.workspace.plans.find((plan) => plan.teamId === teamA.id)!.tumbling[0]!.id);
+    const otherPotential = await other.rulePackage.potentials(builder.workspace, teamB.id, 'tumbling', builder.workspace.plans.find((plan) => plan.teamId === teamB.id)!.tumbling[0]!.id);
     expect(dkPotential.find((item) => item.id === 'B-SKRUE')?.ruleMaximum?.toString()).toBe('3/5');
     expect(otherPotential.find((item) => item.id === 'B-SKRUE')?.ruleMaximum?.toString()).toBe('4/5');
     expect(otherPotential.find((item) => item.id === 'B-SKRUE')?.preview?.after.rounds.every((round) => round.counting.length === 4)).toBe(true);
@@ -82,13 +82,13 @@ describe('versionsskift med bevaret kunnen, eksplicit revurdering og uændret an
     const preview = previewVersionChange(builder.workspace, teamA.id, { ...teamA.rulesetBinding, packageVersion: next.manifest.packageVersion }, registry);
     expect(serializeWorkspace(builder.workspace)).toBe(original);
     expect(preview.reviews).toEqual([]);
-    expect(preview.before.tumbling.difficulty.value?.toString()).toBe('18/5');
-    expect(preview.after.tumbling.difficulty.value?.toString()).toBe('36/5');
+    expect(preview.before.tumbling[0]!.evaluation.difficulty.value?.toString()).toBe('18/5');
+    expect(preview.after.tumbling[0]!.evaluation.difficulty.value?.toString()).toBe('36/5');
     const applied = applyVersionChange(builder.workspace, preview);
     expect(applied.athleteSkills).toEqual(builder.workspace.athleteSkills);
     expect(applied.teams.find((team) => team.id === teamB.id)).toEqual(teamB);
     expect(applied.plans.find((plan) => plan.teamId === teamB.id)).toEqual(builder.workspace.plans.find((plan) => plan.teamId === teamB.id));
-    expect(DK_V1.analyze(applied, teamB.id, 'tumbling').difficulty.value?.toString()).toBe('18/5');
+    expect(DK_V1.analyze(applied, teamB.id, 'tumbling', applied.plans.find((plan) => plan.teamId === teamB.id)!.tumbling[0]!.id).difficulty.value?.toString()).toBe('18/5');
     expect(packageChangeReport(DK_V1, next)).toMatchObject({ changedAlgorithms: ['difficulty'], changedRhythm: ['rh-hb-headstand'] });
   });
 

@@ -21,7 +21,7 @@ Content-Type: application/json; charset=UTF-8
 If-Match: [den oprindelige basis-etag, uændret]
 ```
 
-Body er den validerede snapshot. Fil-id, navn, mappe og deling ændres ikke. Forkontrollen er ikke en fælles lås; `If-Match` i media-requesten er den atomiske betingelse, som skal prøves mod rigtig Google. Der er ingen ubetinget vej og ingen backend-fallback.
+Body er den validerede snapshot af hele arbejdsrummet i format 3. Alle holdets scenarier i begge discipliner og deres prioriterede reserver gemmes samlet, også når en anden plan vises. Eksport omfatter samme samling. Et rent scenarieskift ændrer kun appsessionens navigation og sender ingen skrivning. Fil-id, navn, mappe og deling ændres ikke. Forkontrollen er ikke en fælles lås; `If-Match` i media-requesten er den atomiske betingelse, som skal prøves mod rigtig Google. Der er ingen ubetinget vej og ingen backend-fallback.
 
 Efter et accepteret svar læses filen konsistent igen. Kun genkendt operation med samme id/hash og aktuel nyttelast kan bekræfte snapshot. Fortsat redigering under upload bevares som ugemt kladde.
 
@@ -42,3 +42,7 @@ En forbindelsesgeneration invaliderer sene Google-svar; en fælles IndexedDB-epo
 Ved genaktivering kontrolleres fjernfilen. En ændring varsles uden at erstatte lokal visning. Genindlæsning kræver bevidst kassation af en ugemt kladde. Før browserluk gives browserens standardadvarsel, hvor den understøttes.
 
 Se [T01](google-t01.md), [testbeslutningen](testbeslutning-2026-10-25.md) og [Google-opsætningen](google-opsaetning.md) for forskellen på implementeret adfærd og faktisk Google-verifikation. Direkte API-referencer: [files](https://developers.google.com/workspace/drive/api/reference/rest/v2/files), [update](https://developers.google.com/workspace/drive/api/reference/rest/v2/files/update).
+
+## Migration til format 3
+
+Format 1 og 2 valideres af hver sin strikte læser. Appen tilbyder eksplicit lokal migration med kildeversion, originaleksport og Annuller. De eksisterende omgange bevares som Plan A i hver disciplin, og der tilføjes tomme reservelister. Alle eksisterende identiteter, vurderinger, arvevalg og historik bevares. Revisionsbasis er stadig den faktisk indlæste originals ETag, version, hash og revision; der uploades først ved Gem på Drive. Forbindelsens særskilte lagerformat er uændret. Se [filformatet](filformat.md).

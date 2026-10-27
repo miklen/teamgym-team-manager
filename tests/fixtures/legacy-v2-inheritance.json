@@ -1,0 +1,1216 @@
+{
+  "format": "teamgym-team-manager",
+  "workspaceId": "test-1",
+  "revision": 2,
+  "updatedAt": "2026-10-27T12:00:00.000Z",
+  "recentOperations": [
+    {
+      "id": "synthetic-legacy-operation",
+      "revision": 2,
+      "savedAt": "2026-10-27T12:00:00.000Z",
+      "payloadHash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+    }
+  ],
+  "teams": [
+    {
+      "id": "test-2",
+      "name": "Syntetisk hold A",
+      "archived": false,
+      "rulesetBinding": {
+        "rulesetId": "dk",
+        "packageVersion": "1.0.0",
+        "ageGroup": "junior",
+        "teamType": "girls"
+      }
+    },
+    {
+      "id": "test-12",
+      "name": "Syntetisk hold B",
+      "archived": false,
+      "rulesetBinding": {
+        "rulesetId": "test-only",
+        "packageVersion": "2.0.0",
+        "ageGroup": "test",
+        "teamType": "test"
+      }
+    }
+  ],
+  "athletes": [
+    {
+      "id": "test-22",
+      "name": "Maja Test",
+      "discriminator": "Test 1",
+      "teamId": "test-2",
+      "archived": false,
+      "mixCategory": null
+    },
+    {
+      "id": "test-23",
+      "name": "Maja Test",
+      "discriminator": "Test 2",
+      "teamId": "test-2",
+      "archived": false,
+      "mixCategory": null
+    },
+    {
+      "id": "test-24",
+      "name": "Syntetisk gymnast 3",
+      "discriminator": "Test 3",
+      "teamId": "test-2",
+      "archived": false,
+      "mixCategory": null
+    },
+    {
+      "id": "test-25",
+      "name": "Syntetisk gymnast 4",
+      "discriminator": "Test 4",
+      "teamId": "test-2",
+      "archived": false,
+      "mixCategory": null
+    },
+    {
+      "id": "test-26",
+      "name": "Syntetisk gymnast 5",
+      "discriminator": "Test 5",
+      "teamId": "test-2",
+      "archived": false,
+      "mixCategory": null
+    },
+    {
+      "id": "test-27",
+      "name": "Syntetisk gymnast 6",
+      "discriminator": "Test 6",
+      "teamId": "test-2",
+      "archived": false,
+      "mixCategory": null
+    },
+    {
+      "id": "test-28",
+      "name": "Syntetisk gymnast 7",
+      "discriminator": "Test 7",
+      "teamId": "test-2",
+      "archived": false,
+      "mixCategory": null
+    },
+    {
+      "id": "test-29",
+      "name": "Syntetisk gymnast 8",
+      "discriminator": "Test 8",
+      "teamId": "test-2",
+      "archived": false,
+      "mixCategory": null
+    }
+  ],
+  "skills": [
+    {
+      "id": "skill-tumbling",
+      "name": "Syntetisk baneserie",
+      "archived": false,
+      "discipline": "tumbling",
+      "elements": [
+        {
+          "family": "salto",
+          "direction": "backward",
+          "rotationQuarterTurns": 4,
+          "bodyPositions": [
+            "straight"
+          ],
+          "twistsHalfTurns": 2,
+          "twistDistribution": [
+            2
+          ],
+          "apparatus": "floor",
+          "takeoff": "two-feet",
+          "landing": "feet",
+          "variant": {}
+        }
+      ],
+      "connection": {
+        "kind": "standard",
+        "transitions": []
+      }
+    },
+    {
+      "id": "skill-trampet",
+      "name": "Syntetisk trampetspring",
+      "archived": false,
+      "discipline": "trampet",
+      "jump": {
+        "family": "salto",
+        "direction": "backward",
+        "rotationQuarterTurns": 4,
+        "bodyPositions": [
+          "straight"
+        ],
+        "twistsHalfTurns": 2,
+        "twistDistribution": [
+          2
+        ],
+        "apparatus": "trampet",
+        "takeoff": "two-feet",
+        "landing": "feet",
+        "variant": {}
+      }
+    },
+    {
+      "id": "skill-rhythm",
+      "name": "Syntetisk hovedstand",
+      "archived": false,
+      "discipline": "rhythm",
+      "momentId": "rh-hb-headstand",
+      "variant": {
+        "legs": "together"
+      }
+    },
+    {
+      "id": "1f709b51-a621-4ffe-bcad-a1ebcd51353b",
+      "name": "Rondat – flik – strakt 1/1 (360°)",
+      "archived": false,
+      "discipline": "tumbling",
+      "elements": [
+        {
+          "family": "roundoff",
+          "direction": "backward",
+          "rotationQuarterTurns": 4,
+          "bodyPositions": [
+            "straight"
+          ],
+          "twistsHalfTurns": 0,
+          "twistDistribution": [],
+          "apparatus": "floor",
+          "takeoff": "one-foot",
+          "landing": "feet",
+          "variant": {}
+        },
+        {
+          "family": "flic",
+          "direction": "backward",
+          "rotationQuarterTurns": 4,
+          "bodyPositions": [
+            "straight"
+          ],
+          "twistsHalfTurns": 0,
+          "twistDistribution": [],
+          "apparatus": "floor",
+          "takeoff": "two-feet",
+          "landing": "feet",
+          "variant": {}
+        },
+        {
+          "family": "salto",
+          "direction": "backward",
+          "rotationQuarterTurns": 4,
+          "bodyPositions": [
+            "straight"
+          ],
+          "twistsHalfTurns": 2,
+          "twistDistribution": [
+            2
+          ],
+          "apparatus": "floor",
+          "takeoff": "two-feet",
+          "landing": "feet",
+          "variant": {}
+        }
+      ],
+      "connection": {
+        "kind": "standard",
+        "transitions": [
+          "direct",
+          "direct"
+        ]
+      }
+    },
+    {
+      "id": "28dfbd34-46b3-454f-9a79-d57cc317dcf3",
+      "name": "Rondat – flik",
+      "archived": false,
+      "discipline": "tumbling",
+      "elements": [
+        {
+          "family": "roundoff",
+          "direction": "backward",
+          "rotationQuarterTurns": 4,
+          "bodyPositions": [
+            "straight"
+          ],
+          "twistsHalfTurns": 0,
+          "twistDistribution": [],
+          "apparatus": "floor",
+          "takeoff": "one-foot",
+          "landing": "feet",
+          "variant": {}
+        },
+        {
+          "family": "flic",
+          "direction": "backward",
+          "rotationQuarterTurns": 4,
+          "bodyPositions": [
+            "straight"
+          ],
+          "twistsHalfTurns": 0,
+          "twistDistribution": [],
+          "apparatus": "floor",
+          "takeoff": "two-feet",
+          "landing": "feet",
+          "variant": {}
+        }
+      ],
+      "connection": {
+        "kind": "standard",
+        "transitions": [
+          "direct"
+        ]
+      }
+    },
+    {
+      "id": "b6871920-6166-4a06-a9fe-ca1cb0b90b2c",
+      "name": "Rondat – flik – Lukket salto 0° (baglæns)",
+      "archived": false,
+      "discipline": "tumbling",
+      "elements": [
+        {
+          "family": "roundoff",
+          "direction": "backward",
+          "rotationQuarterTurns": 4,
+          "bodyPositions": [
+            "straight"
+          ],
+          "twistsHalfTurns": 0,
+          "twistDistribution": [],
+          "apparatus": "floor",
+          "takeoff": "one-foot",
+          "landing": "feet",
+          "variant": {}
+        },
+        {
+          "family": "flic",
+          "direction": "backward",
+          "rotationQuarterTurns": 4,
+          "bodyPositions": [
+            "straight"
+          ],
+          "twistsHalfTurns": 0,
+          "twistDistribution": [],
+          "apparatus": "floor",
+          "takeoff": "two-feet",
+          "landing": "feet",
+          "variant": {}
+        },
+        {
+          "family": "salto",
+          "direction": "backward",
+          "rotationQuarterTurns": 4,
+          "bodyPositions": [
+            "tuck"
+          ],
+          "twistsHalfTurns": 0,
+          "twistDistribution": [],
+          "apparatus": "floor",
+          "takeoff": "two-feet",
+          "landing": "feet",
+          "variant": {}
+        }
+      ],
+      "connection": {
+        "kind": "standard",
+        "transitions": [
+          "direct",
+          "direct"
+        ]
+      }
+    },
+    {
+      "id": "f8e4cfba-c389-4073-a16f-01982a046e83",
+      "name": "Rondat – flik – Hoftebøjet salto 0° (baglæns)",
+      "archived": false,
+      "discipline": "tumbling",
+      "elements": [
+        {
+          "family": "roundoff",
+          "direction": "backward",
+          "rotationQuarterTurns": 4,
+          "bodyPositions": [
+            "straight"
+          ],
+          "twistsHalfTurns": 0,
+          "twistDistribution": [],
+          "apparatus": "floor",
+          "takeoff": "one-foot",
+          "landing": "feet",
+          "variant": {}
+        },
+        {
+          "family": "flic",
+          "direction": "backward",
+          "rotationQuarterTurns": 4,
+          "bodyPositions": [
+            "straight"
+          ],
+          "twistsHalfTurns": 0,
+          "twistDistribution": [],
+          "apparatus": "floor",
+          "takeoff": "two-feet",
+          "landing": "feet",
+          "variant": {}
+        },
+        {
+          "family": "salto",
+          "direction": "backward",
+          "rotationQuarterTurns": 4,
+          "bodyPositions": [
+            "pike"
+          ],
+          "twistsHalfTurns": 0,
+          "twistDistribution": [],
+          "apparatus": "floor",
+          "takeoff": "two-feet",
+          "landing": "feet",
+          "variant": {}
+        }
+      ],
+      "connection": {
+        "kind": "standard",
+        "transitions": [
+          "direct",
+          "direct"
+        ]
+      }
+    },
+    {
+      "id": "5c61a689-cc72-431b-9f6e-c5c330902367",
+      "name": "Rondat – flik – strakt baglæns",
+      "archived": false,
+      "discipline": "tumbling",
+      "elements": [
+        {
+          "family": "roundoff",
+          "direction": "backward",
+          "rotationQuarterTurns": 4,
+          "bodyPositions": [
+            "straight"
+          ],
+          "twistsHalfTurns": 0,
+          "twistDistribution": [],
+          "apparatus": "floor",
+          "takeoff": "one-foot",
+          "landing": "feet",
+          "variant": {}
+        },
+        {
+          "family": "flic",
+          "direction": "backward",
+          "rotationQuarterTurns": 4,
+          "bodyPositions": [
+            "straight"
+          ],
+          "twistsHalfTurns": 0,
+          "twistDistribution": [],
+          "apparatus": "floor",
+          "takeoff": "two-feet",
+          "landing": "feet",
+          "variant": {}
+        },
+        {
+          "family": "salto",
+          "direction": "backward",
+          "rotationQuarterTurns": 4,
+          "bodyPositions": [
+            "straight"
+          ],
+          "twistsHalfTurns": 0,
+          "twistDistribution": [],
+          "apparatus": "floor",
+          "takeoff": "two-feet",
+          "landing": "feet",
+          "variant": {}
+        }
+      ],
+      "connection": {
+        "kind": "standard",
+        "transitions": [
+          "direct",
+          "direct"
+        ]
+      }
+    }
+  ],
+  "plans": [
+    {
+      "id": "test-3",
+      "teamId": "test-2",
+      "bindingFingerprint": "{\"ageGroup\":\"junior\",\"packageVersion\":\"1.0.0\",\"rulesetId\":\"dk\",\"teamType\":\"girls\"}",
+      "tumbling": [
+        {
+          "id": "test-5",
+          "entries": [
+            {
+              "id": "test-54",
+              "athleteId": "test-22",
+              "athleteSkillId": "test-30",
+              "role": "counting"
+            },
+            {
+              "id": "test-55",
+              "athleteId": "test-23",
+              "athleteSkillId": "test-33",
+              "role": "counting"
+            },
+            {
+              "id": "test-56",
+              "athleteId": "test-24",
+              "athleteSkillId": "test-36",
+              "role": "counting"
+            },
+            {
+              "id": "test-57",
+              "athleteId": "test-25",
+              "athleteSkillId": "test-39",
+              "role": "counting"
+            },
+            {
+              "id": "test-58",
+              "athleteId": "test-26",
+              "athleteSkillId": "test-42",
+              "role": "counting"
+            },
+            {
+              "id": "test-59",
+              "athleteId": "test-27",
+              "athleteSkillId": "test-45",
+              "role": "counting"
+            }
+          ]
+        },
+        {
+          "id": "test-6",
+          "entries": [
+            {
+              "id": "test-60",
+              "athleteId": "test-22",
+              "athleteSkillId": "test-30",
+              "role": "counting"
+            },
+            {
+              "id": "test-61",
+              "athleteId": "test-23",
+              "athleteSkillId": "test-33",
+              "role": "counting"
+            },
+            {
+              "id": "test-62",
+              "athleteId": "test-24",
+              "athleteSkillId": "test-36",
+              "role": "counting"
+            },
+            {
+              "id": "test-63",
+              "athleteId": "test-25",
+              "athleteSkillId": "test-39",
+              "role": "counting"
+            },
+            {
+              "id": "test-64",
+              "athleteId": "test-26",
+              "athleteSkillId": "test-42",
+              "role": "counting"
+            },
+            {
+              "id": "test-65",
+              "athleteId": "test-27",
+              "athleteSkillId": "test-45",
+              "role": "counting"
+            }
+          ]
+        },
+        {
+          "id": "test-7",
+          "entries": [
+            {
+              "id": "test-66",
+              "athleteId": "test-22",
+              "athleteSkillId": "test-30",
+              "role": "counting"
+            },
+            {
+              "id": "test-67",
+              "athleteId": "test-23",
+              "athleteSkillId": "test-33",
+              "role": "counting"
+            },
+            {
+              "id": "test-68",
+              "athleteId": "test-24",
+              "athleteSkillId": "test-36",
+              "role": "counting"
+            },
+            {
+              "id": "test-69",
+              "athleteId": "test-25",
+              "athleteSkillId": "test-39",
+              "role": "counting"
+            },
+            {
+              "id": "test-70",
+              "athleteId": "test-26",
+              "athleteSkillId": "test-42",
+              "role": "counting"
+            },
+            {
+              "id": "test-71",
+              "athleteId": "test-27",
+              "athleteSkillId": "test-45",
+              "role": "counting"
+            }
+          ]
+        }
+      ],
+      "trampet": [
+        {
+          "id": "test-9",
+          "entries": [
+            {
+              "id": "test-72",
+              "athleteId": "test-22",
+              "athleteSkillId": "test-31",
+              "role": "counting"
+            },
+            {
+              "id": "test-73",
+              "athleteId": "test-23",
+              "athleteSkillId": "test-34",
+              "role": "counting"
+            },
+            {
+              "id": "test-74",
+              "athleteId": "test-24",
+              "athleteSkillId": "test-37",
+              "role": "counting"
+            },
+            {
+              "id": "test-75",
+              "athleteId": "test-25",
+              "athleteSkillId": "test-40",
+              "role": "counting"
+            },
+            {
+              "id": "test-76",
+              "athleteId": "test-26",
+              "athleteSkillId": "test-43",
+              "role": "counting"
+            },
+            {
+              "id": "test-77",
+              "athleteId": "test-27",
+              "athleteSkillId": "test-46",
+              "role": "counting"
+            }
+          ]
+        },
+        {
+          "id": "test-10",
+          "entries": [
+            {
+              "id": "test-78",
+              "athleteId": "test-22",
+              "athleteSkillId": "test-31",
+              "role": "counting"
+            },
+            {
+              "id": "test-79",
+              "athleteId": "test-23",
+              "athleteSkillId": "test-34",
+              "role": "counting"
+            },
+            {
+              "id": "test-80",
+              "athleteId": "test-24",
+              "athleteSkillId": "test-37",
+              "role": "counting"
+            },
+            {
+              "id": "test-81",
+              "athleteId": "test-25",
+              "athleteSkillId": "test-40",
+              "role": "counting"
+            },
+            {
+              "id": "test-82",
+              "athleteId": "test-26",
+              "athleteSkillId": "test-43",
+              "role": "counting"
+            },
+            {
+              "id": "test-83",
+              "athleteId": "test-27",
+              "athleteSkillId": "test-46",
+              "role": "counting"
+            }
+          ]
+        },
+        {
+          "id": "test-11",
+          "entries": [
+            {
+              "id": "test-84",
+              "athleteId": "test-22",
+              "athleteSkillId": "test-31",
+              "role": "counting"
+            },
+            {
+              "id": "test-85",
+              "athleteId": "test-23",
+              "athleteSkillId": "test-34",
+              "role": "counting"
+            },
+            {
+              "id": "test-86",
+              "athleteId": "test-24",
+              "athleteSkillId": "test-37",
+              "role": "counting"
+            },
+            {
+              "id": "test-87",
+              "athleteId": "test-25",
+              "athleteSkillId": "test-40",
+              "role": "counting"
+            },
+            {
+              "id": "test-88",
+              "athleteId": "test-26",
+              "athleteSkillId": "test-43",
+              "role": "counting"
+            },
+            {
+              "id": "test-89",
+              "athleteId": "test-27",
+              "athleteSkillId": "test-46",
+              "role": "counting"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "test-13",
+      "teamId": "test-12",
+      "bindingFingerprint": "{\"ageGroup\":\"test\",\"packageVersion\":\"2.0.0\",\"rulesetId\":\"test-only\",\"teamType\":\"test\"}",
+      "tumbling": [
+        {
+          "id": "test-15",
+          "entries": []
+        },
+        {
+          "id": "test-16",
+          "entries": []
+        },
+        {
+          "id": "test-17",
+          "entries": []
+        }
+      ],
+      "trampet": [
+        {
+          "id": "test-19",
+          "entries": []
+        },
+        {
+          "id": "test-20",
+          "entries": []
+        },
+        {
+          "id": "test-21",
+          "entries": []
+        }
+      ]
+    }
+  ],
+  "schemaVersion": 2,
+  "athleteSkills": [
+    {
+      "id": "test-30",
+      "athleteId": "test-22",
+      "skillId": "skill-tumbling",
+      "archived": false,
+      "stability": 1,
+      "assessedAt": "2026-10-25",
+      "updatedAt": "2026-10-27T12:00:00.000Z",
+      "note": "Kun syntetiske testdata.",
+      "connectionConfirmation": null,
+      "reviewRequiredFor": [],
+      "assessmentOrigin": {
+        "kind": "own"
+      }
+    },
+    {
+      "id": "test-31",
+      "athleteId": "test-22",
+      "skillId": "skill-trampet",
+      "archived": false,
+      "stability": 1,
+      "assessedAt": "2026-10-25",
+      "updatedAt": "2026-10-27T12:00:00.000Z",
+      "note": "Kun syntetiske testdata.",
+      "connectionConfirmation": null,
+      "reviewRequiredFor": [],
+      "assessmentOrigin": {
+        "kind": "own"
+      }
+    },
+    {
+      "id": "test-32",
+      "athleteId": "test-22",
+      "skillId": "skill-rhythm",
+      "archived": false,
+      "stability": 1,
+      "assessedAt": "2026-10-25",
+      "updatedAt": "2026-10-27T12:00:00.000Z",
+      "note": "Kun syntetiske testdata.",
+      "connectionConfirmation": null,
+      "reviewRequiredFor": [],
+      "assessmentOrigin": {
+        "kind": "own"
+      }
+    },
+    {
+      "id": "test-33",
+      "athleteId": "test-23",
+      "skillId": "skill-tumbling",
+      "archived": false,
+      "stability": 5,
+      "assessedAt": "2026-10-25",
+      "updatedAt": "2026-10-27T12:00:00.000Z",
+      "note": "Kun syntetiske testdata.",
+      "connectionConfirmation": null,
+      "reviewRequiredFor": [],
+      "assessmentOrigin": {
+        "kind": "own"
+      }
+    },
+    {
+      "id": "test-34",
+      "athleteId": "test-23",
+      "skillId": "skill-trampet",
+      "archived": false,
+      "stability": 5,
+      "assessedAt": "2026-10-25",
+      "updatedAt": "2026-10-27T12:00:00.000Z",
+      "note": "Kun syntetiske testdata.",
+      "connectionConfirmation": null,
+      "reviewRequiredFor": [],
+      "assessmentOrigin": {
+        "kind": "own"
+      }
+    },
+    {
+      "id": "test-35",
+      "athleteId": "test-23",
+      "skillId": "skill-rhythm",
+      "archived": false,
+      "stability": 5,
+      "assessedAt": "2026-10-25",
+      "updatedAt": "2026-10-27T12:00:00.000Z",
+      "note": "Kun syntetiske testdata.",
+      "connectionConfirmation": null,
+      "reviewRequiredFor": [],
+      "assessmentOrigin": {
+        "kind": "own"
+      }
+    },
+    {
+      "id": "test-36",
+      "athleteId": "test-24",
+      "skillId": "skill-tumbling",
+      "archived": false,
+      "stability": 5,
+      "assessedAt": "2026-10-25",
+      "updatedAt": "2026-10-27T12:00:00.000Z",
+      "note": "Kun syntetiske testdata.",
+      "connectionConfirmation": null,
+      "reviewRequiredFor": [],
+      "assessmentOrigin": {
+        "kind": "own"
+      }
+    },
+    {
+      "id": "test-37",
+      "athleteId": "test-24",
+      "skillId": "skill-trampet",
+      "archived": false,
+      "stability": 5,
+      "assessedAt": "2026-10-25",
+      "updatedAt": "2026-10-27T12:00:00.000Z",
+      "note": "Kun syntetiske testdata.",
+      "connectionConfirmation": null,
+      "reviewRequiredFor": [],
+      "assessmentOrigin": {
+        "kind": "own"
+      }
+    },
+    {
+      "id": "test-38",
+      "athleteId": "test-24",
+      "skillId": "skill-rhythm",
+      "archived": false,
+      "stability": 5,
+      "assessedAt": "2026-10-25",
+      "updatedAt": "2026-10-27T12:00:00.000Z",
+      "note": "Kun syntetiske testdata.",
+      "connectionConfirmation": null,
+      "reviewRequiredFor": [],
+      "assessmentOrigin": {
+        "kind": "own"
+      }
+    },
+    {
+      "id": "test-39",
+      "athleteId": "test-25",
+      "skillId": "skill-tumbling",
+      "archived": false,
+      "stability": 5,
+      "assessedAt": "2026-10-25",
+      "updatedAt": "2026-10-27T12:00:00.000Z",
+      "note": "Kun syntetiske testdata.",
+      "connectionConfirmation": null,
+      "reviewRequiredFor": [],
+      "assessmentOrigin": {
+        "kind": "own"
+      }
+    },
+    {
+      "id": "test-40",
+      "athleteId": "test-25",
+      "skillId": "skill-trampet",
+      "archived": false,
+      "stability": 5,
+      "assessedAt": "2026-10-25",
+      "updatedAt": "2026-10-27T12:00:00.000Z",
+      "note": "Kun syntetiske testdata.",
+      "connectionConfirmation": null,
+      "reviewRequiredFor": [],
+      "assessmentOrigin": {
+        "kind": "own"
+      }
+    },
+    {
+      "id": "test-41",
+      "athleteId": "test-25",
+      "skillId": "skill-rhythm",
+      "archived": false,
+      "stability": 5,
+      "assessedAt": "2026-10-25",
+      "updatedAt": "2026-10-27T12:00:00.000Z",
+      "note": "Kun syntetiske testdata.",
+      "connectionConfirmation": null,
+      "reviewRequiredFor": [],
+      "assessmentOrigin": {
+        "kind": "own"
+      }
+    },
+    {
+      "id": "test-42",
+      "athleteId": "test-26",
+      "skillId": "skill-tumbling",
+      "archived": false,
+      "stability": 5,
+      "assessedAt": "2026-10-25",
+      "updatedAt": "2026-10-27T12:00:00.000Z",
+      "note": "Kun syntetiske testdata.",
+      "connectionConfirmation": null,
+      "reviewRequiredFor": [],
+      "assessmentOrigin": {
+        "kind": "own"
+      }
+    },
+    {
+      "id": "test-43",
+      "athleteId": "test-26",
+      "skillId": "skill-trampet",
+      "archived": false,
+      "stability": 5,
+      "assessedAt": "2026-10-25",
+      "updatedAt": "2026-10-27T12:00:00.000Z",
+      "note": "Kun syntetiske testdata.",
+      "connectionConfirmation": null,
+      "reviewRequiredFor": [],
+      "assessmentOrigin": {
+        "kind": "own"
+      }
+    },
+    {
+      "id": "test-44",
+      "athleteId": "test-26",
+      "skillId": "skill-rhythm",
+      "archived": false,
+      "stability": 5,
+      "assessedAt": "2026-10-25",
+      "updatedAt": "2026-10-27T12:00:00.000Z",
+      "note": "Kun syntetiske testdata.",
+      "connectionConfirmation": null,
+      "reviewRequiredFor": [],
+      "assessmentOrigin": {
+        "kind": "own"
+      }
+    },
+    {
+      "id": "test-45",
+      "athleteId": "test-27",
+      "skillId": "skill-tumbling",
+      "archived": false,
+      "stability": 5,
+      "assessedAt": "2026-10-25",
+      "updatedAt": "2026-10-27T12:00:00.000Z",
+      "note": "Kun syntetiske testdata.",
+      "connectionConfirmation": null,
+      "reviewRequiredFor": [],
+      "assessmentOrigin": {
+        "kind": "own"
+      }
+    },
+    {
+      "id": "test-46",
+      "athleteId": "test-27",
+      "skillId": "skill-trampet",
+      "archived": false,
+      "stability": 5,
+      "assessedAt": "2026-10-25",
+      "updatedAt": "2026-10-27T12:00:00.000Z",
+      "note": "Kun syntetiske testdata.",
+      "connectionConfirmation": null,
+      "reviewRequiredFor": [],
+      "assessmentOrigin": {
+        "kind": "own"
+      }
+    },
+    {
+      "id": "test-47",
+      "athleteId": "test-27",
+      "skillId": "skill-rhythm",
+      "archived": false,
+      "stability": 5,
+      "assessedAt": "2026-10-25",
+      "updatedAt": "2026-10-27T12:00:00.000Z",
+      "note": "Kun syntetiske testdata.",
+      "connectionConfirmation": null,
+      "reviewRequiredFor": [],
+      "assessmentOrigin": {
+        "kind": "own"
+      }
+    },
+    {
+      "id": "test-48",
+      "athleteId": "test-28",
+      "skillId": "skill-tumbling",
+      "archived": false,
+      "stability": 5,
+      "assessedAt": "2026-10-25",
+      "updatedAt": "2026-10-27T12:00:00.000Z",
+      "note": "Kun syntetiske testdata.",
+      "connectionConfirmation": null,
+      "reviewRequiredFor": [],
+      "assessmentOrigin": {
+        "kind": "own"
+      }
+    },
+    {
+      "id": "test-49",
+      "athleteId": "test-28",
+      "skillId": "skill-trampet",
+      "archived": false,
+      "stability": 5,
+      "assessedAt": "2026-10-25",
+      "updatedAt": "2026-10-27T12:00:00.000Z",
+      "note": "Kun syntetiske testdata.",
+      "connectionConfirmation": null,
+      "reviewRequiredFor": [],
+      "assessmentOrigin": {
+        "kind": "own"
+      }
+    },
+    {
+      "id": "test-50",
+      "athleteId": "test-28",
+      "skillId": "skill-rhythm",
+      "archived": false,
+      "stability": 5,
+      "assessedAt": "2026-10-25",
+      "updatedAt": "2026-10-27T12:00:00.000Z",
+      "note": "Kun syntetiske testdata.",
+      "connectionConfirmation": null,
+      "reviewRequiredFor": [],
+      "assessmentOrigin": {
+        "kind": "own"
+      }
+    },
+    {
+      "id": "test-51",
+      "athleteId": "test-29",
+      "skillId": "skill-tumbling",
+      "archived": false,
+      "stability": 5,
+      "assessedAt": "2026-10-25",
+      "updatedAt": "2026-10-27T12:00:00.000Z",
+      "note": "Kun syntetiske testdata.",
+      "connectionConfirmation": null,
+      "reviewRequiredFor": [],
+      "assessmentOrigin": {
+        "kind": "own"
+      }
+    },
+    {
+      "id": "test-52",
+      "athleteId": "test-29",
+      "skillId": "skill-trampet",
+      "archived": false,
+      "stability": 5,
+      "assessedAt": "2026-10-25",
+      "updatedAt": "2026-10-27T12:00:00.000Z",
+      "note": "Kun syntetiske testdata.",
+      "connectionConfirmation": null,
+      "reviewRequiredFor": [],
+      "assessmentOrigin": {
+        "kind": "own"
+      }
+    },
+    {
+      "id": "test-53",
+      "athleteId": "test-29",
+      "skillId": "skill-rhythm",
+      "archived": false,
+      "stability": 5,
+      "assessedAt": "2026-10-25",
+      "updatedAt": "2026-10-27T12:00:00.000Z",
+      "note": "Kun syntetiske testdata.",
+      "connectionConfirmation": null,
+      "reviewRequiredFor": [],
+      "assessmentOrigin": {
+        "kind": "own"
+      }
+    },
+    {
+      "id": "7b2320e3-3f1f-4bb0-b27c-977270f44ab0",
+      "athleteId": "test-22",
+      "skillId": "1f709b51-a621-4ffe-bcad-a1ebcd51353b",
+      "archived": false,
+      "stability": 4,
+      "assessedAt": "2026-10-26",
+      "updatedAt": "2026-10-27T12:00:00.000Z",
+      "note": "",
+      "connectionConfirmation": null,
+      "reviewRequiredFor": [],
+      "assessmentOrigin": {
+        "kind": "own"
+      }
+    },
+    {
+      "id": "1132c4a9-406d-4597-9530-5f3fa6269a54",
+      "athleteId": "test-22",
+      "skillId": "28dfbd34-46b3-454f-9a79-d57cc317dcf3",
+      "archived": false,
+      "stability": null,
+      "assessedAt": null,
+      "updatedAt": "2026-10-27T12:00:00.000Z",
+      "note": "Syntetisk egen null-vurdering.",
+      "connectionConfirmation": null,
+      "reviewRequiredFor": [],
+      "assessmentOrigin": {
+        "kind": "own"
+      }
+    },
+    {
+      "id": "871418fc-bbfd-416e-8e40-87a59ac266cf",
+      "athleteId": "test-22",
+      "skillId": "b6871920-6166-4a06-a9fe-ca1cb0b90b2c",
+      "archived": false,
+      "stability": 4,
+      "assessedAt": "2026-10-26",
+      "updatedAt": "2026-10-27T12:00:00.000Z",
+      "note": "",
+      "connectionConfirmation": null,
+      "reviewRequiredFor": [],
+      "assessmentOrigin": {
+        "kind": "inherited",
+        "sourceId": "7b2320e3-3f1f-4bb0-b27c-977270f44ab0",
+        "sourceChoice": null
+      }
+    },
+    {
+      "id": "b822d8f8-ee74-4d6c-ac53-d2a39c75ac09",
+      "athleteId": "test-22",
+      "skillId": "f8e4cfba-c389-4073-a16f-01982a046e83",
+      "archived": false,
+      "stability": 4,
+      "assessedAt": "2026-10-26",
+      "updatedAt": "2026-10-27T12:00:00.000Z",
+      "note": "",
+      "connectionConfirmation": null,
+      "reviewRequiredFor": [],
+      "assessmentOrigin": {
+        "kind": "inherited",
+        "sourceId": "7b2320e3-3f1f-4bb0-b27c-977270f44ab0",
+        "sourceChoice": null
+      }
+    },
+    {
+      "id": "0bd74a62-293d-41b3-94b8-534a85c6f9c5",
+      "athleteId": "test-22",
+      "skillId": "5c61a689-cc72-431b-9f6e-c5c330902367",
+      "archived": false,
+      "stability": 4,
+      "assessedAt": "2026-10-26",
+      "updatedAt": "2026-10-27T12:00:00.000Z",
+      "note": "",
+      "connectionConfirmation": null,
+      "reviewRequiredFor": [],
+      "assessmentOrigin": {
+        "kind": "inherited",
+        "sourceId": "7b2320e3-3f1f-4bb0-b27c-977270f44ab0",
+        "sourceChoice": null
+      }
+    }
+  ],
+  "inheritanceRelations": [
+    {
+      "sourceId": "7b2320e3-3f1f-4bb0-b27c-977270f44ab0",
+      "targetId": "1132c4a9-406d-4597-9530-5f3fa6269a54",
+      "sourceIdentity": "{\"connection\":{\"kind\":\"standard\",\"transitions\":[\"direct\",\"direct\"]},\"discipline\":\"tumbling\",\"elements\":[{\"apparatus\":\"floor\",\"bodyPositions\":[\"straight\"],\"direction\":\"backward\",\"family\":\"roundoff\",\"landing\":\"feet\",\"rotationQuarterTurns\":4,\"takeoff\":\"one-foot\",\"twistDistribution\":[],\"twistsHalfTurns\":0,\"variant\":{}},{\"apparatus\":\"floor\",\"bodyPositions\":[\"straight\"],\"direction\":\"backward\",\"family\":\"flic\",\"landing\":\"feet\",\"rotationQuarterTurns\":4,\"takeoff\":\"two-feet\",\"twistDistribution\":[],\"twistsHalfTurns\":0,\"variant\":{}},{\"apparatus\":\"floor\",\"bodyPositions\":[\"straight\"],\"direction\":\"backward\",\"family\":\"salto\",\"landing\":\"feet\",\"rotationQuarterTurns\":4,\"takeoff\":\"two-feet\",\"twistDistribution\":[2],\"twistsHalfTurns\":2,\"variant\":{}}]}",
+      "targetIdentity": "{\"connection\":{\"kind\":\"standard\",\"transitions\":[\"direct\"]},\"discipline\":\"tumbling\",\"elements\":[{\"apparatus\":\"floor\",\"bodyPositions\":[\"straight\"],\"direction\":\"backward\",\"family\":\"roundoff\",\"landing\":\"feet\",\"rotationQuarterTurns\":4,\"takeoff\":\"one-foot\",\"twistDistribution\":[],\"twistsHalfTurns\":0,\"variant\":{}},{\"apparatus\":\"floor\",\"bodyPositions\":[\"straight\"],\"direction\":\"backward\",\"family\":\"flic\",\"landing\":\"feet\",\"rotationQuarterTurns\":4,\"takeoff\":\"two-feet\",\"twistDistribution\":[],\"twistsHalfTurns\":0,\"variant\":{}}]}",
+      "catalogId": "spring-foundation",
+      "catalogVersion": "2",
+      "relationId": "exact-prefix"
+    },
+    {
+      "sourceId": "7b2320e3-3f1f-4bb0-b27c-977270f44ab0",
+      "targetId": "871418fc-bbfd-416e-8e40-87a59ac266cf",
+      "sourceIdentity": "{\"connection\":{\"kind\":\"standard\",\"transitions\":[\"direct\",\"direct\"]},\"discipline\":\"tumbling\",\"elements\":[{\"apparatus\":\"floor\",\"bodyPositions\":[\"straight\"],\"direction\":\"backward\",\"family\":\"roundoff\",\"landing\":\"feet\",\"rotationQuarterTurns\":4,\"takeoff\":\"one-foot\",\"twistDistribution\":[],\"twistsHalfTurns\":0,\"variant\":{}},{\"apparatus\":\"floor\",\"bodyPositions\":[\"straight\"],\"direction\":\"backward\",\"family\":\"flic\",\"landing\":\"feet\",\"rotationQuarterTurns\":4,\"takeoff\":\"two-feet\",\"twistDistribution\":[],\"twistsHalfTurns\":0,\"variant\":{}},{\"apparatus\":\"floor\",\"bodyPositions\":[\"straight\"],\"direction\":\"backward\",\"family\":\"salto\",\"landing\":\"feet\",\"rotationQuarterTurns\":4,\"takeoff\":\"two-feet\",\"twistDistribution\":[2],\"twistsHalfTurns\":2,\"variant\":{}}]}",
+      "targetIdentity": "{\"connection\":{\"kind\":\"standard\",\"transitions\":[\"direct\",\"direct\"]},\"discipline\":\"tumbling\",\"elements\":[{\"apparatus\":\"floor\",\"bodyPositions\":[\"straight\"],\"direction\":\"backward\",\"family\":\"roundoff\",\"landing\":\"feet\",\"rotationQuarterTurns\":4,\"takeoff\":\"one-foot\",\"twistDistribution\":[],\"twistsHalfTurns\":0,\"variant\":{}},{\"apparatus\":\"floor\",\"bodyPositions\":[\"straight\"],\"direction\":\"backward\",\"family\":\"flic\",\"landing\":\"feet\",\"rotationQuarterTurns\":4,\"takeoff\":\"two-feet\",\"twistDistribution\":[],\"twistsHalfTurns\":0,\"variant\":{}},{\"apparatus\":\"floor\",\"bodyPositions\":[\"tuck\"],\"direction\":\"backward\",\"family\":\"salto\",\"landing\":\"feet\",\"rotationQuarterTurns\":4,\"takeoff\":\"two-feet\",\"twistDistribution\":[],\"twistsHalfTurns\":0,\"variant\":{}}]}",
+      "catalogId": "spring-foundation",
+      "catalogVersion": "2",
+      "relationId": "full-twist-positions"
+    },
+    {
+      "sourceId": "7b2320e3-3f1f-4bb0-b27c-977270f44ab0",
+      "targetId": "b822d8f8-ee74-4d6c-ac53-d2a39c75ac09",
+      "sourceIdentity": "{\"connection\":{\"kind\":\"standard\",\"transitions\":[\"direct\",\"direct\"]},\"discipline\":\"tumbling\",\"elements\":[{\"apparatus\":\"floor\",\"bodyPositions\":[\"straight\"],\"direction\":\"backward\",\"family\":\"roundoff\",\"landing\":\"feet\",\"rotationQuarterTurns\":4,\"takeoff\":\"one-foot\",\"twistDistribution\":[],\"twistsHalfTurns\":0,\"variant\":{}},{\"apparatus\":\"floor\",\"bodyPositions\":[\"straight\"],\"direction\":\"backward\",\"family\":\"flic\",\"landing\":\"feet\",\"rotationQuarterTurns\":4,\"takeoff\":\"two-feet\",\"twistDistribution\":[],\"twistsHalfTurns\":0,\"variant\":{}},{\"apparatus\":\"floor\",\"bodyPositions\":[\"straight\"],\"direction\":\"backward\",\"family\":\"salto\",\"landing\":\"feet\",\"rotationQuarterTurns\":4,\"takeoff\":\"two-feet\",\"twistDistribution\":[2],\"twistsHalfTurns\":2,\"variant\":{}}]}",
+      "targetIdentity": "{\"connection\":{\"kind\":\"standard\",\"transitions\":[\"direct\",\"direct\"]},\"discipline\":\"tumbling\",\"elements\":[{\"apparatus\":\"floor\",\"bodyPositions\":[\"straight\"],\"direction\":\"backward\",\"family\":\"roundoff\",\"landing\":\"feet\",\"rotationQuarterTurns\":4,\"takeoff\":\"one-foot\",\"twistDistribution\":[],\"twistsHalfTurns\":0,\"variant\":{}},{\"apparatus\":\"floor\",\"bodyPositions\":[\"straight\"],\"direction\":\"backward\",\"family\":\"flic\",\"landing\":\"feet\",\"rotationQuarterTurns\":4,\"takeoff\":\"two-feet\",\"twistDistribution\":[],\"twistsHalfTurns\":0,\"variant\":{}},{\"apparatus\":\"floor\",\"bodyPositions\":[\"pike\"],\"direction\":\"backward\",\"family\":\"salto\",\"landing\":\"feet\",\"rotationQuarterTurns\":4,\"takeoff\":\"two-feet\",\"twistDistribution\":[],\"twistsHalfTurns\":0,\"variant\":{}}]}",
+      "catalogId": "spring-foundation",
+      "catalogVersion": "2",
+      "relationId": "full-twist-positions"
+    },
+    {
+      "sourceId": "7b2320e3-3f1f-4bb0-b27c-977270f44ab0",
+      "targetId": "0bd74a62-293d-41b3-94b8-534a85c6f9c5",
+      "sourceIdentity": "{\"connection\":{\"kind\":\"standard\",\"transitions\":[\"direct\",\"direct\"]},\"discipline\":\"tumbling\",\"elements\":[{\"apparatus\":\"floor\",\"bodyPositions\":[\"straight\"],\"direction\":\"backward\",\"family\":\"roundoff\",\"landing\":\"feet\",\"rotationQuarterTurns\":4,\"takeoff\":\"one-foot\",\"twistDistribution\":[],\"twistsHalfTurns\":0,\"variant\":{}},{\"apparatus\":\"floor\",\"bodyPositions\":[\"straight\"],\"direction\":\"backward\",\"family\":\"flic\",\"landing\":\"feet\",\"rotationQuarterTurns\":4,\"takeoff\":\"two-feet\",\"twistDistribution\":[],\"twistsHalfTurns\":0,\"variant\":{}},{\"apparatus\":\"floor\",\"bodyPositions\":[\"straight\"],\"direction\":\"backward\",\"family\":\"salto\",\"landing\":\"feet\",\"rotationQuarterTurns\":4,\"takeoff\":\"two-feet\",\"twistDistribution\":[2],\"twistsHalfTurns\":2,\"variant\":{}}]}",
+      "targetIdentity": "{\"connection\":{\"kind\":\"standard\",\"transitions\":[\"direct\",\"direct\"]},\"discipline\":\"tumbling\",\"elements\":[{\"apparatus\":\"floor\",\"bodyPositions\":[\"straight\"],\"direction\":\"backward\",\"family\":\"roundoff\",\"landing\":\"feet\",\"rotationQuarterTurns\":4,\"takeoff\":\"one-foot\",\"twistDistribution\":[],\"twistsHalfTurns\":0,\"variant\":{}},{\"apparatus\":\"floor\",\"bodyPositions\":[\"straight\"],\"direction\":\"backward\",\"family\":\"flic\",\"landing\":\"feet\",\"rotationQuarterTurns\":4,\"takeoff\":\"two-feet\",\"twistDistribution\":[],\"twistsHalfTurns\":0,\"variant\":{}},{\"apparatus\":\"floor\",\"bodyPositions\":[\"straight\"],\"direction\":\"backward\",\"family\":\"salto\",\"landing\":\"feet\",\"rotationQuarterTurns\":4,\"takeoff\":\"two-feet\",\"twistDistribution\":[],\"twistsHalfTurns\":0,\"variant\":{}}]}",
+      "catalogId": "spring-foundation",
+      "catalogVersion": "2",
+      "relationId": "full-twist-positions"
+    }
+  ],
+  "inheritanceExclusions": [
+    {
+      "athleteId": "test-22",
+      "targetIdentity": "{\"connection\":{\"kind\":\"standard\",\"transitions\":[]},\"discipline\":\"tumbling\",\"elements\":[{\"apparatus\":\"floor\",\"bodyPositions\":[\"straight\"],\"direction\":\"backward\",\"family\":\"roundoff\",\"landing\":\"feet\",\"rotationQuarterTurns\":4,\"takeoff\":\"one-foot\",\"twistDistribution\":[],\"twistsHalfTurns\":0,\"variant\":{}}]}"
+    }
+  ]
+}

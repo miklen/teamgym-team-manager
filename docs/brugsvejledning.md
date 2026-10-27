@@ -16,9 +16,9 @@ Mens Googles filvælger er åben, skjules appens dialog, så du kan vælge cooki
 
 ## Hold og gymnaster
 
-Opret et hold med navn, præcis regelpakke og profil. Juniorpiger er standard i den installerede DK-pakke. Hvert hold har egne tre bane- og tre trampetomgange. Navne og profiler på andre hold ændres ikke ved redigering af ét hold.
+Opret et hold med navn, præcis regelpakke og profil. Juniorpiger er standard i den installerede DK-pakke. Hvert hold starter med Plan A på bane og trampet, med tre omgange i hvert scenarie. Du kan oprette flere uafhængige scenarier i hver disciplin. Navne og profiler på andre hold ændres ikke ved redigering af ét hold.
 
-Kartoteket starter med **Alle hold**, som også viser gymnaster uden hold. Du kan filtrere på et bestemt hold eller **Uden hold** og søge på navn/kendetegn. Brug kendetegn, når to gymnaster hedder det samme. Gymnastens identitet og færdigheder følger med ved flytning. Gamle omgangspladser bliver stående med advarsel, indtil træneren retter dem.
+Kartoteket starter med **Alle hold**, som også viser gymnaster uden hold. Du kan filtrere på et bestemt hold eller **Uden hold** og søge på navn/kendetegn. Brug kendetegn, når to gymnaster hedder det samme. Gymnastens identitet og færdigheder følger med ved flytning. Gamle omgangspladser og reserver bevares med advarsel i alle scenarier, indtil træneren retter dem.
 
 Åbn gymnasten og vælg **Tilføj færdighed**. Sæt flueben ved flere spring fra den søgbare liste, fx rondat–flik–1/1 og kraft–barani, og angiv sikkerhed 1–5 ud for hvert spring. Fluebenet betyder, at gymnasten kan udføre hele serien uden mellemtrin. Listen rummer 239 færdige banesammensætninger samt selvstændige spring med indgang fra tilløb og trampetspring. Valgene bevares mellem søgninger, grupper og bane/trampet. Vælg vurderingsdato, og registrér alle valgene samlet.
 
@@ -36,17 +36,17 @@ Mangler et spring, bruges **Byg selv** med elementer i rækkefølge. En registre
 
 Stabilitet er en trænerskala fra 1 til 5 med synlige ankre. »Ikke vurderet« er en særskilt tilstand. En vurdering kræver dato og kan have note. Ændres den præcise udførelse, skal den nye udførelse vurderes på ny. Forsøg på at tilføje samme færdighed åbner den eksisterende registrering.
 
-Åbn en registreret færdighed på gymnasten og vælg **Fjern færdighed** for at fjerne den fra gymnastens liste. Bekræftelsen viser, hvis springet bruges i planen, og kan annulleres. Berørte pladser bliver markeret, indtil du vælger en anden færdighed. Andre gymnasters registreringer og gymnastens kortere serier bevares. Du kan tilføje samme færdighed igen gennem den almindelige liste uden dublet; angiv sikkerheden på ny. Det gælder også rytmemomenter.
+Åbn en registreret færdighed på gymnasten og vælg **Fjern færdighed** for at fjerne den fra gymnastens liste. Bekræftelsen viser brug i alle holdets scenarier og reserver med hold, disciplin, scenarienavn og omgang og kan annulleres. Berørte pladser bliver markeret, indtil du vælger en anden færdighed. Andre gymnasters registreringer og gymnastens kortere serier bevares. Du kan tilføje samme færdighed igen gennem den almindelige liste uden dublet; angiv sikkerheden på ny. Det gælder også rytmemomenter.
 
-Åbn gymnasten og vælg **Fjern gymnast** for at fjerne vedkommende fra gymnastlisten og holdets aktive overblik. Bekræftelsen viser navn/kendetegn og antal pladser i springplanen, som skal have valgt en anden gymnast. Du kan annullere. Registrerede færdigheder og eksisterende planreferencer bevares; fjernelsen afventer **Gem på Drive** ligesom andre ændringer.
+Åbn gymnasten og vælg **Fjern gymnast** for at fjerne vedkommende fra gymnastlisten og holdets aktive overblik. Bekræftelsen viser navn/kendetegn, antal udførende pladser og reservepladser samt deres steder i alle scenarier. På disse pladser skal der vælges en anden gymnast. Du kan annullere. Registrerede færdigheder og eksisterende planreferencer bevares; fjernelsen afventer **Gem på Drive** ligesom andre ændringer.
 
 Ved saltoer vises retningen i rækkefølge, fx **Saltoer: baglæns → forlæns**. Søg på **rondat salto salto** for at vælge mellem to baglæns saltoer og baglæns salto til forlæns salto. Der findes også varianter med flik samt lukket, hoftebøjet og strakt position. Retninger vises også ved selvvalgte serienavne.
 
 ## Springplan
 
-Vælg Bane eller Trampet. På brede skærme står de tre omgange ved siden af hinanden; på mindre skærme vælger du omgang i fanerne. Tilføj aktive gymnaster og deres registrerede anvendelige færdigheder. En ufuldstændig plads kan gemmes som kladde. Der opfindes ingen sjette gymnast eller udførelseskarakter.
+Vælg Bane eller Trampet og derefter scenarie på navnelinjen før analysen. Alle scenarier er ligeværdige variationer. På brede skærme står de tre omgange ved siden af hinanden; på mindre skærme vælger du omgang i fanerne. Tilføj aktive gymnaster og deres registrerede anvendelige færdigheder. En ufuldstændig plads kan gemmes som kladde. Der opfindes ingen sjette gymnast eller udførelseskarakter.
 
-DK-profilen tillader seks tællende og højst to ekstra først. Ekstra markeres særskilt og øger ikke tællende point eller stabilitet. Mixprofilen kontrollerer fordelingen. Pilene flytter en plads med mus, berøring eller tastatur; på computer kan pladser også trækkes. Ekstra skal fortsat stå først. Sorteringsforslaget viser ændringer, før det anvendes. »Gør til holdomgang« flytter hele omgangen til førstepladsen.
+DK-profilen tillader seks tællende og højst to ekstra først. Ekstra markeres særskilt og øger ikke tællende point eller stabilitet. Mixprofilen kontrollerer fordelingen. Pilene flytter en plads med mus, berøring eller tastatur; på computer kan pladser også trækkes. Ekstra skal fortsat stå først. Sorteringsforslaget viser ændringer, før det anvendes. »Gør til holdomgang« flytter hele omgangen med reserver til førstepladsen i det viste scenarie. Andre scenarier bevares.
 
 D-grundlaget forklarer oprindelig og justeret D, kendte delresultater og kilde. C viser grundværdi, tillæg, rå fradrag og berørte valg. Uafklarede regler viser deres spørgsmål og eventuelle fortolkningsspor. Flow kræver observation. Stabilitet påvirker ikke D/C og vises med gennemsnit, minimum, lave vurderinger og dækning.
 
@@ -55,6 +55,22 @@ Hver plads viser springets **D-tal** i et lille blåt felt uden ekstra tekst. Si
 Åbn **Spring** på omgangspladsen for at sammenligne de registrerede muligheder. Navn og saltoretning står samlet; D og sikkerhed har egne kolonner på computer og en separat linje på mobil. Søg efter springnavnet eller retningen. Brug piletaster, Home/End og Enter til at vælge; Escape lukker listen og bevarer dit valg. **Vælg senere** lader pladsen stå uden spring. Skifter du gymnast, nulstilles springvalget, så en anden gymnasts færdighed ikke følger med. Først **Opdater** ændrer planen.
 
 Muligheder bygger kun på registrerede anvendelige færdigheder. »Se konkrete ændringer« viser en fuld vidneopstilling og konsekvenser for D, C og stabilitet. Anvendelse ændrer kladden samlet; annullering gør intet. Forskellige tillægsvidner kan være uforenelige. En afbrudt/begrænset søgning er en dokumenteret undergrænse, ikke et bevist maksimum.
+
+### Scenarier
+
+Klik på navnet for at vise et scenarie. **+ Nyt** opretter tre tomme omgange; menuen **•••** tilbyder **Duplikér**, **Omdøb** og **Slet**. Angiv navnet i formularen ved scenarielinjen. Enter bekræfter, Escape eller Annuller lukker. Navne trimmes, er højst 200 tegn og skal være forskellige inden for samme holds disciplin. En kopi får selvstændige opstillinger og reserver og placeres efter kilden. Sletning viser navn, disciplin og alle tre omgange med reserver før bekræftelse; det sidste scenarie kan ikke slettes.
+
+Navnerækken kan rulle for sig selv. **Alle scenarier** viser de fulde navne og søgning. Pile samt Home/End flytter fokus mellem navne; Enter/Space vælger. Appsessionen husker dit valg pr. arbejdsrum, hold og disciplin, også mellem sider. Genindlæsning starter på første scenarie. Et rent scenarieskift ændrer ingen data og starter ingen Drive-gemning.
+
+Ved en ændret plads- eller reserveformular kan **Vis scenarie** vælge næste plan. **Opdater** anvender formularen på den lokale kladde før skift, **Kassér** forlader formularen uden at anvende den, og **Bliv** bevarer indtastningen. Fejl ved Opdater bliver i formularen. Det samme værn gælder en ændret navneformular ved faneskift. Fælles vurderinger og registreringer tilhører stadig gymnasten: ændrer du en vurdering, ses ændringen i alle scenarier, hvor registreringen bruges.
+
+### Reserver
+
+Hver omgang har sin egen prioriterede liste under **Reserver**. **Tilføj reserve** virker også, når omgangen har seks tællende og to ekstra. Vælg aktiv gymnast og et registreret spring i den samme søgbare springvælger; **Vælg senere** gemmer en reserve uden spring. Listen viser prioritet, navn/kendetegn, spring, egen D og sikkerhed eller manglende vurdering. Pilene flytter reserven op eller ned med knap eller tastatur; Fjern sletter kun reservepladsen. Samme gymnast må kun stå én gang samlet blandt udførende og reserver i den samme omgang, men må bruges i andre omgange og scenarier.
+
+Reserver påvirker hverken D, C, springrækkefølge, mixkrav eller tællende sikkerhed. En manglende eller utilgængelig reserve gør ikke alene de udførendes opstilling ufuldstændig. Fjernede/flyttede gymnaster og fjernede færdigheder bevares med en særskilt advarsel; de skal rettes før ny indsættelse.
+
+**Sæt ind** åbner valg af den udførende gymnast, der udgår. Dialogen viser scenarie, disciplin, omgang og før/efter for D, C, sikkerhed og mangler. Annuller bevarer begge lister. Bekræftelse bevarer pladsens rolle og position, indsætter reserven og fjerner kun denne fra listen. Den udgående gymnast bliver ikke automatisk reserve, og rækkefølgen sorteres ikke skjult. En reserve uden spring kan indsættes som ufuldstændig plads. En tom omgang skal først have en udførende plads. Ændres kladden under sammenligningen, skal den beregnes igen.
 
 ## Rytme
 
@@ -66,11 +82,11 @@ Dækning for færdighed og vurdering vises separat. »Se mangler« angiver navne
 
 ## Regelskift og gemning
 
-En ældre format 1-fil viser **Opgradér arbejdsrummet**. Eksportér eventuelt originalen, og vælg **Opgradér lokal kladde** eller **Annuller**. Alle eksisterende vurderinger bliver egne uden ændrede værdier. Originalen på Drive ændres først ved en særskilt **Gem på Drive**, som stadig kontrollerer rettigheder og konkurrerende ændringer. En læser kan eksportere den lokale opgradering. Ældre appudgaver kan ikke åbne format 2. Annullering eller afvisning af en beskadiget/nyere fil bevarer det nuværende arbejdsrum og kladden.
+En ældre format 1- eller 2-fil viser **Opgradér arbejdsrummet** med kildeversion og format 3. Eksportér eventuelt originalen, og vælg **Opgradér lokal kladde** eller **Annuller**. Format 1-vurderinger bliver egne; format 2 bevarer arv og fravalg. De eksisterende tre omgange bliver til Plan A i hver disciplin med tomme reservelister. Originalen på Drive ændres først ved en særskilt **Gem på Drive**, som kontrollerer rettigheder og konkurrerende ændringer. En læser kan eksportere den lokale opgradering. Ældre appudgaver kan ikke åbne format 3. Annullering eller afvisning af en beskadiget/nyere fil bevarer det nuværende arbejdsrum og kladden.
 
-Reglement viser installeret pakke/profil, kilder, algoritmeversioner og kendt tvivl. Et eksplicit skift viser før/efter for begge springdiscipliner, rytme og anvendelighed. Anvend skiftet samlet eller annullér. Ukendte pakker bevares uden fallback. Et nyere filformat afvises uden at ændre filen; filformat og regelversion er forskellige ting.
+Reglement viser installeret pakke/profil, kilder, algoritmeversioner og kendt tvivl. Et eksplicit skift viser særskilt før/efter for alle navngivne scenarier i begge springdiscipliner, deres reservevalg, rytme og anvendelighed. Hele holdet bruger samme binding; lukkede planer bliver også gennemgået. Anvend skiftet samlet eller annullér. Ukendte pakker bevares uden fallback. Et nyere filformat afvises uden at ændre filen; filformat og regelversion er forskellige ting.
 
-**Lokale ændringer · Gem på Drive** gemmer en snapshot. Redigerer du videre under upload, står de nye ændringer fortsat som ugemte. »Gemt« vises først efter bekræftet eller genkendt operation. Ved konflikt kan kladden eksporteres, gennemgås eller kasseres bevidst før indlæsning af den nye fil. Der findes ingen automatisk sammenfletning eller »overskriv alligevel«.
+**Lokale ændringer · Gem på Drive** gemmer hele arbejdsrummet med alle scenarier og reserver, uanset hvilken plan du ser. Eksport af kladden omfatter samme samling. Redigerer du videre under upload, står de nye ændringer fortsat som ugemte. »Gemt« vises først efter bekræftet eller genkendt operation. Ved konflikt kan kladden eksporteres, gennemgås eller kasseres bevidst før indlæsning af den nye fil. Der findes ingen automatisk sammenfletning eller »overskriv alligevel«.
 
 Ved udløbet Google-adgang bevares kladden. Forbind til Google Drive og kontrollér den aktuelle fil igen. Afbryd forbindelse rydder lokal adgang; tilbagekaldelse af samtykke er særskilt. Hvis en anden fane afbryder, lukkes arbejdsrummet, og en ugemt kladde tilbydes som isoleret eksport. Luk ikke siden, før ugemt arbejde er gemt eller eksporteret.
 

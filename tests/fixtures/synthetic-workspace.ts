@@ -31,11 +31,11 @@ export function syntheticWorkspace() {
     workspace = updateAssessment(result.workspace, result.athleteSkillId, { stability: athlete.id === athleteA.id ? 1 : 5, assessedAt: '2026-10-25', note: 'Kun syntetiske testdata.' }, environment);
   }
   const plan = workspace.plans[0]!;
-  for (const discipline of ['tumbling', 'trampet'] as const) for (const round of plan[discipline]) {
+  for (const discipline of ['tumbling', 'trampet'] as const) for (const round of plan[discipline][0]!.rounds) {
     const entries = workspace.athletes.slice(0, 6).map((athlete) => ({ id: environment.id(), athleteId: athlete.id,
       athleteSkillId: workspace.athleteSkills.find((item) => item.athleteId === athlete.id && item.skillId === (discipline === 'tumbling' ? tumblingSkill.id : trampetSkill.id))!.id,
       role: 'counting' as const }));
-    workspace = setRoundEntries(workspace, plan.id, discipline, round.id, entries, limits, environment);
+    workspace = setRoundEntries(workspace, plan.id, discipline, plan[discipline][0]!.id, round.id, entries, limits, environment);
   }
   return { workspace, environment, teamA, teamB, athleteA, athleteB, planId: plan.id };
 }

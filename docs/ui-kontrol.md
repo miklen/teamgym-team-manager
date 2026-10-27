@@ -1,6 +1,6 @@
 # Brugerflade og kontrol
 
-Den visuelle retning følger projektets frontend-skill: varm lys arbejdsflade, mørk tekst, tabellariske tal og én teal accent. Indholdet er holdkontekst/navigation, primær arbejdsflade og detaljer ved de relevante valg. Lister og matricer bærer data; der er ingen dashboardmosaik eller marketinghero.
+Den visuelle retning følger projektets frontend-skill: lys arbejdsflade, mørk tekst, tabellariske tal og én blå accent. Indholdet er holdkontekst/navigation, primær arbejdsflade og detaljer ved de relevante valg. Lister og matricer bærer data; der er ingen dashboardmosaik eller marketinghero.
 
 Interaktionerne er korte positionsovergange ved inspektør, nye/flyttede rækker og ændrede tal, synlige fokusmarkeringer, bevidste forhåndsvisninger samt genberegning af kladden. Flytning bevarer DOM-identitet og tastaturfokus. Dialoger bruger native modal/fokus og returnerer fokus ved lukning. Reduceret bevægelse fjerner animationerne. Tekst fades ikke ind: axe fandt utilstrækkelig kontrast under den oprindelige opacitetsanimation, som blev erstattet af en ren positionsovergang. Den visuelle gennemgang rettede også et skrumpende logo og en klemt redigeringsknap ved stor tekst samt tilføjede omgang, plads og rolle til potentialets ændringsliste.
 
@@ -42,3 +42,23 @@ To nye browserprøver genskaber eksempelserien med udelukkende syntetiske person
 ## Retninger og indgang fra tilløb
 
 Ny mobilkontrol verificerer, at Grundspring og løs baglæns salto/flik/whipback ikke findes i færdige valg. Alle elementer findes i Byg selv; en [tydelig besked om manglende indgang](ui/springindgang-390.png) ledsager den deaktiverede registreringsknap, indtil rondat er sat foran. Serien kan derefter registreres og gemmes med uændrede eksisterende data. Samlet browserkontrol: 40 bestået.
+
+## Scenarier og reserver · 27. oktober 2026
+
+Den lokale format 3-udgave er gennemgået med 12 banescenarier, navne på 200 tegn, tre omgange, tomme og fyldte reserveområder og en reserve uden spring. Disciplin, scenarie og omgang har forskellige niveauer. Scenarier ligger som en integreret navnerække før analysen; Nyt og menuen forbliver uden for rækkens lokale rulning. Alle scenarier viser fulde navne og søgning. Reserveprioritet, spring, D og fem sikkerhedstrin kan læses hver for sig under omgangen.
+
+Implementeringsagenten har visuelt åbnet og gennemgået nedenstående PNG’er. Det er kontrol af faktisk rendering med syntetiske data, ikke ekstern designgodkendelse eller manuel live Drive-accept.
+
+| CSS-bredde | Navigation og lange navne | Reserveoversigt | Navnefejl | Læseadgang |
+| --- | --- | --- | --- | --- |
+| 390 | [Navigation](ui/scenarios-navigation-390.png), [200 tegn](ui/scenarios-long-name-390.png) | [Fyldt og springløs](ui/scenarios-reserves-390.png) | [Navnekonflikt](ui/scenarios-error-390.png) | [Låst formular](ui/scenarios-readonly-390.png) |
+| 768 | [Navigation](ui/scenarios-navigation-768.png), [200 tegn](ui/scenarios-long-name-768.png) | [Reserveområder](ui/scenarios-reserves-768.png) | [Navnekonflikt](ui/scenarios-error-768.png) | [Låst formular](ui/scenarios-readonly-768.png) |
+| 1440 | [Navigation](ui/scenarios-navigation-1440.png), [200 tegn](ui/scenarios-long-name-1440.png) | [Fyldt og tomt beredskab](ui/scenarios-reserves-1440.png) | [Navnekonflikt](ui/scenarios-error-1440.png) | [Låst formular](ui/scenarios-readonly-1440.png) |
+
+Den visuelle gennemgang fandt og rettede mobilens overskrift, taloversigt og navigation ved stor tekst samt fokus, som kunne placere navnefeltets label over viewporten. Navneformularen bringes nu samlet i syne. [Alle scenarier](ui/scenarios-all-390.png) viser fulde navne uden hover. [200 % tekst på mobil](ui/scenarios-large-text-390.png) og [kort dialog ved skaleret layout](ui/scenarios-zoom-200.png) har tilgængelige handlinger og ingen vandret side-overflow.
+
+Browserprøverne dækker pile/Home/End og Enter/Space, navneformularens Escape/fokus, Opdater/Kassér/Bliv og valideringsfejl, reserveprioritet uden drag, navnesammenfald, annullering og samlet indsættelse. Et helt forløb med kopi, reserve, prioritering og indsættelse er gennemført med tastatur ved 720×450 CSS-pixels og skala 2 (1440×900 fysiske pixels). Der er også prøvet 200 % CSS-tekststørrelse ved 390, 768 og 1440, reduceret bevægelse og mindst 44×44 CSS-pixels på centrale handlinger. Denne skalering erstatter ikke brugerens afprøvning af browserens egen zoomfunktion.
+
+Axe med `wcag2a`, `wcag2aa`, `wcag21aa` og `wcag22aa` fandt ingen overtrædelser i de nye afprøvede flader. Det er ikke fuld WCAG-certificering eller en reel skærmlæserprøve. De tre bevægelser er en kort scenariemarkering, positionsovergang ved menu/navneformular og flytte-/indsættelsesovergang. Reduceret bevægelse fjerner animationerne uden at forsinke handlinger.
+
+Brugeren godkendte den lokale udgave 27. oktober 2026 og bad om synkronisering, arkivering og lokalt commit. Se [lokal test](lokal-test.md).
