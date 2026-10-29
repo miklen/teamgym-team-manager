@@ -7,7 +7,15 @@ Gør trænernes vurdering af den enkelte gymnasts konkrete færdighed sammenlign
 ## Requirements
 
 ### Requirement: Fælles skala for spring og rytme
-Systemet SHALL bruge én fælles stabilitetsvurdering med heltal 1–5 på komplette baneserier, trampetspring og rytmemomenter; i brugerfladen SHALL den betegnes Sikkerhed. Stabilitet og Sikkerhed MUST NOT være særskilte værdier. Skalaen SHALL forklares som 1: måske klar til konkurrencen; 2: usikkert, lykkes enkelte gange; 3: lykkes ofte, men svingende; 4: meget stabilt; 5: sikkert og gennemprøvet under konkurrencelignende forhold. Der MUST NOT indføres konkurrerende statusfelter som under indlæring/konkurrenceklar.
+Systemet SHALL bruge én fælles stabilitetsvurdering med heltal 1–5 på komplette baneserier, trampetspring og rytmemomenter; i brugerfladen SHALL den betegnes Sikkerhed. Stabilitet og Sikkerhed MUST NOT være særskilte værdier. Skalaen SHALL forklares med disse fulde betegnelser:
+
+1. Enkelte vellykkede forsøg – lykkes endnu kun sporadisk.
+2. Lykkes jævnligt – men med tydelige udsving mellem forsøgene.
+3. Lykkes oftest – men enkelte forsøg mislykkes stadig.
+4. Stabile udførelser – lykkes gentagne gange til træning.
+5. Gennemprøvet under konkurrencepres – udføres stabilt, også når det gælder.
+
+Der MUST NOT indføres konkurrerende statusfelter som under indlæring/konkurrenceklar. Eksisterende gemte tal, datoer, noter og ophav SHALL bevares uden automatisk omvurdering; de nye betegnelser vises også for eksisterende vurderinger. Træneren SHALL fortsat kunne ændre en vurdering med de almindelige vurderingskommandoer og den fælles flettepolitik.
 
 #### Scenario: Samme skala i begge kartoteker
 - **WHEN** træneren vurderer et trampetspring og et rytmemoment

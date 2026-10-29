@@ -20,6 +20,45 @@ async function inspect(page: import('@playwright/test').Page) {
   await page.getByRole('link', { name: 'Gymnaster', exact: true }).click();
   await page.getByRole('button', { name: /Alma Eksempel/ }).click();
 }
+
+for (const [query, name, count, distribution] of [
+  ['strakt 180', /^Strakt salto 180° \(forlæns\)/, 5, null],
+  ['randy', /^Randy · strakt 900°/, 7, null],
+  ['dobbelt hoftebøjet 180', /^Dobbelt hoftebøjet → hoftebøjet salto 180°/, 9, '0,1'],
+] as const) {
+  test(`forlæns kæde ${query}: fundament, registrering og genåbning`, async ({ page }) => {
+    const source = await openWorkspace(page, repertoire(0));
+    await inspect(page);
+    await page.getByRole('button', { name: 'Tilføj færdighed' }).click();
+    await page.getByRole('combobox', { name: 'Disciplin', exact: true }).selectOption('trampet');
+    await page.getByLabel('Søg sammensat spring eller alias').fill(query);
+    await page.getByRole('checkbox', { name }).check();
+    const review = page.getByRole('region', { name: 'Springvælger', exact: true });
+    if (distribution) {
+      await expect(page.getByRole('button', { name: 'Registrér 1 spring', exact: true })).toBeDisabled();
+      await review.getByRole('checkbox', { name: /^Hoftebøjet salto 0° \(forlæns\)/ }).uncheck();
+      await page.getByRole('combobox', { name: /^Skruefordeling for Dobbelt hoftebøjet/ }).selectOption(distribution);
+      await expect(review.getByRole('checkbox', { name: /^Hoftebøjet salto 0° \(forlæns\)/ })).not.toBeChecked();
+    }
+    await expect(review.locator('[data-selection="foundation"]')).toHaveCount(count);
+    await expect(review.getByRole('checkbox', { name: /^Strakt salto 0° \(forlæns\)/ })).toBeChecked();
+    if (query === 'randy') await expect(review.getByRole('checkbox', { name: /^Rudy · strakt 540°/ })).toBeChecked();
+    if (distribution) await expect(review.getByRole('checkbox', { name: /^Strakt salto 180° \(forlæns\)/ })).toBeChecked();
+    await page.getByRole('button', { name: 'Registrér 1 spring', exact: true }).click();
+    await page.getByRole('button', { name: 'Luk dialog', exact: true }).click();
+    await page.getByRole('button', { name: /Lokale ændringer/ }).click();
+    await expect(page.getByRole('button', { name: 'Gemt', exact: true })).toBeVisible();
+    expect(source.workspace.athleteSkills).toHaveLength(count + 1 - (distribution ? 1 : 0));
+    expect(source.workspace.inheritanceRelations).toHaveLength(count - (distribution ? 1 : 0));
+    expect(source.workspace.inheritanceRelations.every((relation) => relation.catalogVersion === '3')).toBe(true);
+    await page.reload();
+    await page.getByRole('button', { name: /Alma Eksempel/ }).click();
+    await page.getByLabel('Find færdighed', { exact: true }).fill('Strakt salto 0°');
+    await expect(page.getByRole('button', { name: /^Strakt salto 0°/ })).toBeVisible();
+    expect(source.failures).toEqual([]);
+  });
+}
+
 for (const width of [1440, 390])
   for (const count of [1, 22, 120]) {
     test(`familier ${count} registreringer ved ${width}: søgning, tastatur og vurdering`, async ({

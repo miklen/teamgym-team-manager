@@ -2,11 +2,11 @@ import { stabilitySchema } from './schema';
 import type { Stability } from './schema';
 
 export const STABILITY_ANCHORS = [
-  'Måske klar til konkurrencen',
-  'Usikkert, lykkes enkelte gange',
-  'Lykkes ofte, men svingende',
-  'Meget stabilt',
-  'Sikkert og gennemprøvet under konkurrencelignende forhold',
+  'Enkelte vellykkede forsøg – lykkes endnu kun sporadisk.',
+  'Lykkes jævnligt – men med tydelige udsving mellem forsøgene.',
+  'Lykkes oftest – men enkelte forsøg mislykkes stadig.',
+  'Stabile udførelser – lykkes gentagne gange til træning.',
+  'Gennemprøvet under konkurrencepres – udføres stabilt, også når det gælder.',
 ] as const;
 
 export interface StabilitySlot { filled: boolean; value: Stability | null }

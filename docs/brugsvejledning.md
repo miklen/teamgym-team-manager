@@ -22,6 +22,16 @@ Kartoteket starter med **Alle hold**, som også viser gymnaster uden hold. Du ka
 
 Åbn gymnasten og vælg **Tilføj færdighed**. Sæt flueben ved flere spring fra den søgbare liste, fx rondat–flik–1/1 og kraft–barani, og angiv sikkerhed 1–5 ud for hvert spring. Fluebenet betyder, at gymnasten kan udføre hele serien uden mellemtrin. Listen rummer 239 færdige banesammensætninger samt selvstændige spring med indgang fra tilløb og trampetspring. Valgene bevares mellem søgninger, grupper og bane/trampet. Vælg vurderingsdato, og registrér alle valgene samlet.
 
+Sikkerhed bruger samme fem beskrivelser for bane, trampet og rytme:
+
+1. **Enkelte vellykkede forsøg – lykkes endnu kun sporadisk.**
+2. **Lykkes jævnligt – men med tydelige udsving mellem forsøgene.**
+3. **Lykkes oftest – men enkelte forsøg mislykkes stadig.**
+4. **Stabile udførelser – lykkes gentagne gange til træning.**
+5. **Gennemprøvet under konkurrencepres – udføres stabilt, også når det gælder.**
+
+**Ikke vurderet** er fortsat et særskilt valg. Forklaringerne findes i springvælgeren under **Hvad betyder sikkerhed 1–5?** og ved redigering under **Se skalaens fem ankre**. De nye beskrivelser gælder også tidligere vurderinger; deres tal, datoer, noter og ophav ændres ikke automatisk. Gennemgå tidligere vurderinger efter behov, især niveau 1, der tidligere hed Måske klar til konkurrencen.
+
 **Medtag fundament automatisk** viser de medfølgende færdigheder i den samme springvælger, også i Byg selv. Hvert spring har én række med sikkerhed, D og ophav; der er ingen ekstra fundamentblok. Rondat–flik–helskrue medtager rondat, rondat–flik og samme indgang med lukket, hoftebøjet og strakt salto uden skrue. Rudy på trampet medtager de tre kropspositioner med 0° og 180°. Hvert barn kan fravælges eller få egen sikkerhed på sin række før registrering. Et personligt fravalg overlever nye kilder og gem/genåbn. Annullerer du formularen, gemmes ingen valg.
 
 En serie med indgangssalto medtager også samme serie uden saltoen, hvis resten selv kan starte fra tilløb. Fx giver Strakt–rondat–flik–helskrue også Rondat–flik–helskrue og dens fundament. Søg `strakt rondat` for at finde serier med denne begyndelse øverst. Ved søgning står de bedste match først, mens tidligere valg stadig er tilgængelige længere nede. **Søg i alle spring** rydder de øvrige filtre uden at ændre søgeteksten. For tidligere registrerede serier gennemgås det udvidede fundament ved et nyt valg af serien; genåbning tilføjer ikke børn automatisk.

@@ -30,7 +30,7 @@ Fluebenet under denne forklaring er trænerens personlige angivelse af, at gymna
 
 Søgningen prioriterer sammenhængende ord og navnets begyndelse. `strakt rondat` viser derfor Strakt–rondat og Strakt–rondat–flik før serier, hvor strakt først står til sidst. Bindestreger, tankestreger og mellemrum sidestilles. Egne serienavne kan også findes via deres præcise elementnavne. Ved søgning står de bedste match først; dine valg og fundamenter bliver i den samme liste. **Søg i alle spring** rydder gruppe-, D- og valgfiltre og bevarer søgeteksten.
 
-Det versionsmærkede trænerkatalog `spring-foundation`, version `2`, har denne afgrænsede matrix:
+Det versionsmærkede trænerkatalog `spring-foundation`, version `3`, har denne afgrænsede matrix:
 
 | Direkte valgt kilde | Medtaget fundament |
 | --- | --- |
@@ -39,10 +39,16 @@ Det versionsmærkede trænerkatalog `spring-foundation`, version `2`, har denne 
 | Rondat–flik–strakt baglæns helskrue | Samme indgang med lukket, hoftebøjet og strakt baglæns enkeltsalto uden skrue |
 | Rudy · strakt forlæns enkeltsalto 540°, trampet uden redskab | Lukket, hoftebøjet og strakt enkeltsalto med 0° og 180°, samme afsæt/landing |
 | Forlæns dobbelt 540°, trampet uden redskab | Dobbelt 180° med samme kropspositionsforløb: [3,0] og [1,2] → [1,0]; [2,1] og [0,3] → [0,1], målt i halve skruer |
+| Forlæns Barani | Enkeltsalto uden skrue i samme og lavere kropspositioner samt Barani i lavere positioner; strakt Barani giver fem fundamenter |
+| Strakt forlæns Randy / 3½ skrue (Addy) | Rudy / Randy og Rudy samt de seks enkeltsaltoer med 0°/180° |
+| Forlæns dobbelt uden skrue | De tre enkeltsaltoer uden skrue; dobbelt hofte giver også dobbelt lukket |
+| Forlæns dobbelt 180° | De tre enkeltsaltoer og tre Barani-positioner samt samme dobbelt uden skrue; dobbelt hofte giver også dobbelt lukket med samme 180°-fordeling og dobbelt lukket uden skrue |
+
+De nye forlæns kæder gælder trampet uden redskab og afslutningen i baneserier med præcist bevaret indgang og overgange. Blandede kropspositioner i dobbeltsaltoer bevares. Mangler en dobbelt hofte 180° sin fordeling, kræver det nye lukkede 180°-barn afklaring eller fravalg. Katalog 1/2 beholder deres tidligere regler. Eksisterende gymnaster får først de nye fundamenter ved et bevidst genvalg med **Medtag fundament automatisk**; genåbning udvider intet.
 
 Dobbeltrelationen omfatter alle ni kombinationer af lukket/hoftebøjet/strakt i de to saltoer; fx [hoftebøjet,strakt] og [2,1] giver samme positioner og [0,1]. Mangler 540°-fordelingen, vises 180°-barnet som **Afklar skruefordeling**. Afklar på parenten eller fravælg barnet før registrering. Ingen fordeling opfindes.
 
-Fx medtager Strakt–rondat–flik–helskrue også Rondat–flik–helskrue, rondat, rondat–flik og de tre aftalte afslutninger uden skrue. Den samme regel gælder kendte lukket/hoftebøjet/strakt indgangssaltoer foran rondat eller kraftspring. Elementer, skruer og indbyrdes overgange i resten af serien bevares. En barani foran flik giver ikke en løs flikserie uden indgang. Alle børn følger den direkte valgte kilde. Accepterede relationer fra version `1` virker fortsat; nye version `2`-børn tilføjes først ved et bevidst nyt valg af serien med gennemgang af fundamentet.
+Fx medtager Strakt–rondat–flik–helskrue også Rondat–flik–helskrue, rondat, rondat–flik og de tre aftalte afslutninger uden skrue. Den samme regel gælder kendte lukket/hoftebøjet/strakt indgangssaltoer foran rondat eller kraftspring. Elementer, skruer og indbyrdes overgange i resten af serien bevares. En barani foran flik giver ikke en løs flikserie uden indgang. Alle børn følger den direkte valgte kilde. Accepterede relationer fra version `1` og `2` virker fortsat; nye version `3`-børn tilføjes først ved et bevidst nyt valg af serien med gennemgang af fundamentet.
 
 Kataloget beskriver praktisk fundament, ikke officielle regler. Det ændrer ingen kildebytes, D-værdier eller gyldighed og krydser ikke retning eller redskab. Der dannes ingen ny forbindelse af løse registreringer. De fem helskruebørns D i juniorpigeeksemplet er håndfastlagt som 0,10, 0,30, 0,50, 0,50 og 0,60; parentens D er 0,80.
 

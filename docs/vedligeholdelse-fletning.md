@@ -35,6 +35,24 @@ Atomiske lister kræver valg ved forskellige samtidige ændringer i samme liste.
 
 **Ren visning:** Ændring af lokal navigation eller tekststørrelse begrundes som uden indflydelse på fælles data og motor. Ingen ny flettepolitik kræves.
 
+### Forlæns springfundament, katalog 3
+
+Version 3 udvider de accepterbare relationer for Barani, Rudy, Randy, 3½ skrue og forlæns dobbeltsaltoer. Version 1 og 2 beholder deres præcise matrix og relations-id'er. Genåbning afstemmer kun allerede accepterede relationer; nye relationer og registreringer oprettes ved et bevidst valg med gennemgang af fundamentet. En gyldig ældre relation genbruges frem for en dublet.
+
+Der tilføjes ingen gemte felter. Fælles springidentitet bevarer retning, kropspositionsforløb, skruefordeling, redskab, afsæt/landing og baneseriens indgang/overgange. Registreringer beholder id og note; arverelationer følger fortsat den atomiske politik med nøgle sourceId/targetId/catalogId/relationId. Katalogversion er del af den atomiske relation. Kun afslutningen i en baneserie ændres; rækkefølgen af eksisterende elementer og planpladser ændres ikke. Nye fundamenter vises i katalogets deterministiske rækkefølge og kun én gang pr. identitet. Alle relationer peger fra den direkte valgte kilde; automatisk oprettede mellemtrin bliver ikke nye kilder.
+
+Sikkerhed, dato og ophav er fortsat én vurderingsgruppe. Aktive arveværdier afstemmes i den fælles motor; kendte kilder rangeres fortsat efter laveste D og derefter sikkerhed. Egne vurderinger, også null, samt fravalg har forrang. D og gyldighed genberegnes efter eksisterende regler, og noter arves aldrig. Et nyt 180°-barn uden kendt skruefordeling markeres til afklaring; ingen fordeling opfindes. Præsentationen bruger de eksisterende danske navne og ophavsmarkeringer. Sammenligningskontekstens fingerprint omfatter nu også fundamentkataloget.
+
+`tests/domain/forward-foundation.test.ts` dækker kildeændring samtidig med note, egen vurdering og fravalg i begge fletteretninger med rigtig katalogkontekst, samt filrundtur, versionsbevaring og genvalg. Det supplerer den eksisterende strukturelle politikdækning.
+
+### Reviderede sikkerhedsbeskrivelser
+
+Den aftalte skala går fra enkelte vellykkede forsøg til gennemprøvet under konkurrencepres. Kun de fælles beskrivelser i `STABILITY_ANCHORS` ændres; historiske arkivspecifikationer bevares. Gemte 1–5-værdier og null, dato, note og ophav omnummereres eller omvurderes ikke. Træneren kan revurdere gamle vurderinger bevidst. Der oprettes ingen ny status, versionsmarkør eller lokal fletteregel i formularerne.
+
+Den eksplicitte politik er fortsat én atomisk gruppe for sikkerhed/dato/ophav og en selvstændig note. Forskellige samtidige vurderinger kræver valg af hele gruppen; en uafhængig note kan flettes med vurderingen. Id'er, udførelsesidentiteter, rækkefølge, arverelationer og fravalg ændres ikke af beskrivelserne. Arv følger fortsat det gemte tal; D, rangering, grænsen 1–2 for lave vurderinger og øvrige afledte aggregater bevarer deres beregning. Præsentationen får de fem fulde danske beskrivelser i den eksisterende fælles skalaforklaring og ved valgt vurdering.
+
+Samtidighedskontrakten verificeres af `tests/domain/workspace-merge.test.ts` (forskellige atomiske vurderinger, uafhængige noter, arvekilde mod note/egen vurdering/fravalg), suppleret af arveprøverne og skalaprøverne. Browserprøver kontrollerer de nye tekster ved valg og redigering samt bevarelse af eksisterende vurderinger og annullering.
+
 Eksempel på samtidige kommandoer: `renameTeam(B, hold, navn)` og `updateAssessment(B, registrering, vurdering)` skal begge overleve. To `updateAssessment` på samme registrering med forskellig sikkerhed skal kræve ét valg med sikkerhed/dato/ophav samlet. Disse eksempler dækkes i `tests/domain/workspace-merge.test.ts`.
 
 ## Sessionens levetid og gemning

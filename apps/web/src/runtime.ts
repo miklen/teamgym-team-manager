@@ -2,6 +2,7 @@ import { createBrowserConnection, WorkspaceSession } from '@teamgym/drive';
 import type { GoogleConfiguration } from '@teamgym/drive';
 import { reconcileWorkspace } from './inheritance-context';
 import { registry } from './rules';
+import { FOUNDATION_CATALOG } from './spring-library';
 export const googleConfig: GoogleConfiguration = {
   clientId: import.meta.env.VITE_GOOGLE_CLIENT_ID ?? '',
   projectNumber: import.meta.env.VITE_GOOGLE_PROJECT_NUMBER ?? '',
@@ -15,7 +16,7 @@ export const workspaceSession = new WorkspaceSession(
   undefined,
   reconcileWorkspace,
   () => ({
-    fingerprint: JSON.stringify(registry.list(false).map((pkg) => pkg.manifest)),
+    fingerprint: JSON.stringify([registry.list(false).map((pkg) => pkg.manifest), FOUNDATION_CATALOG]),
     reconcile: (workspace) => reconcileWorkspace(workspace, workspace.updatedAt),
   }),
   () =>

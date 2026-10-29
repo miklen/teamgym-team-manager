@@ -1,5 +1,25 @@
 # Lokal test før GitHub
 
+## Afprøvning: ny sikkerhedsskala
+
+Gem eller eksportér kladden før genindlæsning af denne nye udgave. Brug en separat syntetisk testfil.
+
+1. Åbn **Tilføj færdighed**, og fold **Hvad betyder sikkerhed 1–5?** ud. Kontrollér de fem fulde beskrivelser fra Enkelte vellykkede forsøg til Gennemprøvet under konkurrencepres på både bane og trampet.
+2. Åbn en eksisterende vurdering af et spring og et rytmemoment. Fold **Se skalaens fem ankre** ud, og prøv 1–5 samt Ikke vurderet. Den valgte beskrivelse skal følge tallet. De nye tekster må ikke omnummerere tidligere vurderinger eller ændre deres dato, note eller ophav ved åbning eller annullering.
+3. Afprøv mobilbredde, og kontrollér at hele beskrivelsen kan læses. Prøv at gemme og genåbne en ændret vurdering i testfilen.
+
+Automatisk verificeret 29. oktober 2026: `check`, 292 domæneprøver, 82 Drive-prøver og build bestod. Den samlede browserkørsel havde 137/140 bestået; de to nye skalaprøver fik rettet en for bred testafgrænsning til den indre skalaforklaring og bestod derefter ved 1440/390 px, også med udfoldede beskrivelser. Den eksisterende 200 %-tastaturprøve fik timeout i fælleskørslen og bestod ved særskilt genkørsel. Ingen produktrettelse var nødvendig til disse testfejl. Lokaludgaven er genbygget i `dist-local/`, serveren kører på port 5173, og Chromium-kontrol gav HTTP 200 uden JavaScript-fejl. Brugeren gav 29. oktober 2026 udtrykkeligt klarsignal til commit og push af den samlede udgave med springkæder og den nye sikkerhedsskala.
+
+## Afprøvning: rettede forlæns springkæder
+
+Gem eller eksportér en eventuel kladde før genindlæsning. Brug et separat syntetisk testarbejdsrum.
+
+1. Vælg strakt Barani på trampet med **Medtag fundament automatisk**: lukket/hofte/strakt salto uden skrue og lukket/hofte Barani skal medtages. Rudy skal have seks fundamenter. Randy skal også give Rudy; 3½ skrue (Addy i Byg selv) skal også give Randy og Rudy. Hvert fundament vises én gang.
+2. Vælg dobbelt lukket 180° med kendt fordeling: den giver dobbelt lukket uden skrue, tre enkeltsaltoer og tre Barani-positioner. Dobbelt hofte 180° giver desuden dobbelt hofte uden skrue og dobbelt lukket 180° med samme fordeling. Dobbelt uden skrue giver de tre enkeltsaltoer. Prøv også en kraftspring–Barani på bane: indgangen skal bevares.
+3. Ændr kildens sikkerhed og dato, prøv egen vurdering og fravalg, gem i testfilen og genåbn. Eksisterende repertoire udvides først ved genvalg med gennemgang af fundamentet. Prøv dobbelt hofte 180° uden fordeling: afklar fordelingen eller fravælg det uafklarede barn.
+
+Automatisk verificeret 29. oktober 2026: `check`, 292 domæneprøver, 82 Drive-prøver, build og alle 138 browserprøver bestod. Browserprøverne krævede kørsel uden sandbox for at afslutte testserveren korrekt. Lokaludgaven i `dist-local/` er startet på port 5173 og kontrolleret i Chromium med HTTP 200 og uden JavaScript-fejl. Prøverne bruger syntetiske data; der er ikke udført live flerbrugertest på Drive. Brugeren gav 29. oktober 2026 udtrykkeligt klarsignal til commit og push sammen med den nye sikkerhedsskala.
+
 ## Afprøvning: gennemgang af samtidige ændringer
 
 Gem eller eksportér en eksisterende kladde før genindlæsning. Brug to faner med samme separate syntetiske testfil; eksisterende fælles trænerfiler må ikke bruges til skriveprøver.

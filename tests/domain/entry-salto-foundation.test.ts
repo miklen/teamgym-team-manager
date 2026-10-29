@@ -112,7 +112,7 @@ it('alle nye børn følger den direkte valgte serie, også efter genåbning; fra
   )!;
   expect(
     workspace.inheritanceRelations.every(
-      (relation) => relation.sourceId === parent.id && relation.catalogVersion === '2',
+      (relation) => relation.sourceId === parent.id && relation.catalogVersion === '3',
     ),
   ).toBe(true);
   expect(child).toMatchObject({ stability: 3, assessmentOrigin: { kind: 'inherited', sourceId: parent.id } });
@@ -190,5 +190,5 @@ it('bevarer katalog 1 ved genåbning og tilføjer først nye børn ved bevidst r
   );
   expect(next.athleteSkills).toHaveLength(34);
   expect(next.inheritanceRelations.filter((relation) => relation.catalogVersion === '1')).toHaveLength(3);
-  expect(next.inheritanceRelations.filter((relation) => relation.catalogVersion === '2')).toHaveLength(6);
+  expect(next.inheritanceRelations.filter((relation) => relation.catalogVersion === '3')).toHaveLength(6);
 });

@@ -216,7 +216,7 @@ describe('versionsmærket, afgrænset fundament', () => {
             twistDistribution: [a!, b!],
           },
         };
-        const children = springFoundation(double, DK_V1);
+        const children = springFoundation(double, DK_V1, '2');
         expect(children).toHaveLength(1);
         expect(children[0]!.definition).toMatchObject({
           jump: {
@@ -532,6 +532,6 @@ describe('levende arv, egne vurderinger og fravalg', () => {
     expect(roundStability(next, entries, { counting: 1, extra: 0 }, teamA.id).counting.minimum).toBe(3);
     next = updateAssessment(next, parent.id, { stability: 5, assessedAt: '2026-10-26', note: '' }, env);
     expect(roundStability(next, entries, { counting: 1, extra: 0 }, teamA.id).counting.minimum).toBe(5);
-    expect(FOUNDATION_CATALOG.version).toBe('2');
+    expect(FOUNDATION_CATALOG.version).toBe('3');
   });
 });

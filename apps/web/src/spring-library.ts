@@ -505,7 +505,7 @@ export interface SpringSelection {
   confirmed: boolean;
   confirmationNote?: string;
 }
-export const FOUNDATION_CATALOG = { id: 'spring-foundation', version: '2' } as const;
+export const FOUNDATION_CATALOG = { id: 'spring-foundation', version: '3' } as const;
 export interface FoundationEntry {
   definition: SpringDefinition;
   relationId: string;
@@ -653,17 +653,116 @@ function foundationSteps(
   return result;
 }
 
-/** Version 1 bevares præcist. Version 2 lukker fundamentet under fjernelse af en indgangssalto. */
+/** Aftalte forlæns udviklingskæder; kun seriens afslutning udskiftes. */
+function forwardFoundationSteps(skill: SpringDefinition, rulePackage: RulePackage): FoundationEntry[] {
+  const jump = skill.discipline === 'trampet' ? skill.jump : skill.elements.at(-1);
+  if (
+    !jump ||
+    jump.family !== 'salto' ||
+    jump.direction !== 'forward' ||
+    jump.apparatus !== (skill.discipline === 'trampet' ? 'trampet' : 'floor') ||
+    jump.takeoff !== 'two-feet' ||
+    jump.landing !== 'feet' ||
+    canonicalJson(jump.variant) !== '{}'
+  )
+    return [];
+  const result: FoundationEntry[] = [];
+  const add = (execution: ElementExecution, relationId: string, unresolved = false) => {
+    const definition: SpringDefinition =
+      skill.discipline === 'trampet'
+        ? { ...structuredClone(skill), id: newEntityId(), jump: structuredClone(execution) }
+        : {
+            ...structuredClone(skill),
+            id: newEntityId(),
+            elements: [...structuredClone(skill.elements.slice(0, -1)), structuredClone(execution)],
+          };
+    definition.name =
+      definition.discipline === 'trampet'
+        ? springElementName(definition.jump, rulePackage)
+        : springSeriesName(definition.elements, rulePackage);
+    result.push({ definition, relationId, unresolved });
+  };
+  const single =
+    jump.rotationQuarterTurns === 4 &&
+    jump.bodyPositions.length === 1 &&
+    [1, 3, 5, 7].includes(jump.twistsHalfTurns) &&
+    (jump.twistDistribution.length === 0 ||
+      canonicalJson(jump.twistDistribution) === canonicalJson([jump.twistsHalfTurns])) &&
+    (jump.twistsHalfTurns === 1 || jump.bodyPositions[0] === 'straight');
+  const double =
+    jump.rotationQuarterTurns === 8 &&
+    jump.bodyPositions.length === 2 &&
+    [0, 1].includes(jump.twistsHalfTurns) &&
+    (jump.twistDistribution.length === 0 ||
+      (jump.twistDistribution.length === 2 &&
+        jump.twistDistribution.reduce((a, b) => a + b, 0) === jump.twistsHalfTurns));
+  if (!single && !double) return [];
+  const positions = ['tuck', 'pike', 'straight'] as const;
+  // Dobbeltsalto giver alle tre enkeltsaltoer; 180° giver også de tre baranipositioner.
+  const maxPosition = double ? 2 : positions.indexOf(jump.bodyPositions[0]!);
+  for (const position of positions.slice(0, maxPosition + 1))
+    for (const twists of [0, 1]) {
+      if (single && twists === 1 && position === jump.bodyPositions[0] && jump.twistsHalfTurns === 1)
+        continue;
+      if (double && twists > jump.twistsHalfTurns) continue;
+      const execution = rulePackage.springCatalog.find(
+        (entry) =>
+          entry.status === 'allowed' &&
+          entry.execution.family === 'salto' &&
+          entry.execution.apparatus === jump.apparatus &&
+          entry.execution.direction === jump.direction &&
+          entry.execution.rotationQuarterTurns === 4 &&
+          entry.execution.twistsHalfTurns === twists &&
+          canonicalJson(entry.execution.bodyPositions) === canonicalJson([position]) &&
+          entry.execution.takeoff === jump.takeoff &&
+          entry.execution.landing === jump.landing &&
+          canonicalJson(entry.execution.variant) === '{}',
+      )?.execution;
+      if (execution) add(execution, 'forward-salto-foundation');
+    }
+  if (single && jump.bodyPositions[0] === 'straight')
+    for (const twists of [3, 5])
+      if (twists < jump.twistsHalfTurns)
+        add(
+          { ...structuredClone(jump), twistsHalfTurns: twists, twistDistribution: [twists] },
+          'forward-twist-chain',
+        );
+  if (double) {
+    if (jump.twistsHalfTurns === 1)
+      add({ ...structuredClone(jump), twistsHalfTurns: 0, twistDistribution: [] }, 'double-without-twist');
+    if (canonicalJson(jump.bodyPositions) === '["pike","pike"]') {
+      const tucked = { ...structuredClone(jump), bodyPositions: ['tuck', 'tuck'] as const };
+      // Bevar en kendt fordeling. Et nyt 180°-barn uden fordeling kræver afklaring.
+      add(
+        { ...tucked, bodyPositions: [...tucked.bodyPositions] },
+        'double-pike-tuck',
+        jump.twistsHalfTurns === 1 && jump.twistDistribution.length !== 2,
+      );
+      if (jump.twistsHalfTurns === 1)
+        add(
+          { ...tucked, bodyPositions: [...tucked.bodyPositions], twistsHalfTurns: 0, twistDistribution: [] },
+          'double-pike-tuck-without-twist',
+        );
+    }
+  }
+  return result;
+}
+
+/** Tidligere versioner bevarer deres præcise matrix og relations-id'er. */
 export function springFoundation(
   skill: SpringDefinition,
   rulePackage: RulePackage,
   version: string = FOUNDATION_CATALOG.version,
 ): FoundationEntry[] {
   if (version === '1') return foundationSteps(skill, rulePackage, false);
-  if (version !== '2') return [];
+  if (!['2', '3'].includes(version)) return [];
   const result: FoundationEntry[] = [];
   const seen = new Set([skillIdentity(skill)]);
-  const pending = foundationSteps(skill, rulePackage, true);
+  const steps = (definition: SpringDefinition) => [
+    ...foundationSteps(definition, rulePackage, true),
+    ...(version === '3' ? forwardFoundationSteps(definition, rulePackage) : []),
+  ];
+  const pending = steps(skill);
   for (let index = 0; index < pending.length; index++) {
     const entry = pending[index]!;
     const identity = skillIdentity(entry.definition);
@@ -671,7 +770,7 @@ export function springFoundation(
     seen.add(identity);
     result.push(entry);
     if (!entry.unresolved)
-      for (const child of foundationSteps(entry.definition, rulePackage, true))
+      for (const child of steps(entry.definition))
         pending.push({ ...child, relationId: `${entry.relationId}:${child.relationId}` });
   }
   return result;
@@ -687,7 +786,7 @@ export function springInheritanceContext(
       skill.discipline === 'rhythm' ? null : rulePackage.evaluateSkill(skill, registration).difficulty.value,
     accepts: (relation, source, target) =>
       relation.catalogId === FOUNDATION_CATALOG.id &&
-      ['1', '2'].includes(relation.catalogVersion) &&
+      ['1', '2', '3'].includes(relation.catalogVersion) &&
       source.discipline !== 'rhythm' &&
       springFoundation(source, rulePackage, relation.catalogVersion).some(
         (entry) =>
