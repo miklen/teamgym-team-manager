@@ -1,5 +1,15 @@
 # Lokal test før GitHub
 
+## Afprøvning: DK-regler og diskrete usikkerheder — 30. oktober 2026
+
+Gem eller eksportér en eventuel kladde før genindlæsning. Brug en særskilt syntetisk testfil; lokalvisningen kan skrive til den valgte rigtige Drive-fil.
+
+1. Åbn et eksisterende DK 1.0-hold. Springplanen viser en kort besked om den opdaterede pakke. Gå til **Reglement**, vælg **Danmarksserien 1.1.0**, og gennemgå **Vis før og efter**. Skift kun i testfilen. Kontroller, at gymnastdata bevares, og at berørte rytmevurderinger markeres til gennemgang.
+2. Åbn en baneplan med gyldige serier. Ved elementtillægget skal trekanten åbne en kort forklaring af de to C-spor; D og C med åbent grundlag må ikke ligne et sikkert facit. Prøv også et spring med H>1 eller en holdomgang uden klart flertal, hvis testfilen har det.
+3. Vælg knælende Gumbi eller et DB804-moment i rytmen. Trekant og forklaring skal stå ved valget og i momentets detaljer. Kontroller læsbarheden på en smal skærm og med tastatur.
+
+Afvent brugerens lokale test og udtrykkelige klarsignal før commit, push eller publicering.
+
 ## Afprøvning: ny sikkerhedsskala
 
 Gem eller eksportér kladden før genindlæsning af denne nye udgave. Brug en separat syntetisk testfil.

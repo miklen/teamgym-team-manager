@@ -23,6 +23,7 @@ import { ScenarioBar } from './scenario-bar';
 import { useScenarioSelection } from './scenario-context';
 import { ReserveList } from './reserves';
 import { PlanDifficulty, PlanSafety, PlanSkillSelect } from './plan-skill-select';
+import { RuleUncertainty } from './rule-uncertainty';
 
 export function SpringPage(props: DataProps & { teamId: string }) {
   const team = props.workspace.teams.find((item) => item.id === props.teamId)!;
@@ -57,6 +58,7 @@ export function SpringPage(props: DataProps & { teamId: string }) {
           </button>
         </div>
       </div>
+      {team.rulesetBinding.packageVersion === '1.0.0' && <p className="rule-version-note">Regelpakke 1.0.0 · en opdatering med rettelser findes under Reglement.</p>}
       <ScenarioBar
         {...props}
         planId={plan.id}
@@ -137,6 +139,9 @@ function SpringDisciplineView({
   const plan = workspace.plans.find((item) => item.teamId === teamId)!;
   const scenario = plan[discipline].find((item) => item.id === scenarioId)!;
   const evaluation = rulePackage.analyze(workspace, teamId, discipline, scenarioId);
+  const hasPlannedEntries = evaluation.rounds.some((round) => round.entries.length > 0);
+  const dUncertainties = hasPlannedEntries ? [...evaluation.difficulty.issues, ...(rulePackage.manifest.packageVersion === '1.1.0' && evaluation.difficulty.value && evaluation.difficulty.value.multiply(100).denominator !== 1n ? ['H-U06'] : [])] : [];
+  const cUncertainties = hasPlannedEntries ? [...new Set(evaluation.contributions.flatMap((item) => item.decision.issues)), ...(rulePackage.manifest.packageVersion === '1.1.0' && evaluation.composition.value && evaluation.composition.value.multiply(100).denominator !== 1n ? ['H-U06'] : [])] : [];
   const [activeRound, setActiveRound] = useState(0);
   const rowNodes = useRef(new Map<string, HTMLLIElement>());
   const rowPositions = useRef(new Map<string, { x: number; y: number }>());
@@ -230,14 +235,14 @@ function SpringDisciplineView({
       )}
       <div className="analysis-strip">
         <div>
-          <span>Planlagt D · disciplin</span>
+          <div className="analysis-metric-label"><span>Planlagt D · disciplin</span><RuleUncertainty ids={dUncertainties} context="D" compact /></div>
           <strong className="number-change" key={evaluation.panelD?.toString() ?? 'unknown'}>
             {points(evaluation.panelD)}
           </strong>
           <small>{statusText[evaluation.difficulty.status]} · Tre omganges D / 3</small>
         </div>
         <div>
-          <span>Planlagt C · disciplin</span>
+          <div className="analysis-metric-label"><span>Planlagt C · disciplin</span><RuleUncertainty ids={cUncertainties} context="C" compact /></div>
           <strong className="number-change" key={evaluation.composition.panel?.toString() ?? 'unknown'}>
             {points(evaluation.composition.panel)}
           </strong>
@@ -287,6 +292,7 @@ function SpringDisciplineView({
               <p className="round-totals">
                 D <strong>{points(result.panelD)}</strong> <span>{statusText[result.difficulty.status]}</span>
               </p>
+              <RuleUncertainty ids={result.difficulty.issues} />
               <ol className="round-entries">
                 {result.entries.map((participant, index) => (
                   <li
@@ -352,6 +358,8 @@ function SpringDisciplineView({
                         <PlanSafety value={participant.registration?.stability ?? null} />
                       </span>
                     </div>
+                    {participant.evaluation?.hasDouble && <RuleUncertainty ids={['A71-U01']} />}
+                    {participant.skill?.discipline === 'tumbling' && participant.skill.elements[0]?.family === 'salto' && participant.skill.elements[0].direction === 'forward' && <RuleUncertainty ids={['A3-U01']} />}
                     {(participant.adjustedD.value?.compare(participant.originalD.value ?? 0) !== 0 ||
                       participant.adjustedD.status !== 'known') && (
                       <p className="round-contribution">
@@ -524,6 +532,7 @@ function SpringDisciplineView({
                   <Decision value={item.decision} />
                 )}
               </summary>
+              <RuleUncertainty ids={item.decision.issues} />
               <p>
                 {item.kind === 'deduction'
                   ? 'Råt fradrag før netto'

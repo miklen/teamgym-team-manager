@@ -19,6 +19,7 @@ import {
   moveAthlete,
   skillIdentity,
   confirmConnection,
+  bindingFingerprint,
 } from '@teamgym/domain';
 import type { MergeContext, MergeResult, Workspace } from '@teamgym/domain';
 import { syntheticWorkspace, binding } from '../fixtures/synthetic-workspace';
@@ -379,6 +380,21 @@ describe('trevejsmotor', () => {
     expect(w.teams[0]!.rulesetBinding.teamType).toBe('girls');
     expect(w.athleteSkills[0]!.reviewRequiredFor).toEqual([]);
     expect(w.athleteSkills[0]!.stability).toBe(4);
+  });
+  it('DK-pakkeversionsskift og samtidig vurdering kræver ét eksplicit valg i begge fletteretninger', () => {
+    const { b, l, r } = fixture();
+    l.teams[0]!.rulesetBinding.packageVersion = '1.1.0';
+    l.plans[0]!.bindingFingerprint = bindingFingerprint(l.teams[0]!.rulesetBinding);
+    l.athleteSkills[0]!.reviewRequiredFor = [bindingFingerprint(l.teams[0]!.rulesetBinding)];
+    r.athleteSkills[0]!.stability = 4;
+    for (const [left, right] of [[l, r], [r, l]] as const) {
+      const review = mergeWorkspace(b, left, right, context);
+      expect(review.status).toBe('blocked');
+      expect(review.conflicts).toHaveLength(1);
+      const selected = valid(mergeWorkspace(b, left, right, context, choose(review, left === l ? 'remote' : 'local')));
+      expect(selected.teams[0]!.rulesetBinding.packageVersion).toBe(b.teams[0]!.rulesetBinding.packageVersion);
+      expect(selected.athleteSkills[0]!.stability).toBe(4);
+    }
   });
   it('to samtidige domænekommandoer bevarer begge ændringer', () => {
     const { b, environment } = fixture();

@@ -57,6 +57,11 @@ Eksempel på samtidige kommandoer: `renameTeam(B, hold, navn)` og `updateAssessm
 
 ## Sessionens levetid og gemning
 
+### DK-regelpakke 1.1.0
+
+Rettelserne og den fælles datakontrakt er beskrevet i [rettelser og advarsler](reglement/rettelser-og-advarsler-2026-10-30.md). Pakkevalg ændrer den eksisterende atomiske regelbinding og planens fingerprint; ændrede rytmekrav giver versionsbundet revurdering. Springets gemte identitet, gymnast- og registrerings-id'er samt planorden bevares. Regelidentitet, D, C og rytmefællesnævnere genberegnes efter den valgte pakke. Samtidig pakkevalg og ændret vurdering kræver konfliktvalg i begge fletteretninger; visningsadvarsler gemmes ikke.
+
+
 `WorkspaceSession` ejer separat basis, levende kladde, afsendt pending-snapshot og sammenligningssnapshot. Gennemgangen har tilstandene loading, ready, applying, stale og error. Fil-/sessionsgeneration, lokale ændringer, forbindelsesgeneration/status og regelkontekstens fingerprint indgår i bindingen. Annullering, clear og filskift frigiver sammenligningssnapshot og ugyldiggør forsinkede svar. Ingen af disse data serialiseres i arbejdsrumsfilen eller lagres vedvarende.
 
 En afvist betinget upload har kendt udfald. Et mistet svar beholder operationens id, payloadhash og afsendte snapshot. Genforsøg og gennemgang læser filen, før en ny upload kan ske. Genkendes operationen i recentOperations, bruges det bekræftede eget snapshot som sammenligningsbasis, også hvis andre siden har gemt. Det giver aldrig den gamle levende kladde en ekstern revisionsbasis uden fletning. Hvis en nyere fil ikke kan afklare udfaldet, blokeres gennemgangen til eksport/bevidst genindlæsning; ingen ny upload opfindes.

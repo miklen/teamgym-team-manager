@@ -3,7 +3,7 @@ import { bindingFingerprint, confirmRuleReview, parseWorkspace, serializeWorkspa
 import type { SkillDefinition } from '@teamgym/domain';
 import { DK_RHYTHM_CATALOG } from '../../packages/rules/src/catalog';
 import { DK_DEFAULT_BINDING, DK_PROFILES } from '../../packages/rules/src/dk-data';
-import { createDKFamilyPackage, DK_V1 } from '../../packages/rules/src/dk-v1';
+import { createDKFamilyPackage, DK_V1, DK_V2 } from '../../packages/rules/src/dk-v1';
 import { RuleRegistry } from '../../packages/rules/src/registry';
 import { applyVersionChange, packageChangeReport, previewVersionChange } from '../../packages/rules/src/version-change';
 import { fromRows, workspaceBuilder } from '../fixtures/rule-workspace';
@@ -17,6 +17,22 @@ function testOnlyPackage() {
     algorithms: { ...DK_V1.manifest.algorithms, difficulty: 'synthetic-d-2', rhythm: 'synthetic-rhythm-2' }, changeDescription: 'Kun test: andre point, fire deltagere og ingen spejlingsækvivalens.' }, profiles, rhythmCatalog, settings }) };
 }
 const headstand = (side: string): SkillDefinition => ({ id: `headstand-${side}`, name: 'Syntetisk hovedstand', archived: false, discipline: 'rhythm', momentId: 'rh-hb-headstand', variant: { legs: 'together', side } });
+
+it('skift til DK 1.1 bevarer registreringer og kræver revurdering af ændrede rytmekrav', () => {
+  const builder = workspaceBuilder(); const team = builder.team('Syntetisk versionsskift');
+  const registrationId = builder.register(builder.workspace.athletes[0]!.id, headstand('left'));
+  const registry = new RuleRegistry(); registry.register(DK_V1); registry.register(DK_V2);
+  const before = serializeWorkspace(builder.workspace);
+  const nextBinding = { ...team.rulesetBinding, packageVersion: '1.1.0' };
+  const preview = previewVersionChange(builder.workspace, team.id, nextBinding, registry);
+  expect(serializeWorkspace(builder.workspace)).toBe(before);
+  expect(preview.reviews).toContain(registrationId);
+  expect(preview.workspace.athleteSkills.find((item) => item.id === registrationId)?.reviewRequiredFor).toContain(bindingFingerprint(nextBinding));
+  const applied = applyVersionChange(builder.workspace, preview);
+  expect(applied.athleteSkills.find((item) => item.id === registrationId)?.stability).toBe(5);
+  expect(applied.teams.find((item) => item.id === team.id)?.rulesetBinding.packageVersion).toBe('1.1.0');
+  expect(packageChangeReport(DK_V1, DK_V2).changedRhythm).toContain('rh-j-sissone-180');
+});
 
 describe('uforanderlige pakker og forskellige reglementer i samme arbejdsrum', () => {
   it('afviser ændret indhold eller algoritme under samme id/version', () => {

@@ -8,6 +8,7 @@ import { AthleteInspector } from './athletes';
 import { Dialog, Empty, SourceLinks } from './components';
 import { registry } from './rules';
 import { SkillEditor, variantText } from './skill-editor';
+import { hasRuleUncertainty, rhythmUncertaintyIds, RuleUncertainty, UncertaintyMark } from './rule-uncertainty';
 
 const cellLabels = {
   missing: 'Mangler færdighed',
@@ -38,6 +39,7 @@ export function RhythmPage({ workspace, change, writable, teamId }: DataProps & 
           </p>
         </div>
       </div>
+      {team.rulesetBinding.packageVersion === '1.0.0' && <p className="rule-version-note">Regelpakke 1.0.0 · en opdatering med rettelser findes under Reglement.</p>}
       <p>
         Individuel kunnen efter præcis udførelse. Gruppeelementer, koreografi og fuld rytmekarakter indgår
         ikke.
@@ -127,7 +129,7 @@ export function RhythmPage({ workspace, change, writable, teamId }: DataProps & 
                   <tr key={row.key}>
                     <th scope="row">
                       <button className="moment-name" onClick={() => setDetails(row)}>
-                        <strong>{row.moment.name}</strong>
+                        <strong>{row.moment.name} {hasRuleUncertainty(rhythmUncertaintyIds(row.moment, row.variant)) && <UncertaintyMark />}</strong>
                         <small>
                           {row.moment.officialCode} · {row.moment.value} · {row.moment.category}
                         </small>
@@ -172,7 +174,7 @@ export function RhythmPage({ workspace, change, writable, teamId }: DataProps & 
             {filtered.map((row) => (
               <section key={row.key}>
                 <button className="moment-name" onClick={() => setDetails(row)}>
-                  <strong>{row.moment.name}</strong>
+                  <strong>{row.moment.name} {hasRuleUncertainty(rhythmUncertaintyIds(row.moment, row.variant)) && <UncertaintyMark />}</strong>
                   <small>
                     {row.moment.officialCode} · {row.moment.value} · {variantText(row.variant)}
                   </small>
@@ -206,6 +208,7 @@ export function RhythmPage({ workspace, change, writable, teamId }: DataProps & 
           title={`${details.moment.officialCode} · ${details.moment.name}`}
           close={() => setDetails(null)}
         >
+          <RuleUncertainty ids={rhythmUncertaintyIds(details.moment, details.variant)} />
           <p>{details.moment.specificRequirement}</p>
           <p>{variantText(details.variant)}</p>
           <dl>

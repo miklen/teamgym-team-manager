@@ -187,3 +187,14 @@ export const DK_RHYTHM_CATALOG: readonly RhythmCatalogEntry[] = freezeData(readR
   };
 }));
 if (DK_RHYTHM_CATALOG.length !== 94 || DK_RHYTHM_CATALOG.some((item) => item.category === 'G')) throw new Error('Ufuldstændig individuel rytmeimport.');
+
+/** DK 1.1: tre tilladte tilløbsskridt og kun rotationshop med krav om fælles startfront. */
+export const DK_RHYTHM_CATALOG_V2: readonly RhythmCatalogEntry[] = freezeData(DK_RHYTHM_CATALOG.map((entry) => {
+  const copy = structuredClone(entry);
+  copy.generalRequirements = copy.generalRequirements.map((text) => text.replace('højst ét skridt før momentet', 'højst tre gå- eller løbeskridt før momentet'));
+  if (entry.id === 'rh-j-sissone-180') {
+    copy.options = copy.options.filter((option) => option.key !== 'facing');
+    copy.commonFacingRequired = false;
+  }
+  return copy;
+}));

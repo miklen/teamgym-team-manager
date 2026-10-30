@@ -45,6 +45,7 @@ export interface DisciplineEvaluation {
 }
 
 export interface EngineSettings {
+  ruleCorrections?: boolean;
   difficultyMultiplier?: string;
   bonusRate?: string;
   baseTumbling?: string;
@@ -83,13 +84,14 @@ export function evaluateDiscipline(workspace: Workspace, teamId: string, discipl
     if (!athlete || athlete.archived || athlete.teamId !== teamId) local.push(diagnostic('athlete-unavailable', 'Gymnasten er arkiveret eller ikke længere på holdet.', [entry.id, entry.athleteId]));
     if (!registration || !skill) local.push(diagnostic('skill-missing', 'Vælg gymnastens registrerede færdighed i denne disciplin.', [entry.id], 'incomplete'));
     if (registration?.archived || skill?.archived) local.push(diagnostic('skill-archived', 'Færdigheden er arkiveret.', [entry.id, ...(registration ? [registration.id] : [])]));
-    const evaluation = skill ? evaluateSpringSkill(skill, registration?.connectionConfirmation) : null;
+    const evaluation = skill ? evaluateSpringSkill(skill, registration?.connectionConfirmation, settings.ruleCorrections) : null;
     let originalD = evaluation?.difficulty ?? uncertain('incomplete');
     if (settings.difficultyMultiplier) originalD = scaleDecision(originalD, settings.difficultyMultiplier);
     const status = combineStatus([evaluation?.status ?? 'incomplete', ...local.map((item) => item.status)]);
     const available = !local.some((item) => item.status === 'invalid' || item.status === 'incomplete');
     if (evaluation?.validity !== 'known') local.push(diagnostic('skill-validity', evaluation?.connection === 'unverified' ? 'Forbindelsen skal registreres og bekræftes konkret.' : 'Færdighedens variant eller regelkobling kræver gennemgang.', [entry.id], evaluation?.validity === 'invalid' ? 'invalid' : 'unresolved'));
-    if (!available || evaluation?.validity === 'invalid') originalD = uncertain(status === 'known' ? 'incomplete' : status, originalD.issues);
+    if (!available || evaluation?.validity === 'invalid' || settings.ruleCorrections && evaluation?.validity !== 'known')
+      originalD = uncertain(status === 'known' ? 'incomplete' : status, originalD.issues, originalD.knownSubtotal, originalD.alternatives);
     return { entry, athleteName: athlete?.name ?? 'Ukendt gymnast', registration: registration ?? null, skill, evaluation, status,
       identity: available && evaluation?.validity === 'known' ? evaluation.identity : null, originalD, adjustedD: originalD,
       eligibleForC: available && evaluation?.validity === 'known', diagnostics: local };
@@ -122,7 +124,7 @@ export function evaluateDiscipline(workspace: Workspace, teamId: string, discipl
     if (counting.length !== profile.counting && difficulty.status === 'known') difficulty = uncertain('incomplete', [], difficulty.knownSubtotal);
     if (status === 'invalid') difficulty = uncertain('invalid', difficulty.issues, difficulty.knownSubtotal, difficulty.alternatives);
     const order = orderCheck(entries.map((item) => item.evaluation?.rotationCategory ?? null), entries.map((item) => item.originalD.value), roundIndex + 1);
-    if (counting.length !== profile.counting && roundIndex > 0 && order.deduction.status === 'known') order.deduction = uncertain('incomplete');
+    if (counting.length !== profile.counting && roundIndex > 0 && (settings.ruleCorrections || order.deduction.status === 'known')) order.deduction = uncertain('incomplete');
     const sorted = [...entries].sort((a, b) => (a.entry.role === 'extra' ? 0 : 1) - (b.entry.role === 'extra' ? 0 : 1) ||
       (a.evaluation?.rotationCategory ?? Number.MAX_SAFE_INTEGER) - (b.evaluation?.rotationCategory ?? Number.MAX_SAFE_INTEGER) ||
       (a.originalD.value && b.originalD.value ? a.originalD.value.compare(b.originalD.value) : 0));
@@ -163,12 +165,20 @@ export function evaluateDiscipline(workspace: Workspace, teamId: string, discipl
   if (discipline === 'tumbling') {
     const forwards = rounds.map((round) => round.counting.filter((item) => item.eligibleForC && item.evaluation?.pureForward).length);
     const backwards = rounds.map((round) => round.counting.filter((item) => item.eligibleForC && item.evaluation?.pureBackward).length);
-    const direction = allComplete || rounds.some((round, index) => round.compositionReady && forwards[index] === profile.counting) && rounds.some((round, index) => round.compositionReady && backwards[index] === profile.counting) ?
+    let direction = allComplete || rounds.some((round, index) => round.compositionReady && forwards[index] === profile.counting) && rounds.some((round, index) => round.compositionReady && backwards[index] === profile.counting) ?
       pureDirectionDeduction(forwards, backwards, profile.counting) : uncertain('incomplete');
+    const bestForward = forwards.flatMap((count, index) => count === Math.max(...forwards) ? [index] : []);
+    const bestBackward = backwards.flatMap((count, index) => count === Math.max(...backwards) ? [index] : []);
+    if (settings.ruleCorrections && allComplete && direction.value !== null &&
+      Math.max(...forwards) < profile.counting && Math.max(...backwards) < profile.counting &&
+      !bestForward.some((forwardIndex) => bestBackward.some((backwardIndex) => forwardIndex !== backwardIndex))) {
+      direction = uncertain('unresolved', ['C-RETNING-VALG'], 0, { independentMaxima: direction.value });
+    }
     add('C-RETNING', 'Ren forlæns og ren baglæns omgang', 'deduction', direction, '9.2.2.4', allEntryIds, page);
     add('B-SKRUE', 'Mindst 360° i ét element', 'bonus', qualifyingBonus((item) => Boolean(item.evaluation?.hasBaneTwist)), '9.2.3.1', allEntryIds, 31);
     add('B-DOBBELT', 'Dobbeltsalto', 'bonus', qualifyingBonus((item) => Boolean(item.evaluation?.hasDouble)), '9.2.3.2', allEntryIds, 31);
-    const bonus = elementBonus(rounds.map((round) => round.counting.filter((item) => item.eligibleForC).map((item) => item.evaluation!.distinctElementCount)));
+    const countedElements = rounds.map((round) => round.counting.filter((item) => item.eligibleForC).map((item) => item.evaluation!.distinctElementCount));
+    const bonus = settings.ruleCorrections && countedElements.every((round) => round.length === 0) ? uncertain('incomplete') : elementBonus(countedElements);
     add('B-ELEMENT', 'Forskellige elementer — to fortolkningsspor', 'bonus', bonus, '9.2.3.3', allEntryIds, 31);
   } else {
     const vault = rounds.map((round) => round.counting.filter((item) => item.eligibleForC && item.evaluation?.apparatus === 'vault').length);

@@ -25,10 +25,14 @@ export function normalizeElement(input: ElementExecution): ElementExecution {
   return execution;
 }
 
-export function elementIdentity(input: ElementExecution): string { return canonicalJson(normalizeElement(input)); }
-export function springIdentity(skill: SkillDefinition): string {
+export function elementIdentity(input: ElementExecution, corrected = false): string {
+  const element = normalizeElement(input);
+  if (corrected && element.variant.twistAfterHandsHalfTurns === element.twistsHalfTurns) delete element.variant.twistAfterHandsHalfTurns;
+  return canonicalJson(element);
+}
+export function springIdentity(skill: SkillDefinition, corrected = false): string {
   if (skill.discipline === 'rhythm') return skillIdentity(skill);
-  return skill.discipline === 'trampet' ? elementIdentity(skill.jump) : canonicalJson(skill.elements.map(elementIdentity));
+  return skill.discipline === 'trampet' ? elementIdentity(skill.jump, corrected) : canonicalJson(skill.elements.map((element) => elementIdentity(element, corrected)));
 }
 
 export function elementDifficulty(input: ElementExecution): NumericDecision {
@@ -80,8 +84,12 @@ export function officialSpringRecord(execution: ElementExecution) {
   return officialRecordIndex.get(key) ?? null;
 }
 
-export function connectionStatus(skill: Extract<SkillDefinition, { discipline: 'tumbling' }>, confirmation: AthleteSkill['connectionConfirmation'] = null): 'verified' | 'unverified' | 'invalid' {
+export function connectionStatus(skill: Extract<SkillDefinition, { discipline: 'tumbling' }>, confirmation: AthleteSkill['connectionConfirmation'] = null, corrected = false): 'verified' | 'unverified' | 'invalid' {
   if (skill.elements.some((element) => element.apparatus !== 'floor' || element.landing !== 'feet')) return 'invalid';
+  if (corrected && skill.connection.transitions.some((transition) => {
+    const asserted = transition.replace(/\b(?:uden|ingen|intet|ikke)\s+(?:(?:et|noget)\s+)?(?:mellemtrin|mellemskridt|pause|fald|step)\b/gi, '');
+    return /\b(?:mellemtrin|mellemskridt|pause|fald|step)\b/i.test(asserted);
+  })) return 'invalid';
   let standard = skill.connection.transitions.every((transition) => transition === 'direct');
   for (let index = 1; index < skill.elements.length; index++) {
     const before = skill.elements[index - 1]!;
@@ -113,16 +121,17 @@ export interface SpringSkillEvaluation {
   explanation: { countedElementIds: readonly string[]; excludedElementIds: readonly string[]; duplicateCount: number; sources: readonly SourceReference[]; notes: readonly string[] };
 }
 
-export function evaluateSpringSkill(skill: Exclude<SkillDefinition, { discipline: 'rhythm' }>, confirmation: AthleteSkill['connectionConfirmation'] = null): SpringSkillEvaluation {
+export function evaluateSpringSkill(skill: Exclude<SkillDefinition, { discipline: 'rhythm' }>, confirmation: AthleteSkill['connectionConfirmation'] = null, corrected = false): SpringSkillEvaluation {
   const elements = skill.discipline === 'tumbling' ? skill.elements : [skill.jump];
-  const evaluated = elements.map((element) => ({ identity: elementIdentity(element), value: elementDifficulty(element) }));
+  const evaluated = elements.map((element) => ({ identity: elementIdentity(element, corrected), value: elementDifficulty(element) }));
   const baseStatus = combineStatus(evaluated.map((element) => element.value.status));
   const knownElements = evaluated.filter((element): element is { identity: string; value: NumericDecision & { value: Fraction } } => element.value.value !== null);
   const top = topThreeDifficulty(knownElements.map((element) => ({ identity: element.identity, value: element.value.value })));
   let difficulty: NumericDecision = baseStatus === 'known' ? known(top.value) : uncertain(baseStatus,
     [...new Set(evaluated.flatMap((element) => element.value.issues))], top.value);
   if (skill.discipline === 'trampet') difficulty = evaluated[0]!.value;
-  const connection = skill.discipline === 'tumbling' ? connectionStatus(skill, confirmation) : 'verified';
+  const connection = skill.discipline === 'tumbling' ? connectionStatus(skill, confirmation, corrected) : 'verified';
+  if (corrected && connection === 'invalid') difficulty = uncertain('invalid', ['INTERRUPTED-CONNECTION'], difficulty.knownSubtotal);
   const allocationMissing = elements.some((element) => element.bodyPositions.length > 1 && element.twistsHalfTurns > 0 && element.twistsHalfTurns < 6 && element.twistDistribution.length !== element.bodyPositions.length);
   const legalStatus = evaluated.every((element) => element.value.status === 'known' || element.value.issues.length === 1 && element.value.issues[0] === 'Q02') ? 'known' : baseStatus;
   const validity = skill.archived || connection === 'invalid' ? 'invalid' : combineStatus([legalStatus, connection === 'unverified' || allocationMissing ? 'incomplete' : 'known']);
@@ -134,7 +143,7 @@ export function evaluateSpringSkill(skill: Exclude<SkillDefinition, { discipline
     return record ? [record.source, { sourceId: 'H', section: skill.discipline === 'tumbling' ? '9.3.5–6' : '10.3.5–6', page: skill.discipline === 'tumbling' ? 33 : 43 }] :
       [{ sourceId: 'H', section: skill.discipline === 'tumbling' ? '9.3.5–6; formelvariant uden trykt kode' : '10.3.5–6; formelvariant uden trykt kode', page: skill.discipline === 'tumbling' ? 33 : 43 }];
   });
-  return { difficulty, status, validity, identity: springIdentity(skill), rotationCategory, connection, elementValues: evaluated,
+  return { difficulty, status, validity, identity: springIdentity(skill, corrected), rotationCategory, connection, elementValues: evaluated,
     distinctElementCount: new Set(evaluated.filter((item) => item.value.status === 'known').map((item) => item.identity)).size,
     pureForward: elements.every((element) => element.direction === 'forward'), pureBackward: elements.every((element) => element.direction === 'backward'),
     hasDouble: categories.includes(2), hasBaneTwist: elements.some((element) => element.twistsHalfTurns >= 2),

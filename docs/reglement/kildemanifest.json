@@ -1,0 +1,168 @@
+{
+  "reviewDate": "2026-10-30",
+  "scope": "Lokale filer i reglement; ikke bytekontrol af online-PDFer",
+  "sources": [
+    {
+      "id": "H",
+      "document": "01-hovedreglement.md",
+      "file": "Bedoemmelsesreglement-DK-REG-1.pdf",
+      "pages": 48,
+      "sha256": "102db1e201e44056e61212deb2f246ef230a5667257241065183fcd853264e16",
+      "chars": 151547,
+      "bytes": 969501
+    },
+    {
+      "id": "TR",
+      "document": "02-teknisk-regulativ.md",
+      "file": "Teknisk-Regulativ-saeson-26-27.pdf",
+      "pages": 17,
+      "sha256": "591419c4910696454d7556f2a4dbc3d8f6632a833ef78254a03d74614349dc14",
+      "chars": 43331,
+      "bytes": 613192
+    },
+    {
+      "id": "ASP",
+      "document": "03-aspirant.md",
+      "file": "Bedoemmelsesreglement-ASP.pdf",
+      "pages": 8,
+      "sha256": "5d6b9da16a08f84c498d3cd5ebf3206e064aaa75fdb6c52c7edb43198ba8df7f",
+      "chars": 19784,
+      "bytes": 277297
+    },
+    {
+      "id": "A1.1",
+      "document": "04-rytme-dk.md",
+      "file": "Appendix-A1.1-Rytme-Oversigt-over-svaerheder-DK.pdf",
+      "pages": 13,
+      "sha256": "a5bbbaaaa46ffd8f9a1b6c6d20b5c1be8b5787635e97af4a26288a43ef91b7d5",
+      "chars": 34451,
+      "bytes": 859722
+    },
+    {
+      "id": "A1.2",
+      "document": "05-rytme-reg.md",
+      "file": "Appendix-A1.2-Rytme-Oversigt-over-svaerheder-REG.pdf",
+      "pages": 11,
+      "sha256": "90893b0be3c8f0c08f636970dd8068e249e4158db34a82ffdc9d02821657be4a",
+      "chars": 29197,
+      "bytes": 699651
+    },
+    {
+      "id": "A2",
+      "document": "06-rytme-udfoerelse.md",
+      "file": "A2-Appendix-A2-Rytme-Oversigt-over-udfoerelsesfejl.pdf",
+      "pages": 2,
+      "sha256": "352b27179f8b84616446822b03d8bf6e401c4ba34ebde77988fd0a36bfd56b41",
+      "chars": 6023,
+      "bytes": 115047
+    },
+    {
+      "id": "A3",
+      "document": "07-bane-vaerdier.md",
+      "file": "A3-Appendix-A3.1-Bane-Basisvaerdier.pdf",
+      "pages": 1,
+      "sha256": "0f211f746bb146d33334a1b8412ace9ec9b537bdcad8acf42d9bfe5225c3ca36",
+      "chars": 4286,
+      "bytes": 137766
+    },
+    {
+      "id": "A4",
+      "document": "08-trampet-vaerdier.md",
+      "file": "A4-Appendix-A4-Trampet-Basisvaerdier.pdf",
+      "pages": 1,
+      "sha256": "ee5e95e0c626372ed70628383116d99f82df296b48b5b0f90c64264778cc0733",
+      "chars": 4859,
+      "bytes": 132909
+    },
+    {
+      "id": "A5",
+      "document": "09-genkendelse.md",
+      "file": "Appendix-A5-Bane-Trampet-Genkendelse-af-elementer.pdf",
+      "pages": 4,
+      "sha256": "4372f24bdd3df2b86efce2cc6cc89e69e6260898f90217e093c090e277c3934b",
+      "chars": 7720,
+      "bytes": 466478
+    },
+    {
+      "id": "A6",
+      "document": "10-spring-udfoerelse.md",
+      "file": "Appendix-A6-Bane-Trampet-Generelle-fejl-og-fradrag.pdf",
+      "pages": 8,
+      "sha256": "e7b0727cd693fcde11911965701ab5cc9957fbb2a9c0658249ca5908138e0570",
+      "chars": 17465,
+      "bytes": 1127673
+    },
+    {
+      "id": "RED",
+      "document": "11-redskaber.md",
+      "file": "Redskabsregulativ-saeson-25-26-1.pdf",
+      "pages": 10,
+      "sha256": "19d5931eae7f9d5836d609e381ba4e6151e8ca3d84b3d08dd8725e6358a1f10a",
+      "chars": 16575,
+      "bytes": 268687
+    },
+    {
+      "id": "QA",
+      "document": "12-spoergsmaal-svar.md",
+      "file": "251204-Spoergsmaal-og-svar-til-Teamgym-reglementer.pdf",
+      "pages": 4,
+      "sha256": "6bc1af9b8e7a1b7135d41b646653252a2222eec1b55a71b0d192ba18f4de833e",
+      "chars": 9268,
+      "bytes": 318402
+    },
+    {
+      "id": "A7",
+      "document": "13-trippelgodkendelser.md",
+      "file": "Appendix-A7-Trippelgodkendelser.pdf",
+      "pages": 2,
+      "sha256": "115240e8cea0782a0cf23e5d59a7ff99ecc355f47429a2adca4da01f4b9eca58",
+      "chars": 4233,
+      "bytes": 65546
+    },
+    {
+      "id": "A7.1",
+      "document": "14-traenerlicens.md",
+      "file": "Appendix-7.1-Februar-2025.pdf",
+      "pages": 2,
+      "sha256": "357f82dba20567c44a705ddfa5734db26f6d7022636713224456cf3275711b36",
+      "chars": 5102,
+      "bytes": 162512
+    },
+    {
+      "id": "A8",
+      "document": "15-liga-cop.md",
+      "file": "Appendix-A8-Brug-af-CoP-i-nationale-konkurrencer-1.pdf",
+      "pages": 1,
+      "sha256": "0b97c47489b4f62353eaec69497a6e4684821fa085a1e5860d1a4ec056a127d6",
+      "chars": 2786,
+      "bytes": 191871
+    },
+    {
+      "id": "FOR",
+      "document": "16-foraeldretilladelse.md",
+      "file": "foraeldre-godkendelse2018.pdf",
+      "pages": 1,
+      "sha256": "faffbc106a401485aff39aec0035aa6ab8ba7846e237603de2c3f01b8acc57eb",
+      "chars": 1151,
+      "bytes": 226304
+    },
+    {
+      "id": "FK",
+      "document": "17-faelles-bestemmelser.md",
+      "file": "2016_Faelles-konkurrencebestemmelser.pdf",
+      "pages": 2,
+      "sha256": "80192a99080763793478627e80da64a100fe2f88348c5d34f66a28665e98b6b1",
+      "chars": 4984,
+      "bytes": 86598
+    },
+    {
+      "id": "NYT",
+      "document": "18-aendringsorientering.md",
+      "file": "Nyt-bedoemmelsesreglement-i-TeamGym-til-kommende-saeson-25.pdf",
+      "pages": 4,
+      "sha256": "5d6b22fe0c71e2076b80afc39654dde67a5565aa86452d9b43a6dfa8e69a8561",
+      "chars": 6842,
+      "bytes": 135398
+    }
+  ]
+}

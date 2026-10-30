@@ -20,6 +20,7 @@ import type {
 } from '@teamgym/domain';
 import type { RhythmCatalogEntry, RulePackage } from '@teamgym/rules';
 import { ActionForm, Decision, SkillBreakdown, SourceLinks, statusText } from './components';
+import { rhythmUncertaintyIds, RuleUncertainty } from './rule-uncertainty';
 import {
   registerSpringBatch,
   springRegistrationPlan,
@@ -424,6 +425,7 @@ export function SkillEditor({
           </label>
           {moment && (
             <>
+              <RuleUncertainty ids={rhythmUncertaintyIds(moment, variant)} />
               <p>{moment.specificRequirement}</p>
               {moment.options.map((option) => (
                 <label key={option.key}>
@@ -682,6 +684,9 @@ export function SkillEditor({
             <section className="inline-analysis">
               <h3>Planlagt D</h3>
               <Decision value={evaluation.difficulty} />
+              <RuleUncertainty ids={evaluation.difficulty.issues} />
+              {evaluation.hasDouble && <RuleUncertainty ids={['A71-U01']} />}
+              {preview?.discipline === 'tumbling' && preview.elements[0]?.family === 'salto' && preview.elements[0].direction === 'forward' && <RuleUncertainty ids={['A3-U01']} />}
               <SkillBreakdown evaluation={evaluation} />
               <p>
                 Gyldighed: {missingEntry ? 'Mangler indgang' : statusText[evaluation.validity]} · forbindelse:{' '}

@@ -5,6 +5,7 @@ import { formatPoints, STABILITY_ANCHORS } from '@teamgym/domain';
 import type { SourceReference, Stability } from '@teamgym/domain';
 import type { Fraction } from '@teamgym/domain';
 import type { NumericDecision, RulePackage, SpringSkillEvaluation } from '@teamgym/rules';
+import { hasRuleUncertainty, UncertaintyMark } from './rule-uncertainty';
 
 export function SkillBreakdown({ evaluation }: { evaluation: SpringSkillEvaluation }) {
   return (
@@ -44,16 +45,19 @@ const issueLabels: Record<string, string> = {
   'ELEMENT-EXECUTION': 'Udførelsen er ikke gyldig',
   'ELEMENT-DIRECTION': 'Retningen passer ikke til springet',
   'ELEMENT-TAKEOFF': 'Afsættet passer ikke til springet',
+  'INTERRUPTED-CONNECTION': 'Elementer efter mellemtrin eller pause tæller ikke',
 };
 const alternativeLabels: Record<string, string> = {
   table: 'Tabel',
   formula: 'Formel',
   literal: 'Ordlydsspor',
   example: 'Eksempelspor',
+  independentMaxima: 'Nuværende optælling',
 };
 export function Decision({ value }: { value: NumericDecision }) {
   return (
     <span className={`decision ${value.status}`}>
+      {hasRuleUncertainty(value.issues) && <UncertaintyMark />}
       <strong>{value.value ? points(value.value) : statusText[value.status]}</strong>
       {value.value === null && (
         <small>
