@@ -6,6 +6,7 @@ import { DK_KNOWN_ISSUES, DK_PROFILES, DK_SOURCE_MANIFEST } from './dk-data';
 import type { KnownIssue, TeamProfile } from './dk-data';
 import { evaluateDiscipline } from './dk-engine';
 import type { EngineSettings } from './dk-engine';
+import { compositionGuide, compositionGuideOverview } from './dk-guide';
 import { evaluateSpringSkill, normalizeElement } from './dk-spring';
 import type { SpringSkillEvaluation } from './dk-spring';
 import { known, trampetTwistQualifies, uncertain } from './dk-numeric';
@@ -52,7 +53,9 @@ export function createDKFamilyPackage(options: DKPackageOptions = {}): RulePacka
     return discipline === 'tumbling' ? [
       { id: 'B-SKRUE', label: 'Skruetillæg', maximum, weight: (candidate) => Number(candidate.evaluation.hasBaneTwist), unresolvedIssue: null },
       { id: 'B-DOBBELT', label: 'Dobbelttillæg', maximum, weight: (candidate) => Number(candidate.evaluation.hasDouble), unresolvedIssue: null },
-      { id: 'B-ELEMENT', label: 'Elementtillæg — kræver afklaring', maximum: null, weight: (candidate) => candidate.evaluation.distinctElementCount, unresolvedIssue: 'Q01' },
+      { id: 'B-ELEMENT', label: settings.elementBonusResolved ? 'Elementtillæg' : 'Elementtillæg — kræver afklaring', maximum: null,
+        weight: (candidate) => settings.elementBonusResolved ? Math.max(0, candidate.evaluation.distinctElementCount - 1) : candidate.evaluation.distinctElementCount,
+        unresolvedIssue: settings.elementBonusResolved ? null : 'Q01' },
     ] : [
       { id: 'T-SKRUE', label: 'Skruetillæg', maximum, unresolvedIssue: null, weight: (candidate) => {
         if (candidate.definition.discipline !== 'trampet') return 0;
@@ -66,7 +69,9 @@ export function createDKFamilyPackage(options: DKPackageOptions = {}): RulePacka
   }
   return {
     manifest: packageManifest, profiles, springCatalog: DK_SPRING_CATALOG, rhythmCatalog, knownIssues: options.knownIssues ?? DK_KNOWN_ISSUES,
-    evaluateSkill, analyze, bindRhythm: (skill) => bindRhythmSkill(skill, rhythmCatalog),
+    evaluateSkill, analyze, guide: (analysis, profile, potentials) => compositionGuide(analysis, profile, DK_SPRING_CATALOG, settings.bonusRate ?? '0.10', Boolean(settings.elementBonusResolved), potentials),
+    guideOverview: compositionGuideOverview,
+    bindRhythm: (skill) => bindRhythmSkill(skill, rhythmCatalog),
     rhythm: (workspace, teamId, threshold = null) => { profileFor(workspace, teamId); return rhythmCommonality(workspace, teamId, rhythmCatalog, threshold); },
     potentials: (workspace, teamId, discipline, scenarioId, searchOptions = {}) => {
       const profile = profileFor(workspace, teamId);
@@ -86,12 +91,12 @@ export const DK_V1 = createDKFamilyPackage();
 export const DK_V2 = createDKFamilyPackage({
   manifest: {
     ...structuredClone(manifest), packageVersion: '1.1.0',
-    algorithms: { identity: 'dk-identity-2', difficulty: 'dk-d-2', composition: 'dk-c-2', rhythm: 'dk-rhythm-2', potential: 'witness-1' },
-    changeDescription: 'Korrigerer forbindelsesgyldighed, identitet, rytmens skridtkrav og sissones startfront. Viser åbne regelfortolkninger ved berørte resultater.',
+    algorithms: { identity: 'dk-identity-2', difficulty: 'dk-d-2', composition: 'dk-c-3', rhythm: 'dk-rhythm-2', potential: 'witness-2' },
+    changeDescription: 'Korrigerer forbindelsesgyldighed, identitet, rytmens skridtkrav og sissones startfront. Afklarer banens elementtillæg efter reglementets eksempel; øvrige åbne regelfortolkninger vises ved berørte resultater.',
   },
   rhythmCatalog: DK_RHYTHM_CATALOG_V2,
   knownIssues: [
-    ...DK_KNOWN_ISSUES,
+    ...DK_KNOWN_ISSUES.filter((issue) => issue.id !== 'Q01'),
     { id: 'H-U06', title: 'Afrunding af dommernes tal', detail: 'Planlagt D og C beregnes eksakt og rundes direkte ned til nærmeste 0,005. Det er uafklaret, om dommernes værdier først skal behandles til to decimaler.', scope: 'rule', sources: [{ sourceId: 'H', section: '4.4.a og 4.6' }] },
     { id: 'A71-U01', title: 'Licens ved visse dobbeltspring', detail: 'Nogle dobbeltspring kræver licens og særskilt godkendelse. Appen kontrollerer ikke licens, og den gældende ordning for 2026/27 er ikke bekræftet. Bilag A7.1 indgår endnu ikke i pakkens fastlåste kilder.', scope: 'rule', sources: [] },
     { id: 'A1DK-U06', title: 'Gumbis startvalg', detail: 'Den nyere tabel og et ældre spørgsmål og svar beskriver startvalgene forskelligt. Appen tillader knælende start, men den fortolkning er endnu ikke bekræftet.', scope: 'catalog', sources: [{ sourceId: 'A1.1', section: 'Gumbi' }] },
@@ -100,5 +105,5 @@ export const DK_V2 = createDKFamilyPackage({
     { id: 'A3-U01', title: 'Startsaltoens identitet', detail: 'Appen regner en startsalto og en tilsvarende almindelig salto som samme element. En officiel afklaring mangler.', scope: 'catalog', sources: [{ sourceId: 'A3', section: 'Startsalto' }] },
     { id: 'C-RETNING-VALG', title: 'Blandet omgang i begge retningskrav', detail: 'Når samme blandede omgang er nærmest begge retningskrav, bruger appen den i begge optællinger. Det er uafklaret, om to forskellige omgange kræves.', scope: 'rule', sources: [{ sourceId: 'H', section: '9.2.2.4' }] },
   ],
-  settings: { ruleCorrections: true },
+  settings: { ruleCorrections: true, elementBonusResolved: true },
 });

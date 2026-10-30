@@ -3,13 +3,14 @@ import type { AthleteSkill, Diagnostic, EvaluationStatus, RoundEntry, ReserveEnt
 import type { TeamProfile } from './dk-data';
 import type { NumericDecision } from './dk-numeric';
 import { apparatusDeduction, bestBonus, combineStatus, compositionTotal, divideDecision, elementBonus, holdRound, known, mixQuotaCheck, orderCheck, participantStructure,
-  PLANNING_BOUNDARIES, pureDirectionDeduction, repetitionDeduction, sumDecisions, trampetTwistQualifies, uncertain } from './dk-numeric';
+  PLANNING_BOUNDARIES, pureDirectionDeduction, repetitionDeduction, resolvedElementBonus, sumDecisions, trampetTwistQualifies, uncertain } from './dk-numeric';
 import { evaluateSpringSkill, normalizeElement } from './dk-spring';
 import type { SpringSkillEvaluation } from './dk-spring';
 
 export interface RuleContribution {
   id: string; label: string; kind: 'base' | 'bonus' | 'deduction' | 'observation';
   decision: NumericDecision; sources: readonly SourceReference[]; affectedIds: readonly string[];
+  guideCounts?: readonly (readonly number[])[];
 }
 
 export interface ParticipantEvaluation {
@@ -50,6 +51,7 @@ export interface EngineSettings {
   bonusRate?: string;
   baseTumbling?: string;
   baseTrampet?: string;
+  elementBonusResolved?: boolean;
 }
 
 function scaleDecision(value: NumericDecision, scale: string): NumericDecision {
@@ -133,8 +135,8 @@ export function evaluateDiscipline(workspace: Workspace, teamId: string, discipl
       holdDeduction, order, sortedEntryIds: sorted.map((item) => item.entry.id), stability: roundStability(workspace, round.entries, profile, teamId) };
   });
 
-  function add(id: string, label: string, kind: RuleContribution['kind'], decision: NumericDecision, section: string, affectedIds: string[], page: number) {
-    contributions.push({ id, label, kind, decision, sources: [{ sourceId: 'H', section, page }], affectedIds });
+  function add(id: string, label: string, kind: RuleContribution['kind'], decision: NumericDecision, section: string, affectedIds: string[], page: number, guideCounts?: readonly (readonly number[])[]) {
+    contributions.push({ id, label, kind, decision, sources: [{ sourceId: 'H', section, page }], affectedIds, ...(guideCounts ? { guideCounts } : {}) });
   }
   const prefix = discipline === 'tumbling' ? '9' : '10';
   const page = discipline === 'tumbling' ? 30 : 40;
@@ -160,7 +162,7 @@ export function evaluateDiscipline(workspace: Workspace, teamId: string, discipl
     const counts = rounds.map((round) => round.counting.filter((item) => item.eligibleForC && predicate(item)).length);
     const value = bestBonus(counts, profile.counting, bonusRate);
     // Et fuldt maksimum kan være kendt trods mangler i andre omgange.
-    return allComplete || rounds.some((round, index) => round.compositionReady && counts[index] === profile.counting) ? known(value) : uncertain('incomplete', [], value);
+    return { decision: allComplete || rounds.some((round, index) => round.compositionReady && counts[index] === profile.counting) ? known(value) : uncertain('incomplete', [], value), counts };
   }
   if (discipline === 'tumbling') {
     const forwards = rounds.map((round) => round.counting.filter((item) => item.eligibleForC && item.evaluation?.pureForward).length);
@@ -174,25 +176,32 @@ export function evaluateDiscipline(workspace: Workspace, teamId: string, discipl
       !bestForward.some((forwardIndex) => bestBackward.some((backwardIndex) => forwardIndex !== backwardIndex))) {
       direction = uncertain('unresolved', ['C-RETNING-VALG'], 0, { independentMaxima: direction.value });
     }
-    add('C-RETNING', 'Ren forlæns og ren baglæns omgang', 'deduction', direction, '9.2.2.4', allEntryIds, page);
-    add('B-SKRUE', 'Mindst 360° i ét element', 'bonus', qualifyingBonus((item) => Boolean(item.evaluation?.hasBaneTwist)), '9.2.3.1', allEntryIds, 31);
-    add('B-DOBBELT', 'Dobbeltsalto', 'bonus', qualifyingBonus((item) => Boolean(item.evaluation?.hasDouble)), '9.2.3.2', allEntryIds, 31);
+    add('C-RETNING', 'Ren forlæns og ren baglæns omgang', 'deduction', direction, '9.2.2.4', allEntryIds, page, [forwards, backwards]);
+    const twist = qualifyingBonus((item) => Boolean(item.evaluation?.hasBaneTwist));
+    add('B-SKRUE', 'Mindst 360° i ét element', 'bonus', twist.decision, '9.2.3.1', allEntryIds, 31, [twist.counts]);
+    const double = qualifyingBonus((item) => Boolean(item.evaluation?.hasDouble));
+    add('B-DOBBELT', 'Dobbeltsalto', 'bonus', double.decision, '9.2.3.2', allEntryIds, 31, [double.counts]);
     const countedElements = rounds.map((round) => round.counting.filter((item) => item.eligibleForC).map((item) => item.evaluation!.distinctElementCount));
-    const bonus = settings.ruleCorrections && countedElements.every((round) => round.length === 0) ? uncertain('incomplete') : elementBonus(countedElements);
-    add('B-ELEMENT', 'Forskellige elementer — to fortolkningsspor', 'bonus', bonus, '9.2.3.3', allEntryIds, 31);
+    const bonus = settings.elementBonusResolved ? resolvedElementBonus(countedElements, allComplete) :
+      settings.ruleCorrections && countedElements.every((round) => round.length === 0) ? uncertain('incomplete') : elementBonus(countedElements);
+    add('B-ELEMENT', settings.elementBonusResolved ? 'Forskellige elementer efter seriens første' : 'Forskellige elementer — to fortolkningsspor', 'bonus', bonus, '9.2.3.3', allEntryIds, 31,
+      [countedElements.map((round) => round.reduce((sum, value) => sum + Math.max(0, value - 1), 0))]);
   } else {
     const vault = rounds.map((round) => round.counting.filter((item) => item.eligibleForC && item.evaluation?.apparatus === 'vault').length);
     const free = rounds.map((round) => round.counting.filter((item) => item.eligibleForC && item.evaluation?.apparatus === 'free').length);
     const apparatusSatisfied = rounds.some((round, index) => round.compositionReady && vault[index] === profile.counting) && rounds.some((round, index) => round.compositionReady && free[index] === profile.counting);
-    add('C-REDSKAB', 'Omgang med og uden Pegasus', 'deduction', allComplete ? apparatusDeduction(vault, free, profile.counting) : apparatusSatisfied ? known(0) : uncertain('incomplete'), '10.2.2.5', allEntryIds, page);
-    add('T-SKRUE', 'Skruetillæg efter aldersprofil', 'bonus', qualifyingBonus((item) => {
+    add('C-REDSKAB', 'Omgang med og uden Pegasus', 'deduction', allComplete ? apparatusDeduction(vault, free, profile.counting) : apparatusSatisfied ? known(0) : uncertain('incomplete'), '10.2.2.5', allEntryIds, page, [vault, free]);
+    const twist = qualifyingBonus((item) => {
       if (item.skill?.discipline !== 'trampet') return false;
       const element = normalizeElement(item.skill.jump);
       const halfTurnsAfterHands = typeof element.variant.twistAfterHandsHalfTurns === 'number' ? element.variant.twistAfterHandsHalfTurns : element.twistsHalfTurns;
       return trampetTwistQualifies(profile.ageGroup, element.rotationQuarterTurns / 4, halfTurnsAfterHands, element.family);
-    }), '10.2.3.1 og 10.2.4', allEntryIds, 41);
-    add('T-DOBBELT-FRI', 'Dobbeltspring uden redskab', 'bonus', qualifyingBonus((item) => item.evaluation?.rotationCategory === 2 && item.evaluation.apparatus === 'free'), '10.2.3.2', allEntryIds, 41);
-    add('T-DOBBELT-REDSKAB', 'Dobbeltspring med redskab', 'bonus', qualifyingBonus((item) => item.evaluation?.rotationCategory === 2 && item.evaluation.apparatus === 'vault'), '10.2.3.3', allEntryIds, 41);
+    });
+    add('T-SKRUE', 'Skruetillæg efter aldersprofil', 'bonus', twist.decision, '10.2.3.1 og 10.2.4', allEntryIds, 41, [twist.counts]);
+    const freeDouble = qualifyingBonus((item) => item.evaluation?.rotationCategory === 2 && item.evaluation.apparatus === 'free');
+    add('T-DOBBELT-FRI', 'Dobbeltspring uden redskab', 'bonus', freeDouble.decision, '10.2.3.2', allEntryIds, 41, [freeDouble.counts]);
+    const vaultDouble = qualifyingBonus((item) => item.evaluation?.rotationCategory === 2 && item.evaluation.apparatus === 'vault');
+    add('T-DOBBELT-REDSKAB', 'Dobbeltspring med redskab', 'bonus', vaultDouble.decision, '10.2.3.3', allEntryIds, 41, [vaultDouble.counts]);
   }
   add('C-FLOW', 'Flow kræver observation', 'observation', uncertain('incomplete', ['REQUIRES-OBSERVATION']), `${prefix}.2.2.${discipline === 'tumbling' ? '5' : '4'}`, [], page);
   const bonuses = contributions.filter((item) => item.kind === 'bonus').map((item) => item.decision);

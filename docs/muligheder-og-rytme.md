@@ -10,7 +10,7 @@ Hvert tillæg får sit eget vidne og sin egen før/efter-analyse med konkrete gy
 
 Forhåndsvisning anvender ikke ændringer. Anvendelse er en eksplicit handling og afvises, hvis arbejdsdata eller binding er ændret siden beregningen. En afbrudt eller budgetbegrænset søgning mærkes som dokumenteret undergrænse, ikke bevist maksimum. Cache- og workerbeskeder omfatter arbejdsrum, hold, disciplin, scenarie og arbejdsrumsbasis inklusive binding; dataændring kræver en ny beregning.
 
-Q01's elementtillæg har ingen enkelt sikker mulighedsværdi eller opdigtet regelmaksimum. De to fortolkningsspor vises på vidnet, og den uafklarede status bevares.
+DK 1.0.0's Q01-elementtillæg har ingen enkelt sikker mulighedsværdi eller opdigtet regelmaksimum; de to fortolkningsspor bevares. I DK 1.1.0 kan det afklarede elementtillæg få en dokumenteret værdi fra en konkret vidneopstilling. Et generelt regelmaksimum opfindes stadig ikke ud fra filformatets tekniske grænse.
 
 Forslaget navngiver målscenariet og ændrer kun dette scenaries udførende opstillinger. Andre scenarier og fælles vurderinger bevares. Hvis en af omgangens reserver bliver udførende, vises fjernelsen fra netop den reserveliste i forhåndsvisningen. Den udgående gymnast bliver ikke automatisk reserve. Reserver bidrager først til beregningen, når de bliver udførende.
 

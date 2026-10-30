@@ -34,6 +34,27 @@ it('skift til DK 1.1 bevarer registreringer og kræver revurdering af ændrede r
   expect(packageChangeReport(DK_V1, DK_V2).changedRhythm).toContain('rh-j-sissone-180');
 });
 
+it('versionssammenligning viser afklaret elementtillæg før træneren vælger DK 1.1', () => {
+  const builder = workspaceBuilder(); const team = builder.team('Syntetisk elementversionsskift');
+  const series = fromRows(['a3-b-01', 'a3-b-02', 'a3-b-04'], 'version-element-series');
+  for (let index = 0; index < 3; index++) builder.fill(team.id, 'tumbling', index, Array.from({ length: 6 }, () => series));
+  const registry = new RuleRegistry(); registry.register(DK_V1); registry.register(DK_V2);
+  const before = serializeWorkspace(builder.workspace);
+  const preview = previewVersionChange(builder.workspace, team.id, { ...team.rulesetBinding, packageVersion: '1.1.0' }, registry);
+  const oldBonus = preview.before.tumbling[0]!.evaluation.contributions.find((item) => item.id === 'B-ELEMENT')!.decision;
+  const newBonus = preview.after.tumbling[0]!.evaluation.contributions.find((item) => item.id === 'B-ELEMENT')!.decision;
+  expect(oldBonus.status).toBe('unresolved');
+  expect(oldBonus.alternatives.example?.toString()).toBe('6/5');
+  expect(newBonus.status).toBe('known');
+  expect(newBonus.value?.toString()).toBe('6/5');
+  expect(serializeWorkspace(builder.workspace)).toBe(before);
+  const applied = applyVersionChange(builder.workspace, preview);
+  expect(applied.skills).toEqual(builder.workspace.skills);
+  expect(applied.plans[0]!.tumbling[0]!.rounds).toEqual(builder.workspace.plans[0]!.tumbling[0]!.rounds);
+  expect(DK_V2.analyze(applied, team.id, 'tumbling', applied.plans[0]!.tumbling[0]!.id).contributions.find((item) => item.id === 'B-ELEMENT')?.decision.value?.toString()).toBe('6/5');
+  expect(packageChangeReport(DK_V1, DK_V2).changedAlgorithms).toContain('composition');
+});
+
 describe('uforanderlige pakker og forskellige reglementer i samme arbejdsrum', () => {
   it('afviser ændret indhold eller algoritme under samme id/version', () => {
     const registry = new RuleRegistry();

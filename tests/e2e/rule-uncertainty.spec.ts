@@ -10,7 +10,7 @@ for (const viewport of [
   test(`åben regelusikkerhed kan læses ved ${viewport.width}px`, async ({ page }, testInfo) => {
     await page.setViewportSize(viewport);
     const workspace = syntheticWorkspace().workspace;
-    workspace.teams[0]!.rulesetBinding.packageVersion = '1.1.0';
+    workspace.teams[0]!.rulesetBinding.packageVersion = '1.0.0';
     workspace.plans[0]!.bindingFingerprint = bindingFingerprint(workspace.teams[0]!.rulesetBinding);
     await openWorkspace(page, workspace);
     await page.getByRole('link', { name: 'Springplan', exact: true }).click();
@@ -47,6 +47,24 @@ test('tom springplan har hverken stort advarselsfelt eller for tidlig regeltreka
   await page.getByRole('link', { name: 'Springplan', exact: true }).click();
   await expect(page.locator('.analysis-strip .rule-uncertainty')).toHaveCount(0);
   expect((await page.locator('.analysis-strip').boundingBox())?.height ?? 0).toBeLessThan(200);
+});
+
+test('DK 1.1 viser det afklarede elementtillæg uden Q01-trekant', async ({ page }) => {
+  const workspace = syntheticWorkspace().workspace;
+  workspace.teams[0]!.rulesetBinding.packageVersion = '1.1.0';
+  workspace.plans[0]!.bindingFingerprint = bindingFingerprint(workspace.teams[0]!.rulesetBinding);
+  await openWorkspace(page, workspace);
+  await page.getByRole('link', { name: 'Springplan', exact: true }).click();
+  const contribution = page.locator('.contribution-list details').filter({ hasText: 'Forskellige elementer efter seriens første' });
+  await expect(contribution).toContainText('0,000');
+  await expect(contribution).not.toContainText('Q01');
+  const guide = page.getByRole('region', { name: 'Guide til springplanens komposition' });
+  await guide.locator('.composition-guide-overview').click();
+  const row = guide.locator('.composition-guide-row').filter({ has: page.getByText('Elementer', { exact: true }) });
+  await expect(row).toContainText('Pr. serie · over tre omgange');
+  await expect(row).not.toContainText('Uafklaret');
+  await row.locator('summary').click();
+  await expect(row).toContainText('Rondat – flik-flak – lukket salto');
 });
 
 test('J822 forklarer den åbne række ved momentet på mobil', async ({ page }) => {

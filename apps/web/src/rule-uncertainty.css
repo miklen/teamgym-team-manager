@@ -106,7 +106,7 @@
   }
   .analysis-strip > div:nth-child(2) .rule-uncertainty-popover {
     left: auto;
-    right: -4rem;
+    right: 0;
     transform: none;
   }
 }

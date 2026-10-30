@@ -55,13 +55,23 @@ const alternativeLabels: Record<string, string> = {
   independentMaxima: 'Nuværende optælling',
 };
 export function Decision({ value }: { value: NumericDecision }) {
+  const calculated = value.knownSubtotal.compare(0) !== 0;
+  const pendingText = value.status === 'unresolved'
+    ? calculated
+      ? `Beregnet fra afklarede dele: ${points(value.knownSubtotal)}. Resten afhænger af reglen.`
+      : 'Point kan først fastslås, når reglen er afklaret.'
+    : value.status === 'invalid'
+      ? 'Ret fejlen, før point kan beregnes.'
+      : calculated
+        ? `Foreløbigt beregnet: ${points(value.knownSubtotal)}. Beløbet kan ændre sig.`
+        : 'Point kan ikke beregnes endnu.';
   return (
     <span className={`decision ${value.status}`}>
       {hasRuleUncertainty(value.issues) && <UncertaintyMark />}
       <strong>{value.value ? points(value.value) : statusText[value.status]}</strong>
       {value.value === null && (
         <small>
-          Kendt del: {points(value.knownSubtotal)}
+          {pendingText}
           {value.issues.length
             ? ` · ${value.issues.map((issue) => (/^Q\d+$/.test(issue) ? issue : (issueLabels[issue] ?? 'Kræver reglementsgennemgang'))).join(', ')}`
             : ''}

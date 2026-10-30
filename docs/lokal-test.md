@@ -5,10 +5,12 @@
 Gem eller eksportér en eventuel kladde før genindlæsning. Brug en særskilt syntetisk testfil; lokalvisningen kan skrive til den valgte rigtige Drive-fil.
 
 1. Åbn et eksisterende DK 1.0-hold. Springplanen viser en kort besked om den opdaterede pakke. Gå til **Reglement**, vælg **Danmarksserien 1.1.0**, og gennemgå **Vis før og efter**. Skift kun i testfilen. Kontroller, at gymnastdata bevares, og at berørte rytmevurderinger markeres til gennemgang.
-2. Åbn en baneplan med gyldige serier. Ved elementtillægget skal trekanten åbne en kort forklaring af de to C-spor; D og C med åbent grundlag må ikke ligne et sikkert facit. Prøv også et spring med H>1 eller en holdomgang uden klart flertal, hvis testfilen har det.
+2. Åbn en baneplan med gyldige serier. I DK 1.1.0 skal elementtillægget vise ét sikkert tillæg: rondat–flik–flik giver 0,10 og rondat–flik–lukket 0,20 pr. gymnast før gennemsnittet over tre omgange. I DK 1.0.0 skal trekanten fortsat forklare de to ældre C-spor. D og C med andet åbent grundlag må ikke ligne et sikkert facit. Prøv også et spring med H>1 eller en holdomgang uden klart flertal, hvis testfilen har det.
 3. Vælg knælende Gumbi eller et DB804-moment i rytmen. Trekant og forklaring skal stå ved valget og i momentets detaljer. Kontroller læsbarheden på en smal skærm og med tastatur.
+4. Åbn en tillægsrække i kompositionsguiden. Det dokumenterede beløb skal kunne ses på den lukkede række; »Se konkrete ændringer« skal åbne samme før/efter-visning som før. Der skal ikke ligge en gentaget liste med »Holdets dokumenterede muligheder« længere nede. Prøv Annuller, og kontroller at planen er uændret.
+5. Guiden skal være lukket fra start. Se, at D og C står øverst, mens den lukkede guide viser klare omgange samt tillæg og fradrag. Scenariets navn skal kun stå på fanen; holdprofilen skal kunne ses lige under fanerne uden at åbne guiden, også på mobil. Åbn guiden med tastatur for de uddybede rammer og detaljer. En delvis plan skal vise foreløbige eller afventende beløb; DK 1.0.0 skal fortsat markere åbne regler. Prøv også mobilvisning uden vandret rulning.
 
-Afvent brugerens lokale test og udtrykkelige klarsignal før commit, push eller publicering.
+Brugeren afprøvede denne udgave lokalt og gav 31. oktober 2026 udtrykkeligt klarsignal til sync, arkivering, commit og push. Push til `main` starter automatisk GitHub Pages-arbejdsgangen.
 
 ## Afprøvning: ny sikkerhedsskala
 

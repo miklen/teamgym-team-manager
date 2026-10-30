@@ -278,13 +278,13 @@ test('sene workersvar er bundet til scenariet og kan aldrig vises som den nye pl
                 id: message.id,
                 result: [
                   {
-                    id: `result-${name}`,
+                    id: 'B-SKRUE',
                     label: `Svar for ${name}`,
                     selected: null,
                     selectedKnownSubtotal: { numerator: 0n, denominator: 1n },
                     ruleMaximum: null,
-                    documentedValue: null,
-                    status: 'incomplete',
+                    documentedValue: { numerator: name === 'Plan B' ? 2n : 1n, denominator: 5n },
+                    status: 'proven',
                     issue: null,
                     preview: null,
                     independent: true,
@@ -305,17 +305,22 @@ test('sene workersvar er bundet til scenariet og kan aldrig vises som den nye pl
   const source = await openWorkspace(page, scenarioWorkspace());
   await expect(page.getByRole('heading', { name: 'Hold', exact: true })).toBeVisible();
   await page.getByRole('link', { name: 'Springplan', exact: true }).click();
+  await page.locator('.composition-guide-overview').click();
   await expect(page.getByText('Beregner registrerede muligheder… Du kan redigere videre.')).toBeVisible();
   await page.getByRole('tab', { name: 'Plan B', exact: true }).click();
+  await page.locator('.composition-guide-overview').click();
   await page.evaluate(() => {
     const requests = (window as unknown as { syntheticWorkers: { name: string; deliver: () => void }[] })
       .syntheticWorkers;
     requests.find((item) => item.name === 'Plan B')!.deliver();
     requests.find((item) => item.name === 'Plan A')!.deliver();
   });
-  await expect(page.getByText('Svar for Plan B', { exact: true })).toBeVisible();
-  await expect(page.getByText('Svar for Plan A', { exact: true })).toHaveCount(0);
-  await expect(page.getByRole('button', { name: 'Se konkrete ændringer', exact: true })).toBeDisabled();
+  const screw = page.getByRole('region', { name: 'Guide til springplanens komposition' })
+    .locator('.composition-guide-row').filter({ has: page.getByText('Skrue', { exact: true }) });
+  await screw.locator('summary').click();
+  await expect(screw).toContainText('Dokumenteret med registreret kunnen: 0,400');
+  await expect(screw).not.toContainText('0,200');
+  await expect(screw.getByRole('button', { name: 'Se konkrete ændringer' })).toBeDisabled();
   expect(source.puts).toBe(0);
   expect(source.failures).toEqual([]);
 });

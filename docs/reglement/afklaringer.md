@@ -17,6 +17,8 @@ C betyder kompositionskarakter, D betyder sværhedskarakter, og E betyder udfør
 
 ### 1. Giver rondat-flik 0,1 eller 0,2 i elementtillæg?
 
+**Afklaret af træneren for DK 1.1.0 før push:** Tillægget er positivt og følger reglementets eksempel. Første element giver 0; hvert yderligere forskelligt gyldigt element giver +0,10. Gentaget flik tæller kun én gang. Rondat–flik–flik giver +0,10 og rondat–flik–lukket salto +0,20 pr. gymnast. DK 1.0.0 bevarer spørgsmålet og begge historiske fortolkningsspor. Kildeteksten nedenfor er bevaret som grundlag for afklaringen.
+
 **Problemet:** Hovedreglementet siger, at hvert forskelligt element i en baneserie giver 0,1 i tillæg. Rondat og flik er to forskellige elementer, så denne formulering peger på 0,2. Men reglementets eget eksempel giver rondat-flik **0,1**. I samme eksempel giver en mølle alene **0,0**.
 
 Det ser derfor ud til, at eksemplet først tæller fra element nummer to. Det står bare ikke i selve reglen.

@@ -24,6 +24,7 @@ import { useScenarioSelection } from './scenario-context';
 import { ReserveList } from './reserves';
 import { PlanDifficulty, PlanSafety, PlanSkillSelect } from './plan-skill-select';
 import { RuleUncertainty } from './rule-uncertainty';
+import { CompositionGuide } from './composition-guide';
 
 export function SpringPage(props: DataProps & { teamId: string }) {
   const team = props.workspace.teams.find((item) => item.id === props.teamId)!;
@@ -64,6 +65,7 @@ export function SpringPage(props: DataProps & { teamId: string }) {
         planId={plan.id}
         discipline={discipline}
         scenarioId={scenarioId}
+        profile={resolved.status === 'known' ? resolved.profile : null}
         select={(id) => request(() => selectScenario(id))}
       />
       <div
@@ -200,6 +202,23 @@ function SpringDisciplineView({
   const [entryStatus, setEntryStatus] = useState('');
   const [insertedEntryId, setInsertedEntryId] = useState<string | null>(null);
   const potentials = usePotentials(workspace, teamId, discipline, scenarioId);
+  const guide = rulePackage.guide(evaluation, profile, potentials.result);
+  const guideOverview = rulePackage.guideOverview(evaluation);
+  function goToRound(roundId: string) {
+    const index = scenario.rounds.findIndex((round) => round.id === roundId);
+    if (index < 0) return;
+    setActiveRound(index);
+    requestAnimationFrame(() => {
+      const target = document.getElementById(`round-${roundId}`);
+      target?.focus({ preventScroll: true });
+      target?.scrollIntoView({ behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'instant' : 'smooth', block: 'start' });
+    });
+  }
+  function goToAnalysis() {
+    const target = document.getElementById('spring-composition-analysis');
+    target?.focus({ preventScroll: true });
+    target?.scrollIntoView({ behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'instant' : 'smooth', block: 'start' });
+  }
   function entries(round: Round, next: RoundEntry[]) {
     change(setRoundEntries(workspace, plan.id, discipline, scenarioId, round.id, next, profile));
     setEntryError('');
@@ -248,14 +267,10 @@ function SpringDisciplineView({
           </strong>
           <small>{statusText[evaluation.composition.status]} · Flow kræver observation</small>
         </div>
-        <div>
-          <span>Holdprofil</span>
-          <strong>
-            {profile.counting} + {profile.extra}
-          </strong>
-          <small>Tællende + højst ekstra først</small>
-        </div>
       </div>
+      <CompositionGuide rows={guide} overview={guideOverview} profile={profile} rulePackage={rulePackage}
+        potentials={potentials.result} potentialError={potentials.error} onCancelSearch={potentials.cancel}
+        onPreview={setPreview} onRound={goToRound} onAnalysis={goToAnalysis} />
       <div className="round-tabs" aria-label="Vælg omgang">
         {scenario.rounds.map((round, index) => (
           <button key={round.id} aria-pressed={activeRound === index} onClick={() => setActiveRound(index)}>
@@ -270,6 +285,8 @@ function SpringDisciplineView({
             <section
               className={`round ${roundIndex === activeRound ? 'active-round' : ''}`}
               key={round.id}
+              id={`round-${round.id}`}
+              tabIndex={-1}
               aria-label={`${roundIndex + 1}. omgang`}
             >
               <div className="round-heading">
@@ -515,7 +532,7 @@ function SpringDisciplineView({
           );
         })}
       </div>
-      <section className="composition">
+      <section className="composition" id="spring-composition-analysis" tabIndex={-1}>
         <h2>C · bidrag og fradrag</h2>
         <p>
           Planlagt sammensætning; udførelse og flow vurderes ved observation. En fuld konkurrencekarakter
@@ -563,48 +580,6 @@ function SpringDisciplineView({
           Rå C: {points(evaluation.composition.raw)} · netto efter minimum 0:{' '}
           {points(evaluation.composition.value)} · panel: {points(evaluation.composition.panel)}
         </p>
-      </section>
-      <section>
-        <div className="section-heading">
-          <h2>Holdets dokumenterede muligheder</h2>
-          {!potentials.result && (
-            <button className="quiet" onClick={potentials.cancel}>
-              Afbryd søgning
-            </button>
-          )}
-        </div>
-        <p>
-          Hvert tillæg har sin egen opstilling. Mulighederne kan være indbyrdes uforenelige og lægges ikke
-          sammen som sikker samlet C.
-        </p>
-        {potentials.error && <p role="alert">{potentials.error}</p>}
-        {!potentials.result && !potentials.error ? (
-          <p role="status">Beregner registrerede muligheder… Du kan redigere videre.</p>
-        ) : (
-          <div className="potential-list">
-            {potentials.result?.map((item) => (
-              <div key={item.id}>
-                <strong>{item.label}</strong>
-                <p>
-                  Valgt {points(item.selected)} · dokumenteret {points(item.documentedValue)} · regelmaksimum{' '}
-                  {points(item.ruleMaximum)}
-                </p>
-                <small>
-                  {item.status === 'lower-bound'
-                    ? 'Dokumenteret undergrænse; søgningen blev begrænset eller afbrudt.'
-                    : item.status === 'proven'
-                      ? 'Dokumenteret med konkret opstilling.'
-                      : item.status === 'unresolved'
-                        ? `Uafklaret ${item.issue ?? ''}`
-                        : 'Ikke nok anvendelige registreringer til en fuld opstilling.'}
-                </small>
-                <button className="quiet" disabled={!item.preview} onClick={() => setPreview(item)}>
-                  Se konkrete ændringer
-                </button>
-              </div>
-            ))}
-          </div>
-        )}
       </section>
       {evaluation.diagnostics.length > 0 && (
         <details>

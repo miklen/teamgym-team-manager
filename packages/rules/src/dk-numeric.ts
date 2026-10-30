@@ -122,6 +122,14 @@ export function elementBonusForAthlete(distinctCount: number): NumericDecision {
   return uncertain('unresolved', ['Q01'], 0, { literal: new Fraction(distinctCount, 10), example: new Fraction(Math.max(0, distinctCount - 1), 10) });
 }
 
+/** Afklaret DK 1.1.0: første forskellige element giver intet tillæg. */
+export function resolvedElementBonus(distinctCountsByRound: readonly (readonly number[])[], complete: boolean): NumericDecision {
+  if (distinctCountsByRound.length !== 3) throw new Error('Elementtillæg kræver tre omgange.');
+  for (const round of distinctCountsByRound) counts(round, 30);
+  const amount = sumFractions(distinctCountsByRound.flat().map((distinctCount) => new Fraction(Math.max(0, distinctCount - 1), 10))).divide(3);
+  return complete ? known(amount) : uncertain('incomplete', [], amount);
+}
+
 export function trampetTwistQualifies(ageGroup: string, rotations: number, halfTurnsAfterHands: number, family = 'salto'): boolean {
   if (!['U14', 'junior', 'senior'].includes(ageGroup)) throw new Error('Ukendt DK-aldersprofil.');
   if (![1, 2].includes(rotations)) return false;

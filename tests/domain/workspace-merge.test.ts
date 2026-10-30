@@ -23,6 +23,7 @@ import {
 } from '@teamgym/domain';
 import type { MergeContext, MergeResult, Workspace } from '@teamgym/domain';
 import { syntheticWorkspace, binding } from '../fixtures/synthetic-workspace';
+import { DK_V1, DK_V2 } from '../../packages/rules/src/dk-v1';
 
 const context: MergeContext = {
   fingerprint: 'synthetic-rules-v1',
@@ -394,6 +395,26 @@ describe('trevejsmotor', () => {
       const selected = valid(mergeWorkspace(b, left, right, context, choose(review, left === l ? 'remote' : 'local')));
       expect(selected.teams[0]!.rulesetBinding.packageVersion).toBe(b.teams[0]!.rulesetBinding.packageVersion);
       expect(selected.athleteSkills[0]!.stability).toBe(4);
+    }
+  });
+  it('samtidigt skift til afklaret elementregel og ændret omgang kræver valg uden blandet C-grundlag', () => {
+    const { b, l, r } = fixture();
+    l.teams[0]!.rulesetBinding.packageVersion = '1.1.0';
+    l.plans[0]!.bindingFingerprint = bindingFingerprint(l.teams[0]!.rulesetBinding);
+    r.plans[0]!.tumbling[0]!.rounds[1]!.entries[0]!.athleteSkillId = null;
+    for (const [left, right] of [[l, r], [r, l]] as const) {
+      const review = mergeWorkspace(b, left, right, context);
+      expect(review.status).toBe('blocked');
+      expect(review.conflicts.length).toBeGreaterThan(0);
+      const keepOld = valid(mergeWorkspace(b, left, right, context, choose(review, left === l ? 'remote' : 'local')));
+      expect(keepOld.teams[0]!.rulesetBinding.packageVersion).toBe('1.0.0');
+      expect(keepOld.plans[0]!.tumbling[0]!.rounds[1]!.entries[0]!.athleteSkillId).toBeNull();
+      const scenarioId = keepOld.plans[0]!.tumbling[0]!.id;
+      expect(DK_V1.analyze(keepOld, keepOld.teams[0]!.id, 'tumbling', scenarioId).contributions.find((item) => item.id === 'B-ELEMENT')?.decision.status).toBe('unresolved');
+      const keepNew = valid(mergeWorkspace(b, left, right, context, choose(review, left === l ? 'local' : 'remote')));
+      expect(keepNew.teams[0]!.rulesetBinding.packageVersion).toBe('1.1.0');
+      expect(keepNew.plans[0]!.tumbling[0]!.rounds[1]!.entries[0]!.athleteSkillId).not.toBeNull();
+      expect(DK_V2.analyze(keepNew, keepNew.teams[0]!.id, 'tumbling', scenarioId).contributions.find((item) => item.id === 'B-ELEMENT')?.decision.value?.toString()).toBe('0');
     }
   });
   it('to samtidige domænekommandoer bevarer begge ændringer', () => {

@@ -4,6 +4,7 @@ import type { RhythmCatalogEntry, SpringCatalogEntry } from './catalog';
 import { freezeData } from './catalog';
 import type { KnownIssue, TeamProfile } from './dk-data';
 import type { DisciplineEvaluation } from './dk-engine';
+import type { CompositionGuideOverview, CompositionGuideRow } from './dk-guide';
 import type { SpringSkillEvaluation } from './dk-spring';
 import type { BonusPotential, PotentialOptions } from './potential';
 import type { RhythmBinding, RhythmRow } from './rhythm';
@@ -23,11 +24,13 @@ export interface RulePackage {
   evaluateSkill: (skill: Exclude<SkillDefinition, { discipline: 'rhythm' }>, registration?: AthleteSkill) => SpringSkillEvaluation;
   bindRhythm: (skill: Extract<SkillDefinition, { discipline: 'rhythm' }>) => RhythmBinding;
   analyze: (workspace: Workspace, teamId: string, discipline: SpringDiscipline, scenarioId: string) => DisciplineEvaluation;
+  guide: (analysis: DisciplineEvaluation, profile: TeamProfile, potentials?: readonly BonusPotential[] | null) => CompositionGuideRow[];
+  guideOverview: (analysis: DisciplineEvaluation) => CompositionGuideOverview;
   rhythm: (workspace: Workspace, teamId: string, threshold?: 1 | 2 | 3 | 4 | 5 | null) => RhythmRow[];
   potentials: (workspace: Workspace, teamId: string, discipline: SpringDiscipline, scenarioId: string, options?: PotentialOptions) => Promise<BonusPotential[]>;
 }
 
-const behaviorKeys = ['evaluateSkill', 'bindRhythm', 'analyze', 'rhythm', 'potentials'] as const;
+const behaviorKeys = ['evaluateSkill', 'bindRhythm', 'analyze', 'guide', 'guideOverview', 'rhythm', 'potentials'] as const;
 function packageData(rulePackage: RulePackage) {
   return { manifest: rulePackage.manifest, profiles: rulePackage.profiles, springCatalog: rulePackage.springCatalog, rhythmCatalog: rulePackage.rhythmCatalog, knownIssues: rulePackage.knownIssues };
 }

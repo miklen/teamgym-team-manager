@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { updateAssessment } from '@teamgym/domain';
-import { DK_V1 } from '../../packages/rules/src/dk-v1';
+import { DK_V1, DK_V2 } from '../../packages/rules/src/dk-v1';
 import { DK_SPRING_CATALOG } from '../../packages/rules/src/catalog';
 import { DK_DEFAULT_BINDING } from '../../packages/rules/src/dk-data';
 import { applyPotentialPreview, PotentialCache } from '../../packages/rules/src/potential';
@@ -19,6 +19,26 @@ function scenario() {
 }
 
 describe('konkrete individuelle tillægsmuligheder med fulde vidneopstillinger', () => {
+  it('afklaret DK 1.1-elementtillæg får et selvstændigt vidne uden opdigtet regelmaksimum', async () => {
+    const builder = workspaceBuilder();
+    const team = builder.team('Afklaret elementtest', { ...DK_DEFAULT_BINDING, packageVersion: '1.1.0' });
+    const basic = fromRows(['a3-b-01', 'a3-b-02', 'a3-b-04'], 'resolved-basic');
+    const richer = fromRows(['a3-b-01', 'a3-b-02', 'a3-b-03', 'a3-b-11'], 'resolved-richer');
+    for (let index = 0; index < 3; index++) builder.fill(team.id, 'tumbling', index, Array.from({ length: 6 }, () => basic));
+    for (const athlete of builder.workspace.athletes.filter((item) => item.teamId === team.id).slice(0, 6)) builder.register(athlete.id, richer);
+    const scenarioId = builder.workspace.plans[0]!.tumbling[0]!.id;
+    const potentials = await DK_V2.potentials(builder.workspace, team.id, 'tumbling', scenarioId);
+    const element = potentials.find((item) => item.id === 'B-ELEMENT')!;
+    expect(element.selected?.toString()).toBe('6/5');
+    expect(element.documentedValue?.toString()).toBe('7/5');
+    expect(element.status).toBe('proven');
+    expect(element.ruleMaximum).toBeNull();
+    expect(element.issue).toBeNull();
+    expect(element.preview?.after.contributions.find((item) => item.id === 'B-ELEMENT')?.decision.value?.toString()).toBe('7/5');
+    const guide = DK_V2.guide(DK_V2.analyze(builder.workspace, team.id, 'tumbling', scenarioId), DK_V2.profiles.find((item) => item.ageGroup === 'junior' && item.teamType === 'girls')!, potentials);
+    expect(guide.find((item) => item.id === 'B-ELEMENT')?.documented?.toString()).toBe('7/5');
+  });
+
   it('viser valgt 4/6 og dokumenteret 6/6 med to ændrede registreringer', async () => {
     const { builder, team } = scenario();
     const original = structuredClone(builder.workspace);

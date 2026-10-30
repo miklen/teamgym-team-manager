@@ -43,7 +43,7 @@ Den fulde [regelmatrix](../openspec/changes/archive/2026-10-25-build-teamgym-tea
 | C-FLOW | H 9.2.2.5/10.2.2.4 | Kræver observation; intet automatisk fradrag eller godkendelse. C10. |
 | B-SKRUE | H 9.2.3.1 | 0,10 gange bedste antal med mindst 360° i ét element. 2/6/4 giver 0,60; C01/B01. |
 | B-DOBBELT | H 9.2.3.2 | 0,10 gange bedste antal med dobbelt, uafhængig bedste omgang fra skrue. C02/B02. |
-| B-ELEMENT | H 9.2.3.3 | Q01: 0,10 pr. forskelligt element kontra 0,10 færre pr. serie. Alle gyldige elementer tæller til C, også det fjerde. U02/U10. |
+| B-ELEMENT | H 9.2.3.3 | DK 1.1.0: +0,10 pr. forskelligt gyldigt element efter seriens første, summeret over tællende og divideret med tre omgange. Rondat–flik–flik giver 0,10, rondat–flik–lukket 0,20 pr. gymnast; et fjerde forskelligt element tæller også. DK 1.0.0 bevarer Q01's to spor. |
 | T-SKRUE | H 10.2.3.1/10.2.4 | Junior/senior mindst 540° på enkelt eller 180° på dobbelt; U14 mindst 360° på enkelt. Tsukahara kræver mindst 360° efter håndafsæt eller dokumenteret Kasamatsu-ækvivalens. C03–C07/B03–B05. |
 | T-DOBBELT-FRI/-REDSKAB | H 10.2.3.2–3 | Hver 0,10 gange bedste antal dobbeltspring, separat med/uden redskab. C06–C08. |
 | POT | Produktkrav | Forskellige gymnaster, registreret komplet kunnen og fuld vidneopstilling. 4/6 kan blive 6/6 ved to konkrete registreringsændringer; integrationstest. |
@@ -52,9 +52,9 @@ Den fulde [regelmatrix](../openspec/changes/archive/2026-10-25-build-teamgym-tea
 
 ## Uafklaret er et resultat
 
-Q01–Q06 og K01/K02 er versionsdata med kilder. En uafklaret subtotal gør en afhængig total uafklaret, mens andre kendte bidrag vises. Eksempelvis gør A4-konflikten på hoftebøjet overslag-salto 180° D uafklaret, men fjerner ikke sikre C-forhold, som er uafhængige af den konkrete værdi. Ukendt er ikke nul. En tom omgang er ikke et observeret gennemløb.
+Q01 er fortsat åbent i DK 1.0.0, men trænerens afklaring har gjort eksempelsporet gældende i DK 1.1.0. Q02–Q06 og K01/K02 bevares som versionsdata med kilder. En uafklaret subtotal gør en afhængig total uafklaret, mens andre kendte bidrag vises. Eksempelvis gør A4-konflikten på hoftebøjet overslag-salto 180° D uafklaret, men fjerner ikke sikre C-forhold, som er uafhængige af den konkrete værdi. Ukendt er ikke nul. En tom omgang er ikke et observeret gennemløb.
 
-Forbudte eller uafklarede spring skaber ingen sikker potentialekandidat. Der er ingen fritekstindstilling, der ændrer officielle satser eller løser et dommerspørgsmål. En afklaring kræver dokumenteret kilde og en ny pakkeversion.
+Forbudte eller uafklarede spring skaber ingen sikker potentialekandidat. Der er ingen fritekstindstilling, der ændrer officielle satser eller løser et dommerspørgsmål. Ændringer efter publicering kræver en ny pakkeversion; 1.1.0 blev rettet direkte før push efter trænerens afklaring. Fastlåste kildebytes og historiske facit bevares.
 
 ## Verifikationens grænser
 
@@ -62,4 +62,4 @@ De 77 forventninger ligger i referencefilen og oversættes af en semantisk testa
 
 `npm run test:mutations` bruger en isoleret kodekopi og ændrer bevidst juniorgrænsen til 360°, fliks sats, gentagelsesoptællingen i D og C-filtrering på justeret D. Alle fire skal give assertion-fejl i facit-/integrationstestene. Produktionsfilerne ændres ikke af kontrollen.
 
-Visuel kildekontrol, samme agents håndregning, automatiske tests og mutationskontrol er forskellige kontrolformer. Der er ikke indhentet ekstern dommergodkendelse eller svar på Q01–Q06. En bestået suite beviser ikke, at uafklarede regler er afklaret.
+Visuel kildekontrol, samme agents håndregning, automatiske tests og mutationskontrol er forskellige kontrolformer. Træneren har afklaret Q01 for den lokale 1.1.0-pakke; der er ikke indhentet ekstern dommergodkendelse eller svar på Q02–Q06. En bestået suite beviser ikke, at øvrige uafklarede regler er afklaret.
