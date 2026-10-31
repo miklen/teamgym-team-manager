@@ -11,6 +11,8 @@ Der er to forskellige slags spørgsmål:
 - **Kilderne siger noget forskelligt:** eksempelvis to forskellige værdier for samme spring. Vi skal have fastslået, hvilken angivelse der gælder.
 - **Teksten forklarer ikke hele tilfældet:** eksempelvis hvordan man tæller fejl i en bestemt rækkefølge. Vi skal have et konkret bedømmelseseksempel, før vi kan lave en entydig beregning.
 
+I appen findes de samme punkter under **Reglement → Kendt tvivl** for holdets regelpakke. Hvert punkt nedenfor angiver appens id, og appens kildelinks åbner den konkrete PDF-side.
+
 C betyder kompositionskarakter, D betyder sværhedskarakter, og E betyder udførelseskarakter. Eksemplerne nedenfor er konstrueret til at vise problemet; de mulige svar er **ikke** godkendte fortolkninger.
 
 ## Start her: Danmarksseriens springomgange
@@ -31,6 +33,8 @@ Det ser derfor ud til, at eksemplet først tæller fra element nummer to. Det st
 
 **Kilde:** Hovedreglementet, PDF-side 31, punkt 9.2.3.3 og eksemplet; side 32, punkt 9.2.4. Reference **H-U01** i [kildeopslaget](01-hovedreglement.md).
 
+**I appen:** Q01, kun i DK 1.0.0. DK 1.1.0 bruger trænerens afklaring.
+
 ### 2. Hvad er værdien af overslag-salto hoftebøjet med halv skrue?
 
 **Problemet:** Trampettabellen angiver springet til **1,20**. Men tabellen og hovedreglementet angiver samtidig basisværdien uden skrue til **1,00** og tillægget for en halv skrue til **0,10**. Regnet efter den formel bliver værdien **1,10**.
@@ -42,6 +46,8 @@ Det ser derfor ud til, at eksemplet først tæller fra element nummer to. Det st
 **Betydning:** Appen kan ellers give dette spring en forkert D-værdi og sammenligne det forkert med andre spring.
 
 **Kilde:** Appendix A4, side 1, springkoden H>1; hovedreglementet punkt 10.3.5-6. Reference **A4-U01** i [kildeopslaget](08-trampet-vaerdier.md).
+
+**I appen:** Q02.
 
 ### 3. Hvem får fradrag, når kun nogle gymnaster gentager et spring?
 
@@ -69,6 +75,8 @@ A gentager springet. Omgang 2 har flest lukkede saltoer, men B har ikke gentaget
 
 **Kilde:** Hovedreglementet, side 30 og 40, punkt 9.2.2.3 og 10.2.2.3. Reference **H-U02** i [kildeopslaget](01-hovedreglement.md).
 
+**I appen:** Q03, kun i DK 1.0.0. DK 1.1.0 bruger trænerens afklaring.
+
 ### 4. Hvad sker der i holdomgangen, hvis ingen springserie har et flertal?
 
 **Problemet:** Første omgang skal være ens. En gymnast, der laver noget andet end størstedelen af holdet, får nul i D for sin serie/sit spring. Men teksten forklarer ikke tydeligt, hvad referencegruppen er, hvis ingen har mere end halvdelen.
@@ -82,6 +90,8 @@ A gentager springet. Omgang 2 har flest lukkede saltoer, men B har ikke gentaget
 **Betydning:** Valget af reference kan ændre store dele af holdomgangens D-karakter, ikke kun et lille fradrag.
 
 **Kilde:** Hovedreglementet, punkt 9.2.2.1/9.3.4 og 10.2.2.1/10.3.4, side 30/34 og 40/43. Reference **H-U03** i [kildeopslaget](01-hovedreglement.md).
+
+**I appen:** Q05.
 
 ### 5. Hvor mange rækkefølgefejl er der i 0,8 → 0,6 → 0,7?
 
@@ -100,6 +110,8 @@ A gentager springet. Omgang 2 har flest lukkede saltoer, men B har ikke gentaget
 
 **Kilde:** Hovedreglementet, side 30 og 40, punkt 9.2.2.2 og 10.2.2.2. Reference **H-U04** i [kildeopslaget](01-hovedreglement.md).
 
+**I appen:** Q06.
+
 ### 6. Hvordan bedømmes omgange, hvor nogle bruger Pegasus og andre ikke gør?
 
 **Problemet:** Holdet skal have mindst én trampetomgang med redskab og én uden. Fradraget angives pr. gymnast. Det er ikke beskrevet præcist, hvordan man udvælger og tæller mangler ved blandede omgange.
@@ -113,6 +125,8 @@ A gentager springet. Omgang 2 har flest lukkede saltoer, men B har ikke gentaget
 **Betydning:** Appen kan ellers vise et sikkert C-resultat for en opstilling, som kilderne ikke giver os en entydig beregningsmetode til.
 
 **Kilde:** Hovedreglementet, side 40, punkt 10.2.2.5. Reference **H-U05** i [kildeopslaget](01-hovedreglement.md).
+
+**I appen:** Q04.
 
 ### 7. Hvornår skal der afrundes?
 
@@ -128,6 +142,8 @@ A gentager springet. Omgang 2 har flest lukkede saltoer, men B har ikke gentaget
 
 **Kilde:** Hovedreglementet, side 11 og 13, punkt 4.4.a og 4.6. Reference **H-U06** i [kildeopslaget](01-hovedreglement.md).
 
+**I appen:** H-U06.
+
 ### 8. Hvilke krav om trænerlicens gælder i 2026/27?
 
 **Problemet:** Trænerlicensbilaget omfatter også visse dobbeltspring. Men det angiver licensernes gyldighed til og med 2025/26 og siger kun, at forbundet kan forlænge dem. Den leverede fil dokumenterer ikke en forlængelse.
@@ -142,6 +158,8 @@ A gentager springet. Omgang 2 har flest lukkede saltoer, men B har ikke gentaget
 
 **Kilde:** Appendix A7.1, side 1-2. Referencer **A71-U01-U05** i [kildeopslaget](14-traenerlicens.md).
 
+**I appen:** A71-U01. Bilag A7.1 er ikke blandt pakkens fastlåste kilder, så appen har intet sidelink til det.
+
 ### 9. Er en salto som start et andet element end den samme salto senere?
 
 **Problemet:** Banetabellen har både almindelige poster og særskilt markerede startposter for visse forlæns saltoer. Værdien er den samme. Tabellen forklarer ikke selv, om startmarkeringen ændrer identiteten ved optælling af forskellige elementer.
@@ -154,19 +172,37 @@ A gentager springet. Omgang 2 har flest lukkede saltoer, men B har ikke gentaget
 
 **Kilde:** Appendix A3, side 1. Reference **A3-U01** i [kildeopslaget](07-bane-vaerdier.md).
 
+**I appen:** A3-U01.
+
+### 10. Må én blandet baneomgang bruges til både forlæns- og baglænskravet?
+
+**Problemet:** Holdet skal have mindst én ren forlæns og én ren baglæns baneomgang. Mangler en af dem, bruges omgangen nærmest kravet, og der trækkes for hver manglende gymnast. Reglen siger ikke, om den samme blandede omgang må være nærmest begge krav.
+
+**Eksempel:** Ingen omgang er helt forlæns eller helt baglæns. Omgang 2 har tre forlæns og tre baglæns serier og er den eneste bedste kandidat til begge krav.
+
+**Spørgsmålet, vi skal have svar på:**
+
+> Må omgang 2 bruges i optællingen for både forlæns- og baglænskravet, eller skal de to krav vurderes mod to forskellige omgange? Hvor stort bliver fradraget i eksemplet?
+
+**Betydning:** Appen bruger i dag samme omgang i begge optællinger og markerer fradraget som åbent. Et andet svar kan ændre banens C-karakter.
+
+**Kilde:** Hovedreglementet, side 30, punkt 9.2.2.4. Reference **H-C05** i [kildeopslaget](01-hovedreglement.md) og **C-RETNING-VALG** i [rettelser og advarsler](rettelser-og-advarsler-2026-10-30.md).
+
+**I appen:** C-RETNING-VALG.
+
 ## Danmarksseriens rytme
 
 Disse spørgsmål handler om elementvalg og deres værdi. Hvert spørgsmål henviser til en mere detaljeret kildebeskrivelse.
 
 | Hvad er problemet?                                                                                                  | Hvad skal vi konkret have svar på?                                                                          | Kildeopslag                                                  |
 | ------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------ |
-| DB804 bruges både om en pirouette og et stem til håndstand.                                                         | Hvilken kode er korrekt for hvert element? Må de vælges sammen, når reglementet kræver forskellige koder?   | [A1DK-U01](04-rytme-dk.md), PDF-side 3-4                     |
+| DB804 bruges både om en pirouette og et stem til håndstand.                                                         | Hvilken kode er korrekt for hvert element? Må de vælges sammen, når reglementet kræver forskellige koder?   | [A1DK-U01](04-rytme-dk.md), PDF-side 3-4; i appen K01        |
 | G802 bruges om to forskellige kast med værdierne 0,6 og 0,8.                                                        | Hvilken kode og værdi skal anmeldes for kast uden rotation og kast med rotation?                            | [A1DK-U02](04-rytme-dk.md), side 12                          |
 | Et spagatspring har koden J822, mens de øvrige i samme række slutter på 11.                                         | Er J822 korrekt, og regnes det som samme tabelrække som J211/J611 ved valg af to spring?                    | [A1DK-U03](04-rytme-dk.md), side 8                           |
 | Teksten angiver både 15° for horisontal overkrop og 30° for horisontal krop.                                        | Hvilken tolerance gælder i de konkrete balancer, hvor beskrivelserne bruger begge begreber?                 | [A1DK-U04](04-rytme-dk.md), side 1 og balancekravene         |
 | Balancer skal vælges fra forskellige rækker, men rækkenumre går igen i forskellige kategorier.                      | Må hovedstand HB201 og stående balance SB201 vælges sammen, eller regnes de som samme række?                | [A1DK-U05](04-rytme-dk.md), H punkt 8.3.7.1                  |
 | Ældre spørgsmål/svar beskriver fri Gumbi-start; den nyere tabel nævner sidelæns/baglæns start.                      | Hvilke startpositioner er tilladt for A807 i den gældende udgave, eksempelvis knælende start?               | [A1DK-U06](04-rytme-dk.md), [QA-U02](12-spoergsmaal-svar.md) |
-| Revisionshistorikken siger, at 540° kattespring er tilføjet, men tabellerne har ingen identificerbar celle for det. | Findes et rettelsesblad med den korrekte kode, værdi og udførelseskrav, eller er revisionsnotitsen forkert? | [A1DK-U07](04-rytme-dk.md), H side 5                         |
+| Revisionshistorikken siger, at 540° kattespring er tilføjet, men tabellerne har ingen identificerbar celle for det. | Findes et rettelsesblad med den korrekte kode, værdi og udførelseskrav, eller er revisionsnotitsen forkert? | [A1DK-U07](04-rytme-dk.md), H side 5; i appen K02            |
 
 ## Udførelse og dommerfradrag
 
@@ -233,4 +269,4 @@ Disse punkter er bevaret, så de ikke bliver glemt. De behøver ikke alle være 
 4. Gem svar, afsender, dato, original dokumentation og række/sæson sammen med punktets reference. Bevar den oprindelige konflikt.
 5. Lav derefter et uafhængigt regneeksempel, som implementeringen kan testes imod.
 
-**Status:** Der er endnu ikke indhentet eller registreret officielle svar i denne liste. Der er ikke sendt spørgsmål på brugerens vegne. Detaljerne og de oprindelige referencer er bevaret i kildeopslagene. Denne omskrivning gør spørgsmålene lettere at læse; den afgør ingen sportslige fortolkninger og ændrer ingen appregler eller fælles data.
+**Status:** Der er endnu ikke indhentet eller registreret officielle svar i denne liste. Punkt 1 og 3 er afklaret af træneren for DK 1.1.0; det er trænerens beslutninger, ikke officielle svar. Der er ikke sendt spørgsmål på brugerens vegne. Detaljerne og de oprindelige referencer er bevaret i kildeopslagene. Denne omskrivning gør spørgsmålene lettere at læse; den afgør ingen sportslige fortolkninger og ændrer ingen appregler eller fælles data.
