@@ -38,8 +38,8 @@ Den fulde [regelmatrix](../openspec/changes/archive/2026-10-25-build-teamgym-tea
 | C-HOLD | H 9.2.2.1/10.2.2.1 | 0,20 pr. tællende afvigende gymnast fra klar majoritet; gyldigt element beholder C-berettigelse trods D-nulstilling. C09. |
 | C-GENTAG | H 9.2.2.3/10.2.2.3 | DK 1.1.0: Tæl hver præcis serie-/springidentitet på holdet pr. omgang, uanset gymnast. Frihold én omgang med flest forekomster; giv 0,20 for hver forekomst i de øvrige omgange. 2 mod 3 giver 0,40; fulde gentagelser i to/tre omgange giver 1,20/2,40. Ved lige antal er beløbet kendt uden udpegning af friholdt omgang. |
 | C-RETNING | H 9.2.2.4 | 0,20 gange manglende rene forlæns plus manglende rene baglæns i hver sin nærmeste omgang. 0/4/2 og 6/0/3 giver 0,40; F01–F03. |
-| C-REDSKAB | H 10.2.2.5 | En fuld med- og en fuld uden-omgang giver 0. Alle tre uden eller med giver 1,20; V01–V03. Blandede grænsetilfælde er Q04/U08. |
-| C-ORDEN | H 9.2.2.2/10.2.2.2 | Omgang 2/3: rotationskategori før stigende D. Sats 0,10; præcis optælling af fejl er Q06. O01–O02 og U09. |
+| C-REDSKAB | H 10.2.2.5 | En fuld med- og en fuld uden-omgang giver 0. Alle tre uden eller med giver 1,20; V01–V03. DK 1.1.0: en omgang er hel med eller hel uden Pegasus, også for ekstra; en blandet omgang er ugyldig planlægning. DK 1.0.0 bevarer Q04/U08. |
+| C-ORDEN | H 9.2.2.2/10.2.2.2 | Omgang 2/3: rotationskategori (uden salto, enkelt, dobbelt, trippel; blandet serie i højeste) før stigende D. DK 1.1.0: 0,10 pr. tællende gymnast, der står efter et tidligere højere spring; 0,8;0,6;0,7 giver 0,20. Ekstra indgår ikke. DK 1.0.0 bevarer Q06. O01–O02 og U09. |
 | C-FLOW | H 9.2.2.5/10.2.2.4 | Kræver observation; intet automatisk fradrag eller godkendelse. C10. |
 | B-SKRUE | H 9.2.3.1 | 0,10 gange bedste antal med mindst 360° i ét element. 2/6/4 giver 0,60; C01/B01. |
 | B-DOBBELT | H 9.2.3.2 | 0,10 gange bedste antal med dobbelt, uafhængig bedste omgang fra skrue. C02/B02. |

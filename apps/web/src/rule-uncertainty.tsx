@@ -3,9 +3,7 @@ import './rule-uncertainty.css';
 const explanations: Record<string, string> = {
   Q01: 'Regelteksten giver 0,10 pr. forskelligt baneelement; eksemplet tæller først fra element nr. 2. Begge muligheder vises, indtil det er afklaret.',
   Q02: 'Trampettabellen giver 1,20; basisværdi plus en halv skrue giver 1,10. Springets D er derfor åbent.',
-  Q04: 'Reglen forklarer ikke sikkert, hvordan blandede omgange med og uden Pegasus skal tælles.',
   Q05: 'Ingen serie har flertal i holdomgangen. Det er uklart, hvilken serie de øvrige skal sammenlignes med.',
-  Q06: 'Rækkefølgen er ikke entydigt korrekt. Reglementet fastlægger ikke, om hver fejl tælles mod naboen eller mod tidligere højeste værdi.',
   'H-U06':
     'Appen runder den præcise værdi direkte ned til 0,005. Det er uafklaret, om dommernes tal først skal behandles til to decimaler.',
   'A71-U01':

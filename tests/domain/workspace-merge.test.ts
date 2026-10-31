@@ -78,7 +78,7 @@ describe('trevejsmotor', () => {
     const x = jump('a4-f-01');
     builder.fill(team.id, 'trampet', 0, Array.from({ length: 6 }, () => x));
     builder.fill(team.id, 'trampet', 1, ['a4-f-02', 'a4-f-03', 'a4-f-04', 'a4-f-05', 'a4-f-06', 'a4-f-07'].map(jump));
-    builder.fill(team.id, 'trampet', 2, ['a4-f-08', 'a4-f-09', 'a4-v-01', 'a4-v-02', 'a4-v-03', 'a4-v-04'].map(jump));
+    builder.fill(team.id, 'trampet', 2, ['a4-f-08', 'a4-f-09', 'a4-f-10', 'a4-f-11', 'a4-f-12', 'a4-f-13'].map(jump));
     const b = builder.workspace;
     const l = structuredClone(b);
     const r = structuredClone(b);
@@ -91,6 +91,51 @@ describe('trevejsmotor', () => {
       expect(result.contributions.find((item) => item.id === 'C-GENTAG')?.decision.value?.toString()).toBe('2/5');
       expect(merged.plans[0]!.trampet[0]!.rounds[1]!.entries[0]!.athleteSkillId).toBe(rounds[0]!.entries[0]!.athleteSkillId);
       expect(merged.plans[0]!.trampet[0]!.rounds[2]!.entries[1]!.athleteSkillId).toBe(rounds[0]!.entries[1]!.athleteSkillId);
+    }
+  });
+  it('genberegner rækkefølgefejl i hver omgang efter samtidige flytninger', () => {
+    const builder = workspaceBuilder();
+    const team = builder.team('Syntetisk fletterækkefølge', { rulesetId: 'dk', packageVersion: '1.1.0', ageGroup: 'junior', teamType: 'girls' });
+    const jump = (sourceId: string) => ({ id: `order-${sourceId}`, name: `Syntetisk ${sourceId}`, archived: false,
+      discipline: 'trampet' as const, jump: structuredClone(DK_SPRING_CATALOG.find((item) => item.referenceId === sourceId)!.execution) });
+    const rising = ['a4-f-01', 'a4-f-02', 'a4-f-03', 'a4-f-06', 'a4-f-07', 'a4-f-08'].map(jump);
+    for (const round of [0, 1, 2]) builder.fill(team.id, 'trampet', round, rising);
+    const b = builder.workspace;
+    const l = structuredClone(b);
+    const r = structuredClone(b);
+    const second = l.plans[0]!.trampet[0]!.rounds[1]!.entries;
+    second.splice(0, 2, second[1]!, second[0]!);
+    const third = r.plans[0]!.trampet[0]!.rounds[2]!.entries;
+    third.unshift(third.pop()!);
+    for (const [left, right] of [[l, r], [r, l]] as const) {
+      const merged = valid(mergeWorkspace(b, left, right, context));
+      const result = DK_V2.analyze(merged, team.id, 'trampet', merged.plans[0]!.trampet[0]!.id);
+      expect(result.contributions.find((item) => item.id === 'C-ORDEN-2')?.decision.value?.toString()).toBe('1/10');
+      expect(result.contributions.find((item) => item.id === 'C-ORDEN-3')?.decision.value?.toString()).toBe('1/2');
+    }
+  });
+  it('fletter en blandet Pegasus-omgang uden blokering og viser den som ugyldig bagefter', () => {
+    const builder = workspaceBuilder();
+    const team = builder.team('Syntetisk fletteredskab', { rulesetId: 'dk', packageVersion: '1.1.0', ageGroup: 'junior', teamType: 'girls' });
+    const jump = (sourceId: string) => ({ id: `apparatus-${sourceId}`, name: `Syntetisk ${sourceId}`, archived: false,
+      discipline: 'trampet' as const, jump: structuredClone(DK_SPRING_CATALOG.find((item) => item.referenceId === sourceId)!.execution) });
+    const free = ['a4-f-01', 'a4-f-02', 'a4-f-03', 'a4-f-06', 'a4-f-07', 'a4-f-08'].map(jump);
+    const vault = ['a4-v-01', 'a4-v-02', 'a4-v-03', 'a4-v-04', 'a4-v-05', 'a4-v-06'].map(jump);
+    for (const round of [0, 1, 2]) builder.fill(team.id, 'trampet', round, free);
+    const vaultIds = (() => { builder.fill(team.id, 'trampet', 0, vault); return builder.workspace.plans[0]!.trampet[0]!.rounds[0]!.entries.map((entry) => entry.athleteSkillId); })();
+    builder.fill(team.id, 'trampet', 0, free);
+    const b = builder.workspace;
+    const l = structuredClone(b);
+    const r = structuredClone(b);
+    l.plans[0]!.trampet[0]!.rounds[0]!.entries.forEach((entry, index) => { entry.athleteSkillId = vaultIds[index]!; });
+    r.plans[0]!.trampet[0]!.rounds[1]!.entries[0]!.athleteSkillId = vaultIds[0]!;
+    for (const [left, right] of [[l, r], [r, l]] as const) {
+      const merged = valid(mergeWorkspace(b, left, right, context));
+      const result = DK_V2.analyze(merged, team.id, 'trampet', merged.plans[0]!.trampet[0]!.id);
+      const roundIds = merged.plans[0]!.trampet[0]!.rounds.map((round) => round.id);
+      expect(result.rounds.map((round) => round.status === 'invalid')).toEqual([false, true, false]);
+      expect(result.diagnostics.filter((item) => item.code === 'mixed-apparatus').flatMap((item) => item.affectedIds)).toEqual([roundIds[1]]);
+      expect(result.contributions.find((item) => item.id === 'C-REDSKAB')?.decision.status).toBe('invalid');
     }
   });
   it('bevarer ensidig/ens ændring og forskellige felter, er deterministisk og muterer intet', () => {

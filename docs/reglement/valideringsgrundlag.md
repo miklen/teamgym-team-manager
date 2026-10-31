@@ -46,8 +46,8 @@
 | U02  | Overslag salto hoftebøjet 180°                            | A4-U01: D=1,10 eller 1,20                                |
 | U03  | Holdomgang fordelt 3/3, 2/2/2 eller 3/2/1                 | H-U03: reference og D/C                                  |
 | U04  | Delvis gentagelse på tværs af skiftende gymnaster         | H-U02: afklaret for DK 1.1.0; holdoptælling, 0,20 × (sum − største omgang) pr. identitet. Ved lighed er omgangsplacering ikke fastlagt. |
-| U05  | Tre blandede redskabsomgange, hver 3 med/3 uden           | H-U05: antal mangler og valg af omgange                  |
-| U06  | Faldende/stigende D inden for samme rotation: 0,8;0,6;0,7 | H-U04: hændelsesoptælling                                |
+| U05  | Tre blandede redskabsomgange, hver 3 med/3 uden           | H-U05 afklaret for DK 1.1.0: ugyldig omgang, intet fradrag |
+| U06  | Faldende/stigende D inden for samme rotation: 0,8;0,6;0,7 | H-U04 afklaret for DK 1.1.0: to fejl, 0,20              |
 | U07  | Fuldt REG-rytmeprogram med alle C-komponenter             | H-U08: 1,2-maksimum versus 1,3-komponentsum              |
 | U08  | REG med én hånd på Pegasus                                | A6-U02: 0 eller 0,6 i E; kan stadig være legitimt forsøg |
 | U09  | Alle har trænerlicens, dokumenteret kun til 25/26         | A71-U01: ingen sikker gyldighed i 26/27                  |

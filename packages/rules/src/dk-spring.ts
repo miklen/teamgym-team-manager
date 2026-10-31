@@ -110,6 +110,8 @@ export interface SpringSkillEvaluation {
   validity: EvaluationStatus;
   identity: string;
   rotationCategory: number | null;
+  /** Rækkefølgekategori efter trænerafklaring: højeste saltokategori i serien, 0 uden salto. */
+  orderCategory: number;
   connection: 'verified' | 'unverified' | 'invalid';
   elementValues: readonly { identity: string; value: NumericDecision }[];
   distinctElementCount: number;
@@ -138,12 +140,13 @@ export function evaluateSpringSkill(skill: Exclude<SkillDefinition, { discipline
   const status = combineStatus([baseStatus, validity]);
   const categories = elements.filter((element) => element.family === 'salto').map((element) => element.rotationQuarterTurns / 4);
   const rotationCategory = skill.discipline === 'trampet' ? skill.jump.rotationQuarterTurns / 4 : categories.length && new Set(categories).size === 1 ? categories[0]! : null;
+  const orderCategory = skill.discipline === 'trampet' ? skill.jump.rotationQuarterTurns / 4 : Math.max(0, ...categories);
   const sources: SourceReference[] = elements.flatMap((element) => {
     const record = officialSpringRecord(element);
     return record ? [record.source, { sourceId: 'H', section: skill.discipline === 'tumbling' ? '9.3.5–6' : '10.3.5–6', page: skill.discipline === 'tumbling' ? 33 : 43 }] :
       [{ sourceId: 'H', section: skill.discipline === 'tumbling' ? '9.3.5–6; formelvariant uden trykt kode' : '10.3.5–6; formelvariant uden trykt kode', page: skill.discipline === 'tumbling' ? 33 : 43 }];
   });
-  return { difficulty, status, validity, identity: springIdentity(skill, corrected), rotationCategory, connection, elementValues: evaluated,
+  return { difficulty, status, validity, identity: springIdentity(skill, corrected), rotationCategory, orderCategory, connection, elementValues: evaluated,
     distinctElementCount: new Set(evaluated.filter((item) => item.value.status === 'known').map((item) => item.identity)).size,
     pureForward: elements.every((element) => element.direction === 'forward'), pureBackward: elements.every((element) => element.direction === 'backward'),
     hasDouble: categories.includes(2), hasBaneTwist: elements.some((element) => element.twistsHalfTurns >= 2),

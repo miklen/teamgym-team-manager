@@ -1,8 +1,8 @@
 import { Fraction, bindingFingerprint, roundStability, sumFractions } from '@teamgym/domain';
 import type { AthleteSkill, Diagnostic, EvaluationStatus, RoundEntry, ReserveEntry, SkillDefinition, SourceReference, SpringDiscipline, Workspace } from '@teamgym/domain';
 import type { TeamProfile } from './dk-data';
-import type { NumericDecision } from './dk-numeric';
-import { apparatusDeduction, bestBonus, combineStatus, compositionTotal, divideDecision, elementBonus, holdRound, known, mixQuotaCheck, orderCheck, participantStructure,
+import type { NumericDecision, OrderResult } from './dk-numeric';
+import { apparatusDeduction, bestBonus, combineStatus, compositionTotal, divideDecision, elementBonus, holdRound, known, mixQuotaCheck, orderCheck, resolvedOrderCheck, participantStructure,
   PLANNING_BOUNDARIES, pureDirectionDeduction, repetitionDeduction, resolvedElementBonus, resolvedRepetitionDeduction, sumDecisions, trampetTwistQualifies, uncertain } from './dk-numeric';
 import { evaluateSpringSkill, normalizeElement } from './dk-spring';
 import type { SpringSkillEvaluation } from './dk-spring';
@@ -32,7 +32,7 @@ export interface RoundEvaluation {
   reserves: readonly ReserveEvaluation[];
   difficulty: NumericDecision; panelD: Fraction | null; status: EvaluationStatus;
   compositionReady: boolean;
-  holdDeduction: NumericDecision; order: ReturnType<typeof orderCheck>; sortedEntryIds: readonly string[];
+  holdDeduction: NumericDecision; order: OrderResult; orderFaultIds: readonly string[]; sortedEntryIds: readonly string[];
   stability: ReturnType<typeof roundStability>;
 }
 export type ReserveEvaluation = Omit<ParticipantEvaluation, 'entry'> & { entry: ReserveEntry };
@@ -53,6 +53,8 @@ export interface EngineSettings {
   baseTrampet?: string;
   elementBonusResolved?: boolean;
   repetitionResolved?: boolean;
+  orderResolved?: boolean;
+  apparatusRoundsResolved?: boolean;
 }
 
 function scaleDecision(value: NumericDecision, scale: string): NumericDecision {
@@ -111,7 +113,13 @@ export function evaluateDiscipline(workspace: Workspace, teamId: string, discipl
       status = combineStatus([status, mix]);
       if (mix !== 'known') diagnostics.push(diagnostic('mix-quota', 'De tællende skal opfylde holdprofilens eksplicitte mixfordeling.', [round.id], mix === 'invalid' ? 'invalid' : 'incomplete'));
     }
-    const compositionReady = !invalidStructure && counting.length === profile.counting && counting.every((item) => item.eligibleForC) &&
+    const apparatuses = new Set(entries.map((item) => item.evaluation?.apparatus).filter((value) => value === 'vault' || value === 'free'));
+    const mixedApparatus = discipline === 'trampet' && Boolean(settings.apparatusRoundsResolved) && apparatuses.size > 1;
+    if (mixedApparatus) {
+      status = 'invalid';
+      diagnostics.push(diagnostic('mixed-apparatus', `${roundIndex + 1}. omgang blander spring med og uden Pegasus. Pegasus står foran trampolinen hele omgangen eller slet ikke.`, [round.id]));
+    }
+    const compositionReady = !invalidStructure && !mixedApparatus && counting.length === profile.counting && counting.every((item) => item.eligibleForC) &&
       (!profile.mixQuota || mixQuotaCheck(counting.map((item) => athletes.get(item.entry.athleteId)?.mixCategory ?? null), profile.mixQuota.girl, profile.mixQuota.boy) === 'known');
     let holdDeduction = known(0);
     if (roundIndex === 0) {
@@ -126,14 +134,18 @@ export function evaluateDiscipline(workspace: Workspace, teamId: string, discipl
     let difficulty = sumDecisions(counting.map((item) => item.adjustedD));
     if (counting.length !== profile.counting && difficulty.status === 'known') difficulty = uncertain('incomplete', [], difficulty.knownSubtotal);
     if (status === 'invalid') difficulty = uncertain('invalid', difficulty.issues, difficulty.knownSubtotal, difficulty.alternatives);
-    const order = orderCheck(entries.map((item) => item.evaluation?.rotationCategory ?? null), entries.map((item) => item.originalD.value), roundIndex + 1);
+    const order = settings.orderResolved
+      ? resolvedOrderCheck(counting.map((item) => item.evaluation?.orderCategory ?? null), counting.map((item) => item.originalD), roundIndex + 1)
+      : orderCheck(entries.map((item) => item.evaluation?.rotationCategory ?? null), entries.map((item) => item.originalD.value), roundIndex + 1);
+    const orderFaultIds = order.faultIndexes.map((index) => counting[index]!.entry.id);
     if (counting.length !== profile.counting && roundIndex > 0 && (settings.ruleCorrections || order.deduction.status === 'known')) order.deduction = uncertain('incomplete');
     const sorted = [...entries].sort((a, b) => (a.entry.role === 'extra' ? 0 : 1) - (b.entry.role === 'extra' ? 0 : 1) ||
-      (a.evaluation?.rotationCategory ?? Number.MAX_SAFE_INTEGER) - (b.evaluation?.rotationCategory ?? Number.MAX_SAFE_INTEGER) ||
+      ((settings.orderResolved ? a.evaluation?.orderCategory : a.evaluation?.rotationCategory) ?? Number.MAX_SAFE_INTEGER) -
+        ((settings.orderResolved ? b.evaluation?.orderCategory : b.evaluation?.rotationCategory) ?? Number.MAX_SAFE_INTEGER) ||
       (a.originalD.value && b.originalD.value ? a.originalD.value.compare(b.originalD.value) : 0));
     diagnostics.push(...entries.flatMap((item) => item.diagnostics));
     return { id: round.id, entries, counting, reserves: round.reserves.map((entry) => evaluateEntry(entry)), difficulty, panelD: difficulty.value?.panelFloor() ?? null, status, compositionReady,
-      holdDeduction, order, sortedEntryIds: sorted.map((item) => item.entry.id), stability: roundStability(workspace, round.entries, profile, teamId) };
+      holdDeduction, order, orderFaultIds, sortedEntryIds: sorted.map((item) => item.entry.id), stability: roundStability(workspace, round.entries, profile, teamId) };
   });
 
   function add(id: string, label: string, kind: RuleContribution['kind'], decision: NumericDecision, section: string, affectedIds: string[], page: number, guideCounts?: readonly (readonly number[])[]) {
@@ -169,7 +181,8 @@ export function evaluateDiscipline(workspace: Workspace, teamId: string, discipl
     return relevant ? [round.id] : [];
   }) : allEntryIds;
   add('C-GENTAG', 'Gentagne serier eller spring mellem omgange', 'deduction', repeat, `${prefix}.2.2.3`, repeatRoundIds, page);
-  for (const [index, round] of rounds.entries()) if (index > 0) add(`C-ORDEN-${index + 1}`, `Rækkefølge i omgang ${index + 1}`, 'deduction', round.order.deduction, `${prefix}.2.2.2`, [round.id, ...round.entries.map((item) => item.entry.id)], page);
+  for (const [index, round] of rounds.entries()) if (index > 0) add(`C-ORDEN-${index + 1}`, `Rækkefølge i omgang ${index + 1}`, 'deduction', round.order.deduction, `${prefix}.2.2.2`,
+    settings.orderResolved ? [round.id, ...round.orderFaultIds] : [round.id, ...round.entries.map((item) => item.entry.id)], page);
 
   function qualifyingBonus(predicate: (participant: ParticipantEvaluation) => boolean) {
     const counts = rounds.map((round) => round.counting.filter((item) => item.eligibleForC && predicate(item)).length);
@@ -203,7 +216,9 @@ export function evaluateDiscipline(workspace: Workspace, teamId: string, discipl
     const vault = rounds.map((round) => round.counting.filter((item) => item.eligibleForC && item.evaluation?.apparatus === 'vault').length);
     const free = rounds.map((round) => round.counting.filter((item) => item.eligibleForC && item.evaluation?.apparatus === 'free').length);
     const apparatusSatisfied = rounds.some((round, index) => round.compositionReady && vault[index] === profile.counting) && rounds.some((round, index) => round.compositionReady && free[index] === profile.counting);
-    add('C-REDSKAB', 'Omgang med og uden Pegasus', 'deduction', allComplete ? apparatusDeduction(vault, free, profile.counting) : apparatusSatisfied ? known(0) : uncertain('incomplete'), '10.2.2.5', allEntryIds, page, [vault, free]);
+    const mixedRoundIds = settings.apparatusRoundsResolved ? diagnostics.filter((item) => item.code === 'mixed-apparatus').flatMap((item) => item.affectedIds) : [];
+    const apparatus = mixedRoundIds.length > 0 ? uncertain('invalid') : allComplete ? apparatusDeduction(vault, free, profile.counting) : apparatusSatisfied ? known(0) : uncertain('incomplete');
+    add('C-REDSKAB', 'Omgang med og uden Pegasus', 'deduction', apparatus, '10.2.2.5', mixedRoundIds.length > 0 ? mixedRoundIds : allEntryIds, page, [vault, free]);
     const twist = qualifyingBonus((item) => {
       if (item.skill?.discipline !== 'trampet') return false;
       const element = normalizeElement(item.skill.jump);

@@ -309,6 +309,13 @@ function SpringDisciplineView({
                 D <strong>{points(result.panelD)}</strong> <span>{statusText[result.difficulty.status]}</span>
               </p>
               <RuleUncertainty ids={result.difficulty.issues} />
+              {evaluation.diagnostics
+                .filter((item) => item.code === 'mixed-apparatus' && item.affectedIds.includes(round.id))
+                .map((item) => (
+                  <p key={item.code} className="entry-warning" role="status">
+                    {item.message} Vælg spring med samme redskab til hele omgangen.
+                  </p>
+                ))}
               <ol className="round-entries">
                 {result.entries.map((participant, index) => (
                   <li
@@ -509,7 +516,24 @@ function SpringDisciplineView({
                     </li>
                   ))}
                 </ul>
-                <p>Rækkefølge: {statusText[result.order.deduction.status]}</p>
+                <p>
+                  Rækkefølge:{' '}
+                  {!result.order.applies
+                    ? 'gælder ikke i 1. omgang'
+                    : result.order.deduction.status === 'known' && result.orderFaultIds.length === 0
+                      ? 'korrekt'
+                      : result.order.deduction.status === 'known'
+                        ? `${result.orderFaultIds.length} fejl · fradrag ${points(result.order.deduction.value)}`
+                        : statusText[result.order.deduction.status]}
+                </p>
+                {result.orderFaultIds.length > 0 && (
+                  <p className="muted">
+                    Står efter et højere spring:{' '}
+                    {result.orderFaultIds
+                      .map((id) => result.counting.find((item) => item.entry.id === id)?.athleteName ?? 'Ukendt')
+                      .join(', ')}
+                  </p>
+                )}
                 <button
                   className="quiet"
                   disabled={!writable || result.sortedEntryIds.length !== round.entries.length}
@@ -518,7 +542,8 @@ function SpringDisciplineView({
                   Vis sorteringsforslag
                 </button>
                 <p className="muted">
-                  Rotationskategori før stigende D. Sortering anvendes kun efter dit valg.
+                  Uden salto, enkelt-, dobbelt- og trippelsalto; blandet serie i højeste kategori. Derefter stigende D.
+                  Sortering anvendes kun efter dit valg.
                 </p>
                 {result.entries.some((item) => item.entry.role === 'extra') && (
                   <>

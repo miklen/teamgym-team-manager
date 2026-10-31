@@ -105,14 +105,40 @@ export function holdRound(identities: readonly (string | null)[], values: readon
     deduction: identityComplete ? known(new Fraction(deviating, 5)) : uncertain('incomplete', [], new Fraction(deviating, 5)), referenceIdentity };
 }
 
-export function orderCheck(rotations: readonly (number | null)[], difficulties: readonly (Fraction | null)[], roundNumber: number) {
-  if (roundNumber === 1) return { compliant: true, applies: false, deduction: known(0) };
+export function orderCheck(rotations: readonly (number | null)[], difficulties: readonly (Fraction | null)[], roundNumber: number): OrderResult {
+  if (roundNumber === 1) return { compliant: true, applies: false, deduction: known(0), faultIndexes: [] };
   if (rotations.length !== difficulties.length || rotations.some((rotation) => rotation === null) || difficulties.some((value) => value === null)) {
-    return { compliant: null, applies: true, deduction: uncertain('unresolved', ['Q06']) };
+    return { compliant: null, applies: true, deduction: uncertain('unresolved', ['Q06']), faultIndexes: [] };
   }
   const compliant = rotations.every((rotation, index) => index === 0 || rotation! > rotations[index - 1]! ||
     (rotation === rotations[index - 1] && difficulties[index]!.compare(difficulties[index - 1]!) >= 0));
-  return { compliant, applies: true, deduction: compliant ? known(0) : uncertain('unresolved', ['Q06']) };
+  return { compliant, applies: true, deduction: compliant ? known(0) : uncertain('unresolved', ['Q06']), faultIndexes: [] };
+}
+
+/** DK 1.1.0: Hvert tællende spring, der står efter en højere kategori eller et sværere spring i samme kategori, giver ét fradrag. */
+export interface OrderResult { compliant: boolean | null; applies: boolean; deduction: NumericDecision; faultIndexes: readonly number[] }
+
+export function resolvedOrderCheck(categories: readonly (number | null)[], difficulties: readonly NumericDecision[], roundNumber: number): OrderResult {
+  if (categories.length !== difficulties.length) throw new Error('Rækkefølgen kræver én kategori og én sværhed pr. spring.');
+  if (roundNumber === 1) return { compliant: true, applies: false, deduction: known(0), faultIndexes: [] };
+  const faultIndexes: number[] = [];
+  const unknown: NumericDecision[] = [];
+  for (const [index, category] of categories.entries()) {
+    const value = difficulties[index]!.value;
+    if (category === null || value === null) { unknown.push(difficulties[index]!); continue; }
+    const fault = categories.slice(0, index).some((earlier, earlierIndex) => {
+      const earlierValue = difficulties[earlierIndex]!.value;
+      return earlier !== null && earlierValue !== null && (earlier > category || earlier === category && earlierValue.compare(value) > 0);
+    });
+    if (fault) faultIndexes.push(index);
+  }
+  const amount = new Fraction(faultIndexes.length, 10);
+  if (unknown.length) {
+    const status = combineStatus(unknown.map((decision) => decision.status === 'known' ? 'incomplete' : decision.status));
+    return { compliant: faultIndexes.length ? false : null, applies: true, faultIndexes,
+      deduction: uncertain(status === 'known' ? 'incomplete' : status, [...new Set(unknown.flatMap((decision) => decision.issues))], amount) };
+  }
+  return { compliant: faultIndexes.length === 0, applies: true, deduction: known(amount), faultIndexes };
 }
 
 export function elementBonus(distinctCountsByRound: readonly (readonly number[])[]): NumericDecision {

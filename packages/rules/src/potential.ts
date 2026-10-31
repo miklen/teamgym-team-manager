@@ -56,7 +56,7 @@ function bestTeam(candidates: readonly PotentialCandidate[], profile: TeamProfil
 }
 
 function witnessEntries(candidates: readonly PotentialCandidate[], current: readonly RoundEntry[], roundId: string): RoundEntry[] {
-  return [...candidates].sort((a, b) => (a.evaluation.rotationCategory ?? 100) - (b.evaluation.rotationCategory ?? 100) ||
+  return [...candidates].sort((a, b) => a.evaluation.orderCategory - b.evaluation.orderCategory ||
     a.evaluation.difficulty.value!.compare(b.evaluation.difficulty.value!)).map((candidate) => ({
       id: current.find((entry) => entry.athleteId === candidate.athleteId)?.id ?? `witness:${roundId}:${candidate.athleteId}`,
       athleteId: candidate.athleteId, athleteSkillId: candidate.registration.id, role: 'counting',

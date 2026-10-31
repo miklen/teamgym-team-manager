@@ -31,6 +31,10 @@ DK-analysen SHALL kontrollere identisk holdomgang først, gentagelser, rækkefø
 - **WHEN** alle tre fuldt udfyldte trampetomgange er uden redskab
 - **THEN** vises det manglende Pegasus-krav og det kildebaserede C-fradrag samt de berørte pladser.
 
+#### Scenario: Blandet Pegasus-omgang i DK 1.1.0
+- **WHEN** en DK 1.1.0-trampetomgang indeholder spring både med og uden Pegasus, også blandt ekstra gymnaster
+- **THEN** markeres omgangen som ugyldig planlægning med forklaring om, at Pegasus står hele omgangen eller slet ikke, og redskabsfradraget beregnes ikke; DK 1.0.0 bevarer Q04.
+
 ### Requirement: Banens tillæg beregnes særskilt
 DK-analysen SHALL beregne skruetillæg på 0,10 pr. tællende gymnast med mindst 360° i ét element i den bedste omgang for dette tillæg og dobbelttillæg på 0,10 pr. tællende gymnast i den bedste omgang for dette tillæg. Elementtillæg SHALL behandles særskilt: DK 1.0.0 SHALL bevare konflikten mellem ordlyd og eksempel som uafklaret med begge beregningsspor; DK 1.1.0 SHALL give et positivt tillæg på 0,10 for hver forskellig gyldig C-elementidentitet ud over seriens første, summeret for tællende gymnaster og divideret med tre omgange. Gentagne forekomster af samme element SHALL kun tælle én gang i serien.
 
@@ -101,8 +105,12 @@ DK-analysen SHALL implementere de præcise inputuniverser, formler og undtagelse
 - **THEN** er retningsfradraget 0,20*(6−4)+0,20*(6−6)=0,40 med de manglende forlæns udførelser forklaret.
 
 #### Scenario: Flere rækkefølgefejl kræver afklaret optælling
-- **WHEN** en omgang 2 har enkeltrotationer med D 0,80/0,50/0,60 og Q06 endnu ikke er afklaret
+- **WHEN** en omgang 2 i DK 1.0.0 har enkeltrotationer med D 0,80/0,50/0,60 og Q06 endnu ikke er afklaret
 - **THEN** vises forkert rækkefølge og forslag om stigende D, mens præcist fradrag og afhængig C-total forbliver uafklaret.
+
+#### Scenario: Trænerafklaret rækkefølgeoptælling i DK 1.1.0
+- **WHEN** en omgang 2 i DK 1.1.0 har tællende spring i samme kategori med D 0,80/0,60/0,70 efter en ekstra gymnast
+- **THEN** gives 0,10 for hver tællende gymnast med et tidligere højere spring, i alt 0,20; den ekstra indgår ikke, blandet serie placeres i sin højeste kategori, og serie uden salto i laveste kategori.
 
 ### Requirement: Guiden viser hver regels tælleenhed
 Hver vist kompositionsregel SHALL angive, om den tælles pr. kvalificerende gymnast i én bedste omgang, kræver én eller flere hele omgange eller opgøres på tværs af tre omgange. Viste tal og tilstande SHALL følge den valgte regelpakkes eksisterende analyse og profil. DK's skrue- og dobbelttillæg SHALL fremstå som gradvise tillæg pr. tællende gymnast i tillæggets egen bedste omgang, ikke som et tillæg der først opstår ved seks af seks. Banens elementtillæg SHALL adskilles som et gennemsnit over tre omgange; DK 1.0.0 bevarer uafklarede fortolkningsspor, mens DK 1.1.0 bruger den afklarede sats. Krav om rene retningsomgange og trampet med/uden Pegasus SHALL fremstå som omgangskrav og ikke som tillæg af samme type som skruer.
