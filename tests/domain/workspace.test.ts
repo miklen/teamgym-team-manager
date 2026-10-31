@@ -29,7 +29,7 @@ describe('fælles fil og seks vedvarende omgange', () => {
 
   it('afviser nyere og ældre ukendte skemaer og ændrer aldrig originalen', () => {
     const { workspace } = syntheticWorkspace();
-    for (const [version, code] of [[5, 'newer-schema'], [0, 'migration-required']] as const) {
+    for (const [version, code] of [[6, 'newer-schema'], [0, 'migration-required']] as const) {
       const original = JSON.stringify({ ...workspace, schemaVersion: version });
       try { parseWorkspace(original); throw new Error('Skulle afvises'); }
       catch (error) { expect(error).toBeInstanceOf(WorkspaceFormatError); expect((error as WorkspaceFormatError).code).toBe(code); }
@@ -136,7 +136,7 @@ describe('identiteter, medlemskab og arkivering', () => {
     const { workspace, teamA, teamB, athleteA, environment } = syntheticWorkspace();
     const entries = workspace.plans[0]!.tumbling[0]!.rounds[0].entries;
     const extraAthlete = workspace.athletes[7]!;
-    const extra: typeof entries[number] = { id: 'extra-entry', athleteId: extraAthlete.id, role: 'extra', plannedSpot: null, athleteSkillId: workspace.athleteSkills.find((item) => item.athleteId === extraAthlete.id && item.skillId === tumblingSkill.id)!.id };
+    const extra: typeof entries[number] = { id: 'extra-entry', athleteId: extraAthlete.id, role: 'extra', plannedSpot: null, plannedSkillId: null, athleteSkillId: workspace.athleteSkills.find((item) => item.athleteId === extraAthlete.id && item.skillId === tumblingSkill.id)!.id };
     expect(roundStability(workspace, [extra, ...entries], limits, teamA.id).counting).toEqual(roundStability(workspace, entries, limits, teamA.id).counting);
     const moved = moveAthlete(workspace, athleteA.id, teamB.id, environment);
     expect(roundStability(moved, entries, limits, teamA.id).counting).toMatchObject({ complete: false, assessedCount: 5, filledCount: 5 });

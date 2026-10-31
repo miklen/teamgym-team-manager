@@ -123,7 +123,8 @@ for (const width of [1440, 390]) {
         .getByText('Færdigheden er fjernet fra gymnasten. Vælg en anden færdighed.', { exact: true })
         .first(),
     ).toBeVisible();
-    await page.getByRole('button', { name: 'Vurdering', exact: true }).first().click();
+    await page.getByRole('button', { name: /^Handlinger for / }).first().click();
+    await page.getByRole('menuitem', { name: 'Vurdering', exact: true }).click();
     await expect(fullRow).toContainText('Fjernet');
     await expect(page.getByRole('button', { name: 'Fjern færdighed', exact: true })).toBeDisabled();
     await page.getByRole('button', { name: 'Luk dialog', exact: true }).click();

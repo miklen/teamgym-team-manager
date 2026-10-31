@@ -99,12 +99,15 @@ test('alle seks omgange kan betjenes med tastatur på tablet', async ({ page }) 
       await page
         .getByRole('button', { name: `${round}. ${round === 1 ? 'Holdomgang' : 'Omgang'}`, exact: true })
         .press('Enter');
-      const move = page.getByRole('button', {
+      const menu = page.getByRole('button', { name: `Handlinger for Syntetisk gymnast 3 i ${round}. omgang`, exact: true });
+      await menu.press('Enter');
+      const move = page.getByRole('menuitem', {
         name: `Flyt Syntetisk gymnast 3 op i ${round}. omgang`,
         exact: true,
       });
+      await expect(page.getByRole('menuitem').first()).toBeFocused();
       await move.press('Enter');
-      await expect(move).toBeFocused();
+      await expect(menu).toBeFocused();
     }
   }
   expect(source.failures).toEqual([]);

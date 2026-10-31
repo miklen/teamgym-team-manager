@@ -1,8 +1,8 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import type { RefObject } from 'react';
-import { clearPlannedSpot, formatStability, moveRoundFirst, newEntityId, setPlannedSpot, setRoundEntries } from '@teamgym/domain';
+import { addAmbition, changeAmbitionSkill, clearPlannedSpot, fillAmbition, formatStability, moveRoundFirst, newEntityId, setPlannedSpot, setRoundEntries } from '@teamgym/domain';
 import type { Round, RoundEntry, RoundEntryInput, SpringDiscipline, Workspace } from '@teamgym/domain';
-import { applyPotentialPreview } from '@teamgym/rules';
+import { ambitionCanNow, ambitionEnvironment, applyPotentialPreview } from '@teamgym/rules';
 import type { BonusPotential, ParticipantEvaluation, RoundEvaluation, RulePackage, TeamProfile } from '@teamgym/rules';
 import type { DataProps } from './athletes';
 import { AthleteInspector } from './athletes';
@@ -24,7 +24,11 @@ import { useScenarioSelection } from './scenario-context';
 import { ReserveList } from './reserves';
 import { PlanDifficulty, PlanSafety, PlanSkillSelect } from './plan-skill-select';
 import { RuleUncertainty } from './rule-uncertainty';
+import { Icon } from './ui';
+import type { IconName } from './ui';
 import { CompositionGuide } from './composition-guide';
+import { AmbitionReadiness, AmbitionCreateForm, AmbitionFillForm, ambitionLabel, SlotModeSwitch } from './ambition';
+import type { AmbitionRequest, SlotMode } from './ambition';
 import { MaximumScoreMetric, RoundPlannedExecution, RoundSpotShare, SlotSpot, spotGradeLabel } from './planned-spot';
 import type { SpotChange } from './planned-spot';
 
@@ -97,12 +101,12 @@ export function SpringPage(props: DataProps & { teamId: string }) {
                   <h2>{index + 1}. omgang</h2>
                   {[...round.entries, ...round.reserves].map((entry) => (
                     <p key={entry.id}>
-                      {workspaceName(props.workspace, entry.athleteId)} ·{' '}
+                      {entry.athleteId === null ? 'Ambition' : workspaceName(props.workspace, entry.athleteId)} ·{' '}
                       {props.workspace.skills.find(
                         (skill) =>
                           skill.id ===
-                          props.workspace.athleteSkills.find((item) => item.id === entry.athleteSkillId)
-                            ?.skillId,
+                          (props.workspace.athleteSkills.find((item) => item.id === entry.athleteSkillId)
+                            ?.skillId ?? ('plannedSkillId' in entry ? entry.plannedSkillId : null)),
                       )?.name ?? 'Vælg senere'}{' '}
                       · {'role' in entry ? 'Udførende' : 'Reserve'}
                     </p>
@@ -224,8 +228,43 @@ function SpringDisciplineView({
     change(setRoundEntries(workspace, plan.id, discipline, scenarioId, round.id, next, profile));
     setEntryError('');
     setEntryStatus(
-      `${scenario.rounds.findIndex((item) => item.id === round.id) + 1}. omgang opdateret: ${next.map((entry) => workspace.athletes.find((athlete) => athlete.id === entry.athleteId)?.name).join(', ')}.`,
+      `${scenario.rounds.findIndex((item) => item.id === round.id) + 1}. omgang opdateret: ${next.map((entry) => (entry.athleteId === null ? 'ambition' : workspace.athletes.find((athlete) => athlete.id === entry.athleteId)?.name)).join(', ')}.`,
     );
+  }
+  const [filledEntryId, setFilledEntryId] = useState<string | null>(null);
+  useEffect(() => {
+    if (!filledEntryId) return;
+    const frame = requestAnimationFrame(() =>
+      rowNodes.current.get(filledEntryId)?.querySelector<HTMLButtonElement>('.entry-name')?.focus({ preventScroll: true }),
+    );
+    return () => cancelAnimationFrame(frame);
+  }, [filledEntryId]);
+  function ambition(round: Round, value: AmbitionRequest) {
+    const environment = ambitionEnvironment(rulePackage);
+    const roundNumber = scenario.rounds.findIndex((item) => item.id === round.id) + 1;
+    if (value.kind === 'add') {
+      const position = value.role === 'extra' ? round.entries.filter((entry) => entry.role === 'extra').length : round.entries.length;
+      change(addAmbition(workspace, plan.id, discipline, scenarioId, round.id, value.definition, value.role, position, profile, environment).workspace);
+      setEntryError('');
+      setEntryStatus(`${roundNumber}. omgang: ambition tilføjet · ${springDisplayName(value.definition, rulePackage)} · mangler gymnast.`);
+      return;
+    }
+    let next = workspace;
+    const current = round.entries.find((entry) => entry.id === value.entryId)!;
+    if (value.role !== current.role) {
+      const changed = round.entries.map((entry) => (entry.id === value.entryId ? { ...entry, role: value.role } : entry));
+      next = setRoundEntries(next, plan.id, discipline, scenarioId, round.id,
+        [...changed.filter((entry) => entry.role === 'extra'), ...changed.filter((entry) => entry.role === 'counting')], profile);
+    }
+    if (value.definition) next = changeAmbitionSkill(next, plan.id, discipline, scenarioId, round.id, value.entryId, value.definition, undefined, profile, environment);
+    if (value.athleteSkillId) next = fillAmbition(next, plan.id, discipline, scenarioId, round.id, value.entryId, value.athleteSkillId, environment);
+    change(next);
+    setEntryError('');
+    if (value.athleteSkillId) {
+      const registration = next.athleteSkills.find((item) => item.id === value.athleteSkillId)!;
+      setFilledEntryId(value.entryId);
+      setEntryStatus(`${workspaceName(next, registration.athleteId).trim()} tager pladsen i ${roundNumber}. omgang.`);
+    } else setEntryStatus(`${roundNumber}. omgang: ambitionen er opdateret.`);
   }
   function shift(round: Round, index: number, delta: number) {
     const copy = [...round.entries];
@@ -237,7 +276,7 @@ function SpringDisciplineView({
     }
   }
   function spot(round: Round, participant: ParticipantEvaluation, value: SpotChange) {
-    const name = accessibleName(participant.entry.athleteId, participant.athleteName);
+    const name = accessibleName(participant);
     try {
       change(
         value
@@ -255,7 +294,11 @@ function SpringDisciplineView({
     }
   }
   const [drag, setDrag] = useState<{ roundId: string; entryId: string } | null>(null);
-  function accessibleName(athleteId: string, name: string) {
+  function accessibleName(participant: ParticipantEvaluation) {
+    const { athleteId } = participant.entry;
+    const name = participant.athleteName;
+    if (athleteId === null)
+      return `ambitionen ${participant.skill ? springDisplayName(participant.skill, rulePackage) : ''}`.trim();
     const athlete = workspace.athletes.find((item) => item.id === athleteId);
     return workspace.athletes.filter((item) => item.name === name).length > 1
       ? `${name} ${athlete?.discriminator || athleteId}`
@@ -330,6 +373,11 @@ function SpringDisciplineView({
                 D <strong>{points(result.panelD)}</strong>
                 <RoundSpotShare result={result} />
                 <span>{statusText[result.difficulty.status]}</span>
+                {round.entries.some((entry) => entry.athleteId === null) && (
+                  <span className="round-missing">
+                    {round.entries.filter((entry) => entry.athleteId === null).length} mangler gymnast
+                  </span>
+                )}
                 <RoundPlannedExecution result={result} />
               </p>
               <RuleUncertainty ids={result.difficulty.issues} />
@@ -340,17 +388,32 @@ function SpringDisciplineView({
                     {item.message} Vælg spring med samme redskab til hele omgangen.
                   </p>
                 ))}
+              {round.entries.some((entry) => entry.athleteId === null) &&
+                evaluation.diagnostics
+                  .filter((item) => item.code === 'mix-quota' && item.affectedIds.includes(round.id))
+                  .map((item) => (
+                    <p key={item.code} className="entry-warning">
+                      {item.message}
+                    </p>
+                  ))}
               <ol className="round-entries">
-                {result.entries.map((participant, index) => (
+                {result.entries.map((participant, index) => {
+                  const isAmbition = participant.entry.athleteId === null;
+                  const springName = participant.skill ? springDisplayName(participant.skill, rulePackage) : 'Spring mangler';
+                  const canNow = isAmbition ? ambitionCanNow(workspace, rulePackage, teamId, round, participant.entry.id) : 0;
+                  const warnings = participant.diagnostics.filter((diagnostic) => !isAmbition || diagnostic.code !== 'athlete-missing');
+                  return (
                   <li
                     key={participant.entry.id}
                     ref={(node) => {
                       if (node) rowNodes.current.set(participant.entry.id, node);
                       else rowNodes.current.delete(participant.entry.id);
                     }}
-                    className={`${participant.entry.role === 'extra' ? 'extra-entry' : ''}${insertedEntryId === participant.entry.id ? ' reserve-inserted' : ''}`}
-                    onAnimationEnd={() => {
+                    className={`${participant.entry.role === 'extra' ? 'extra-entry' : ''}${isAmbition ? ' ambition-entry' : ''}${participant.entry.plannedSpot ? ' has-spot' : ''}${insertedEntryId === participant.entry.id ? ' reserve-inserted' : ''}${filledEntryId === participant.entry.id ? ' ambition-filled' : ''}`}
+                    onAnimationEnd={(event) => {
+                      if (event.target !== event.currentTarget) return;
                       if (insertedEntryId === participant.entry.id) setInsertedEntryId(null);
+                      if (filledEntryId === participant.entry.id) setFilledEntryId(null);
                     }}
                     draggable={writable}
                     onDragStart={() => setDrag({ roundId: round.id, entryId: participant.entry.id })}
@@ -377,113 +440,136 @@ function SpringDisciplineView({
                     <div className="entry-main">
                       <button
                         className="entry-name"
+                        aria-label={isAmbition ? ambitionLabel(springName, canNow) : undefined}
                         onClick={() => openEntry({ round, entry: participant.entry })}
                       >
-                        <strong>{participant.athleteName}</strong>
-                        <small>
-                          {
-                            workspace.athletes.find((athlete) => athlete.id === participant.entry.athleteId)
-                              ?.discriminator
-                          }
-                        </small>
-                        <small>
-                          {participant.entry.role === 'extra' ? 'EKSTRA · ' : ''}
-                          {participant.skill
-                            ? springDisplayName(participant.skill, rulePackage)
-                            : 'Vælg registreret færdighed'}
-                        </small>
-                        {participant.skill && springDirectionText(participant.skill) && (
-                          <small className="spring-directions">
-                            {springDirectionText(participant.skill)}
-                          </small>
-                        )}
+                        <span className="entry-head">
+                          <span className="entry-who">
+                            {isAmbition ? (
+                              <>
+                                <span className="ambition-mark" aria-hidden="true">+</span>
+                                <strong className="ambition-missing">Mangler gymnast</strong>
+                                <AmbitionReadiness canNow={canNow} />
+                              </>
+                            ) : (
+                              <>
+                                <strong title={participant.athleteName}>{participant.athleteName}</strong>
+                                <small>
+                                  {workspace.athletes.find((athlete) => athlete.id === participant.entry.athleteId)?.discriminator}
+                                </small>
+                              </>
+                            )}
+                          </span>
+                          <span className="entry-value">
+                            {!isAmbition && <PlanSafety value={participant.registration?.stability ?? null} />}
+                            <PlanDifficulty
+                              value={participant.originalD.value ? points(participant.originalD.value) : null}
+                              spotted={
+                                participant.plannedSpot && participant.spotD !== participant.adjustedD && participant.spotD.value
+                                  ? points(participant.spotD.value)
+                                  : undefined
+                              }
+                            />
+                          </span>
+                        </span>
+                        <span className="entry-what">
+                          {participant.entry.role === 'extra' && <span className="entry-extra">EKSTRA</span>}
+                          <span className="entry-spring">
+                            {isAmbition || participant.skill ? springName : 'Vælg registreret færdighed'}
+                          </span>
+                          {participant.skill && springDirectionText(participant.skill) && (
+                            <small className="spring-directions">{springDirectionText(participant.skill)}</small>
+                          )}
+                        </span>
                       </button>
-                      <span className="entry-value">
-                        <PlanDifficulty
-                          value={participant.originalD.value ? points(participant.originalD.value) : null}
-                          spotted={
-                            participant.plannedSpot && participant.spotD !== participant.adjustedD && participant.spotD.value
-                              ? points(participant.spotD.value)
-                              : undefined
-                          }
+                      <div className="entry-tools">
+                        {isAmbition ? (
+                          <button
+                            className="quiet ambition-fill"
+                            aria-label={`Besæt ambitionen ${springName} i ${roundIndex + 1}. omgang`}
+                            onClick={() => openEntry({ round, entry: participant.entry })}
+                          >
+                            Besæt
+                          </button>
+                        ) : (
+                          <SlotSpot
+                            participant={participant}
+                            athleteLabel={accessibleName(participant)}
+                            rulePackage={rulePackage}
+                            writable={writable}
+                            onChange={(value) => spot(round, participant, value)}
+                          />
+                        )}
+                        <EntryMenu
+                          label={`Handlinger for ${accessibleName(participant)} i ${roundIndex + 1}. omgang`}
+                          items={[
+                            {
+                              icon: 'up',
+                              text: 'Flyt op',
+                              label: `Flyt ${accessibleName(participant)} op i ${roundIndex + 1}. omgang`,
+                              disabled: !writable || index === 0,
+                              run: () => shift(round, index, -1),
+                            },
+                            {
+                              icon: 'down',
+                              text: 'Flyt ned',
+                              label: `Flyt ${accessibleName(participant)} ned i ${roundIndex + 1}. omgang`,
+                              disabled: !writable || index === round.entries.length - 1,
+                              run: () => shift(round, index, 1),
+                            },
+                            ...(isAmbition
+                              ? []
+                              : [
+                                  {
+                                    icon: 'assess' as const,
+                                    text: 'Vurdering',
+                                    run: () =>
+                                      setAthlete({
+                                        id: participant.entry.athleteId!,
+                                        registrationId: participant.registration?.id,
+                                      }),
+                                  },
+                                ]),
+                            {
+                              icon: 'remove',
+                              text: 'Fjern fra omgangen',
+                              label: `Fjern ${accessibleName(participant)} fra ${roundIndex + 1}. omgang`,
+                              disabled: !writable,
+                              danger: true,
+                              run: () =>
+                                entries(
+                                  round,
+                                  round.entries.filter((entry) => entry.id !== participant.entry.id),
+                                ),
+                            },
+                          ]}
                         />
-                        <PlanSafety value={participant.registration?.stability ?? null} />
-                      </span>
+                      </div>
                     </div>
-                    {participant.evaluation?.hasDouble && <RuleUncertainty ids={['A71-U01']} />}
-                    {participant.skill?.discipline === 'tumbling' && participant.skill.elements[0]?.family === 'salto' && participant.skill.elements[0].direction === 'forward' && <RuleUncertainty ids={['A3-U01']} />}
-                    <SlotContribution participant={participant} />
-                    {participant.spotD.issues.includes('Q-SPOT-DUP') && <RuleUncertainty ids={['Q-SPOT-DUP']} />}
-                    <div className="entry-tools">
-                      <SlotSpot
-                        participant={participant}
-                        athleteLabel={accessibleName(participant.entry.athleteId, participant.athleteName)}
-                        rulePackage={rulePackage}
-                        writable={writable}
-                        onChange={(value) => spot(round, participant, value)}
-                      />
-                      <span className="entry-tool-group">
-                        <button
-                          className="quiet"
-                          disabled={!writable || index === 0}
-                          aria-label={`Flyt ${accessibleName(participant.entry.athleteId, participant.athleteName)} op i ${roundIndex + 1}. omgang`}
-                          onClick={() => shift(round, index, -1)}
-                        >
-                          ↑
-                        </button>
-                        <button
-                          className="quiet"
-                          disabled={!writable || index === round.entries.length - 1}
-                          aria-label={`Flyt ${accessibleName(participant.entry.athleteId, participant.athleteName)} ned i ${roundIndex + 1}. omgang`}
-                          onClick={() => shift(round, index, 1)}
-                        >
-                          ↓
-                        </button>
-                        <button
-                          className="quiet"
-                          onClick={() =>
-                            setAthlete({
-                              id: participant.entry.athleteId,
-                              registrationId: participant.registration?.id,
-                            })
-                          }
-                        >
-                          Vurdering
-                        </button>
-                        <button
-                          className="quiet"
-                          disabled={!writable}
-                          aria-label={`Fjern ${accessibleName(participant.entry.athleteId, participant.athleteName)} fra ${roundIndex + 1}. omgang`}
-                          onClick={() =>
-                            entries(
-                              round,
-                              round.entries.filter((entry) => entry.id !== participant.entry.id),
-                            )
-                          }
-                        >
-                          Fjern
-                        </button>
-                      </span>
-                    </div>
-                    {(participant.diagnostics.length > 0 || participant.adjustedD.status !== 'known') && (
-                      <p className="entry-warning">
-                        {participant.diagnostics
-                          .map((diagnostic) => {
-                            if (diagnostic.code === 'skill-archived')
-                              return 'Færdigheden er fjernet fra gymnasten. Vælg en anden færdighed.';
-                            if (
-                              diagnostic.code === 'athlete-unavailable' &&
-                              workspace.athletes.find((item) => item.id === participant.entry.athleteId)
-                                ?.archived
-                            )
-                              return 'Gymnasten er fjernet. Vælg en anden gymnast.';
-                            return diagnostic.message;
-                          })
-                          .join(' ') || statusText[participant.adjustedD.status]}
-                      </p>
-                    )}
+                    <EntryNotes
+                      participant={participant}
+                      uncertainties={[
+                        ...(participant.evaluation?.hasDouble ? ['A71-U01'] : []),
+                        ...(participant.skill?.discipline === 'tumbling' && participant.skill.elements[0]?.family === 'salto' && participant.skill.elements[0].direction === 'forward' ? ['A3-U01'] : []),
+                        ...(participant.spotD.issues.includes('Q-SPOT-DUP') ? ['Q-SPOT-DUP'] : []),
+                      ]}
+                      ambition={isAmbition}
+                      warning={warnings
+                              .map((diagnostic) => {
+                                if (diagnostic.code === 'skill-archived')
+                                  return 'Færdigheden er fjernet fra gymnasten. Vælg en anden færdighed.';
+                                if (
+                                  diagnostic.code === 'athlete-unavailable' &&
+                                  workspace.athletes.find((item) => item.id === participant.entry.athleteId)?.archived
+                                )
+                                  return 'Gymnasten er fjernet. Vælg en anden gymnast.';
+                                return diagnostic.message;
+                              })
+                              .join(' ')}
+                    />
                   </li>
-                ))}
+                  );
+                })}
               </ol>
               {!round.entries.length && (
                 <Empty>Ingen gymnaster valgt. Tilføj holdets registrerede færdigheder.</Empty>
@@ -639,7 +725,7 @@ function SpringDisciplineView({
       )}
       {entryDialog && (
         <Dialog
-          title={entryDialog.entry ? 'Redigér omgangsplads' : 'Tilføj omgangsplads'}
+          title={entryDialog.entry?.athleteId === null ? 'Besæt ambition' : entryDialog.entry ? 'Redigér omgangsplads' : 'Tilføj omgangsplads'}
           close={() => requestLeave(() => {})}
         >
           <label>
@@ -673,6 +759,19 @@ function SpringDisciplineView({
             inspect={(id) => {
               setEntryDialog(null);
               setAthlete({ id, registrationId: undefined });
+            }}
+            ambition={{
+              profile,
+              planId: plan.id,
+              scenarioId,
+              request: (value) => {
+                ambition(entryDialog.round, value);
+                setEntryDialog(null);
+                dirty.current = false;
+                const action = pending.current;
+                pending.current = null;
+                action?.();
+              },
             }}
             submit={(entry) => {
               const changed = entryDialog.entry
@@ -942,41 +1041,173 @@ export function StabilitySummary({ value }: { value: RoundEvaluation['stability'
     </div>
   );
 }
-function SlotContribution({ participant }: { participant: ParticipantEvaluation }) {
+interface EntryMenuItem {
+  icon: IconName;
+  text: string;
+  label?: string;
+  disabled?: boolean;
+  danger?: boolean;
+  run: () => void;
+}
+function EntryMenu({ label, items }: { label: string; items: EntryMenuItem[] }) {
+  const [open, setOpen] = useState(false);
+  const root = useRef<HTMLDivElement>(null);
+  const trigger = useRef<HTMLButtonElement>(null);
+  useEffect(() => {
+    if (!open) return;
+    const outside = (event: PointerEvent) => {
+      if (!root.current?.contains(event.target as Node)) setOpen(false);
+    };
+    document.addEventListener('pointerdown', outside);
+    root.current?.querySelector<HTMLButtonElement>('[role="menuitem"]:not(:disabled)')?.focus();
+    return () => document.removeEventListener('pointerdown', outside);
+  }, [open]);
+  function close() {
+    setOpen(false);
+    trigger.current?.focus();
+  }
+  return (
+    <div
+      ref={root}
+      className={`entry-menu${open ? ' open' : ''}`}
+      onKeyDown={(event) => {
+        if (!open) return;
+        if (event.key === 'Escape') {
+          event.stopPropagation();
+          close();
+          return;
+        }
+        if (!['ArrowDown', 'ArrowUp', 'Home', 'End'].includes(event.key)) return;
+        const buttons = Array.from(root.current!.querySelectorAll<HTMLButtonElement>('[role="menuitem"]:not(:disabled)'));
+        const at = buttons.indexOf(document.activeElement as HTMLButtonElement);
+        const next =
+          event.key === 'Home'
+            ? 0
+            : event.key === 'End'
+              ? buttons.length - 1
+              : (at + (event.key === 'ArrowDown' ? 1 : buttons.length - 1)) % buttons.length;
+        event.preventDefault();
+        buttons[next]?.focus();
+      }}
+    >
+      <button
+        ref={trigger}
+        type="button"
+        className="quiet entry-menu-trigger"
+        aria-label={label}
+        aria-haspopup="menu"
+        aria-expanded={open}
+        title="Flere handlinger"
+        onClick={() => setOpen(!open)}
+      >
+        <span aria-hidden="true">•••</span>
+      </button>
+      {open && (
+        <div className="entry-menu-items" role="menu" aria-label={label}>
+          {items.map((item) => (
+            <button
+              key={item.text}
+              type="button"
+              role="menuitem"
+              className={item.danger ? 'danger' : undefined}
+              aria-label={item.label}
+              disabled={item.disabled}
+              onClick={() => {
+                item.run();
+                close();
+              }}
+            >
+              <Icon name={item.icon} />
+              <span>{item.text}</span>
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+function EntryNotes({ participant, uncertainties, warning, ambition }: { participant: ParticipantEvaluation; uncertainties: string[]; warning: string; ambition: boolean }) {
   const { originalD, adjustedD, spotD } = participant;
   const spotted = spotD !== adjustedD;
   const differs = (value: typeof spotD) => value.status !== 'known' || value.value?.compare(originalD.value ?? 0) !== 0;
-  if (!differs(adjustedD) && !(spotted && spotD.status !== 'known')) return null;
-  const shown = spotD;
+  // En ambition bidrager aldrig, før den er besat; omgangens total siger allerede, at der mangler en gymnast.
+  const contribution = !ambition && (differs(adjustedD) || (spotted && spotD.status !== 'known'));
+  if (!contribution && !uncertainties.length && !warning) return null;
   const reason =
     participant.entry.role === 'extra'
-      ? 'Ekstra indgår ikke i summen.'
+      ? 'ekstra tæller ikke'
       : adjustedD.status !== 'known'
-        ? 'Holdomgangen er ufuldstændig eller kræver afklaring.'
+        ? 'afventer holdomgangen'
         : differs(adjustedD)
-          ? 'Afvigelse fra holdomgangens reference.'
+          ? 'afviger fra holdomgangen'
           : spotD.issues.includes('SPOT-RATES')
-            ? 'Planlagt modtagning; regelpakken har ingen kendte satser.'
+            ? 'modtagning uden kendte satser'
             : spotD.status !== 'known'
-              ? 'Planlagt modtagning; halveringen er uafklaret.'
-              : 'Planlagt modtagning: kraftig hjælp halverer D.';
+              ? 'halvering ved modtagning uafklaret'
+              : 'kraftig hjælp halverer D';
   return (
-    <p className="round-contribution">
-      {spotted && (
-        <>
-          <span className="contribution-own">
-            Egen D <strong>{originalD.value ? points(originalD.value) : statusText[originalD.status]}</strong>
-          </span>{' '}
-          ·{' '}
-        </>
+    <div className="entry-notes">
+      {contribution && (
+        <p className="round-contribution">
+          {spotted && (
+            <>
+              <span className="contribution-own">
+                Egen D <strong>{originalD.value ? points(originalD.value) : statusText[originalD.status]}</strong>
+              </span>{' '}
+              ·{' '}
+            </>
+          )}
+          Bidrag til omgang: <strong>{spotD.value ? points(spotD.value) : statusText[spotD.status]}</strong>{' '}
+          <span className="contribution-reason">· {reason}</span>
+        </p>
       )}
-      Bidrag til omgang:{' '}
-      <strong>{shown.value ? points(shown.value) : statusText[shown.status]}</strong>{' '}
-      · {reason}
-    </p>
+      {warning && <p className="entry-warning">{warning}</p>}
+      <RuleUncertainty ids={uncertainties} />
+    </div>
   );
 }
-export function EntryForm({
+type AthleteEntry = Omit<RoundEntryInput, 'athleteId'> & { athleteId: string };
+interface EntryFormProps {
+  workspace: Workspace;
+  teamId: string;
+  discipline: SpringDiscipline;
+  rulePackage: RulePackage;
+  round: Round;
+  entry: RoundEntryInput | undefined;
+  writable: boolean;
+  submit: (entry: AthleteEntry) => void;
+  inspect: (athleteId: string) => void;
+  reserve?: boolean;
+  formRef?: RefObject<HTMLFormElement | null>;
+  onDirty?: () => void;
+  /** Kun udførende pladser kan være ambitioner; reserver har altid en gymnast. */
+  ambition?: { profile: TeamProfile; planId: string; scenarioId: string; request: (value: AmbitionRequest) => void };
+}
+export function EntryForm(props: EntryFormProps) {
+  const [mode, setMode] = useState<SlotMode>('athlete');
+  const { ambition, entry } = props;
+  if (ambition && entry && entry.athleteId === null)
+    return (
+      <AmbitionFillForm
+        {...props}
+        {...ambition}
+        entry={entry as RoundEntry}
+        formRef={props.formRef}
+        onDirty={props.onDirty}
+      />
+    );
+  return (
+    <>
+      {ambition && !entry && <SlotModeSwitch value={mode} onChange={setMode} disabled={!props.writable} />}
+      {ambition && !entry && mode === 'ambition' ? (
+        <AmbitionCreateForm {...props} request={ambition.request} formRef={props.formRef} onDirty={props.onDirty} />
+      ) : (
+        <AthleteEntryForm {...props} />
+      )}
+    </>
+  );
+}
+function AthleteEntryForm({
   workspace,
   teamId,
   discipline,
@@ -989,20 +1220,7 @@ export function EntryForm({
   reserve = false,
   formRef,
   onDirty,
-}: {
-  workspace: Workspace;
-  teamId: string;
-  discipline: SpringDiscipline;
-  rulePackage: RulePackage;
-  round: Round;
-  entry: RoundEntryInput | undefined;
-  writable: boolean;
-  submit: (entry: RoundEntryInput) => void;
-  inspect: (athleteId: string) => void;
-  reserve?: boolean;
-  formRef?: RefObject<HTMLFormElement | null>;
-  onDirty?: () => void;
-}) {
+}: EntryFormProps) {
   const athletes = workspace.athletes.filter(
     (athlete) =>
       athlete.teamId === teamId &&
@@ -1034,6 +1252,7 @@ export function EntryForm({
           athleteId,
           athleteSkillId: String(data.get('skill')) || null,
           role: data.get('role') === 'extra' ? 'extra' : 'counting',
+          plannedSkillId: null,
         })
       }
     >

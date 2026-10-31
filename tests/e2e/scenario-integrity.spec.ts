@@ -10,7 +10,11 @@ function legacy(workspace: Workspace, version: number) {
   for (const plan of value.plans)
     for (const scenario of [...plan.tumbling, ...plan.trampet])
       for (const round of scenario.rounds)
-        for (const entry of round.entries) delete (entry as Partial<typeof entry>).plannedSpot;
+        for (const entry of round.entries) {
+          delete (entry as Partial<typeof entry>).plannedSkillId;
+          if (version < 4) delete (entry as Partial<typeof entry>).plannedSpot;
+        }
+  if (version === 4) return JSON.stringify({ ...value, schemaVersion: 4 });
   if (version === 3) return JSON.stringify({ ...value, schemaVersion: 3 });
   const plans = value.plans.map((plan) => ({
     ...plan,
@@ -42,7 +46,7 @@ function legacy(workspace: Workspace, version: number) {
   );
 }
 
-for (const version of [1, 2, 3]) {
+for (const version of [1, 2, 3, 4]) {
   test(`format ${version}: originaleksport, annullering med åben kladde og lokal migration uden upload`, async ({
     page,
   }) => {
@@ -63,8 +67,8 @@ for (const version of [1, 2, 3]) {
     await page.getByRole('button', { name: 'Åbn link', exact: true }).click();
     const migration = page.getByRole('dialog', { name: 'Opgradér arbejdsrummet', exact: true });
     await expect(migration).toContainText(`Filen bruger format ${version}.`);
-    await expect(migration).toContainText('Opgradér til format 4');
-    await expect(migration).toContainText('Ældre appudgaver kan ikke åbne format 4.');
+    await expect(migration).toContainText('Opgradér til format 5');
+    await expect(migration).toContainText('Ældre appudgaver kan ikke åbne format 5.');
     const downloadEvent = page.waitForEvent('download');
     await migration.getByRole('button', { name: 'Eksportér original', exact: true }).click();
     const download = await downloadEvent;
@@ -83,7 +87,7 @@ for (const version of [1, 2, 3]) {
     expect(source.workspace.schemaVersion).toBe(version);
     await page.getByRole('button', { name: /Lokale ændringer/ }).click();
     await expect(page.getByRole('button', { name: 'Gemt', exact: true })).toBeVisible();
-    expect(source.workspace.schemaVersion).toBe(4);
+    expect(source.workspace.schemaVersion).toBe(5);
     expect(source.failures).toEqual([]);
   });
 }
@@ -93,7 +97,7 @@ test('reserve til fyldt omgang er adskilt fra deltagere og kan fjernes igen', as
   const plan = workspace.plans[0]!;
   const scenario = plan.tumbling[0]!;
   const round = scenario.rounds[0];
-  round.entries.unshift(...round.reserves.map((reserve) => ({ ...reserve, role: 'extra' as const, plannedSpot: null })));
+  round.entries.unshift(...round.reserves.map((reserve) => ({ ...reserve, role: 'extra' as const, plannedSpot: null, plannedSkillId: null })));
   round.reserves = [];
   const source = await openWorkspace(page, workspace);
   await expect(page.getByRole('heading', { name: 'Hold', exact: true })).toBeVisible();
@@ -134,7 +138,11 @@ test('forældet reservevisning afviser en syntetisk samtidig lokal ændring og k
   await dialog.getByLabel('Gymnast der udgår').selectOption({ index: 1 });
   // Model a local update arriving while the modal keeps its original comparison.
   await page
-    .locator('.round-entries button[aria-label^="Fjern"]')
+    .locator('.round-entries .entry-menu-trigger')
+    .last()
+    .evaluate((button) => (button as HTMLButtonElement).click());
+  await page
+    .locator('.round-entries [role="menuitem"][aria-label^="Fjern"]')
     .last()
     .evaluate((button) => (button as HTMLButtonElement).click());
   await expect(dialog.getByRole('alert')).toContainText('Beregn igen');
@@ -424,7 +432,7 @@ test('ugyldig pladsformular bliver åben ved Opdater før skift og kan rettes ud
 }) => {
   const workspace = scenarioWorkspace();
   const round = workspace.plans[0]!.tumbling[0]!.rounds[0];
-  round.entries.unshift(...round.reserves.map((entry) => ({ ...entry, role: 'extra' as const, plannedSpot: null })));
+  round.entries.unshift(...round.reserves.map((entry) => ({ ...entry, role: 'extra' as const, plannedSpot: null, plannedSkillId: null })));
   round.reserves = [];
   const source = await openWorkspace(page, workspace);
   await expect(page.getByRole('heading', { name: 'Hold', exact: true })).toBeVisible();

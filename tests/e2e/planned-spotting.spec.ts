@@ -155,6 +155,8 @@ test('tastatur og skærmlæser: kraftig hjælp på baneserie vælger sidste elem
   await expect(editor.getByRole('radio', { name: 'Ingen' })).toBeFocused();
   for (let step = 0; step < 3; step++) await page.keyboard.press('ArrowDown');
   await expect(editor.getByRole('radio', { name: /Kraftig hjælp/ })).toBeChecked();
+  await editor.scrollIntoViewIfNeeded();
+  await page.screenshot({ path: 'tmp/ui-qa/modtagning-valg.png', animations: 'disabled' });
   await expect(page.locator('p.sr-only[role="status"]').filter({ hasText: 'Planlagt modtagning for' })).toHaveText(
     'Planlagt modtagning for Syntetisk gymnast 3: Kraftig hjælp i svæv/landing.',
   );
@@ -189,6 +191,8 @@ test('mobil: modtagning kan planlægges uden vandret rulning og uden axe-fejl', 
   await page.getByRole('button', { name: '3. Omgang', exact: true }).click();
   const third = round(page, 3);
   await third.getByRole('button', { name: 'Planlæg modtagning for Syntetisk gymnast 5', exact: true }).click();
+  expect(await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth)).toBeLessThanOrEqual(0);
+  await page.screenshot({ path: 'tmp/ui-qa/modtagning-valg-mobil.png', animations: 'disabled' });
   await third.getByRole('radio', { name: /^Hjælp til udførelse/ }).click();
   await expect(third.getByRole('button', { name: /^Planlagt modtagning Hjælp til udførelse for Syntetisk gymnast 5/ })).toHaveText('Hjælp');
   await expect(third.locator('.round-execution')).toContainText('E-loft 9,000');
@@ -268,7 +272,8 @@ test('Maks. mulig karakter: tom, delvis, fuld og blandet Pegasus-omgang', async 
   await page.getByRole('tab', { name: 'Fuld plan', exact: true }).click();
   await expect(maximum.locator('strong')).toHaveText(/^\d+,\d{3}$/);
   await expect(maximum).toContainText('Beregnet · C + D + E-loft');
-  await round(page, 1).getByRole('button', { name: 'Fjern Syntetisk gymnast 3 fra 1. omgang', exact: true }).click();
+  await round(page, 1).getByRole('button', { name: 'Handlinger for Syntetisk gymnast 3 i 1. omgang', exact: true }).click();
+  await round(page, 1).getByRole('menuitem', { name: 'Fjern Syntetisk gymnast 3 fra 1. omgang', exact: true }).click();
   await expect(maximum.locator('strong')).toHaveText('Ufuldstændig');
   await expect(guide).toContainText('Ufuldstændig');
 });

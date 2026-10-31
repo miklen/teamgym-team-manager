@@ -1,0 +1,383 @@
+/* Ambitioner: pladsens egen silhuet, der venter på en gymnast. Samme geometri som en besat plads. */
+
+/* Segmenteret valg: Gymnast / Ingen gymnast endnu */
+.slot-mode {
+  position: relative;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  padding: 4px;
+  margin: 4px 0 18px;
+  border-radius: 12px;
+  background: #eef1f8;
+  box-shadow: inset 0 0 0 1px #e2e7f1;
+}
+.slot-mode label {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0;
+  min-height: 42px;
+  padding: 6px 10px;
+  border-radius: 9px;
+  color: #56637b;
+  font-size: 0.82rem;
+  font-weight: 650;
+  text-align: center;
+  cursor: pointer;
+  transition: color 160ms ease;
+}
+.slot-mode input {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  margin: 0;
+  min-height: 0;
+  cursor: pointer;
+}
+.slot-mode label:has(input:checked) {
+  color: var(--ink);
+}
+.slot-mode label:has(input:focus-visible) {
+  outline: 3px solid #5478f6;
+  outline-offset: 1px;
+}
+.slot-mode-thumb {
+  position: absolute;
+  top: 4px;
+  bottom: 4px;
+  left: 4px;
+  width: calc(50% - 4px);
+  border-radius: 9px;
+  background: white;
+  box-shadow:
+    0 1px 2px #1a31550f,
+    0 2px 8px #1a315512;
+  transition: transform 220ms cubic-bezier(0.3, 0.7, 0.2, 1);
+}
+.slot-mode[data-mode='ambition'] .slot-mode-thumb {
+  transform: translateX(100%);
+}
+
+/* Det stiplede plus: den manglende gymnast */
+.ambition-mark,
+.candidate-avatar {
+  display: inline-grid;
+  place-items: center;
+  flex-shrink: 0;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+.ambition-mark,
+.candidate-avatar.ghost {
+  border: 1.5px dashed #a9b6d6;
+  color: #6b7fb8;
+  background: #f7f9fe;
+  font-size: 1rem;
+  font-weight: 500;
+}
+.ambition-intro {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  margin: 0 0 14px;
+  color: var(--muted);
+  font-size: 0.78rem;
+}
+.ambition-intro p {
+  margin: 0;
+}
+.ambition-form > fieldset > .ambition-intro {
+  animation: ambition-reveal 200ms ease-out;
+}
+
+/* Fastlåst spring øverst i besættelsesvisningen */
+.ambition-ticket {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 16px;
+  border: 1px dashed #b7c3e0;
+  border-radius: 14px;
+  background: linear-gradient(180deg, #fafbff, #f5f7fd);
+}
+.ambition-eyebrow {
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  font-size: 0.6rem !important;
+  font-weight: 700 !important;
+  color: #6b7fb8 !important;
+}
+.ambition-change-toggle {
+  margin: 6px 0 0 auto;
+  display: block;
+  font-size: 0.75rem;
+}
+.ambition-change {
+  margin-top: 12px;
+  animation: ambition-reveal 180ms ease-out;
+}
+
+/* Kandidater */
+.ambition-candidates {
+  margin-top: 18px;
+  display: grid;
+  gap: 2px;
+  max-height: min(46vh, 420px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 2px;
+}
+.ambition-candidates-title {
+  margin: 0 0 6px;
+  font-size: 0.82rem;
+  font-weight: 650;
+  color: #45516a;
+}
+.candidate-group {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  margin: 14px 0 4px;
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #6a768e;
+}
+.candidate-group span {
+  font-variant-numeric: tabular-nums;
+  color: #95a0b5;
+}
+.candidate-empty {
+  margin: 2px 0 6px;
+  color: var(--muted);
+  font-size: 0.78rem;
+}
+.candidate-row,
+.candidate-row > label {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 0;
+  min-width: 0;
+}
+.candidate-row {
+  position: relative;
+  padding: 9px 12px;
+  border-radius: 11px;
+  border: 1px solid transparent;
+  font-weight: 550;
+  color: var(--ink);
+  cursor: pointer;
+  transition:
+    background 140ms ease,
+    border-color 140ms ease;
+}
+.candidate-row > label {
+  flex: 1;
+  cursor: default;
+}
+.candidate-row:not(.is-disabled):hover {
+  background: #f4f6fc;
+}
+.candidate-row.is-selected {
+  background: #eef2ff;
+  border-color: #c5d1f5;
+}
+.candidate-row input[type='radio'] {
+  position: absolute;
+  opacity: 0;
+  width: 1px;
+  height: 1px;
+  min-height: 0;
+  padding: 0;
+  pointer-events: none;
+}
+.candidate-row:has(input:focus-visible) {
+  outline: 3px solid #5478f6;
+  outline-offset: 1px;
+}
+.candidate-avatar {
+  background: #e7ecfa;
+  color: #2945a3;
+  transition:
+    background 160ms ease,
+    color 160ms ease;
+}
+.candidate-row.is-selected .candidate-avatar:not(.ghost) {
+  background: var(--accent);
+  color: white;
+}
+.candidate-name {
+  display: grid;
+  gap: 1px;
+  flex: 1;
+  min-width: 0;
+}
+.candidate-name strong {
+  font-size: 0.82rem;
+  font-weight: 650;
+  overflow-wrap: anywhere;
+}
+.candidate-name small {
+  font-size: 0.68rem;
+  font-weight: 450;
+  color: var(--muted);
+}
+.candidate-row.is-disabled .candidate-avatar {
+  background: #f1f3f8;
+  color: #9aa4b8;
+}
+.candidate-row.is-disabled .candidate-name strong {
+  color: #7a859b;
+}
+.candidate-row.is-disabled > button {
+  flex-shrink: 0;
+  font-size: 0.72rem;
+  min-height: 36px;
+  padding: 4px 8px;
+}
+
+/* Kataloget: Ingen gymnast i stedet for sikkerhed */
+.plan-no-athlete {
+  justify-self: end;
+  color: #6b7fb8;
+  font-size: 0.68rem;
+  font-weight: 650;
+  white-space: nowrap;
+}
+
+/* Ambitionen i omgangen: samme geometri som en besat plads, "hvem" står åben */
+.round-entries li.ambition-entry {
+  --row-bg: #f6f8ff;
+  border-radius: 8px;
+}
+.ambition-entry .entry-who {
+  align-items: center;
+}
+.ambition-entry .entry-name .ambition-mark {
+  width: 18px;
+  height: 18px;
+  font-size: 0.7rem;
+}
+.ambition-missing {
+  color: #5a6680;
+  font-style: italic;
+}
+.ambition-entry .entry-what .entry-spring {
+  color: #24345a;
+  font-weight: 650;
+}
+.ambition-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 0 7px;
+  border-radius: 999px;
+  font-size: 0.64rem;
+  font-weight: 700;
+  line-height: 1.6;
+  white-space: nowrap;
+}
+.ambition-chip.ready {
+  color: #1d6a5f;
+  background: #e3f4ef;
+}
+.ambition-chip.ready::before {
+  content: '';
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: currentColor;
+}
+.ambition-chip.none {
+  color: #566078;
+  background: transparent;
+  box-shadow: inset 0 0 0 1px #dde3ee;
+}
+.ambition-entry .entry-tools .ambition-fill {
+  color: var(--accent);
+  font-weight: 700;
+}
+.round-totals .round-missing {
+  color: #5a6680;
+  font-weight: 650;
+}
+
+/* Fra ambition til besat: kanten bliver fast, og gymnasten falder på plads */
+.has-workspace .round-entries li.ambition-filled {
+  animation: ambition-fill 420ms cubic-bezier(0.3, 0.7, 0.2, 1);
+}
+.round-entries li.ambition-filled .entry-name strong {
+  animation: ambition-name 360ms ease-out;
+}
+@keyframes ambition-fill {
+  from {
+    background: #f3f6ff;
+    box-shadow: inset 0 0 0 1px #9fb2ea;
+  }
+  to {
+    background: transparent;
+    box-shadow: inset 0 0 0 1px transparent;
+  }
+}
+@keyframes ambition-name {
+  from {
+    opacity: 0;
+    transform: translateY(3px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+@keyframes ambition-reveal {
+  from {
+    opacity: 0;
+    transform: translateY(-3px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .slot-mode-thumb,
+  .slot-mode label,
+  .candidate-row,
+  .candidate-avatar {
+    transition: none;
+  }
+  .has-workspace .round-entries li.ambition-filled,
+  .round-entries li.ambition-filled .entry-name strong,
+  .ambition-change,
+  .ambition-form > fieldset > .ambition-intro {
+    animation: none;
+  }
+}
+@media (max-width: 600px) {
+  .slot-mode label {
+    font-size: 0.76rem;
+    padding-inline: 6px;
+  }
+  .ambition-ticket {
+    padding: 12px;
+    gap: 10px;
+  }
+  .candidate-row {
+    padding-inline: 8px;
+    gap: 8px;
+  }
+  .candidate-row > label {
+    gap: 8px;
+  }
+}
+
+/* Flettevisning: en ambition læses som én samlet værdi. */
+.review-ambition { display: inline-grid; gap: 2px; }
+.review-ambition small { color: var(--muted, #667085); }

@@ -44,9 +44,17 @@
 .safety-bars i.filled {
   background: var(--safety-color);
 }
+.entry-value {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.entry-value > .plan-difficulty {
+  padding: 3px 8px;
+  font-size: 0.84rem;
+}
 .entry-value > .plan-safety {
   display: flex;
-  margin-top: 7px;
 }
 .plan-skill-select {
   min-width: 0;

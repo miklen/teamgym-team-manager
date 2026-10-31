@@ -17,6 +17,7 @@ import {
   migrateWorkspaceV2,
   migrateWorkspaceV3,
   validateWorkspaceV3,
+  validateWorkspaceV4,
   serializeWorkspace,
   parseWorkspace,
   workspacePayload,
@@ -73,10 +74,10 @@ describe('format 3, scenarier og reserver', () => {
   });
   it('har selvstændige strikte gamle skemaer og accepterer ikke nye felter under gamle versionsmærker', () => {
     const { workspace } = setup();
-    expect(validateWorkspace(workspace).schemaVersion).toBe(4);
-    for (const version of [1, 2, 3]) {
+    expect(validateWorkspace(workspace).schemaVersion).toBe(5);
+    for (const version of [1, 2, 3, 4]) {
       const mixed = { ...workspace, schemaVersion: version };
-      expect(() => (version === 1 ? validateWorkspaceV1(mixed) : version === 2 ? validateWorkspaceV2(mixed) : validateWorkspaceV3(mixed))).toThrow();
+      expect(() => (version === 1 ? validateWorkspaceV1(mixed) : version === 2 ? validateWorkspaceV2(mixed) : version === 3 ? validateWorkspaceV3(mixed) : validateWorkspaceV4(mixed))).toThrow();
     }
     const mixed = structuredClone(v2);
     Object.assign(mixed.plans[0]!.tumbling[0]!, { reserves: [] });
@@ -236,7 +237,7 @@ describe('format 3, scenarier og reserver', () => {
     });
     expect(() =>
       setRoundReserves(current, plan.id, 'tumbling', closed.id, closed.rounds[0].id, [
-        { ...reserve, id: 'duplicate', athleteId: round.entries[0]!.athleteId, athleteSkillId: null },
+        { ...reserve, id: 'duplicate', athleteId: round.entries[0]!.athleteId!, athleteSkillId: null },
       ]),
     ).toThrow('to gange');
     const moved = moveAthlete(current, reserve.athleteId, teamB.id, environment);
@@ -451,7 +452,7 @@ describe('format 3, scenarier og reserver', () => {
     const removed = target.rounds[1].entries.pop()!;
     target.rounds[1].reserves.push({
       id: 'potential-reserve',
-      athleteId: removed.athleteId,
+      athleteId: removed.athleteId!,
       athleteSkillId: removed.athleteSkillId,
     });
     const suggestions = await DK_V1.potentials(current, plan.teamId, 'tumbling', target.id);

@@ -24,9 +24,10 @@ for (const width of [1440, 1024]) {
     await expect(
       page.getByText('Gymnasten er arkiveret eller ikke længere på holdet.', { exact: true }).first(),
     ).toBeVisible();
-    await page.getByRole('button', { name: 'Fjern Maja Test Test 1 fra 1. omgang', exact: true }).click();
+    await page.getByRole('button', { name: 'Handlinger for Maja Test Test 1 i 1. omgang', exact: true }).first().click();
+    await page.getByRole('menuitem', { name: 'Fjern Maja Test Test 1 fra 1. omgang', exact: true }).click();
     await expect(
-      page.getByRole('button', { name: 'Fjern Maja Test Test 1 fra 1. omgang', exact: true }),
+      page.getByRole('button', { name: 'Handlinger for Maja Test Test 1 i 1. omgang', exact: true }),
     ).toHaveCount(0);
     expect(source.puts).toBe(0);
     expect(source.failures).toEqual([]);

@@ -136,6 +136,8 @@ const entry = object<RoundEntry>('Udførende', {
     { grade: value('Modtagningsgrad'), skillId: value('Modtaget spring'), elementIndex: value('Modtaget element') },
     'atomic',
   ),
+  // Ambitionens spring hører til den atomiske deltagerliste; kan nu og match er afledte og gemmes ikke.
+  plannedSkillId: value('Planlagt spring'),
 });
 const reserve = object<ReserveEntry>('Reserve', {
   id: identity(),

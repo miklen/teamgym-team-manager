@@ -24,6 +24,7 @@ const labels: Record<string, string> = {
   athleteSkillId: 'Valgt spring',
   role: 'Rolle',
   plannedSpot: 'Planlagt modtagning',
+  plannedSkillId: 'Planlagt spring',
   counting: 'Tællende',
   extra: 'Ekstra',
   entries: 'Deltagere',
@@ -144,6 +145,15 @@ function Value({ value, names }: { value: unknown; names: Map<string, string> })
       </span>
     );
   }
+  if (typeof value === 'object' && 'plannedSkillId' in value && 'athleteId' in value && value.athleteId === null) {
+    const planned = names.get(String(value.plannedSkillId)) ?? 'Ukendt spring';
+    return (
+      <span className="review-ambition">
+        <strong>Ambition · {planned}</strong>
+        <small>mangler gymnast</small>
+      </span>
+    );
+  }
   if (typeof value === 'boolean') return <span>{value ? 'Ja' : 'Nej'}</span>;
   if (Array.isArray(value))
     return value.length ? (
@@ -166,7 +176,7 @@ function Value({ value, names }: { value: unknown; names: Map<string, string> })
             <div key={key}>
               <dt>{labels[key] ?? key}</dt>
               <dd>
-                {key === 'plannedSpot' && item === null ? <span className="muted">Ingen</span> : <Value value={item} names={names} />}
+                {key === 'athleteId' && item === null ? <span className="muted">Mangler gymnast</span> : (key === 'plannedSpot' || key === 'plannedSkillId') && item === null ? <span className="muted">Ingen</span> : <Value value={item} names={names} />}
               </dd>
             </div>
           ))}

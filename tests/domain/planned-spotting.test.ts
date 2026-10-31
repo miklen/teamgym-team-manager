@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
-  clearPlannedSpot, duplicateScenario, insertReserve, migrateWorkspace, migrateWorkspaceV3, moveRoundFirst, plannedSpotState, registerAthleteSkill,
+  clearPlannedSpot, duplicateScenario, insertReserve, migrateWorkspace, migrateWorkspaceV3, validateWorkspaceV4, moveRoundFirst, plannedSpotState, registerAthleteSkill,
   replaceAthleteSkill, serializeWorkspace, setPlannedSpot, setRoundEntries, setRoundReserves, updateAssessment, validateWorkspace, workspacePayload,
 } from '@teamgym/domain';
 import type { PlannedSpotInput, SpringDiscipline, Workspace } from '@teamgym/domain';
@@ -30,7 +30,7 @@ const spot = (fixture: ReturnType<typeof setup>, workspace: Workspace, entryInde
   return setPlannedSpot(workspace, fixture.planId, discipline, scenario.id, round.id, round.entries[entryIndex]!.id, input, fixture.environment);
 };
 function withSeries(fixture: ReturnType<typeof setup>, workspace: Workspace, entryIndex = 0) {
-  const athleteId = entriesOf(workspace)[entryIndex]!.athleteId;
+  const athleteId = entriesOf(workspace)[entryIndex]!.athleteId!;
   const registered = registerAthleteSkill(workspace, athleteId, series, fixture.environment);
   const entries = entriesOf(registered.workspace).map((entry, index) => index === entryIndex ? { ...entry, athleteSkillId: registered.athleteSkillId } : entry);
   return { workspace: setRoundEntries(registered.workspace, fixture.planId, 'tumbling', fixture.tumbling.id, fixture.round.id, entries, limits, fixture.environment), registrationId: registered.athleteSkillId };
@@ -76,8 +76,9 @@ describe('format 4: gyldig planlagt modtagning', () => {
   });
 
   it('har et gyldigt format 4-eksempel', () => {
-    const example = validateWorkspace(v4);
-    expect(example.schemaVersion).toBe(4);
+    validateWorkspaceV4(v4);
+    const example = migrateWorkspace(v4);
+    expect(example.schemaVersion).toBe(5);
     expect(example.plans.flatMap((plan) => plan.tumbling.flatMap((scenario) => scenario.rounds.flatMap((round) => round.entries))).some((entry) => entry.plannedSpot?.grade === 'heavy')).toBe(true);
   });
 });
@@ -85,7 +86,7 @@ describe('format 4: gyldig planlagt modtagning', () => {
 describe('migration til format 4', () => {
   it('bevarer id-er, scenarier, reserver og vurderinger og giver alle pladser null', () => {
     const migrated = migrateWorkspaceV3(scenarioExample);
-    expect(migrated.schemaVersion).toBe(4);
+    expect(migrated.schemaVersion).toBe(5);
     expect(migrated.athleteSkills).toEqual(scenarioExample.athleteSkills);
     expect(migrated.plans.map((plan) => plan.id)).toEqual(scenarioExample.plans.map((plan) => plan.id));
     for (const discipline of ['tumbling', 'trampet'] as const) migrated.plans.forEach((plan, planIndex) => plan[discipline].forEach((scenario, scenarioIndex) => {
@@ -93,7 +94,7 @@ describe('migration til format 4', () => {
       expect(scenario.id).toBe(original.id);
       scenario.rounds.forEach((round, roundIndex) => {
         expect(round.reserves).toEqual(original.rounds[roundIndex]!.reserves);
-        expect(round.entries).toEqual(original.rounds[roundIndex]!.entries.map((entry) => ({ ...entry, plannedSpot: null })));
+        expect(round.entries).toEqual(original.rounds[roundIndex]!.entries.map((entry) => ({ ...entry, plannedSpot: null, plannedSkillId: null })));
       });
     }));
   });
@@ -103,10 +104,10 @@ describe('migration til format 4', () => {
     expect(serializeWorkspace(migrateWorkspaceV3(JSON.parse(bytes)))).toBe(serializeWorkspace(migrateWorkspaceV3(JSON.parse(bytes))));
     for (const example of [v1, v2, v3, scenarioExample]) {
       const migrated = migrateWorkspace(structuredClone(example));
-      expect(migrated.schemaVersion).toBe(4);
+      expect(migrated.schemaVersion).toBe(5);
       expect(migrated.plans.flatMap((plan) => [...plan.tumbling, ...plan.trampet].flatMap((scenario) => scenario.rounds.flatMap((round) => round.entries))).every((entry) => entry.plannedSpot === null)).toBe(true);
     }
-    expect(() => migrateWorkspace({ ...v4, schemaVersion: 5 })).toThrow();
+    expect(() => migrateWorkspace({ ...v4, schemaVersion: 6 })).toThrow();
   });
 });
 
@@ -159,7 +160,7 @@ describe('kommandoer for planlagt modtagning', () => {
         athleteSkillId: fixture.workspace.athleteSkills.find((item) => item.athleteId === fixture.workspace.athletes[6]!.id && item.skillId === tumblingSkill.id)!.id }], limits, fixture.environment);
     expect(entriesOf(reordered).find((entry) => entry.id === first!.id)!.plannedSpot).toEqual(expected);
     const roleChanged = setRoundEntries(spotted, fixture.planId, 'tumbling', fixture.tumbling.id, fixture.round.id,
-      entriesOf(spotted).map((entry, index) => index === 0 ? { ...entry, role: 'extra' as const } : entry).concat([{ id: 'syvende', athleteId: fixture.workspace.athletes[6]!.id, role: 'counting', plannedSpot: null,
+      entriesOf(spotted).map((entry, index) => index === 0 ? { ...entry, role: 'extra' as const } : entry).concat([{ id: 'syvende', athleteId: fixture.workspace.athletes[6]!.id, role: 'counting', plannedSpot: null, plannedSkillId: null,
         athleteSkillId: fixture.workspace.athleteSkills.find((item) => item.athleteId === fixture.workspace.athletes[6]!.id && item.skillId === tumblingSkill.id)!.id }]).sort((a, b) => (a.role === 'extra' ? 0 : 1) - (b.role === 'extra' ? 0 : 1)), limits, fixture.environment);
     expect(entriesOf(roleChanged).find((entry) => entry.id === first!.id)!.plannedSpot).toEqual(expected);
     const moved = moveRoundFirst(spotted, fixture.planId, 'tumbling', fixture.tumbling.id, fixture.round.id, fixture.environment);

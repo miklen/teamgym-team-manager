@@ -270,9 +270,11 @@ export function SlotSpot({
 
 function SpotGlyph() {
   return (
-    <svg className="spot-glyph" viewBox="0 0 16 16" aria-hidden="true">
-      <path d="M2.5 10.5c2.2 2.6 8.8 2.6 11 0" />
-      <path d="M8 2.5v6M5.5 6 8 8.5 10.5 6" />
+    <svg className="spot-glyph" viewBox="0 0 24 24" aria-hidden="true">
+      <path d="M18 11V6a2 2 0 0 0-4 0" />
+      <path d="M14 10V4a2 2 0 0 0-4 0v2" />
+      <path d="M10 10.5V6a2 2 0 0 0-4 0v8" />
+      <path d="M18 8a2 2 0 1 1 4 0v6a8 8 0 0 1-8 8h-2c-2.8 0-4.5-.86-6-2.34l-3.6-3.6a2 2 0 0 1 2.83-2.82L7 15" />
     </svg>
   );
 }

@@ -39,7 +39,8 @@ test('seks omgange, hurtig vurdering, bevidst sortering og gem/genåbn', async (
   await page.getByRole('link', { name: 'Springplan' }).click();
   await expect(page.getByRole('heading', { name: 'Springplan', exact: true })).toBeVisible();
   await expect(page.getByText('4,3/5', { exact: true })).toHaveCount(3);
-  await page.getByRole('button', { name: 'Vurdering', exact: true }).first().click();
+  await page.getByRole('button', { name: /^Handlinger for / }).first().click();
+  await page.getByRole('menuitem', { name: 'Vurdering', exact: true }).click();
   await page.getByRole('radio', { name: '5', exact: true }).check();
   await page.getByRole('button', { name: 'Opdatér vurdering' }).click();
   await page.getByRole('button', { name: 'Luk dialog' }).click();

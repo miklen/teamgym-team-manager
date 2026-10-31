@@ -22,8 +22,13 @@ import {
   bindingFingerprint,
   setPlannedSpot,
   plannedSpotState,
+  setRoundEntries,
+  setRoundReserves,
+  addAmbition,
+  changeAmbitionSkill,
+  fillAmbition,
 } from '@teamgym/domain';
-import type { MergeContext, MergeResult, Workspace } from '@teamgym/domain';
+import type { MergeContext, MergeResult, SkillDefinition, Workspace } from '@teamgym/domain';
 import { syntheticWorkspace, binding } from '../fixtures/synthetic-workspace';
 import { DK_V1, DK_V2 } from '../../packages/rules/src/dk-v1';
 import { DK_SPRING_CATALOG } from '../../packages/rules/src/catalog';
@@ -209,7 +214,7 @@ describe('trevejsmotor', () => {
     const removed = round.entries.shift()!;
     round.reserves.push({
       id: 'synthetic-reserve',
-      athleteId: removed.athleteId,
+      athleteId: removed.athleteId!,
       athleteSkillId: removed.athleteSkillId,
     });
     r.plans[0]!.tumbling[0]!.rounds[0].entries.reverse();
@@ -579,5 +584,107 @@ describe('planlagt modtagning i trevejsfletning', () => {
     expect(participant.spotD).toEqual(participant.adjustedD);
     expect(analysis.rounds[0]!.plannedExecution.count).toBe(0);
     expect(analysis.rounds[0]!.difficulty).toEqual(analysis.rounds[0]!.unspottedDifficulty);
+  });
+});
+
+describe('ambitioner i trevejsfletning', () => {
+  const limits = { counting: 6, extra: 2 };
+  const directions = [['lokal', false], ['fil', true]] as const;
+  function ambitionSetup() {
+    const f = fixture();
+    const plan = f.b.plans[0]!, scenario = plan.trampet[0]!;
+    const roundAt = (workspace: Workspace, index = 1) => workspace.plans[0]!.trampet[0]!.rounds[index]!;
+    const trampetId = f.b.skills.find((skill) => skill.discipline === 'trampet')!.id;
+    const definition = f.b.skills.find((skill) => skill.id === trampetId)!;
+    const cleared = setRoundEntries(f.b, plan.id, 'trampet', scenario.id, roundAt(f.b).id, roundAt(f.b).entries.slice(0, 5), limits, f.environment);
+    const added = addAmbition(cleared, plan.id, 'trampet', scenario.id, roundAt(f.b).id, definition, 'counting', 5, limits, f.environment);
+    const b = added.workspace, entryId = added.entryId;
+    const registration = (workspace: Workspace, athleteIndex: number) =>
+      workspace.athleteSkills.find((item) => item.athleteId === workspace.athletes[athleteIndex]!.id && item.skillId === trampetId)!.id;
+    const fill = (workspace: Workspace, athleteIndex: number) =>
+      fillAmbition(workspace, plan.id, 'trampet', scenario.id, roundAt(b).id, entryId, registration(workspace, athleteIndex), f.environment);
+    const entry = (workspace: Workspace) => roundAt(workspace).entries.find((item) => item.id === entryId)!;
+    const jump = (id: string): SkillDefinition => ({ ...definition, id, name: 'Syntetisk nyt ambitionsspring', jump: { ...(definition as { jump: object }).jump, twistsHalfTurns: 4, twistDistribution: [4] } } as SkillDefinition);
+    const change = (workspace: Workspace, next: SkillDefinition) =>
+      changeAmbitionSkill(workspace, plan.id, 'trampet', scenario.id, roundAt(b).id, entryId, next, undefined, limits, f.environment);
+    return { ...f, b, plan, scenario, roundAt, entryId, fill, entry, registration, jump, change, trampetId };
+  }
+
+  it.each(directions)('samme ambition besat med forskellige gymnaster giver ét valg (%s)', (_side, swap) => {
+    const { b, fill, entry } = ambitionSetup();
+    const six = fill(b, 6), seven = fill(b, 7);
+    const [l, r] = swap ? [seven, six] : [six, seven];
+    const review = mergeWorkspace(b, l, r, context);
+    expect(review.conflicts).toHaveLength(1);
+    expect(entry(valid(mergeWorkspace(b, l, r, context, choose(review, 'local')))).athleteId).toBe(entry(l).athleteId);
+    expect(entry(valid(mergeWorkspace(b, l, r, context, choose(review, 'remote')))).athleteId).toBe(entry(r).athleteId);
+  });
+
+  it('samme gymnast på samme ambition på begge sider giver ingen konflikt', () => {
+    const { b, fill, entry } = ambitionSetup();
+    const w = valid(mergeWorkspace(b, fill(b, 6), fill(b, 6), context));
+    expect(entry(w)).toMatchObject({ athleteId: b.athletes[6]!.id, plannedSkillId: null });
+  });
+
+  it.each(directions)('skift af spring mod besættelse vælges samlet og giver aldrig en blandet plads (%s)', (_side, swap) => {
+    const { b, fill, change, jump, entry } = ambitionSetup();
+    const changed = change(b, jump('skill-nyt')), filled = fill(b, 6);
+    const [l, r] = swap ? [filled, changed] : [changed, filled];
+    const review = mergeWorkspace(b, l, r, context);
+    expect(review.conflicts).toHaveLength(1);
+    for (const side of ['local', 'remote'] as const) {
+      const merged = entry(valid(mergeWorkspace(b, l, r, context, choose(review, side))));
+      const wantFilled = (side === 'local') === swap;
+      expect(merged).toMatchObject(wantFilled ? { athleteId: b.athletes[6]!.id, plannedSkillId: null } : { athleteId: null, plannedSkillId: 'skill-nyt' });
+    }
+  });
+
+  it.each(directions)('besættelse mod reserve med samme gymnast kræver valg og kan ikke give dobbelt deltagelse (%s)', (_side, swap) => {
+    const { b, plan, scenario, roundAt, fill, registration, entry } = ambitionSetup();
+    const filled = fill(b, 6);
+    const reserved = setRoundReserves(b, plan.id, 'trampet', scenario.id, roundAt(b).id, [{ id: 'reserve-samme', athleteId: b.athletes[6]!.id, athleteSkillId: registration(b, 6) }]);
+    const [l, r] = swap ? [reserved, filled] : [filled, reserved];
+    const review = mergeWorkspace(b, l, r, context);
+    expect(review.status).not.toBe('valid');
+    let validCount = 0;
+    for (const side of ['local', 'remote'] as const) {
+      const result = mergeWorkspace(b, l, r, context, choose(review, side));
+      if (result.status !== 'valid') continue;
+      validCount++;
+      const round = roundAt(result.candidate);
+      const ids = [...round.entries, ...round.reserves].map((item) => item.athleteId).filter((id) => id === b.athletes[6]!.id);
+      expect(ids).toHaveLength(1);
+      expect(entry(result.candidate).athleteId === null || round.reserves.length === 0).toBe(true);
+    }
+    expect(validCount).toBe(2);
+  });
+
+  it.each(directions)('samme nye spring defineret på begge sider samles, og ambitionen peger på den valgte definition (%s)', (_side, swap) => {
+    const { b, change, jump, entry } = ambitionSetup();
+    const left = change(b, jump('nyt-venstre')), right = change(b, jump('nyt-hoejre'));
+    const [l, r] = swap ? [right, left] : [left, right];
+    const review = mergeWorkspace(b, l, r, context);
+    expect(review.conflicts).toHaveLength(1);
+    for (const side of ['local', 'remote'] as const) {
+      const w = valid(mergeWorkspace(b, l, r, context, choose(review, side)));
+      expect(w.skills).toHaveLength(b.skills.length + 1);
+      expect(w.skills.map((skill) => skill.id)).toContain(entry(w).plannedSkillId);
+    }
+  });
+
+  it.each(directions)('arkiveret definition mod besættelse kræver ét valg; begge udfald er gyldige og forklarlige (%s)', (_side, swap) => {
+    const { b, fill, entry, trampetId, teamA } = ambitionSetup();
+    const archived = setArchived(b, 'skills', trampetId, true), filled = fill(b, 6);
+    const [l, r] = swap ? [filled, archived] : [archived, filled];
+    const review = mergeWorkspace(b, l, r, context);
+    expect(review.conflicts).toHaveLength(1);
+    const keepArchive = valid(mergeWorkspace(b, l, r, context, choose(review, swap ? 'remote' : 'local')));
+    expect(keepArchive.skills.find((skill) => skill.id === trampetId)!.archived).toBe(true);
+    expect(entry(keepArchive)).toMatchObject({ athleteId: null, plannedSkillId: trampetId });
+    const participant = DK_V1.analyze(keepArchive, teamA.id, 'trampet', keepArchive.plans[0]!.trampet[0]!.id).rounds[1]!.entries.find((item) => item.entry.id === entry(b).id)!;
+    expect(participant.diagnostics.map((item) => item.code)).toContain('skill-archived');
+    const keepFill = valid(mergeWorkspace(b, l, r, context, choose(review, swap ? 'local' : 'remote')));
+    expect(keepFill.skills.find((skill) => skill.id === trampetId)!.archived).toBe(false);
+    expect(entry(keepFill).athleteId).toBe(b.athletes[6]!.id);
   });
 });

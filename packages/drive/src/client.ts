@@ -17,7 +17,7 @@ export interface FileMetadata extends FileReference {
 }
 export interface LoadedWorkspace {
   originalBytes?: string;
-  sourceSchemaVersion?: 1 | 2 | 3;
+  sourceSchemaVersion?: 1 | 2 | 3 | 4;
   basis: DriveBasis;
   metadata: FileMetadata;
   workspace: Workspace;
@@ -158,7 +158,7 @@ export class DriveClient implements WorkspaceClient {
       let raw: unknown;
       try { raw = JSON.parse(bytes); } catch { throw new DriveError('format', 'Filen indeholder ugyldig JSON. Originalen ændres ikke.'); }
       const version = raw && typeof raw === 'object' && 'schemaVersion' in raw ? raw.schemaVersion : undefined;
-      const migration = version === 1 || version === 2 || version === 3;
+      const migration = version === 1 || version === 2 || version === 3 || version === 4;
       const workspace = migration ? migrateWorkspace(raw) : parseWorkspace(bytes);
       const contentHash = await sha256(bytes);
       this.checkContext(generation);

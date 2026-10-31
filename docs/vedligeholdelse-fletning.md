@@ -1,6 +1,6 @@
 # Vedligeholdelse af sammenligning og fletning
 
-`packages/domain/src/workspace-merge.ts` sammenligner basis B, lokal L og fil R uden mutation, netværk, ur eller tilfældige id'er. Alle tre skal være gyldige format 4-filer med samme workspaceId. En basis eller fil i format 3 migreres først deterministisk uden nye id'er; format 1 og 2 flettes ikke. Konteksten injicerer en stabil fingerprint og ren afstemning med de aktuelle regelpakker. Uafgjorte/ugyldige resultater har ingen `candidate`; kun `status: 'valid'` kan anvendes. Konflikt-id'er er bundet til input og kontekst. Ingen valg er forhåndsudfyldt. Genberegn ved ændrede valg.
+`packages/domain/src/workspace-merge.ts` sammenligner basis B, lokal L og fil R uden mutation, netværk, ur eller tilfældige id'er. Alle tre skal være gyldige format 5-filer med samme workspaceId. En basis eller fil i format 3 eller 4 migreres først deterministisk uden nye id'er; format 1 og 2 flettes ikke. Konteksten injicerer en stabil fingerprint og ren afstemning med de aktuelle regelpakker. Uafgjorte/ugyldige resultater har ingen `candidate`; kun `status: 'valid'` kan anvendes. Konflikt-id'er er bundet til input og kontekst. Ingen valg er forhåndsudfyldt. Genberegn ved ændrede valg.
 
 ## Dækningsoversigt
 
@@ -68,6 +68,20 @@ Eksempel på samtidige kommandoer: `renameTeam(B, hold, navn)` og `updateAssessm
 **Præsentation:** Pladsen viser grad, eventuelt element og justeret D med tekst. En nulstillet modtagning vises som afledt status med handlinger til at fjerne den eller planlægge igen og præsenteres ikke som en trænerbeslutning. Formularer bruger `setPlannedSpot`/`clearPlannedSpot` og indfører ingen egne regler for nulstilling eller fletning.
 
 **Tests:** `tests/domain/workspace-merge.test.ts` (planlagt modtagning i trevejsfletning: samme omgang, forskellige omgange, to forskellige modtagninger på samme plads og ens ændringer i begge retninger samt udskiftet spring med afledt nulstilling), `tests/domain/planned-spotting.test.ts` (validering, migration og kommandoer), `tests/domain/planned-spotting-rules.test.ts` (D, E-loft og Maks. mulig karakter med faste facit) og `tests/drive/workspace-session.test.ts` (migration fra format 3, gennemgang mod en fil i format 3 og afvisning af format 5).
+
+### Ambitioner, format 5
+
+**Fælles data:** En plads i en bane- eller trampetomgang har nu `athleteId: Id | null` og `plannedSkillId: Id | null`. Præcis ét af dem er sat: en besat plads har gymnast og `plannedSkillId: null`; en ambition har `athleteId: null`, `athleteSkillId: null`, `plannedSpot: null` og et `plannedSkillId`, der peger på en kendt definition i pladsens disciplin. Reserver har altid gymnast. Format 4 migreres deterministisk til format 5 med `plannedSkillId: null` på alle pladser uden nye id'er, ur eller tilfældighed; format 1–3 går gennem samme kæde. Ældre apps afviser format 5 som nyere.
+
+**Identiteter og rækkefølge:** Ambitionen er en almindelig plads med eget id, rolle og position. `addAmbition` genbruger en aktiv definition med samme springidentitet (regelpakkens identitet injiceres som `CommandEnvironment.springIdentity`) eller opretter definitionen i samme ændring. `fillAmbition` bevarer plads-id, rolle og position og sætter `plannedSkillId: null`. `setRoundEntries` kan ikke omdanne en plads mellem ambition og besat; det kræver de navngivne kommandoer. `duplicateScenario` og `moveRoundFirst` bevarer ambitioner. To sider, der definerer samme nye spring med forskellige id'er, samles af den eksisterende unikhedsregel for præcise spring.
+
+**Politik:** `merge-policy.ts` klassificerer `plannedSkillId` som værdi med betegnelsen "Planlagt spring" inden for den atomiske deltagerliste. Samme ambition besat med forskellige gymnaster, spring skiftet mens pladsen besættes, og besættelse mod reserve med samme gymnast giver ét valg for hele omgangen i begge fletteretninger; en blandet plads kan ikke opstå. Arkiveret definition mod en ny besættelse følger reglen om sletning mod ny reference og kræver ét valg; vælges arkiveringen, forbliver ambitionen med diagnosen `skill-archived`.
+
+**Afhængigheder og afledte værdier:** `planReferences()` medtager `plannedSkillId`, så kartotekets referencer og diagnoser kender ambitioner. *Kan nu*, match, kandidater, mixstatus, D, C, sikkerhed og potentialer er afledte og gemmes aldrig. Reglerne giver diagnosen `athlete-missing`; mix vurderes kun på besatte pladser (opnåelig er ufuldstændig, brudt er ugyldig); den uafklarede gentagelsesregel giver begge udfald som alternativer. Potentialesøgningen udskifter aldrig en omgang med ambitioner og forklarer det med `AMBITION-ROUNDS`. `insertReserve` og `setPlannedSpot` afviser ambitioner.
+
+**Præsentation:** Ambitionspladsen har samme geometri som en besat plads med stiplet kontur og chips for Mangler gymnast og *N kan nu*. Besættelse sker i én formular med fastlåst spring og grupperne Kan springet og Kan ikke endnu. Konfliktvisningen viser "Ambition · <springnavn> · mangler gymnast". Formularer bruger `addAmbition`, `changeAmbitionSkill` og `fillAmbition` og indfører ingen egne flette- eller matchregler.
+
+**Tests:** `tests/domain/workspace-merge.test.ts` (ambitioner i trevejsfletning i begge retninger), `tests/domain/routine-ambitions.test.ts` (validering, migration og kommandoer), `tests/domain/routine-ambitions-rules.test.ts` (D, holdomgang, mix, gentagelse, sikkerhed, *kan nu* og forslag med faste facit) og `tests/drive/workspace-session.test.ts` (migration fra format 4, gennemgang mod en fil i format 4 og afvisning af format 6).
 
 ## Sessionens levetid og gemning
 

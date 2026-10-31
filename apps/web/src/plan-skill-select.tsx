@@ -53,15 +53,25 @@ export interface PlanSkillOption {
   stability: Stability | null;
 }
 
-/** Søgbart springvalg. Fokus bliver i søgefeltet, og piletaster vælger den aktive række. */
+/** Sikkerhedskolonnen for et spring uden gymnast. Teksten bærer betydningen. */
+export function PlanNoAthlete() {
+  return <span className="plan-no-athlete">Ingen gymnast</span>;
+}
+
+/**
+ * Søgbart springvalg. Fokus bliver i søgefeltet, og piletaster vælger den aktive række.
+ * I katalogtilstand vælges et spring uden gymnast: sikkerhed erstattes af Ingen gymnast, og pladsen kan ikke gemmes uden spring.
+ */
 export function PlanSkillSelect({
   options,
   initialValue,
   onChange,
+  catalog = false,
 }: {
   options: PlanSkillOption[];
   initialValue: string;
-  onChange?: (() => void) | undefined;
+  onChange?: ((id: string) => void) | undefined;
+  catalog?: boolean;
 }) {
   const id = useId();
   const root = useRef<HTMLDivElement>(null);
@@ -78,11 +88,11 @@ export function PlanSkillSelect({
   const filtered = options.filter((option) =>
     words.every((word) => `${option.name} ${option.direction}`.toLocaleLowerCase('da').includes(word)),
   );
-  const rows: (PlanSkillOption | null)[] = query.trim() ? filtered : [null, ...filtered];
+  const rows: (PlanSkillOption | null)[] = query.trim() || catalog ? filtered : [null, ...filtered];
   const activeIndex = Math.min(active, rows.length - 1);
   const choose = (option: PlanSkillOption | null) => {
     setValue(option?.id ?? '');
-    onChange?.();
+    onChange?.(option?.id ?? '');
     setOpen(false);
     trigger.current?.focus();
   };
@@ -142,12 +152,12 @@ export function PlanSkillSelect({
       >
         <span id={`${id}-value`} className="plan-choice-name">
           <strong>{selected?.name ?? 'Vælg spring'}</strong>
-          <small>{selected?.direction || `${options.length} registrerede spring`}</small>
+          <small>{selected?.direction || (catalog ? (selected ? '' : `${options.length} spring i kataloget`) : `${options.length} registrerede spring`)}</small>
         </span>
         {selected && (
           <span className="plan-choice-numbers">
             <PlanDifficulty value={selected.difficulty} />
-            <PlanSafety value={selected.stability} />
+            {catalog ? <PlanNoAthlete /> : <PlanSafety value={selected.stability} />}
           </span>
         )}
         <span className={`plan-select-chevron ${open ? 'is-open' : ''}`} aria-hidden="true">
@@ -161,8 +171,8 @@ export function PlanSkillSelect({
               ref={search}
               type="search"
               role="combobox"
-              aria-label="Søg registrerede spring"
-              placeholder="Søg spring…"
+              aria-label={catalog ? 'Søg i springkataloget' : 'Søg registrerede spring'}
+              placeholder={catalog ? 'Søg i kataloget…' : 'Søg spring…'}
               autoComplete="off"
               aria-autocomplete="list"
               aria-expanded="true"
@@ -188,7 +198,7 @@ export function PlanSkillSelect({
           <div className="plan-option-columns" aria-hidden="true">
             <span>Spring</span>
             <span>D</span>
-            <span>Sikkerhed</span>
+            <span>{catalog ? 'Gymnast' : 'Sikkerhed'}</span>
           </div>
           <ul id={`${id}-list`} role="listbox" aria-labelledby={`${id}-label`} className="plan-skill-options">
             {rows.map((option, index) => (
@@ -199,7 +209,7 @@ export function PlanSkillSelect({
                 aria-selected={(option?.id ?? '') === value}
                 aria-label={
                   option
-                    ? `${option.name}${option.direction ? `, ${option.direction}` : ''}, D ${option.difficulty ?? 'Uafklaret'}, sikkerhed ${option.stability === null ? 'Ikke vurderet' : `${option.stability}/5`}`
+                    ? `${option.name}${option.direction ? `, ${option.direction}` : ''}, D ${option.difficulty ?? 'Uafklaret'}, ${catalog ? 'ingen gymnast' : `sikkerhed ${option.stability === null ? 'Ikke vurderet' : `${option.stability}/5`}`}`
                     : 'Vælg senere · ufuldstændig plads'
                 }
                 data-active={index === activeIndex}
@@ -219,7 +229,7 @@ export function PlanSkillSelect({
                     —
                   </span>
                 )}
-                <PlanSafety value={option?.stability ?? null} />
+                {catalog ? <PlanNoAthlete /> : <PlanSafety value={option?.stability ?? null} />}
                 <span className="plan-option-check" aria-hidden="true">
                   {(option?.id ?? '') === value ? '✓' : ''}
                 </span>
@@ -228,7 +238,7 @@ export function PlanSkillSelect({
           </ul>
           {rows.length === 0 && (
             <p className="plan-options-empty" role="status">
-              Ingen registrerede spring matcher.
+              {catalog ? 'Ingen spring i kataloget matcher.' : 'Ingen registrerede spring matcher.'}
             </p>
           )}
         </div>

@@ -707,13 +707,13 @@ function App() {
           <Dialog title="Opgradér arbejdsrummet" close={() => workspaceSession.cancelMigration()}>
             <p>
               Filen bruger format {data.migration.sourceSchemaVersion}. Opgradér til format {CURRENT_SCHEMA_VERSION} for at
-              arbejde med appens nyeste muligheder, blandt andet planlagt modtagning.
+              arbejde med appens nyeste muligheder, blandt andet ambitioner uden gymnast.
             </p>
             <p>
               {data.migration.sourceSchemaVersion !== undefined && data.migration.sourceSchemaVersion < 3
                 ? 'Eksisterende planer bevares som Plan A i hver disciplin. '
                 : 'Alle scenarier og reserver bevares. '}
-              Vurderinger, arv og fravalg bevares, og ingen plads får en modtagning. Originalen på Drive ændres
+              Vurderinger, arv og fravalg bevares, og alle pladser beholder deres gymnast. Originalen på Drive ændres
               først, når du vælger Gem på Drive. Ældre appudgaver kan ikke åbne format {CURRENT_SCHEMA_VERSION}.
             </p>
             <div className="actions">

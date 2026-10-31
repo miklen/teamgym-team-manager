@@ -225,7 +225,7 @@ test('migration er et bevidst valg med eksport af original, annullering og separ
   expect(source.workspace.schemaVersion).toBe(1);
   await page.getByRole('button', { name: /Lokale ændringer/ }).click();
   await expect(page.getByRole('button', { name: 'Gemt', exact: true })).toBeVisible();
-  expect(source.workspace.schemaVersion).toBe(4);
+  expect(source.workspace.schemaVersion).toBe(5);
   expect(source.workspace.athleteSkills[0]!.assessmentOrigin.kind).toBe('own');
   expect(source.failures).toEqual([]);
 });
@@ -419,6 +419,7 @@ test('kendt egen D 0,80 med bidrag 0,00 samt ekstra og ukendt egen D', async ({ 
     athleteSkillId: extraSkill.athleteSkillId,
     role: 'extra',
     plannedSpot: null,
+    plannedSkillId: null,
   });
   if (full.discipline !== 'tumbling') throw Error('fixture');
   const unknown = {

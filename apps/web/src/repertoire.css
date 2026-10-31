@@ -340,7 +340,7 @@
     border-color 150ms ease;
 }
 .round-contribution {
-  margin: 4px 0 12px;
+  margin: 4px 0 6px;
   font-size: 0.66rem;
   color: var(--muted);
   line-height: 1.6;

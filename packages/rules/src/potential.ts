@@ -36,6 +36,8 @@ export interface BonusPotential {
   status: 'proven' | 'lower-bound' | 'incomplete' | 'unresolved'; issue: string | null;
   preview: PotentialPreview | null; independent: true; searchedCandidates: number;
 }
+/** Forslag blev udelukket, fordi de ville udskifte en omgang med ambitioner. */
+export const AMBITION_ROUNDS_ISSUE = 'AMBITION-ROUNDS';
 export interface PotentialOptions { signal?: AbortSignal; candidateBudget?: number }
 
 function bestTeam(candidates: readonly PotentialCandidate[], profile: TeamProfile, weight: (candidate: PotentialCandidate) => number): PotentialCandidate[] | null {
@@ -66,6 +68,7 @@ function witnessEntries(candidates: readonly PotentialCandidate[], current: read
         id: previous?.id ?? `witness:${roundId}:${candidate.athleteId}`,
         athleteId: candidate.athleteId, athleteSkillId: candidate.registration.id, role: 'counting',
         plannedSpot: previous?.athleteSkillId === candidate.registration.id ? structuredClone(previous.plannedSpot) : null,
+        plannedSkillId: null,
       };
     });
 }
@@ -121,16 +124,18 @@ export async function searchBonusPotentials(workspace: Workspace, teamId: string
     if ((!firstIsIdentical && !uniform) || !optimal || options.signal?.aborted) return base;
     let chosen: PotentialPreview | null = null;
     let best: Fraction | null = null;
+    let ambitionBlocked = false;
+    // Ambitionspladser er faste: et forslag udskifter aldrig en omgang, der indeholder dem.
+    const hasAmbition = (index: number) => scenario.rounds[index]!.entries.some((entry) => entry.athleteId === null);
     for (const roundIndex of [1, 2]) {
+      const replaced = [...(firstIsIdentical ? [] : [0]), ...[1, 2].filter((index) => index === roundIndex || !before.rounds[index]?.compositionReady)];
+      if (replaced.some(hasAmbition)) { ambitionBlocked = true; continue; }
       const copy = structuredClone(workspace);
       const copyPlan = copy.plans.find((item) => item.id === plan.id)!;
       const copyScenario = copyPlan[discipline].find((item) => item.id === scenarioId)!;
-      if (!firstIsIdentical) copyScenario.rounds[0].entries = witnessEntries(uniform!, copyScenario.rounds[0].entries, copyScenario.rounds[0].id);
-      for (const index of [1, 2]) {
-        if (index === roundIndex || !before.rounds[index]?.compositionReady) {
-          const round = copyScenario.rounds[index]!;
-          round.entries = witnessEntries(optimal, round.entries, round.id);
-        }
+      for (const index of replaced) {
+        const round = copyScenario.rounds[index]!;
+        round.entries = witnessEntries(index === 0 ? uniform! : optimal, round.entries, round.id);
       }
       for (const round of copyScenario.rounds) round.reserves = round.reserves.filter((reserve) => !round.entries.some((entry) => entry.athleteId === reserve.athleteId));
       copyPlan.bindingFingerprint = fingerprint;
@@ -143,7 +148,7 @@ export async function searchBonusPotentials(workspace: Workspace, teamId: string
       const changes: PlannedChange[] = [];
       for (const [index, round] of copyScenario.rounds.entries()) {
         const previous = scenario.rounds[index]!;
-        const affected = new Set([...previous.entries, ...round.entries].map((entry) => entry.athleteId));
+        const affected = new Set([...previous.entries, ...round.entries].flatMap((entry) => entry.athleteId === null ? [] : [entry.athleteId]));
         for (const athleteId of affected) {
           const oldEntry = previous.entries.find((entry) => entry.athleteId === athleteId);
           const newEntry = round.entries.find((entry) => entry.athleteId === athleteId);
@@ -157,6 +162,7 @@ export async function searchBonusPotentials(workspace: Workspace, teamId: string
       const preview = { teamId, discipline, scenarioId, basisPayload, bindingFingerprint: fingerprint, workspace: copy, before, after, changes, reserveChanges };
       if (best === null || amount.compare(best) > 0 || amount.compare(best) === 0 && changes.length < chosen!.changes.length) { chosen = preview; best = amount; }
     }
+    if (!chosen && ambitionBlocked && !bonus.unresolvedIssue) return { ...base, status: 'incomplete', issue: AMBITION_ROUNDS_ISSUE };
     return { ...base, status: bonus.unresolvedIssue ? 'unresolved' : chosen ? truncated ? 'lower-bound' : 'proven' : base.status,
       documentedValue: bonus.unresolvedIssue ? null : best, preview: chosen };
   });

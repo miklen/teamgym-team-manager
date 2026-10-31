@@ -413,8 +413,8 @@ export class WorkspaceSession {
           'cancelled',
           'Kladden eller forbindelsen er ændret under hentning. Gennemgå igen.',
         );
-      // Format 3 migreres deterministisk uden nye id'er og kan derfor flettes; format 1 og 2 kan ikke.
-      if (current.originalBytes !== undefined && current.sourceSchemaVersion !== 3)
+      // Format 3 og 4 migreres deterministisk uden nye id'er og kan derfor flettes; format 1 og 2 kan ikke.
+      if (current.originalBytes !== undefined && current.sourceSchemaVersion !== 3 && current.sourceSchemaVersion !== 4)
         throw new DriveError('format', 'Den nyeste fil kræver migration og kan ikke flettes.');
       if (this.pending) {
         const operation = this.pending;

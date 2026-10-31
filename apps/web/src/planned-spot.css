@@ -1,14 +1,6 @@
 .entry-tools {
   position: relative;
 }
-.entry-tool-group {
-  display: inline-flex;
-  align-items: center;
-  margin-left: auto;
-}
-.entry-tools .entry-tool-group > .quiet {
-  min-width: 34px;
-}
 .round-entries li:has(.slot-spot.open) {
   position: relative;
   z-index: 5;
@@ -27,7 +19,7 @@
 }
 .spot-trigger {
   min-width: 0;
-  min-height: 36px;
+  min-height: 30px;
   padding: 0 2px;
   border: 0;
   background: transparent;
@@ -90,12 +82,12 @@
   font-variant-numeric: tabular-nums;
 }
 .spot-glyph {
-  width: 13px;
-  height: 13px;
+  width: 15px;
+  height: 15px;
   flex: none;
   fill: none;
   stroke: currentColor;
-  stroke-width: 1.7;
+  stroke-width: 1.9;
   stroke-linecap: round;
   stroke-linejoin: round;
 }
@@ -288,10 +280,6 @@
   }
 }
 @media (max-width: 600px) {
-  .entry-tools .entry-tool-group > .quiet {
-    min-width: 36px;
-    padding-inline: 7px;
-  }
   .spot-trigger.active .spot-glyph {
     display: none;
   }
@@ -318,6 +306,11 @@
     width: auto;
     height: auto;
     clip-path: none;
+  }
+}
+@media (pointer: coarse) {
+  .spot-trigger {
+    min-height: 36px;
   }
 }
 @media (prefers-reduced-motion: reduce) {
@@ -466,4 +459,13 @@
   border-left: 2px solid #aa651c;
   color: #6d4419;
   font-size: 0.78rem;
+}
+
+/* I omgangens række er udløseren kun et ikon; valget forankres i rækkens højre kant med fast bredde. */
+.entry-tools .spot-popover {
+  left: auto;
+  right: -2px;
+  width: min(21rem, calc(100vw - 48px));
+  max-width: none;
+  transform-origin: calc(100% - 24px) 0;
 }

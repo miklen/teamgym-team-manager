@@ -1,3 +1,4 @@
+import { AMBITION_ROUNDS_ISSUE } from '@teamgym/rules';
 import type { BonusPotential, CompositionGuideOverview, CompositionGuideRow, DisciplineEvaluation, RulePackage, TeamProfile } from '@teamgym/rules';
 import { points, SourceLinks } from './components';
 import { RuleUncertainty } from './rule-uncertainty';
@@ -22,9 +23,10 @@ export function CompositionGuide({ rows, overview, maximum, profile, rulePackage
     { title: 'Rammer og krav', rows: rows.filter((row) => row.category !== 'bonus') },
     { title: 'Tillæg', rows: rows.filter((row) => row.category === 'bonus') },
   ];
+  const missing = maximum?.rounds.reduce((sum, round) => sum + round.entries.filter((item) => item.entry.athleteId === null).length, 0) ?? 0;
   const progress = overview.contextInvalid ? 'Regelgrundlag kræver gennemgang'
     : !overview.started ? 'Ingen omgange klar'
-      : `${overview.readyRounds}/${overview.totalRounds} omgange klar${overview.unresolved ? ' · åbne regler' : ''}`;
+      : `${overview.readyRounds}/${overview.totalRounds} omgange klar${overview.unresolved ? ' · åbne regler' : ''}${missing ? ` · ${missing} mangler gymnast` : ''}`;
   return <section className="composition-guide" aria-label="Guide til springplanens komposition">
     <details className="composition-guide-disclosure">
       <summary className="composition-guide-overview">
@@ -65,7 +67,9 @@ export function CompositionGuide({ rows, overview, maximum, profile, rulePackage
                   ? 'Dokumenteret med en konkret opstilling.'
                   : potential.status === 'unresolved'
                     ? `Uafklaret ${potential.issue ?? ''}`
-                    : 'Ikke nok anvendelige registreringer til en fuld opstilling.'}</small>
+                    : potential.issue === AMBITION_ROUNDS_ISSUE
+                      ? 'Forslag udskifter ikke omgange med ambitioner. Besæt eller fjern dem for at se forslag.'
+                      : 'Ikke nok anvendelige registreringer til en fuld opstilling.'}</small>
               <button className="quiet" type="button" disabled={!potential.preview} onClick={() => onPreview(potential)}>Se konkrete ændringer</button>
             </div>}
             {row.example && <p>Eksempel at træne frem mod: {row.example.label} ({row.example.code}). Eksemplet viser et katalogspring, ikke en gymnasts registrerede kunnen.</p>}

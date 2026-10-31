@@ -66,7 +66,7 @@ function setup() {
 }
 function legacyRound({ reserves: _reserves, ...round }: Workspace['plans'][number]['tumbling'][number]['rounds'][number]) {
   void _reserves;
-  return { ...round, entries: round.entries.map(({ plannedSpot: _spot, ...entry }) => { void _spot; return entry; }) };
+  return { ...round, entries: round.entries.map(({ plannedSpot: _spot, plannedSkillId: _planned, ...entry }) => { void _spot; void _planned; return entry; }) };
 }
 function v1(workspace: Workspace) {
   const { inheritanceRelations: _relations, inheritanceExclusions: _exclusions, ...rest } = workspace;

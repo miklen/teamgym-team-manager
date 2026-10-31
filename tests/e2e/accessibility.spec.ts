@@ -19,7 +19,8 @@ test('WCAG 2.2 AA på centrale arbejdsflader og vurderingsdialog', async ({ page
     ).toEqual([]);
   }
   await page.getByRole('link', { name: 'Springplan' }).click();
-  await page.getByRole('button', { name: 'Vurdering', exact: true }).first().click();
+  await page.getByRole('button', { name: /^Handlinger for / }).first().click();
+  await page.getByRole('menuitem', { name: 'Vurdering', exact: true }).click();
   await expect(page.getByRole('dialog')).toBeVisible();
   const dialogResult = await new AxeBuilder({ page })
     .withTags(['wcag2a', 'wcag2aa', 'wcag21aa', 'wcag22aa'])

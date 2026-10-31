@@ -43,7 +43,8 @@ for (const width of [1440, 390]) {
     await expect(
       page.getByText('Gymnasten er fjernet. Vælg en anden gymnast.', { exact: true }).first(),
     ).toBeVisible();
-    await page.getByRole('button', { name: 'Vurdering', exact: true }).first().click();
+    await page.getByRole('button', { name: /^Handlinger for / }).first().click();
+    await page.getByRole('menuitem', { name: 'Vurdering', exact: true }).click();
     await expect(
       page.getByText(
         'Gymnasten er fjernet fra gymnastlisten. Vælg en anden gymnast på de berørte pladser i springplanen.',

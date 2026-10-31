@@ -2,7 +2,7 @@ import { Fraction, activePlannedSpot, bindingFingerprint, roundStability, sumFra
 import type { AthleteSkill, Diagnostic, EvaluationStatus, PlannedSpot, RoundEntry, ReserveEntry, SkillDefinition, SourceReference, SpringDiscipline, Workspace } from '@teamgym/domain';
 import type { SpotRate, SpotRates, TeamProfile } from './dk-data';
 import type { NumericDecision, OrderResult } from './dk-numeric';
-import { apparatusDeduction, bestBonus, combineStatus, compositionTotal, divideDecision, elementBonus, holdRound, known, mixQuotaCheck, orderCheck, resolvedOrderCheck, participantStructure,
+import { apparatusDeduction, bestBonus, combineStatus, compositionTotal, divideDecision, elementBonus, holdRound, known, mixQuotaCheck, mixQuotaWithAmbitions, orderCheck, resolvedOrderCheck, participantStructure,
   PLANNING_BOUNDARIES, plannedExecutionCeiling, plannedMaximumScore, pureDirectionDeduction, spottedTopThreeDifficulty, repetitionDeduction, resolvedElementBonus, resolvedRepetitionDeduction, sumDecisions, trampetTwistQualifies, uncertain } from './dk-numeric';
 import { evaluateSpringSkill, normalizeElement } from './dk-spring';
 import type { SpringSkillEvaluation } from './dk-spring';
@@ -100,7 +100,29 @@ export function evaluateDiscipline(workspace: Workspace, teamId: string, discipl
   if (!scenario) throw new Error('Scenariet findes ikke i holdets disciplin.');
   const rawRounds = scenario.rounds;
 
+  /** En ambition evalueres fra springdefinitionen: D, identitet og C-berettigelse som en besat plads med samme spring. */
+  function evaluateAmbition<T extends RoundEntry | ReserveEntry>(entry: T, plannedSkillId: string): Omit<ParticipantEvaluation, 'entry'> & { entry: T } {
+    const definition = definitions.get(plannedSkillId);
+    const skill = definition && definition.discipline === discipline ? definition : null;
+    const local: Diagnostic[] = [diagnostic('athlete-missing', 'Mangler gymnast', [entry.id], 'incomplete')];
+    if (!skill) local.push(diagnostic('skill-missing', 'Vælg et spring i denne disciplin.', [entry.id], 'incomplete'));
+    if (skill?.archived) local.push(diagnostic('skill-archived', 'Færdigheden er arkiveret.', [entry.id, skill.id]));
+    const evaluation = skill ? evaluateSpringSkill(skill, null, settings.ruleCorrections) : null;
+    let originalD = evaluation?.difficulty ?? uncertain('incomplete');
+    if (settings.difficultyMultiplier) originalD = scaleDecision(originalD, settings.difficultyMultiplier);
+    // Mangler gymnast er en planlægningsmangel, ikke et utilgængeligt bidrag.
+    const available = !local.some((item) => item.code !== 'athlete-missing' && (item.status === 'invalid' || item.status === 'incomplete'));
+    if (evaluation && evaluation.validity !== 'known') local.push(diagnostic('skill-validity', evaluation.connection === 'unverified' ? 'Forbindelsen bekræftes, når en gymnast tager pladsen.' : 'Færdighedens variant eller regelkobling kræver gennemgang.', [entry.id], evaluation.validity === 'invalid' ? 'invalid' : 'unresolved'));
+    const status = combineStatus([evaluation?.status ?? 'incomplete', ...local.map((item) => item.status)]);
+    if (!available || evaluation?.validity !== 'known')
+      originalD = uncertain(status === 'known' ? 'incomplete' : status, originalD.issues, originalD.knownSubtotal, originalD.alternatives);
+    return { entry, athleteName: 'Mangler gymnast', registration: null, skill, evaluation, status,
+      identity: available && evaluation?.validity === 'known' ? evaluation.identity : null, originalD, adjustedD: originalD, spotD: originalD, plannedSpot: null,
+      eligibleForC: available && evaluation?.validity === 'known', diagnostics: local };
+  }
+
   function evaluateEntry<T extends RoundEntry | ReserveEntry>(entry: T): Omit<ParticipantEvaluation, 'entry'> & { entry: T } {
+    if (entry.athleteId === null) return evaluateAmbition(entry, (entry as RoundEntry).plannedSkillId!);
     const athlete = athletes.get(entry.athleteId);
     const registration = entry.athleteSkillId ? registrations.get(entry.athleteSkillId) : undefined;
     const definition = registration ? definitions.get(registration.skillId) : undefined;
@@ -147,10 +169,17 @@ export function evaluateDiscipline(workspace: Workspace, teamId: string, discipl
     const invalidStructure = !participantStructure(entries.map((item) => item.entry.role), profile.counting, profile.extra);
     let status = combineStatus([counting.length === profile.counting ? 'known' : 'incomplete', ...counting.map((item) => item.status)]);
     if (invalidStructure) { status = 'invalid'; diagnostics.push(diagnostic('participant-limits', 'Antal tællende/ekstra eller rækkefølgen opfylder ikke holdprofilen.', [round.id])); }
+    const ambitionCount = counting.filter((item) => item.entry.athleteId === null).length;
+    const filledCategories = counting.flatMap((item) => item.entry.athleteId === null ? [] : [athletes.get(item.entry.athleteId)?.mixCategory ?? null]);
+    // Med ambitioner vurderes kun de besatte pladser: en opnåelig fordeling er ufuldstændig, en brudt er ugyldig.
+    const mix = !profile.mixQuota ? 'known' : ambitionCount > 0 ? mixQuotaWithAmbitions(filledCategories, profile.mixQuota.girl, profile.mixQuota.boy) :
+      mixQuotaCheck(filledCategories, profile.mixQuota.girl, profile.mixQuota.boy);
+    const mixAttainable = mix === 'known' || ambitionCount > 0 && mix === 'incomplete' && !filledCategories.includes(null);
     if (profile.mixQuota) {
-      const mix = mixQuotaCheck(counting.map((item) => athletes.get(item.entry.athleteId)?.mixCategory ?? null), profile.mixQuota.girl, profile.mixQuota.boy);
       status = combineStatus([status, mix]);
-      if (mix !== 'known') diagnostics.push(diagnostic('mix-quota', 'De tællende skal opfylde holdprofilens eksplicitte mixfordeling.', [round.id], mix === 'invalid' ? 'invalid' : 'incomplete'));
+      if (mix !== 'known') diagnostics.push(diagnostic('mix-quota', mixAttainable
+        ? `Mixfordelingen afhænger af, hvem der tager ${ambitionCount === 1 ? 'ambitionspladsen' : `de ${ambitionCount} ambitionspladser`}.`
+        : 'De tællende skal opfylde holdprofilens eksplicitte mixfordeling.', [round.id], mix === 'invalid' ? 'invalid' : 'incomplete'));
     }
     const apparatuses = new Set(entries.map((item) => item.evaluation?.apparatus).filter((value) => value === 'vault' || value === 'free'));
     const mixedApparatus = discipline === 'trampet' && Boolean(settings.apparatusRoundsResolved) && apparatuses.size > 1;
@@ -158,8 +187,7 @@ export function evaluateDiscipline(workspace: Workspace, teamId: string, discipl
       status = 'invalid';
       diagnostics.push(diagnostic('mixed-apparatus', `${roundIndex + 1}. omgang blander spring med og uden Pegasus. Pegasus står foran trampolinen hele omgangen eller slet ikke.`, [round.id]));
     }
-    const compositionReady = !invalidStructure && !mixedApparatus && counting.length === profile.counting && counting.every((item) => item.eligibleForC) &&
-      (!profile.mixQuota || mixQuotaCheck(counting.map((item) => athletes.get(item.entry.athleteId)?.mixCategory ?? null), profile.mixQuota.girl, profile.mixQuota.boy) === 'known');
+    const compositionReady = !invalidStructure && !mixedApparatus && counting.length === profile.counting && counting.every((item) => item.eligibleForC) && mixAttainable;
     let holdDeduction = known(0);
     if (roundIndex === 0) {
       const hold = holdRound(counting.map((item) => item.identity), counting.map((item) => item.originalD.value), profile.counting);
@@ -212,7 +240,18 @@ export function evaluateDiscipline(workspace: Workspace, teamId: string, discipl
     const identityCounts = matches.map((items) => items.length);
     if (settings.repetitionResolved) return resolvedRepetitionDeduction(identityCounts, profile.counting);
     const nonempty = matches.filter((items) => items.length > 0);
-    const sameAthletes = nonempty.length <= 1 || nonempty.every((items) => items.map((item) => item.entry.athleteId).sort().join('|') === nonempty[0]!.map((item) => item.entry.athleteId).sort().join('|'));
+    const filled = (items: readonly ParticipantEvaluation[]) => items.flatMap((item) => item.entry.athleteId === null ? [] : [item.entry.athleteId]);
+    if (nonempty.some((items) => items.some((item) => item.entry.athleteId === null))) {
+      // Ambitioner kan besættes af hvem som helst: begge udfald beregnes, når de begge er mulige.
+      const union = new Set(nonempty.flatMap(filled));
+      const canBeSame = nonempty.every((items) => items.length === nonempty[0]!.length) && union.size <= nonempty[0]!.length;
+      const different = repetitionDeduction(identityCounts, nonempty.length <= 1, profile.counting);
+      if (!canBeSame) return different;
+      const same = repetitionDeduction(identityCounts, true, profile.counting);
+      if (same.status === different.status && (same.value === null ? different.value === null : different.value !== null && same.value.compare(different.value) === 0)) return same;
+      return uncertain('incomplete', ['AMBITION-ATHLETES'], 0, { sameAthletes: same.value ?? same.knownSubtotal, differentAthletes: different.value ?? different.knownSubtotal });
+    }
+    const sameAthletes = nonempty.length <= 1 || nonempty.every((items) => filled(items).sort().join('|') === filled(nonempty[0]!).sort().join('|'));
     return repetitionDeduction(identityCounts, sameAthletes, profile.counting);
   });
   let repeat = sumDecisions(repeatResults);

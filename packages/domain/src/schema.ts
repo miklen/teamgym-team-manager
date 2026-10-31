@@ -1,6 +1,6 @@
 import { z } from 'zod';
 
-export const CURRENT_SCHEMA_VERSION = 4;
+export const CURRENT_SCHEMA_VERSION = 5;
 export const WORKSPACE_FORMAT = 'teamgym-team-manager';
 export const idSchema = z.string().min(1).max(200).regex(/^[\w:.-]+$/);
 const nameSchema = z.string().min(1).max(200).refine((value) => value.trim().length > 0);
@@ -83,7 +83,19 @@ export type SpotGrade = z.infer<typeof spotGradeSchema>;
 /** Planlagt modtagning er en trænerbeslutning på pladsen; `skillId` er springet, den blev planlagt for. */
 export const plannedSpotSchema = z.strictObject({ grade: spotGradeSchema, skillId: idSchema, elementIndex: z.number().int().nonnegative().max(29).nullable() });
 export type PlannedSpot = z.infer<typeof plannedSpotSchema>;
-export const roundEntrySchema = roundEntryV3Schema.safeExtend({ plannedSpot: plannedSpotSchema.nullable() });
+export const roundEntryV4Schema = roundEntryV3Schema.safeExtend({ plannedSpot: plannedSpotSchema.nullable() });
+/** En ambition er en plads uden gymnast med et planlagt spring; en besat plads har aldrig et planlagt spring. */
+export const roundEntrySchema = z.strictObject({
+  id: idSchema, athleteId: idSchema.nullable(), athleteSkillId: idSchema.nullable(), role: z.enum(['counting', 'extra']),
+  plannedSpot: plannedSpotSchema.nullable(), plannedSkillId: idSchema.nullable(),
+}).superRefine((entry, context) => {
+  if ((entry.athleteId === null) === (entry.plannedSkillId === null)) {
+    context.addIssue({ code: 'custom', message: 'En plads har enten en gymnast eller et planlagt spring.', path: ['plannedSkillId'] });
+  }
+  if (entry.athleteId === null && (entry.athleteSkillId !== null || entry.plannedSpot !== null)) {
+    context.addIssue({ code: 'custom', message: 'En ambition har hverken registrering eller modtagning.', path: ['athleteSkillId'] });
+  }
+});
 export const roundV2Schema = z.strictObject({ id: idSchema, entries: z.array(roundEntryV3Schema).max(100) });
 export const routinePlanV2Schema = z.strictObject({
   id: idSchema, teamId: idSchema, bindingFingerprint: z.string().min(1),
@@ -92,13 +104,19 @@ export const routinePlanV2Schema = z.strictObject({
 });
 export const reserveEntrySchema = z.strictObject({ id: idSchema, athleteId: idSchema, athleteSkillId: idSchema.nullable() });
 export const roundV3Schema = z.strictObject({ id: idSchema, entries: z.array(roundEntryV3Schema).max(100), reserves: z.array(reserveEntrySchema) });
+export const roundV4Schema = z.strictObject({ id: idSchema, entries: z.array(roundEntryV4Schema).max(100), reserves: z.array(reserveEntrySchema) });
 export const roundSchema = z.strictObject({ id: idSchema, entries: z.array(roundEntrySchema).max(100), reserves: z.array(reserveEntrySchema) });
 const scenarioName = nameSchema.refine((value) => value === value.trim());
 export const scenarioV3Schema = z.strictObject({ id: idSchema, name: scenarioName, rounds: z.tuple([roundV3Schema, roundV3Schema, roundV3Schema]) });
+export const scenarioV4Schema = z.strictObject({ id: idSchema, name: scenarioName, rounds: z.tuple([roundV4Schema, roundV4Schema, roundV4Schema]) });
 export const scenarioSchema = z.strictObject({ id: idSchema, name: scenarioName, rounds: z.tuple([roundSchema, roundSchema, roundSchema]) });
 export const routinePlanV3Schema = z.strictObject({
   id: idSchema, teamId: idSchema, bindingFingerprint: z.string().min(1),
   tumbling: z.array(scenarioV3Schema).min(1), trampet: z.array(scenarioV3Schema).min(1),
+});
+export const routinePlanV4Schema = z.strictObject({
+  id: idSchema, teamId: idSchema, bindingFingerprint: z.string().min(1),
+  tumbling: z.array(scenarioV4Schema).min(1), trampet: z.array(scenarioV4Schema).min(1),
 });
 export const routinePlanSchema = z.strictObject({
   id: idSchema, teamId: idSchema, bindingFingerprint: z.string().min(1),
@@ -126,11 +144,14 @@ export const workspaceV2Schema = z.strictObject({ ...workspaceFields, plans: z.a
   athleteSkills: z.array(athleteSkillSchema), inheritanceRelations: z.array(inheritanceRelationSchema), inheritanceExclusions: z.array(inheritanceExclusionSchema) });
 export const workspaceV3Schema = z.strictObject({ ...workspaceFields, plans: z.array(routinePlanV3Schema), schemaVersion: z.literal(3),
   athleteSkills: z.array(athleteSkillSchema), inheritanceRelations: z.array(inheritanceRelationSchema), inheritanceExclusions: z.array(inheritanceExclusionSchema) });
+export const workspaceV4Schema = z.strictObject({ ...workspaceFields, plans: z.array(routinePlanV4Schema), schemaVersion: z.literal(4),
+  athleteSkills: z.array(athleteSkillSchema), inheritanceRelations: z.array(inheritanceRelationSchema), inheritanceExclusions: z.array(inheritanceExclusionSchema) });
 export const workspaceSchema = z.strictObject({ ...workspaceFields, plans: z.array(routinePlanSchema), schemaVersion: z.literal(CURRENT_SCHEMA_VERSION),
   athleteSkills: z.array(athleteSkillSchema), inheritanceRelations: z.array(inheritanceRelationSchema), inheritanceExclusions: z.array(inheritanceExclusionSchema) });
 export type WorkspaceV1 = z.infer<typeof workspaceV1Schema>;
 export type WorkspaceV2 = z.infer<typeof workspaceV2Schema>;
 export type WorkspaceV3 = z.infer<typeof workspaceV3Schema>;
+export type WorkspaceV4 = z.infer<typeof workspaceV4Schema>;
 export type ReserveEntry = z.infer<typeof reserveEntrySchema>;
 export type Scenario = z.infer<typeof scenarioSchema>;
 export type InheritanceRelation = z.infer<typeof inheritanceRelationSchema>;
@@ -140,7 +161,8 @@ export type Team = z.infer<typeof teamSchema>;
 export type Athlete = z.infer<typeof athleteSchema>;
 export type AthleteSkill = z.infer<typeof athleteSkillSchema>;
 export type RoundEntry = z.infer<typeof roundEntrySchema>;
-/** Pladsændringer udleder modtagningen fra den eksisterende plads; kun modtagningskommandoerne sætter den. */
-export type RoundEntryInput = Omit<RoundEntry, 'plannedSpot'> & { plannedSpot?: PlannedSpot | null };
+/** Pladsændringer udleder modtagningen fra den eksisterende plads; kun modtagningskommandoerne sætter den.
+ * `plannedSkillId` udelades for en plads med gymnast. */
+export type RoundEntryInput = Omit<RoundEntry, 'plannedSpot' | 'plannedSkillId'> & { plannedSpot?: PlannedSpot | null; plannedSkillId?: string | null };
 export type Round = z.infer<typeof roundSchema>;
 export type RoutinePlan = z.infer<typeof routinePlanSchema>;

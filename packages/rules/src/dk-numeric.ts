@@ -182,6 +182,12 @@ export function mixQuotaCheck(categories: readonly ('girl' | 'boy' | null)[], re
   return categories.filter((category) => category === 'girl').length === requiredGirls && categories.filter((category) => category === 'boy').length === requiredBoys ? 'known' : 'invalid';
 }
 
+/** Kun de besatte tællende pladser vurderes; ambitionerne kan stadig udfylde kvoten. */
+export function mixQuotaWithAmbitions(filled: readonly ('girl' | 'boy' | null)[], requiredGirls = 3, requiredBoys = 3): EvaluationStatus {
+  if (filled.filter((category) => category === 'girl').length > requiredGirls || filled.filter((category) => category === 'boy').length > requiredBoys) return 'invalid';
+  return 'incomplete';
+}
+
 export const PLANNING_BOUNDARIES = Object.freeze({ flow: 'requires-observation', flowDeduction: null, inventMissingAthleteCDeduction: false } as const);
 
 export function sumDecisions(decisions: readonly NumericDecision[]): NumericDecision {

@@ -203,7 +203,7 @@ export function ReserveList({
               )}
               <div className="reserve-actions">
                 <button
-                  disabled={!writable || !round.entries.length || unavailable}
+                  disabled={!writable || !round.entries.some((entry) => entry.athleteId !== null) || unavailable}
                   onClick={() => {
                     setInserting(reserve);
                     setTargetId('');
@@ -246,8 +246,12 @@ export function ReserveList({
                   Fjern
                 </button>
               </div>
-              {!round.entries.length && (
-                <small>Tilføj først en udførende plads for at sætte en reserve ind.</small>
+              {!round.entries.some((entry) => entry.athleteId !== null) && (
+                <small>
+                  {round.entries.length
+                    ? 'Ambitioner kan ikke erstattes. Besæt en plads for at sætte en reserve ind.'
+                    : 'Tilføj først en udførende plads for at sætte en reserve ind.'}
+                </small>
               )}
             </li>
           );
@@ -302,8 +306,9 @@ export function ReserveList({
             entry={editing.entry ? { ...editing.entry, role: 'counting' } : undefined}
             writable={writable}
             inspect={(id) => leave(() => setAthleteId(id))}
-            submit={({ role: _role, ...entry }) => {
+            submit={({ role: _role, plannedSkillId: _plannedSkillId, ...entry }) => {
               void _role;
+              void _plannedSkillId;
               update(
                 editing.entry
                   ? round.reserves.map((item) => (item.id === entry.id ? entry : item))
@@ -389,11 +394,13 @@ export function ReserveList({
             Gymnast der udgår
             <select autoFocus value={targetId} onChange={(event) => calculate(event.target.value, inserting)}>
               <option value="">Vælg udførende plads</option>
-              {round.entries.map((entry, index) => (
-                <option key={entry.id} value={entry.id}>
-                  {index + 1}. {name(entry.athleteId)} · {entry.role === 'extra' ? 'Ekstra' : 'Tællende'}
-                </option>
-              ))}
+              {round.entries.map((entry, index) =>
+                entry.athleteId === null ? null : (
+                  <option key={entry.id} value={entry.id}>
+                    {index + 1}. {name(entry.athleteId)} · {entry.role === 'extra' ? 'Ekstra' : 'Tællende'}
+                  </option>
+                ),
+              )}
             </select>
           </label>
           {error && <p role="alert">{error}</p>}
