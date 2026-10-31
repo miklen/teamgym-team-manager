@@ -43,7 +43,7 @@
 | Case | Input                                                     | Åben afhængighed                                         |
 | ---- | --------------------------------------------------------- | -------------------------------------------------------- |
 | U01  | Seks ens rondat-flik-serier i en baneomgang               | H-U01: 0,1 eller 0,2 pr. gymnast i elementtillæg         |
-| U02  | Overslag salto hoftebøjet 180°                            | A4-U01: D=1,10 eller 1,20                                |
+| U02  | Overslag salto hoftebøjet 180°                            | A4-U01 afklaret for DK 1.1.0: reglementet gælder, D=1,10 |
 | U03  | Holdomgang fordelt 3/3, 2/2/2 eller 3/2/1                 | H-U03: reference og D/C                                  |
 | U04  | Delvis gentagelse på tværs af skiftende gymnaster         | H-U02: afklaret for DK 1.1.0; holdoptælling, 0,20 × (sum − største omgang) pr. identitet. Ved lighed er omgangsplacering ikke fastlagt. |
 | U05  | Tre blandede redskabsomgange, hver 3 med/3 uden           | H-U05 afklaret for DK 1.1.0: ugyldig omgang, intet fradrag |

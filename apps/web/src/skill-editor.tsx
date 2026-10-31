@@ -603,9 +603,10 @@ export function SkillEditor({
                           : item.status === 'forbidden'
                             ? 'Forbudt i DK'
                             : `Uafklaret ${item.issueId}`}
+                        {item.appliedValue && ` · reglementet gælder (A4 trykt ${item.printedValue.replace('.', ',')})`}
                       </small>
                     </span>
-                    <strong>{item.printedValue.replace('.', ',')}</strong>
+                    <strong>{(item.appliedValue ?? item.printedValue).replace('.', ',')}</strong>
                   </button>
                 ))}
               </div>

@@ -13,7 +13,7 @@ Change: `build-teamgym-team-manager`, schema `spec-driven`, arkiveret 25. oktobe
 ## Implementeret
 
 - Strengt filformat 1, stabile identiteter, medlems-/arkiveringskommandoer, komplette færdigheder, stabilitet og seks omgange pr. hold.
-- Alle 103 springkildeposter og 94 individuelle rytmeposter, eksakt D/C, Q01 bevaret som åbent spor i DK 1.0.0 og afklaret i DK 1.1.0, Q02–Q06/K01/K02, konkrete tillægsvidner, rytmefællesnævnere, eksplicitte regelskift og uforanderlige publicerede pakker.
+- Alle 103 springkildeposter og 94 individuelle rytmeposter, eksakt D/C, Q01–Q06 bevaret som åbne i DK 1.0.0, Q01–Q04 og Q06 afklaret i DK 1.1.0, Q05/K01/K02, konkrete tillægsvidner, rytmefællesnævnere, eksplicitte regelskift og uforanderlige publicerede pakker.
 - Personlig GIS-forbindelse, Picker, verificeret kontoreference, afgrænset IndexedDB-lagring, udløbsmargin, generations-/fanebeskyttelse og hukommelsesfallback.
 - Konsistent Drive-læsning, betinget media-upload, operationshistorik, serialiseret gemning, adskilt snapshot/kladde, konflikt/eksport og genkendelse af mistet svar.
 - Dansk app med hold/kartotek, færdighedsbygger, vurderingsinspektør, springplan, C/D-forklaringer, potentiale i Web Worker, rytmematrix/kompakt visning og reglementside.

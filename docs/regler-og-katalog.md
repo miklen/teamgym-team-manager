@@ -8,7 +8,7 @@ Alle 103 springkildeposter bevares med trykt kode/værdi, kildeposition og statu
 
 Rotation, retning, redskab, kropsposition pr. relevant rotation og skruefordeling bevares. Forskellige kropspositioner med samme laveste D-basis er ikke samme C-identitet. Under tre hele skruer kan fordelingen give forskellige elementer; fra tre hele skruer bruges det samlede skruetal efter A5. En gentagen flik ændrer seriens identitet, men giver ikke mere D.
 
-Byggerens standardforbindelser er afgrænsede kæder som rondat–flik–baglæns salto og kraftspring–forlæns salto. Reglementspoint godkender ikke alle permutationer. Redskab/landing skal passe til forbindelsen; ikke-verificerede kæder kræver en konkret trænerbekræftelse på gymnastens komplette serie. Bekræftelsen kan ikke ophæve trippelforbud, ukendt variant eller Q02.
+Byggerens standardforbindelser er afgrænsede kæder som rondat–flik–baglæns salto og kraftspring–forlæns salto. Reglementspoint godkender ikke alle permutationer. Redskab/landing skal passe til forbindelsen; ikke-verificerede kæder kræver en konkret trænerbekræftelse på gymnastens komplette serie. Bekræftelsen kan ikke ophæve trippelforbud, ukendt variant eller Q02 i DK 1.0.0.
 
 De 94 individuelle rytmefelter har generelle krav, kategori-, række- og cellekrav samt kildehenvisning. Alle 13 A1.1-sider er kontrolleret visuelt under importen; de fire G-felter er bevidst udeladt. DB804-pirouetten og DB804-stemmet bevarer hver sin identitet. Kattespring 540° opfindes ikke. Valgfri landing, afsæt, håndhjælp og startvariant registreres konkret; spejling tilsidesætter ikke et krav om fælles startretning.
 
@@ -36,7 +36,7 @@ Den fulde [regelmatrix](../openspec/changes/archive/2026-10-25-build-teamgym-tea
 | --- | --- | --- |
 | P01–P03 | H 9.1/10.1 og holdomgangskrav | Tre omgange, seks tællende, højst to ekstra først; mix 3+3 blandt tællende. P01–P04. Tom plads er manglende input. |
 | ID01–ID02 | A3/A5 identitet | Samme D er ikke samme identitet; startrolle er ikke nyt element. D03, I01–I04. |
-| D-BASIS | H 9.3.5/10.3.5 og A3/A4 | Basisværdier for familie, retning, position og redskab. D06–D09; P05 afviser trippel; Q02/U01 bevarer to værdier. |
+| D-BASIS | H 9.3.5/10.3.5 og A3/A4 | Basisværdier for familie, retning, position og redskab. D06–D09; P05 afviser trippel; DK 1.1.0: reglementet går forud for appendiks, så H>1 er 1,00 + 0,10 = 1,10 (A4 trykt 1,20). DK 1.0.0: Q02/U01 bevarer to værdier. |
 | D-SKRUE | H 9.3.6/10.3.6 | 0,10 pr. 180° på enkelt/dobbelt; ekstra 0,10 ved 1080° og hver yderligere 360°. T00–T08. |
 | D-BANE | H 9.3.1 | Op til tre forskellige højeste værdier: D01–D05/D13; gentagen flik tæller ikke igen. |
 | D-HOLD | H 9.3.4/10.3.4 | Klar majoritet over halvdelen. 5/1 nulstiller hele den afvigendes D; C09. 3/3, 2/2/2 og 3/2/1 er Q05, U05–U07. |
@@ -60,7 +60,7 @@ Den fulde [regelmatrix](../openspec/changes/archive/2026-10-25-build-teamgym-tea
 
 ## Uafklaret er et resultat
 
-Q01 er fortsat åbent i DK 1.0.0, men trænerens afklaring har gjort eksempelsporet gældende i DK 1.1.0. Q02–Q06 og K01/K02 bevares som versionsdata med kilder. En uafklaret subtotal gør en afhængig total uafklaret, mens andre kendte bidrag vises. Eksempelvis gør A4-konflikten på hoftebøjet overslag-salto 180° D uafklaret, men fjerner ikke sikre C-forhold, som er uafhængige af den konkrete værdi. Ukendt er ikke nul. En tom omgang er ikke et observeret gennemløb.
+Q01 er fortsat åbent i DK 1.0.0, men trænerens afklaring har gjort eksempelsporet gældende i DK 1.1.0. Q02, Q03, Q04 og Q06 er afklaret i DK 1.1.0 og bevaret som åbne i DK 1.0.0; Q05 og K01/K02 bevares som versionsdata med kilder. En uafklaret subtotal gør en afhængig total uafklaret, mens andre kendte bidrag vises. Eksempelvis gør A4-konflikten på hoftebøjet overslag-salto 180° D uafklaret i DK 1.0.0, men fjerner ikke sikre C-forhold, som er uafhængige af den konkrete værdi. Ukendt er ikke nul. En tom omgang er ikke et observeret gennemløb.
 
 Forbudte eller uafklarede spring skaber ingen sikker potentialekandidat. Der er ingen fritekstindstilling, der ændrer officielle satser eller løser et dommerspørgsmål. Ændringer efter publicering kræver en ny pakkeversion; 1.1.0 blev rettet direkte før push efter trænerens afklaring. Fastlåste kildebytes og historiske facit bevares.
 
@@ -70,4 +70,4 @@ De 77 forventninger ligger i referencefilen og oversættes af en semantisk testa
 
 `npm run test:mutations` bruger en isoleret kodekopi og ændrer bevidst juniorgrænsen til 360°, fliks sats, gentagelsesoptællingen i D og C-filtrering på justeret D. Alle fire skal give assertion-fejl i facit-/integrationstestene. Produktionsfilerne ændres ikke af kontrollen.
 
-Visuel kildekontrol, samme agents håndregning, automatiske tests og mutationskontrol er forskellige kontrolformer. Træneren har afklaret Q01 for den lokale 1.1.0-pakke; der er ikke indhentet ekstern dommergodkendelse eller svar på Q02–Q06. En bestået suite beviser ikke, at øvrige uafklarede regler er afklaret.
+Visuel kildekontrol, samme agents håndregning, automatiske tests og mutationskontrol er forskellige kontrolformer. Træneren har afklaret Q01, Q03, Q04 og Q06 for 1.1.0-pakken. Q02 bygger på en dommers mundtlige svar formidlet af træneren; der er ikke registreret skriftlige officielle svar. En bestået suite beviser ikke, at øvrige uafklarede regler er afklaret.

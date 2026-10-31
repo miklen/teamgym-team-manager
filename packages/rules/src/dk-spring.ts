@@ -35,7 +35,8 @@ export function springIdentity(skill: SkillDefinition, corrected = false): strin
   return skill.discipline === 'trampet' ? elementIdentity(skill.jump, corrected) : canonicalJson(skill.elements.map((element) => elementIdentity(element, corrected)));
 }
 
-export function elementDifficulty(input: ElementExecution): NumericDecision {
+/** `formulaForVaultPikeHalfTwist`: DK 1.1.0 følger reglementets formel for H>1 frem for A4-tabellen (Q02). */
+export function elementDifficulty(input: ElementExecution, formulaForVaultPikeHalfTwist = false): NumericDecision {
   const element = normalizeElement(input);
   const fullRotations = element.rotationQuarterTurns / 4;
   const afterHands = element.variant.twistAfterHandsHalfTurns;
@@ -64,7 +65,7 @@ export function elementDifficulty(input: ElementExecution): NumericDecision {
     if (element.family === 'overslag-salto') bases = ['0.90', '1.00', '1.20'];
   }
   if (!bases || (element.direction === 'sideways' && element.family === 'salto')) return uncertain('unresolved', ['UNKNOWN-ELEMENT']);
-  if (element.family === 'overslag-salto' && position === 'pike' && element.twistsHalfTurns === 1) {
+  if (!formulaForVaultPikeHalfTwist && element.family === 'overslag-salto' && position === 'pike' && element.twistsHalfTurns === 1) {
     return uncertain('unresolved', ['Q02'], 0, { table: Fraction.from('1.20'), formula: Fraction.from('1.10') });
   }
   return known(Fraction.from(bases[shapeIndex]!).add(twistIncrement(element.twistsHalfTurns)));
@@ -123,9 +124,9 @@ export interface SpringSkillEvaluation {
   explanation: { countedElementIds: readonly string[]; excludedElementIds: readonly string[]; duplicateCount: number; sources: readonly SourceReference[]; notes: readonly string[] };
 }
 
-export function evaluateSpringSkill(skill: Exclude<SkillDefinition, { discipline: 'rhythm' }>, confirmation: AthleteSkill['connectionConfirmation'] = null, corrected = false): SpringSkillEvaluation {
+export function evaluateSpringSkill(skill: Exclude<SkillDefinition, { discipline: 'rhythm' }>, confirmation: AthleteSkill['connectionConfirmation'] = null, corrected = false, formulaForVaultPikeHalfTwist = false): SpringSkillEvaluation {
   const elements = skill.discipline === 'tumbling' ? skill.elements : [skill.jump];
-  const evaluated = elements.map((element) => ({ identity: elementIdentity(element, corrected), value: elementDifficulty(element) }));
+  const evaluated = elements.map((element) => ({ identity: elementIdentity(element, corrected), value: elementDifficulty(element, formulaForVaultPikeHalfTwist) }));
   const baseStatus = combineStatus(evaluated.map((element) => element.value.status));
   const knownElements = evaluated.filter((element): element is { identity: string; value: NumericDecision & { value: Fraction } } => element.value.value !== null);
   const top = topThreeDifficulty(knownElements.map((element) => ({ identity: element.identity, value: element.value.value })));

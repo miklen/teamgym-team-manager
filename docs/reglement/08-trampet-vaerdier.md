@@ -37,10 +37,10 @@ S. 1: gruppe 1 med springbord, gruppe 2 uden; D-værdi, navn, symbol og K-kode. 
 
 | ID     | Sted og konflikt                                                                                                                   | Præcist spørgsmål / betydning                                                                                                        |
 | ------ | ---------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------ |
-| A4-U01 | S. 1, H>1, overslag salto hoftebøjet 180° står 1,20; basis H>=1,00 plus 0,10 giver 1,10. H 10.3.5-6 støtter sidstnævnte beregning. | Er H>1 en særlig værdi på 1,20 eller en trykfejl, der skal være 1,10? Bevar begge mulige værdier og markér D uafklaret.              |
+| A4-U01 | S. 1, H>1, overslag salto hoftebøjet 180° står 1,20; basis H>=1,00 plus 0,10 giver 1,10. H 10.3.5-6 støtter sidstnævnte beregning. | Er H>1 en særlig værdi på 1,20 eller en trykfejl, der skal være 1,10? Bevar begge mulige værdier og markér D uafklaret i DK 1.0.0. Afklaret for DK 1.1.0: reglementet gælder, D=1,10.              |
 | A4-U02 | S. 1, dobbelt Tsukahara lukket 360° TOO2 står 2,50; TOO=1,70 plus 2×0,20 giver 2,10.                                               | Er TOO2=2,50 en særregel eller fejl? Relevant for fremtidig Liga/ESM A; DK-forbud gør ikke katalogkonflikten irrelevant for genbrug. |
 | A4-U03 | Stjernefodnoterne specificerer lukket/strakt, ikke hoftebøjet Kasamatsu.                                                           | Hvilken identitet og værdi gælder en hoftebøjet Kasamatsu, hvis den skal understøttes? Ingen udvidelse af ækvivalens uden svar.      |
 
 ## Senere validering
 
-Kontrollér H>1 som uafklaret, selv om andre C-egenskaber kan være sikre. Kontrollér at TSU uden efterfølgende skrue ikke opfylder C-skruekravet, selv om indspringet drejer. Test frit dobbelt strakt 1260°: 0,90 + 7×0,10 + 0,10 = 1,70, som trykt. Kataloget er ikke en generisk luftrotationstæller uden redskabskontekst.
+Kontrollér H>1 som uafklaret i DK 1.0.0 og 1,10 i DK 1.1.0, selv om andre C-egenskaber kan være sikre. Kontrollér at TSU uden efterfølgende skrue ikke opfylder C-skruekravet, selv om indspringet drejer. Test frit dobbelt strakt 1260°: 0,90 + 7×0,10 + 0,10 = 1,70, som trykt. Kataloget er ikke en generisk luftrotationstæller uden redskabskontekst.

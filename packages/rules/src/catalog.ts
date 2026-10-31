@@ -27,6 +27,8 @@ export interface SpringCatalogEntry {
   name: string;
   officialCode: string;
   printedValue: string;
+  /** Pakkens gældende D, når en afklaring afviger fra den trykte kildeværdi. */
+  appliedValue?: string;
   status: 'allowed' | 'forbidden' | 'unresolved';
   issueId: string | null;
   source: SourceReference;
@@ -67,6 +69,10 @@ export const DK_SPRING_CATALOG: readonly SpringCatalogEntry[] = freezeData(sprin
   startRole: row.name!.endsWith(' start'),
 })));
 if (DK_SPRING_CATALOG.length !== 103 || new Set(DK_SPRING_CATALOG.map((item) => item.referenceId)).size !== 103) throw new Error('Ufuldstændig springimport.');
+
+/** DK 1.1.0: Q02 afklaret 31. oktober 2026 — ved uoverensstemmelse gælder reglementets formel frem for A4-tabellen (H>1 = 1,10). */
+export const DK_SPRING_CATALOG_V2: readonly SpringCatalogEntry[] = freezeData(DK_SPRING_CATALOG.map((entry) =>
+  entry.issueId === 'Q02' ? { ...structuredClone(entry), status: 'allowed' as const, issueId: null, appliedValue: '1.10' } : structuredClone(entry)));
 
 export function rawElementIdentity(execution: ElementExecution): string { return canonicalJson(execution); }
 

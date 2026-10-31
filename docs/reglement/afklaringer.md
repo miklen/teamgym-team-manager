@@ -37,6 +37,8 @@ Det ser derfor ud til, at eksemplet først tæller fra element nummer to. Det st
 
 ### Q02 · Hvad er værdien af overslag-salto hoftebøjet med halv skrue?
 
+**Afklaret for DK 1.1.0 den 31. oktober 2026:** En dommer har over for træneren afklaret, at hovedreglementet gælder, når et appendiks og reglementet ikke stemmer overens. Værdien beregnes derfor efter reglementets formel: basis 1,00 + 0,10 for halv skrue = **1,10**. A4-tabellens trykte 1,20 er bevaret som kildeværdi, men bruges ikke i DK 1.1.0. Svaret er formidlet mundtligt via træneren og er ikke registreret som skriftligt officielt svar. Den oprindelige problemformulering nedenfor er bevaret som baggrund.
+
 **Problemet:** Trampettabellen angiver springet til **1,20**. Men tabellen og hovedreglementet angiver samtidig basisværdien uden skrue til **1,00** og tillægget for en halv skrue til **0,10**. Regnet efter den formel bliver værdien **1,10**.
 
 **Spørgsmålet, vi skal have svar på:**
@@ -46,6 +48,8 @@ Det ser derfor ud til, at eksemplet først tæller fra element nummer to. Det st
 **Betydning:** Appen kan ellers give dette spring en forkert D-værdi og sammenligne det forkert med andre spring.
 
 **Kilde:** Appendix A4, side 1, springkoden H>1; hovedreglementet punkt 10.3.5-6. Reference **A4-U01** i [kildeopslaget](08-trampet-vaerdier.md).
+
+**I appen:** Q02 vises kun i DK 1.0.0. DK 1.1.0 bruger 1,10.
 
 ### Q03 · Hvem får fradrag, når kun nogle gymnaster gentager et spring?
 
@@ -273,4 +277,4 @@ Disse punkter er bevaret, så de ikke bliver glemt. De behøver ikke alle være 
 4. Gem svar, afsender, dato, original dokumentation og række/sæson sammen med punktets reference. Bevar den oprindelige konflikt.
 5. Lav derefter et uafhængigt regneeksempel, som implementeringen kan testes imod.
 
-**Status:** Der er endnu ikke indhentet eller registreret officielle svar i denne liste. Q01, Q03, Q04 og Q06 er afklaret af træneren for DK 1.1.0; det er trænerens beslutninger, ikke officielle svar. Der er ikke sendt spørgsmål på brugerens vegne. Detaljerne og de oprindelige referencer er bevaret i kildeopslagene. Denne omskrivning gør spørgsmålene lettere at læse; den afgør ingen sportslige fortolkninger og ændrer ingen appregler eller fælles data.
+**Status:** Der er endnu ikke indhentet eller registreret officielle svar i denne liste. Q01, Q03, Q04 og Q06 er afklaret af træneren for DK 1.1.0; det er trænerens beslutninger, ikke officielle svar. Q02 er afklaret for DK 1.1.0 ud fra en dommers mundtlige svar formidlet af træneren: reglementet går forud for appendiks. Der er ikke sendt spørgsmål på brugerens vegne. Detaljerne og de oprindelige referencer er bevaret i kildeopslagene. Denne omskrivning gør spørgsmålene lettere at læse; den afgør ingen sportslige fortolkninger og ændrer ingen appregler eller fælles data.
