@@ -3,9 +3,7 @@
 ## Purpose
 
 Lader trænerne sammensætte hele holdets konkurrenceopstilling med tre baneomgange og tre trampetomgange og se konsekvenserne, mens de arbejder.
-
 ## Requirements
-
 ### Requirement: Vedvarende scenarier pr. hold og disciplin
 Systemet SHALL oprette mindst ét navngivet scenarie for bane og mindst ét for trampet på hvert hold. Hvert scenarie SHALL indeholde præcis tre omgange, som kan redigeres, gemmes og genåbnes. Scenariernes antal SHALL kunne udvides efter trænerens behov uden en produktgrænse på eksempelvis A, B og C. Scenarier for de to discipliner SHALL være uafhængige. Alle scenarier SHALL være ligeværdige; systemet MUST NOT kræve udpegning eller aktivering af en officiel konkurrenceplan. Ufuldstændige opstillinger SHALL kunne gemmes som kladder med tydelig angivelse af mangler.
 
@@ -18,7 +16,7 @@ Systemet SHALL oprette mindst ét navngivet scenarie for bane og mindst ét for 
 - **THEN** har det nye banescenarie tre omgange, og trampettens to scenarier er uændrede.
 
 ### Requirement: Gymnaster og kendte færdigheder vælges sammen
-En omgangsplads SHALL vælge et aktivt holdmedlem og en af gymnastens registrerede anvendelige færdigheder i den pågældende disciplin. Hver valgmulighed SHALL før valg vise præcist springnavn, relevant saltoretning, springets egen D under holdets regelpakke og gymnastens effektive sikkerhed eller Ikke vurderet. Afledte registreringer SHALL kunne vælges på samme grundlag som egne, når de er aktive og anvendelige. Systemet MUST forhindre samme gymnast på flere pladser samlet blandt deltagere og reserver i samme omgang i samme scenarie, men SHALL tillade deltagelse og reservestatus i flere forskellige omgange og scenarier og forskellig gymnastbesætning mellem omgange.
+En omgangsplads SHALL enten vælge et aktivt holdmedlem og en af gymnastens registrerede anvendelige færdigheder i den pågældende disciplin eller være en ambition med et valgt spring og uden gymnast efter kravene til ambitioner. Hver valgmulighed for en gymnast SHALL før valg vise præcist springnavn, relevant saltoretning, springets egen D under holdets regelpakke og gymnastens effektive sikkerhed eller Ikke vurderet. Afledte registreringer SHALL kunne vælges på samme grundlag som egne, når de er aktive og anvendelige. Systemet MUST forhindre samme gymnast på flere pladser samlet blandt deltagere og reserver i samme omgang i samme scenarie, men SHALL tillade deltagelse og reservestatus i flere forskellige omgange og scenarier og forskellig gymnastbesætning mellem omgange. Ambitioner uden gymnast SHALL ikke indgå i denne unikhedskontrol.
 
 #### Scenario: Samme gymnast i flere omgange
 - **WHEN** en gymnast vælges i baneomgang 1 og 3
@@ -35,6 +33,10 @@ En omgangsplads SHALL vælge et aktivt holdmedlem og en af gymnastens registrere
 #### Scenario: Samme gymnast i alternative planer
 - **WHEN** en gymnast deltager i Plan A og er reserve i samme omgangsnummer i Plan B
 - **THEN** er begge valg tilladt og uafhængige.
+
+#### Scenario: Flere ambitioner med samme spring
+- **WHEN** træneren opretter to ambitioner med samme spring i samme omgang
+- **THEN** er det tilladt, fordi ingen gymnast endnu er valgt.
 
 ### Requirement: Holdomgang er første omgang
 Der SHALL være præcis én holdomgang i hvert scenarie, placeret først. Valg af en anden omgang som holdomgang SHALL tilbyde flytning til førstepladsen med bevarelse af hele omgangens data, inklusive reservelisten, og genberegning af alle konsekvenser i det pågældende scenarie. Andre scenarier MUST NOT ændres. Systemet MUST NOT godkende en holdomgang på anden eller tredje konkurrenceplads.
@@ -77,14 +79,18 @@ Gymnaster SHALL kunne flyttes i en omgang med mus, berøring og tastatur-/knapba
 - **THEN** vises resultatet ikke som Plan B's mulighed, og det kan ikke anvendes på Plan B.
 
 ### Requirement: Ufuldstændighed er forskellig fra fradrag
-En tom plads eller et manglende valg SHALL vises som en planlægningsmangel og MUST NOT automatisk fortolkes som et faktisk gennemløb, et bestemt udførelsesfradrag eller en fuld godkendt opstilling. Kendte delresultater SHALL kunne vises med tydeligt beregningsgrundlag.
+En tom plads, et manglende valg eller en ambition uden gymnast SHALL vises som en planlægningsmangel og MUST NOT automatisk fortolkes som et faktisk gennemløb, et bestemt udførelsesfradrag eller en fuld godkendt opstilling. Kendte delresultater SHALL kunne vises med tydeligt beregningsgrundlag. En ambition SHALL vises som Mangler gymnast, mens dens spring indgår i D og C som planlagt spring.
 
 #### Scenario: Fem udfyldte pladser
 - **WHEN** kun fem tællende gymnaster er valgt
 - **THEN** viser appen de kendte værdier og den manglende plads og bruger ikke en skjult antagelse om den sjette gymnasts udførelse.
 
+#### Scenario: Fem besatte og én ambition
+- **WHEN** en omgang har fem besatte tællende pladser og én tællende ambition med kendt D
+- **THEN** viser omgangen den samlede D for alle seks spring og status Mangler gymnast for én plads, uden at omgangen fremstår som gennemført.
+
 ### Requirement: Søgbart visuelt springvalg
-Springvalget på en omgangsplads SHALL vise registrerede muligheder i adskilte rækker med navn, saltoretning, D og sikkerhed som særskilte visuelle oplysninger. Desktop SHALL bruge faste sammenlignelige kolonner, og mobil SHALL bevare oplysningerne uden vandret overflow. Sikkerhed SHALL bruge fem trin og en talværdi med tilgængelig forklaring ved Ikke vurderet. Listen SHALL kunne søges, betjenes med pile/Home/End/Enter og lukkes med Escape uden at lukke omgangspladsens dialog. Valg SHALL bevares ved lukning af listen, og et gymnastskift SHALL nulstille springvalget. Vælg senere SHALL tillade en plads uden spring. Planen MUST NOT ændres før Opdater.
+Springvalget på en omgangsplads SHALL vise mulighederne i adskilte rækker med navn, saltoretning, D og sikkerhed som særskilte visuelle oplysninger. For en gymnast er mulighederne de registrerede, og for en ambition er de disciplinens springkatalog med Ingen gymnast i stedet for sikkerhed. Desktop SHALL bruge faste sammenlignelige kolonner, og mobil SHALL bevare oplysningerne uden vandret overflow. Sikkerhed SHALL bruge fem trin og en talværdi med tilgængelig forklaring ved Ikke vurderet. Listen SHALL kunne søges, betjenes med pile/Home/End/Enter og lukkes med Escape uden at lukke omgangspladsens dialog. Valg SHALL bevares ved lukning af listen, og et skift af gymnast, herunder til eller fra Ingen gymnast endnu, SHALL nulstille springvalget. Vælg senere SHALL tillade en plads med gymnast uden spring. Planen MUST NOT ændres før Opdater.
 
 #### Scenario: Søg og vælg med tastatur
 - **WHEN** træneren søger en registreret variant, flytter det aktive valg og trykker Enter
@@ -93,6 +99,10 @@ Springvalget på en omgangsplads SHALL vise registrerede muligheder i adskilte r
 #### Scenario: Skift gymnast og annullér
 - **WHEN** træneren vælger et spring, skifter til en anden gymnast og lukker dialogen
 - **THEN** viser listen kun den nye gymnasts anvendelige spring, det tidligere valg er nulstillet, og den gemte plan er uændret.
+
+#### Scenario: Skift til Ingen gymnast endnu
+- **WHEN** træneren har valgt en gymnasts spring og skifter til Ingen gymnast endnu
+- **THEN** nulstilles springvalget, og listen viser disciplinens katalog.
 
 ### Requirement: Opret, navngiv og omdøb scenarier
 Træneren SHALL kunne oprette et tomt scenarie og omdøbe et eksisterende. Et nyt scenarie SHALL have tre tomme omgange og tomme reservelister og åbnes efter oprettelse. Navne SHALL trimmes, indeholde 1–200 tegn efter trimning og være entydige uden forskel på store og små bogstaver inden for samme holds disciplin. Samme navn SHALL være tilladt i andre discipliner og på andre hold. Ugyldige navne SHALL give fejl ved feltet uden delvis oprettelse eller tab af indtastning. Nye scenarier SHALL placeres efter det scenarie, handlingen startede fra. Annullering MUST NOT ændre data.
@@ -158,7 +168,7 @@ Med Sæt ind SHALL træneren vælge, hvilken af omgangens udførende gymnaster r
 - **THEN** anvendes forhåndsvisningen ikke, begge aktuelle lister bevares, og ved forældet grundlag tilbydes en ny beregning.
 
 ### Requirement: Konkrete forslag ændrer kun deres eget scenarie
-Et potentialeforslag SHALL vise målscenariet og være bundet til den opstilling og det arbejdsrumsgrundlag, det blev beregnet for. Et forældet forslag eller et forslag til et andet scenarie MUST NOT kunne anvendes som ændring af den viste plan. Anvendelse SHALL kun ændre målscenariets udførende opstillinger og bevare andre scenarier og fælles registreringer. Reserver SHALL bevares, bortset fra at en reserve, som forslaget gør udførende i samme omgang, SHALL fjernes fra netop den reserveliste med synlig angivelse i forhåndsvisningen. Udgående deltagere MUST NOT automatisk blive reserver.
+Et potentialeforslag SHALL vise målscenariet og være bundet til den opstilling og det arbejdsrumsgrundlag, det blev beregnet for. Et forældet forslag eller et forslag til et andet scenarie MUST NOT kunne anvendes som ændring af den viste plan. Anvendelse SHALL kun ændre målscenariets udførende opstillinger og bevare andre scenarier og fælles registreringer. Reserver SHALL bevares, bortset fra at en reserve, som forslaget gør udførende i samme omgang, SHALL fjernes fra netop den reserveliste med synlig angivelse i forhåndsvisningen. Udgående deltagere MUST NOT automatisk blive reserver. Ambitionspladser SHALL behandles som faste; et forslag MUST NOT besætte, ændre eller fjerne dem, og et forslag, der ville udskifte en omgang med ambitioner, MUST NOT tilbydes. Når det udelukker forslag, SHALL årsagen vises.
 
 #### Scenario: Forslag bruger en reserve som udførende
 - **WHEN** et konkret forslag til Plan B gør en af anden omgangs reserver til tællende deltager
@@ -167,6 +177,10 @@ Et potentialeforslag SHALL vise målscenariet og være bundet til den opstilling
 #### Scenario: Planen ændres efter forslag
 - **WHEN** træneren redigerer arbejdsrummet efter at have åbnet et forslag
 - **THEN** afvises anvendelsen med besked om at beregne igen, uden at overskrive de nyere ændringer.
+
+#### Scenario: Omgang med ambitioner
+- **WHEN** et tillæg kun kan opnås ved at udskifte en omgang, der indeholder en ambition
+- **THEN** tilbydes intet konkret forslag, og tillægget forklarer, at forslag ikke udskifter omgange med ambitioner.
 
 ### Requirement: Springplanen giver overblik før opstillingen
 For et hold med installeret regelpakke SHALL springplanen vise en sammenklappelig, kompakt guide for den valgte disciplin og det valgte scenarie før de tre omgange, også når alle omgange er tomme. Den lukkede guide SHALL give et kort statusoverblik; når den åbnes, SHALL den adskille planens rammer og kompositionskrav fra tillæg og vise deres aktuelle tilstand uden at kræve gennemlæsning af den fulde C-analyse. En tom eller delvis plan MUST NOT markeres som et gennemført forsøg med faktisk fradrag. Guidens tilstande SHALL afledes af den aktuelle regelbinding og plan; træneren MUST NOT skulle gemme særskilte flueben.
@@ -218,3 +232,4 @@ Et konkret forslag, som ændrer springet eller gymnasten på en plads med planla
 #### Scenario: Forslag ændrer modtaget spring
 - **WHEN** et potentialeforslag udskifter springet på en plads med planlagt modtagning
 - **THEN** viser forhåndsvisningen, at modtagningen fjernes, og efter anvendelse har pladsen ingen modtagning.
+

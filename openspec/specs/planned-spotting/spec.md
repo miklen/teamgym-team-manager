@@ -3,11 +3,9 @@
 ## Purpose
 
 Lader trænerne planlægge modtagning på en omgangsplads med regelbundne konsekvenser for D og planlagte E-fradrag og vise Maks. mulig karakter.
-
 ## Requirements
-
 ### Requirement: Én planlagt modtagning pr. omgangsplads
-Træneren SHALL kunne registrere højst én planlagt modtagning på en deltagerplads i en bane- eller trampetomgang, når pladsen har et valgt spring. Registreringen SHALL være en bevidst konkurrencebeslutning for netop den gymnast og netop det spring på pladsen. Den MUST NOT udledes af, foreslås af eller ændre gymnastens sikkerhed, og den MUST NOT gemmes på færdighedsregistreringen. Reservepladser og rytme SHALL ikke have planlagt modtagning. Træneren SHALL kunne fjerne en modtagning igen.
+Træneren SHALL kunne registrere højst én planlagt modtagning på en deltagerplads i en bane- eller trampetomgang, når pladsen har en gymnast og et valgt spring. Registreringen SHALL være en bevidst konkurrencebeslutning for netop den gymnast og netop det spring på pladsen. Den MUST NOT udledes af, foreslås af eller ændre gymnastens sikkerhed, og den MUST NOT gemmes på færdighedsregistreringen. Reservepladser, ambitioner uden gymnast og rytme SHALL ikke have planlagt modtagning. Træneren SHALL kunne fjerne en modtagning igen.
 
 #### Scenario: Modtagning trods høj sikkerhed
 - **WHEN** træneren planlægger modtagning for en gymnast med sikkerhed 5 på det valgte spring
@@ -16,6 +14,10 @@ Træneren SHALL kunne registrere højst én planlagt modtagning på en deltagerp
 #### Scenario: Plads uden spring
 - **WHEN** en plads ikke har et valgt spring
 - **THEN** kan der ikke registreres en modtagning, og en fil med en modtagning på en sådan plads afvises som ugyldig.
+
+#### Scenario: Ambition uden gymnast
+- **WHEN** en plads er en ambition uden gymnast
+- **THEN** tilbydes ingen modtagning, og en fil med en modtagning på en ambition afvises som ugyldig.
 
 ### Requirement: Tre grader med regelbundne konsekvenser
 Modtagningen SHALL have netop én af graderne Let støtte, Hjælp til udførelse og Kraftig hjælp i svæv/landing. Holdets regelpakke SHALL fastlægge beløb og kilder. For DK-pakkerne SHALL Let støtte give et planlagt E-fradrag på 0,5 og Hjælp til udførelse et planlagt E-fradrag på 1,0 (A6-07). Kraftig hjælp SHALL give et planlagt E-fradrag på 1,0 og halvere D for det modtagne element (H 9.3.3/10.3.3). E-fradraget og D-halveringen SHALL vurderes særskilt. Hver grad SHALL vise en kort forklaring med kilde. Forklaringen SHALL oplyse, at planen forudsætter landing med fødderne først, og at en mislykket landing er en observation uden for planen. En regelpakke uden kendte satser SHALL vise konsekvensen som uafklaret og MUST NOT opfinde et beløb.
@@ -71,3 +73,4 @@ En planlagt modtagning SHALL nulstilles, når pladsens gymnast eller valgte spri
 #### Scenario: Rækkefølge ændres
 - **WHEN** træneren flytter en plads med planlagt modtagning til en anden position i omgangen
 - **THEN** bevares modtagningen uændret.
+

@@ -3,9 +3,7 @@
 ## Purpose
 
 Forklarer holdets planlagte komposition, allerede opnåede og mulige tillæg samt fradrag på tværs af de tre omgange i hver springdisciplin.
-
 ## Requirements
-
 ### Requirement: Forklarlig C-oversigt pr. disciplin
 Systemet SHALL vise grundværdi, hvert tillæg, hvert fradrag, rå sum og C efter regelpakkens nedre grænse. Hvert forhold SHALL vise beløb, regelhenvisning, berørte omgange/gymnaster og status som opfyldt, delvist opfyldt, ikke opfyldt, ikke vurderbart eller uafklaret. DK-bane SHALL starte fra 0,00 og DK-trampet fra 1,00; C SHALL ikke være negativ. Panelværdien SHALL nedrundes til nærmeste 0,005 efter pkt. 4.6 efter rå beregning og nedre grænse. Et ældre generelt loft på kompositionsfradrag MUST NOT genindføres i den fastlåste v1.4-pakke.
 
@@ -172,3 +170,23 @@ Guiden SHALL være sammenklappet ved åbning af springplanen. Den lukkede visnin
 #### Scenario: Synlig holdprofil uden gentaget scenarienavn
 - **WHEN** et kendt DK-hold åbner sin springplan på computer eller mobil
 - **THEN** står scenariets navn én gang på den valgte fane, mens holdprofilens navn og deltagergrænser står på en kort linje under fanerne, også når kompositionsguiden er lukket.
+
+### Requirement: Ambitioner indgår i C som planlagte spring
+Ambitionspladser SHALL indgå i kompositionskrav, tillæg, fradrag og guiden som planlagte spring med deres springidentitet og D. Der vises ingen opdeling mellem besatte pladser og ambitioner. Mixfordelingen SHALL kun vurderes på besatte pladser. Når den stadig kan opfyldes af ambitionspladserne, SHALL kravet vises som ufuldstændigt med henvisning til de ubesatte pladser og MUST NOT forhindre beregning af C. En allerede brudt fordeling SHALL fortsat være ugyldig. Hvis et krav afhænger af, hvilke gymnaster der tager ambitionerne, og udfaldene er forskellige, SHALL resultatet vises som ufuldstændigt med de mulige værdier. En omgang med ambitioner MUST NOT markeres som gennemført.
+
+#### Scenario: Tillæg med ambitioner
+- **WHEN** alle tre baneomgange har seks tællende spring, hvoraf fire er ambitioner, og sprungene opfylder et elementtillæg
+- **THEN** vises tillægget som opnået i planen, og omgangene viser Mangler gymnast for ambitionerne.
+
+#### Scenario: Mix afhænger af ambitioner
+- **WHEN** et mixhold kræver tre piger og tre drenge, og en omgang har to piger, to drenge og to ambitioner
+- **THEN** beregnes C, og mixkravet vises som ufuldstændigt med henvisning til de to ubesatte pladser.
+
+#### Scenario: Brudt mix
+- **WHEN** de besatte tællende pladser allerede har fire piger på et hold, der kræver tre piger og tre drenge
+- **THEN** er mixkravet ugyldigt, uanset ambitionerne.
+
+#### Scenario: Gentagelse afhænger af gymnaster
+- **WHEN** gentagelsesreglen afhænger af, om de samme gymnaster udfører et spring, og en af de berørte pladser er en ambition, som giver forskellige udfald
+- **THEN** vises fradraget som ufuldstændigt med begge mulige værdier.
+

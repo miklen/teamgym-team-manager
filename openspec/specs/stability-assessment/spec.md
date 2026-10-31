@@ -3,9 +3,7 @@
 ## Purpose
 
 Gør trænernes vurdering af den enkelte gymnasts konkrete færdighed sammenlignelig og synlig i springomgange og rytmefællesnævnere uden falsk statistisk præcision.
-
 ## Requirements
-
 ### Requirement: Fælles skala for spring og rytme
 Systemet SHALL bruge én fælles stabilitetsvurdering med heltal 1–5 på komplette baneserier, trampetspring og rytmemomenter; i brugerfladen SHALL den betegnes Sikkerhed. Stabilitet og Sikkerhed MUST NOT være særskilte værdier. Skalaen SHALL forklares med disse fulde betegnelser:
 
@@ -111,3 +109,11 @@ Ved overgang fra en fil uden arveophav SHALL alle eksisterende vurderinger behan
 #### Scenario: Ældre ens vurderinger
 - **WHEN** en format 1-fil indeholder rondat-flik og en helskrueserie med samme sikkerhed og dato
 - **THEN** bevares begge som egne vurderinger, indtil træneren bevidst vælger arv for den korte serie.
+
+### Requirement: Ambitioner er ubesatte pladser i sikkerhedsaggregatet
+En ambition SHALL i omgangens sikkerhedsaggregat tælle som en krævet, men ikke udfyldt plads. Den MUST NOT bidrage med en vurdering, og den MUST NOT få en antaget sikkerhed. Aggregatet SHALL markeres som ufuldstændigt, så længe en tællende ambition er ubesat.
+
+#### Scenario: Fem besatte og én ambition
+- **WHEN** en omgang har fem tællende besatte pladser vurderet 5 og én tællende ambition
+- **THEN** vises 5,0/5 blandt de fem vurderede, minimum 5, 5/6 vurderet og en ufuldstændig tilstand.
+
