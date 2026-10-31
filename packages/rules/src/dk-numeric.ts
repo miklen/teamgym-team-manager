@@ -1,5 +1,7 @@
 import { Fraction, sumFractions } from '@teamgym/domain';
 import type { EvaluationStatus } from '@teamgym/domain';
+import { DK_SPRING_RULES, minTwistHalfTurns } from './spring-rules';
+import type { TwistBonusRule } from './spring-rules';
 
 export interface NumericDecision {
   status: EvaluationStatus;
@@ -52,34 +54,34 @@ export function bestBonus(qualifyingCounts: readonly number[], required = 6, rat
   return Fraction.from(rate).multiply(Math.max(0, ...qualifyingCounts));
 }
 
-export function pureDirectionDeduction(forward: readonly number[], backward: readonly number[], required = 6): NumericDecision {
+export function pureDirectionDeduction(forward: readonly number[], backward: readonly number[], required = 6, rate = '0.2'): NumericDecision {
   if (forward.length !== 3 || backward.length !== 3) throw new Error('Retning kræver tre omgange.');
   counts(forward, required); counts(backward, required);
-  return known(new Fraction((required - Math.max(...forward)) + (required - Math.max(...backward)), 5));
+  return known(Fraction.from(rate).multiply((required - Math.max(...forward)) + (required - Math.max(...backward))));
 }
 
-export function apparatusDeduction(vault: readonly number[], free: readonly number[], required = 6): NumericDecision {
+export function apparatusDeduction(vault: readonly number[], free: readonly number[], required = 6, rate = '0.2'): NumericDecision {
   if (vault.length !== 3 || free.length !== 3) throw new Error('Redskabskrav kræver tre omgange.');
   counts(vault, required); counts(free, required);
   if (vault.some((value, index) => value + free[index]! !== required)) return uncertain('incomplete');
   if (vault.includes(required) && free.includes(required)) return known(0);
-  if (vault.every((value) => value === 0) || free.every((value) => value === 0)) return known(new Fraction(required, 5));
+  if (vault.every((value) => value === 0) || free.every((value) => value === 0)) return known(Fraction.from(rate).multiply(required));
   return uncertain('unresolved', ['Q04']);
 }
 
-export function repetitionDeduction(identityCounts: readonly number[], sameAthletes: boolean, required = 6): NumericDecision {
+export function repetitionDeduction(identityCounts: readonly number[], sameAthletes: boolean, required = 6, rate = '0.2'): NumericDecision {
   counts(identityCounts, required);
   const used = identityCounts.filter((count) => count > 0);
   if (used.length <= 1) return known(0);
-  if (sameAthletes && used.every((count) => count === required)) return known(new Fraction(required * (used.length - 1), 5));
+  if (sameAthletes && used.every((count) => count === required)) return known(Fraction.from(rate).multiply(required * (used.length - 1)));
   return uncertain('unresolved', ['Q03']);
 }
 
 /** DK 1.1.0: Gentagelser tælles på holdets præcise springidentitet på tværs af omgange. */
-export function resolvedRepetitionDeduction(identityCounts: readonly number[], required = 6): NumericDecision {
+export function resolvedRepetitionDeduction(identityCounts: readonly number[], required = 6, rate = '0.2'): NumericDecision {
   if (identityCounts.length !== 3) throw new Error('Gentagelse kræver tre omgange.');
   counts(identityCounts, required);
-  return known(new Fraction(identityCounts.reduce((sum, count) => sum + count, 0) - Math.max(...identityCounts), 5));
+  return known(Fraction.from(rate).multiply(identityCounts.reduce((sum, count) => sum + count, 0) - Math.max(...identityCounts)));
 }
 
 export function holdReference(identityCounts: readonly number[], required = 6): { status: EvaluationStatus; index: number | null; issues: readonly string[] } {
@@ -91,7 +93,7 @@ export function holdReference(identityCounts: readonly number[], required = 6): 
     issues: identityCounts.reduce((sum, count) => sum + count, 0) < required ? [] : ['Q05'] };
 }
 
-export function holdRound(identities: readonly (string | null)[], values: readonly (Fraction | null)[], required = 6) {
+export function holdRound(identities: readonly (string | null)[], values: readonly (Fraction | null)[], required = 6, rate = '0.2') {
   const groups = [...new Set(identities.filter((identity): identity is string => identity !== null))];
   const reference = holdReference(groups.map((identity) => identities.filter((item) => item === identity).length), required);
   if (reference.index === null) return { ...reference, adjusted: values.map(() => null), sum: uncertain(reference.status === 'known' ? 'incomplete' : reference.status, reference.issues), deduction: uncertain(reference.status === 'known' ? 'incomplete' : reference.status, reference.issues), referenceIdentity: null };
@@ -102,7 +104,7 @@ export function holdRound(identities: readonly (string | null)[], values: readon
   const complete = identityComplete && adjusted.every((value) => value !== null);
   const subtotal = sumFractions(adjusted.filter((value): value is Fraction => value !== null));
   return { ...reference, adjusted, sum: complete ? known(subtotal) : uncertain('incomplete', [], subtotal),
-    deduction: identityComplete ? known(new Fraction(deviating, 5)) : uncertain('incomplete', [], new Fraction(deviating, 5)), referenceIdentity };
+    deduction: identityComplete ? known(Fraction.from(rate).multiply(deviating)) : uncertain('incomplete', [], Fraction.from(rate).multiply(deviating)), referenceIdentity };
 }
 
 export function orderCheck(rotations: readonly (number | null)[], difficulties: readonly (Fraction | null)[], roundNumber: number): OrderResult {
@@ -118,7 +120,7 @@ export function orderCheck(rotations: readonly (number | null)[], difficulties: 
 /** DK 1.1.0: Hvert tællende spring, der står efter en højere kategori eller et sværere spring i samme kategori, giver ét fradrag. */
 export interface OrderResult { compliant: boolean | null; applies: boolean; deduction: NumericDecision; faultIndexes: readonly number[] }
 
-export function resolvedOrderCheck(categories: readonly (number | null)[], difficulties: readonly NumericDecision[], roundNumber: number): OrderResult {
+export function resolvedOrderCheck(categories: readonly (number | null)[], difficulties: readonly NumericDecision[], roundNumber: number, rate = '0.1'): OrderResult {
   if (categories.length !== difficulties.length) throw new Error('Rækkefølgen kræver én kategori og én sværhed pr. spring.');
   if (roundNumber === 1) return { compliant: true, applies: false, deduction: known(0), faultIndexes: [] };
   const faultIndexes: number[] = [];
@@ -132,7 +134,7 @@ export function resolvedOrderCheck(categories: readonly (number | null)[], diffi
     });
     if (fault) faultIndexes.push(index);
   }
-  const amount = new Fraction(faultIndexes.length, 10);
+  const amount = Fraction.from(rate).multiply(faultIndexes.length);
   if (unknown.length) {
     const status = combineStatus(unknown.map((decision) => decision.status === 'known' ? 'incomplete' : decision.status));
     return { compliant: faultIndexes.length ? false : null, applies: true, faultIndexes,
@@ -156,25 +158,31 @@ export function elementBonusForAthlete(distinctCount: number): NumericDecision {
 }
 
 /** Afklaret DK 1.1.0: første forskellige element giver intet tillæg. */
-export function resolvedElementBonus(distinctCountsByRound: readonly (readonly number[])[], complete: boolean): NumericDecision {
+export function resolvedElementBonus(distinctCountsByRound: readonly (readonly number[])[], complete: boolean, rate = '0.1'): NumericDecision {
   if (distinctCountsByRound.length !== 3) throw new Error('Elementtillæg kræver tre omgange.');
   for (const round of distinctCountsByRound) counts(round, 30);
-  const amount = sumFractions(distinctCountsByRound.flat().map((distinctCount) => new Fraction(Math.max(0, distinctCount - 1), 10))).divide(3);
+  const amount = sumFractions(distinctCountsByRound.flat().map((distinctCount) => Fraction.from(rate).multiply(Math.max(0, distinctCount - 1)))).divide(3);
   return complete ? known(amount) : uncertain('incomplete', [], amount);
 }
 
-export function trampetTwistQualifies(ageGroup: string, rotations: number, halfTurnsAfterHands: number, family = 'salto'): boolean {
-  if (!['U14', 'junior', 'senior'].includes(ageGroup)) throw new Error('Ukendt DK-aldersprofil.');
+export function trampetTwistQualifies(ageGroup: string, rotations: number, halfTurnsAfterHands: number, family = 'salto', rule: TwistBonusRule = DK_SPRING_RULES.trampet.twistBonus): boolean {
+  const single = minTwistHalfTurns(rule, ageGroup);
   if (![1, 2].includes(rotations)) return false;
-  if (family === 'tsukahara') return halfTurnsAfterHands >= 2;
-  return rotations === 1 ? halfTurnsAfterHands >= (ageGroup === 'U14' ? 2 : 3) : rotations === 2 && halfTurnsAfterHands >= 1;
+  if (family === 'tsukahara' && rule.tsukaharaMinHalfTurns !== null) return halfTurnsAfterHands >= rule.tsukaharaMinHalfTurns;
+  return rotations === 1 ? halfTurnsAfterHands >= single : rule.doubleMinHalfTurns !== null && halfTurnsAfterHands >= rule.doubleMinHalfTurns;
 }
 
-export function participantStructure(roles: readonly ('counting' | 'extra')[], counting = 6, extra = 2) {
+/** Banens skruetillæg: mindst ét element med profilens mindste skrue. */
+export function baneTwistQualifies(ageGroup: string, twistsHalfTurns: readonly number[], rule: TwistBonusRule = DK_SPRING_RULES.tumbling.twistBonus): boolean {
+  const minimum = minTwistHalfTurns(rule, ageGroup);
+  return twistsHalfTurns.some((turns) => turns >= minimum);
+}
+
+export function participantStructure(roles: readonly ('counting' | 'extra')[], counting = 6, extra = 2, extraOrderApplies = true) {
   const count = roles.filter((role) => role === 'counting').length;
   const extraCount = roles.length - count;
   const firstCounting = roles.indexOf('counting');
-  return count <= counting && extraCount <= extra && (firstCounting < 0 || roles.slice(firstCounting).every((role) => role === 'counting'));
+  return count <= counting && extraCount <= extra && (!extraOrderApplies || firstCounting < 0 || roles.slice(firstCounting).every((role) => role === 'counting'));
 }
 
 export function mixQuotaCheck(categories: readonly ('girl' | 'boy' | null)[], requiredGirls = 3, requiredBoys = 3): EvaluationStatus {

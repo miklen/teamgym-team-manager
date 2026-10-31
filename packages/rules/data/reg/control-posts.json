@@ -1,0 +1,645 @@
+{
+  "package": "reg@1.0.0",
+  "note": "Én kontrolpost pr. numerisk REG-springregel. Tallene er læst direkte fra de låste kilder i sources.json; facit-id'erne peger på håndregnede cases i tests/domain/reg-fixtures.test.ts, hvis forventede tal ikke er genereret af produktionskoden. `covers` peger på de parametre i REG_SPRING_RULES/REG_V1, som posten dækker; tests/domain/reg-coverage.test.ts kræver, at alle parametre og kildehenvisninger er dækket.",
+  "posts": [
+    {
+      "id": "REG-DELTAGERE-BANE",
+      "source": {
+        "sourceId": "H",
+        "section": "9.1f",
+        "page": 29
+      },
+      "supplementarySources": [
+        {
+          "sourceId": "TR",
+          "section": "1.3.1",
+          "page": 5
+        }
+      ],
+      "profile": "alle REG-profiler",
+      "discipline": "tumbling",
+      "formula": "Minimum 6 gymnaster pr. omgang; ved flere end 6 er de første ikke gældende. Tællende = de sidste 6. Planlægningsgrænse for ekstra = 12 − 6 = 6 (afledt af TR 1.3.1, højst 12 gymnaster).",
+      "unit": "gymnast pr. omgang",
+      "exceptions": [
+        "Intet rækkefølgekrav til ekstra gymnaster i REG (DK kræver ukorrekt rækkefølge overholdt).",
+        "Ekstragrænsen 6 er afledt og registreret som REG-EXTRA-LIMIT-DERIVED."
+      ],
+      "tests": ["REG-F15"],
+      "covers": ["participants"]
+    },
+    {
+      "id": "REG-DELTAGERE-TRAMPET",
+      "source": {
+        "sourceId": "H",
+        "section": "10.1e",
+        "page": 39
+      },
+      "supplementarySources": [
+        {
+          "sourceId": "TR",
+          "section": "1.3.1",
+          "page": 5
+        }
+      ],
+      "profile": "alle REG-profiler",
+      "discipline": "trampet",
+      "formula": "Som H 9.1f: tællende = de sidste 6; ekstra højst 6 (afledt af TR 1.3.1).",
+      "unit": "gymnast pr. omgang",
+      "exceptions": [
+        "Intet rækkefølgekrav til ekstra gymnaster i REG.",
+        "Ekstragrænsen er afledt (REG-EXTRA-LIMIT-DERIVED)."
+      ],
+      "tests": ["REG-F15"],
+      "covers": ["participants"]
+    },
+    {
+      "id": "REG-MIX",
+      "source": {
+        "sourceId": "H",
+        "section": "9.1f / 10.1e",
+        "page": 29
+      },
+      "profile": "REG mix (U11, U14, junior)",
+      "discipline": "both",
+      "formula": "Mixhold: samme antal tællende piger og drenge i hver omgang = 3 + 3.",
+      "unit": "tællende gymnast pr. køn pr. omgang",
+      "exceptions": [],
+      "tests": ["REG-F27"],
+      "covers": ["profiles"]
+    },
+    {
+      "id": "REG-PROFILER",
+      "source": {
+        "sourceId": "TR",
+        "section": "1.3",
+        "page": 4
+      },
+      "profile": "U11, U14, junior × piger/drenge/mix",
+      "discipline": "both",
+      "formula": "U11: under 11 år; U14: under 14 år; junior: 14–17 år. Ingen senior i REG. Dispensationsnote: to gymnaster må være op til 2 år yngre/ældre, hvis holdets gennemsnit ligger i intervallet.",
+      "unit": "profil",
+      "exceptions": ["Dispensationsnoten vises som tekst og håndhæves ikke."],
+      "tests": ["REG-F28"],
+      "covers": ["profiles"]
+    },
+    {
+      "id": "REG-C-GRUND-BANE",
+      "source": {
+        "sourceId": "H",
+        "section": "9.2.1a, d",
+        "page": 30
+      },
+      "profile": "alle REG-profiler",
+      "discipline": "tumbling",
+      "formula": "C = max(0; 0,0 + tillæg (9.2.3) − fradrag (9.2.2)).",
+      "unit": "hold",
+      "exceptions": ["9.2.1d: ved færre end 6 gymnaster gives intet fradrag for den manglende gymnast."],
+      "tests": ["REG-F01", "REG-F17"],
+      "covers": ["tumbling.baseC"]
+    },
+    {
+      "id": "REG-C-HOLD-BANE",
+      "source": {
+        "sourceId": "H",
+        "section": "9.2.2.1",
+        "page": 30
+      },
+      "profile": "alle REG-profiler",
+      "discipline": "tumbling",
+      "formula": "Fradrag = 0,1 × antal tællende gymnaster, der ikke udfører holdomgangens præcise springkombination. Afvigende gymnast får D 0 for serien (DK-motorens holdomgangsbehandling).",
+      "unit": "gymnast",
+      "exceptions": ["Q05 (3+3-fordeling) forbliver uafklaret."],
+      "inheritance": {
+        "kind": "open",
+        "issue": "Q05",
+        "reason": "Åben i DK 1.1.0; REG fastsætter ikke en anden ramme."
+      },
+      "tests": ["REG-F09", "REG-F14"],
+      "covers": ["tumbling.deductionRates.hold"]
+    },
+    {
+      "id": "REG-C-ORDEN-BANE",
+      "source": {
+        "sourceId": "H",
+        "section": "9.2.2.2 og 9.2.4",
+        "page": 30
+      },
+      "profile": "alle REG-profiler",
+      "discipline": "tumbling",
+      "formula": "Ingen REG-sats: rækkefølgefradrag beregnes og vises ikke.",
+      "unit": "ikke relevant",
+      "exceptions": [],
+      "inheritance": {
+        "kind": "not-applicable",
+        "issue": "Q06",
+        "reason": "Q06 vedrører rækkefølgefradraget, som ikke findes i REG."
+      },
+      "tests": ["REG-F13"],
+      "covers": ["tumbling.orderDeduction", "tumbling.deductionRates.order"]
+    },
+    {
+      "id": "REG-C-GENTAG-BANE",
+      "source": {
+        "sourceId": "H",
+        "section": "9.2.2.3",
+        "page": 30
+      },
+      "profile": "alle REG-profiler",
+      "discipline": "tumbling",
+      "formula": "Fradrag = 0,1 × antal forekomster af samme præcise springkombination uden for den omgang, hvor den forekommer flest gange.",
+      "unit": "gang",
+      "exceptions": [],
+      "inheritance": {
+        "kind": "inherited",
+        "issue": "Q03",
+        "reason": "DK 1.1.0-afklaringen (tælling pr. præcis identitet for holdet) gælder; REG fastsætter kun satsen 0,1."
+      },
+      "tests": ["REG-F08"],
+      "covers": ["tumbling.deductionRates.repetition"]
+    },
+    {
+      "id": "REG-C-RETNING",
+      "source": {
+        "sourceId": "H",
+        "section": "9.2.2.4",
+        "page": 30
+      },
+      "profile": "alle REG-profiler",
+      "discipline": "tumbling",
+      "formula": "Fradrag = 0,1 × antal gymnaster, der mangler i den omgang, der kommer tættest på en ren forlæns hhv. baglæns omgang.",
+      "unit": "gymnast",
+      "exceptions": ["C-RETNING-VALG arves som kendt tvivl."],
+      "tests": ["REG-F16"],
+      "covers": ["tumbling.deductionRates.requirement"]
+    },
+    {
+      "id": "REG-C-FLOW-BANE",
+      "source": {
+        "sourceId": "H",
+        "section": "9.2.2.5 og 9.2.4",
+        "page": 31
+      },
+      "profile": "alle REG-profiler",
+      "discipline": "tumbling",
+      "formula": "Ingen REG-sats: flowfradrag beregnes og vises ikke.",
+      "unit": "ikke relevant",
+      "exceptions": [],
+      "tests": ["REG-F26"],
+      "covers": ["tumbling.flowDeduction"]
+    },
+    {
+      "id": "REG-B-SKRUE-BANE",
+      "source": {
+        "sourceId": "H",
+        "section": "9.2.3.1",
+        "page": 31
+      },
+      "profile": "alle REG-profiler",
+      "discipline": "tumbling",
+      "formula": "Tillæg = 0,2 × antal tællende gymnaster med mindst ét element med ≥ 360° skrue i den omgang, hvor flest skruer.",
+      "unit": "gymnast",
+      "exceptions": [],
+      "tests": ["REG-F01"],
+      "covers": ["tumbling.twistBonus"]
+    },
+    {
+      "id": "REG-B-DOBBELT-BANE",
+      "source": {
+        "sourceId": "H",
+        "section": "9.2.3.2 og 9.2.4",
+        "page": 31
+      },
+      "profile": "alle REG-profiler",
+      "discipline": "tumbling",
+      "formula": "Ingen REG-sats: dobbeltrotationstillæg beregnes og vises ikke som manglende.",
+      "unit": "ikke relevant",
+      "exceptions": [],
+      "inheritance": {
+        "kind": "not-applicable",
+        "issue": "Q02",
+        "reason": "Q02 vedrører dobbeltrotationer, som er forbudt i REG (H 9.3.2/10.3.2)."
+      },
+      "tests": ["REG-F26"],
+      "covers": ["tumbling.doubleBonuses"]
+    },
+    {
+      "id": "REG-B-ELEMENT",
+      "source": {
+        "sourceId": "H",
+        "section": "9.2.3.3",
+        "page": 31
+      },
+      "profile": "alle REG-profiler",
+      "discipline": "tumbling",
+      "formula": "Tillæg = (Σ omgang 1 + Σ omgang 2 + Σ omgang 3) / 3, hvor hver tællende serie giver 0,1 × (antal forskellige gyldige elementer − 1).",
+      "unit": "forskelligt element ud over seriens første",
+      "exceptions": ["Kun elementer landet med fødderne først."],
+      "inheritance": {
+        "kind": "inherited",
+        "issue": "Q01",
+        "reason": "DK 1.1.0-afklaringen (seriens første tæller ikke) gælder; REG-satsen er den samme 0,1. Svarer til H 9.2.3.3's eksempel (rondat–flik–flik 0,1)."
+      },
+      "tests": ["REG-F01", "REG-F07"],
+      "covers": ["tumbling.elementBonusRate"]
+    },
+    {
+      "id": "REG-C-OPSUM-BANE",
+      "source": {
+        "sourceId": "H",
+        "section": "9.2.4",
+        "page": 32
+      },
+      "profile": "alle REG-profiler",
+      "discipline": "tumbling",
+      "formula": "Opsummering: holdomgang 0,1, gentagelse 0,1, retning 0,1, skrue 0,2, element 0,1; ingen rækkefølge, flow eller dobbelttillæg.",
+      "unit": "krydskontrol",
+      "exceptions": [],
+      "tests": ["REG-F01", "REG-F13", "REG-F26"],
+      "covers": []
+    },
+    {
+      "id": "REG-D-SERIE",
+      "source": {
+        "sourceId": "H",
+        "section": "9.3.1",
+        "page": 33
+      },
+      "profile": "alle REG-profiler",
+      "discipline": "tumbling",
+      "formula": "Seriens D = summen af de tre forskellige elementer med højest værdi; omgangens D = summen af tællende; holdets D = gennemsnit af tre omgange.",
+      "unit": "forskelligt element",
+      "exceptions": [],
+      "tests": ["REG-F02", "REG-F22"],
+      "covers": []
+    },
+    {
+      "id": "REG-D-ROTATION-BANE",
+      "source": {
+        "sourceId": "H",
+        "section": "9.3.2",
+        "page": 33
+      },
+      "profile": "alle REG-profiler",
+      "discipline": "tumbling",
+      "formula": "Element med > 1 rotation: D 0, ikke tilladt (REG-MULTI-ROTATION-FORBIDDEN), bevaret til rettelse.",
+      "unit": "element",
+      "exceptions": [],
+      "tests": ["REG-F12"],
+      "covers": ["tumbling.maxRotations"]
+    },
+    {
+      "id": "REG-D-MODTAG-BANE",
+      "source": {
+        "sourceId": "H",
+        "section": "9.3.3",
+        "page": 33
+      },
+      "profile": "alle REG-profiler",
+      "discipline": "tumbling",
+      "formula": "Kraftig hjælp i svæv/landing: elementets D halveres, og seriens tre bedste genberegnes.",
+      "unit": "element",
+      "exceptions": ["Q-SPOT-DUP arves som uafklaret."],
+      "tests": ["REG-F20"],
+      "covers": []
+    },
+    {
+      "id": "REG-D-FORBUD-BANE",
+      "source": {
+        "sourceId": "H",
+        "section": "9.3.4",
+        "page": 34
+      },
+      "profile": "alle REG-profiler",
+      "discipline": "tumbling",
+      "formula": "Udførelse af ikke-tilladte spring giver D 0.",
+      "unit": "element",
+      "exceptions": [],
+      "tests": ["REG-F12"],
+      "covers": ["tumbling.apparatusWhitelist", "forbiddenRotationIssue"]
+    },
+    {
+      "id": "REG-D-VAERDI-BANE",
+      "source": {
+        "sourceId": "H",
+        "section": "9.3.5",
+        "page": 34
+      },
+      "supplementarySources": [
+        {
+          "sourceId": "A3",
+          "section": "bane",
+          "page": null
+        }
+      ],
+      "profile": "alle REG-profiler",
+      "discipline": "tumbling",
+      "formula": "REG-kolonne: vejrmølle 0,10; kraftspring 0,20; flyvespring 0,20; salto lukket/hoftebøjet 0,20; strakt 0,30; rondat 0,10; flik 0,20; whipback 0,30; dobbelt/trippel '-'.",
+      "unit": "element",
+      "exceptions": [],
+      "tests": ["REG-F02", "REG-F22", "REG-SPRING-VALUES"],
+      "covers": ["tumbling.valueSource"]
+    },
+    {
+      "id": "REG-D-SKRUE",
+      "source": {
+        "sourceId": "H",
+        "section": "9.3.6",
+        "page": 34
+      },
+      "supplementarySources": [
+        {
+          "sourceId": "H",
+          "section": "10.3.6",
+          "page": 44
+        }
+      ],
+      "profile": "alle REG-profiler",
+      "discipline": "both",
+      "formula": "Skruetillæg på enkeltsalto: + 0,1 pr. 180°.",
+      "unit": "180° skrue",
+      "exceptions": [],
+      "tests": ["REG-F02", "REG-F03"],
+      "covers": ["tumbling.valueSource"]
+    },
+    {
+      "id": "REG-T-GRUND",
+      "source": {
+        "sourceId": "H",
+        "section": "10.2.1a, c",
+        "page": 39
+      },
+      "profile": "alle REG-profiler",
+      "discipline": "trampet",
+      "formula": "C = max(0; 1,0 + tillæg (10.2.3) − fradrag (10.2.2)).",
+      "unit": "hold",
+      "exceptions": ["10.2.1c: ved færre end 6 gymnaster gives intet fradrag for den manglende gymnast."],
+      "tests": ["REG-F04", "REG-F05"],
+      "covers": ["trampet.baseC"]
+    },
+    {
+      "id": "REG-T-HOLD",
+      "source": {
+        "sourceId": "H",
+        "section": "10.2.2.1",
+        "page": 40
+      },
+      "profile": "alle REG-profiler",
+      "discipline": "trampet",
+      "formula": "Fradrag = 0,1 × antal tællende gymnaster, der ikke udfører holdomgangens præcise element.",
+      "unit": "gymnast",
+      "exceptions": ["Q05 forbliver uafklaret."],
+      "tests": ["REG-F18"],
+      "covers": ["trampet.deductionRates.hold"]
+    },
+    {
+      "id": "REG-T-ORDEN",
+      "source": {
+        "sourceId": "H",
+        "section": "10.2.2.2 og 10.2.4",
+        "page": 40
+      },
+      "profile": "alle REG-profiler",
+      "discipline": "trampet",
+      "formula": "Ingen REG-sats: rækkefølgefradrag beregnes og vises ikke.",
+      "unit": "ikke relevant",
+      "exceptions": [],
+      "inheritance": {
+        "kind": "not-applicable",
+        "issue": "Q06",
+        "reason": "Rækkefølgefradrag findes ikke i REG."
+      },
+      "tests": ["REG-F13"],
+      "covers": ["trampet.orderDeduction", "trampet.deductionRates.order"]
+    },
+    {
+      "id": "REG-T-GENTAG",
+      "source": {
+        "sourceId": "H",
+        "section": "10.2.2.3",
+        "page": 40
+      },
+      "profile": "alle REG-profiler",
+      "discipline": "trampet",
+      "formula": "Fradrag = 0,1 × antal forekomster af samme præcise element uden for den omgang, hvor det forekommer flest gange.",
+      "unit": "gang",
+      "exceptions": [],
+      "inheritance": {
+        "kind": "inherited",
+        "issue": "Q03",
+        "reason": "Samme tælleprincip som DK 1.1.0 med REG-satsen 0,1."
+      },
+      "tests": ["REG-F23"],
+      "covers": ["trampet.deductionRates.repetition"]
+    },
+    {
+      "id": "REG-T-FLOW",
+      "source": {
+        "sourceId": "H",
+        "section": "10.2.2.4 og 10.2.4",
+        "page": 40
+      },
+      "profile": "alle REG-profiler",
+      "discipline": "trampet",
+      "formula": "Ingen REG-sats: flowfradrag beregnes og vises ikke.",
+      "unit": "ikke relevant",
+      "exceptions": [],
+      "tests": ["REG-F26"],
+      "covers": ["trampet.flowDeduction"]
+    },
+    {
+      "id": "REG-T-REDSKAB",
+      "source": {
+        "sourceId": "H",
+        "section": "10.2.2.5",
+        "page": 40
+      },
+      "profile": "alle REG-profiler",
+      "discipline": "trampet",
+      "formula": "Fradrag = 0,1 × antal tællende gymnaster, når holdet mangler en omgang med hhv. uden Pegasus.",
+      "unit": "gymnast",
+      "exceptions": ["Legitimt mislykket forsøg udløser ikke fradraget (observation, ikke planlægning)."],
+      "inheritance": {
+        "kind": "inherited",
+        "issue": "Q04",
+        "reason": "DK 1.1.0-afklaringen (blandet Pegasus-omgang er ugyldig planlægning) gælder."
+      },
+      "tests": ["REG-F05", "REG-F24"],
+      "covers": ["trampet.deductionRates.requirement"]
+    },
+    {
+      "id": "REG-T-SKRUE",
+      "source": {
+        "sourceId": "H",
+        "section": "10.2.3.1",
+        "page": 40
+      },
+      "profile": "U11: ≥ 180°; U14 og junior: ≥ 360°",
+      "discipline": "trampet",
+      "formula": "Tillæg = 0,2 × antal tællende gymnaster, der opfylder profilens skruekrav, i den omgang, hvor flest skruer.",
+      "unit": "gymnast",
+      "exceptions": [
+        "På Pegasus skal skruen ligge efter håndisætningen.",
+        "Tsukahara/Kasamatsu-noten er uden betydning i REG, da springene er forbudt."
+      ],
+      "tests": ["REG-F04", "REG-F06"],
+      "covers": ["trampet.twistBonus"]
+    },
+    {
+      "id": "REG-T-DOBBELT",
+      "source": {
+        "sourceId": "H",
+        "section": "10.2.3.2–10.2.3.3 og 10.2.4",
+        "page": 41
+      },
+      "profile": "alle REG-profiler",
+      "discipline": "trampet",
+      "formula": "Ingen REG-sats: dobbelttillæg med og uden redskab beregnes og vises ikke som manglende.",
+      "unit": "ikke relevant",
+      "exceptions": [],
+      "inheritance": {
+        "kind": "not-applicable",
+        "issue": "Q02",
+        "reason": "Dobbeltrotationer er forbudt i REG."
+      },
+      "tests": ["REG-F26"],
+      "covers": ["trampet.doubleBonuses"]
+    },
+    {
+      "id": "REG-T-OPSUM",
+      "source": {
+        "sourceId": "H",
+        "section": "10.2.4",
+        "page": 41
+      },
+      "profile": "alle REG-profiler",
+      "discipline": "trampet",
+      "formula": "Opsummering: grundværdi 1,0; holdomgang 0,1; gentagelse 0,1; redskab 0,1; skrue 0,2; ingen rækkefølge, flow eller dobbelttillæg.",
+      "unit": "krydskontrol",
+      "exceptions": [],
+      "tests": ["REG-F04", "REG-F26"],
+      "covers": ["trampet.elementBonusRate"]
+    },
+    {
+      "id": "REG-T-D",
+      "source": {
+        "sourceId": "H",
+        "section": "10.3.1",
+        "page": 42
+      },
+      "profile": "alle REG-profiler",
+      "discipline": "trampet",
+      "formula": "Omgangens D = summen af tællende gymnasters element; holdets D = gennemsnit af tre omgange.",
+      "unit": "element",
+      "exceptions": [],
+      "tests": ["REG-F03", "REG-F19"],
+      "covers": []
+    },
+    {
+      "id": "REG-T-ROTATION",
+      "source": {
+        "sourceId": "H",
+        "section": "10.3.2",
+        "page": 42
+      },
+      "profile": "alle REG-profiler",
+      "discipline": "trampet",
+      "formula": "Element med > 1 rotation giver D 0 (REG-MULTI-ROTATION-FORBIDDEN). På Pegasus tæller overslaget som rotation; kun mølleoverslag og overslag er gyldige (hvidliste).",
+      "unit": "element",
+      "exceptions": [],
+      "tests": ["REG-F11", "REG-F25"],
+      "covers": ["trampet.maxRotations", "trampet.apparatusWhitelist"]
+    },
+    {
+      "id": "REG-T-MODTAG",
+      "source": {
+        "sourceId": "H",
+        "section": "10.3.3",
+        "page": 42
+      },
+      "profile": "alle REG-profiler",
+      "discipline": "trampet",
+      "formula": "Kraftig hjælp i svæv/landing halverer elementets D.",
+      "unit": "element",
+      "exceptions": [],
+      "tests": ["REG-F20"],
+      "covers": []
+    },
+    {
+      "id": "REG-T-FORBUD",
+      "source": {
+        "sourceId": "H",
+        "section": "10.3.4",
+        "page": 43
+      },
+      "profile": "alle REG-profiler",
+      "discipline": "trampet",
+      "formula": "Udførelse af ikke-tilladte spring giver D 0.",
+      "unit": "element",
+      "exceptions": [],
+      "tests": ["REG-F11"],
+      "covers": ["forbiddenRotationIssue"]
+    },
+    {
+      "id": "REG-T-VAERDI",
+      "source": {
+        "sourceId": "H",
+        "section": "10.3.5",
+        "page": 43
+      },
+      "supplementarySources": [
+        {
+          "sourceId": "A4",
+          "section": "trampet",
+          "page": null
+        }
+      ],
+      "profile": "alle REG-profiler",
+      "discipline": "trampet",
+      "formula": "REG-kolonne: mølleoverslag 0,30; overslag 0,40; fri salto lukket 0,10, hoftebøjet 0,20, strakt 0,30; overslag-salto, Tsukahara og dobbelt '-'.",
+      "unit": "element",
+      "exceptions": [],
+      "tests": ["REG-F03", "REG-F19", "REG-SPRING-VALUES"],
+      "covers": ["trampet.valueSource"]
+    },
+    {
+      "id": "REG-A6-MODTAG",
+      "source": {
+        "sourceId": "A6",
+        "section": "1.7",
+        "page": 5
+      },
+      "profile": "alle REG-profiler",
+      "discipline": "both",
+      "formula": "Planlagt E-fradrag: let støtte 0,5; hjælp til udførelse 1,0.",
+      "unit": "modtagning",
+      "exceptions": ["Ekstra gymnasters modtagning tæller 0."],
+      "tests": ["REG-F10", "REG-F21"],
+      "covers": []
+    },
+    {
+      "id": "REG-RYTME-KATALOG",
+      "source": {
+        "sourceId": "A1.2",
+        "section": "HB–A, kolonneværdier",
+        "page": 2
+      },
+      "supplementarySources": [
+        {
+          "sourceId": "H",
+          "section": "8.3.3.f",
+          "page": 21
+        }
+      ],
+      "profile": "alle REG-profiler",
+      "discipline": "rhythm",
+      "formula": "Momentets værdi = overskriften på den kolonne, cellen står i (A1.2 s. 2–9 og 11); 75 momenter uden G på s. 10. Koden bruges ikke til værdien.",
+      "unit": "moment",
+      "exceptions": [
+        "G-celler (s. 10) indgår ikke i kataloget (A1REG-U02).",
+        "Ingen samlet rytmekarakter beregnes (H-U08, REG-RYTME-RAMMER)."
+      ],
+      "tests": ["REG-RHYTHM-CELLS", "REG-RHYTHM-VALUES"],
+      "covers": ["rhythmCatalog"]
+    }
+  ]
+}

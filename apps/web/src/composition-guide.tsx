@@ -1,6 +1,6 @@
 import { AMBITION_ROUNDS_ISSUE } from '@teamgym/rules';
 import type { BonusPotential, CompositionGuideOverview, CompositionGuideRow, DisciplineEvaluation, RulePackage, TeamProfile } from '@teamgym/rules';
-import { points, SourceLinks } from './components';
+import { extraLimitText, points, SourceLinks } from './components';
 import { RuleUncertainty } from './rule-uncertainty';
 import { maximumScoreText } from './planned-spot';
 import './composition-guide.css';
@@ -38,7 +38,7 @@ export function CompositionGuide({ rows, overview, maximum, profile, rulePackage
       </summary>
       <div className="composition-guide-expanded">
         <div className="composition-guide-heading">
-          <p>Holdprofil: {profile.counting} tællende · højst {profile.extra} ekstra først · {overview.totalRounds} omgange.</p>
+          <p>Holdprofil: {profile.counting} tællende · {extraLimitText(rulePackage, profile)} · {overview.totalRounds} omgange.</p>
           <button className="quiet" type="button" onClick={onAnalysis}>Fuld C-analyse</button>
         </div>
     <div className="composition-guide-groups">
@@ -73,7 +73,7 @@ export function CompositionGuide({ rows, overview, maximum, profile, rulePackage
               <button className="quiet" type="button" disabled={!potential.preview} onClick={() => onPreview(potential)}>Se konkrete ændringer</button>
             </div>}
             {row.example && <p>Eksempel at træne frem mod: {row.example.label} ({row.example.code}). Eksemplet viser et katalogspring, ikke en gymnasts registrerede kunnen.</p>}
-            <RuleUncertainty ids={row.issues} />
+            <RuleUncertainty ids={row.issues} knownIssues={rulePackage.knownIssues} />
             <SourceLinks sources={row.sources} rulePackage={rulePackage} />
             {row.example && <SourceLinks sources={row.example.sources} rulePackage={rulePackage} />}
             <div className="guide-row-actions">

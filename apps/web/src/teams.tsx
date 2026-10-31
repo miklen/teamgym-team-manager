@@ -134,7 +134,7 @@ function NewTeam({ submit }: { submit: (name: string, binding: RulesetBinding) =
         <select value={packageKey} onChange={(event) => setPackage(event.target.value)}>
           {packages.map((item) => (
             <option
-              key={item.manifest.packageVersion}
+              key={`${item.manifest.rulesetId}@${item.manifest.packageVersion}`}
               value={`${item.manifest.rulesetId}@${item.manifest.packageVersion}`}
             >
               {item.manifest.name} · {item.manifest.packageVersion}
@@ -161,9 +161,11 @@ export function RulesPage({ workspace, change, writable, teamId }: DataProps & {
   const resolved = registry.resolve(team.rulesetBinding);
   const packages = registry.list();
   const retired = registry.isRetired(team.rulesetBinding.rulesetId, team.rulesetBinding.packageVersion);
+  const successor =
+    packages.find((item) => item.manifest.rulesetId === team.rulesetBinding.rulesetId) ?? packages[0];
   const [target, setTarget] = useState(
-    retired && packages[0]
-      ? `${packages[0].manifest.rulesetId}@${packages[0].manifest.packageVersion}`
+    retired && successor
+      ? `${successor.manifest.rulesetId}@${successor.manifest.packageVersion}`
       : `${team.rulesetBinding.rulesetId}@${team.rulesetBinding.packageVersion}`,
   );
   const selected = packages.find(
@@ -191,7 +193,7 @@ export function RulesPage({ workspace, change, writable, teamId }: DataProps & {
       {retired && (
         <p className="notice">
           {team.rulesetBinding.packageVersion} er udfaset og kan ikke vælges til nye hold. Holdets data bevares og
-          beregnes fortsat. Vælg {packages[0]?.manifest.packageVersion} nedenfor, og se før og efter, inden du skifter.
+          beregnes fortsat. Vælg {successor?.manifest.packageVersion} nedenfor, og se før og efter, inden du skifter.
         </p>
       )}
       {resolved.status !== 'known' && (
@@ -283,18 +285,22 @@ export function RulesPage({ workspace, change, writable, teamId }: DataProps & {
                             {
                               H: 'Bedømmelsesreglement',
                               'A1.1': 'Rytme · oversigt over sværheder',
+                              'A1.2': 'Rytme · oversigt over sværheder (Regionsrækken)',
                               A3: 'Bane · basisværdier',
                               A4: 'Trampet · basisværdier',
                               A5: 'Genkendelse af elementer',
                               A6: 'Generelle fejl og fradrag',
+                              TR: 'Turneringsreglement',
                             } as Record<string, string>
                           )[source.id] ?? source.edition,
                       },
                     ]}
                   />
-                  <a href={source.officialUrl} target="_blank" rel="noreferrer">
-                    Officiel kilde
-                  </a>
+                  {source.officialUrl ? (
+                    <a href={source.officialUrl} target="_blank" rel="noreferrer">
+                      Officiel kilde
+                    </a>
+                  ) : null}
                   <details className="source-details">
                     <summary>Versionsdetaljer</summary>
                     <small>{source.edition}</small>

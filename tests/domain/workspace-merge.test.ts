@@ -31,6 +31,7 @@ import {
 import type { MergeContext, MergeResult, SkillDefinition, Workspace } from '@teamgym/domain';
 import { syntheticWorkspace, binding } from '../fixtures/synthetic-workspace';
 import { DK_V1, DK_V2 } from '../../packages/rules/src/dk-v1';
+import { REG_V1 } from '../../packages/rules/src/reg-v1';
 import { DK_SPRING_CATALOG } from '../../packages/rules/src/catalog';
 import { workspaceBuilder } from '../fixtures/rule-workspace';
 
@@ -492,6 +493,33 @@ describe('trevejsmotor', () => {
       expect(keepNew.teams[0]!.rulesetBinding.packageVersion).toBe('1.1.0');
       expect(keepNew.plans[0]!.tumbling[0]!.rounds[1]!.entries[0]!.athleteSkillId).not.toBeNull();
       expect(DK_V2.analyze(keepNew, keepNew.teams[0]!.id, 'tumbling', scenarioId).contributions.find((item) => item.id === 'B-ELEMENT')?.decision.value?.toString()).toBe('0');
+    }
+  });
+  it('samtidigt skift fra DK til Regionsrækken og ændret omgang kræver ét valg uden blandet grundlag', () => {
+    const { b, l, r } = fixture();
+    l.teams[0]!.rulesetBinding = { rulesetId: 'reg', packageVersion: '1.0.0', ageGroup: 'junior', teamType: 'girls' };
+    l.plans[0]!.bindingFingerprint = bindingFingerprint(l.teams[0]!.rulesetBinding);
+    l.athleteSkills[0]!.reviewRequiredFor = [bindingFingerprint(l.teams[0]!.rulesetBinding)];
+    r.plans[0]!.tumbling[0]!.rounds[1]!.entries[0]!.athleteSkillId = null;
+    r.athleteSkills[0]!.stability = 4;
+    for (const [left, right] of [[l, r], [r, l]] as const) {
+      const review = mergeWorkspace(b, left, right, context);
+      expect(review.status).toBe('blocked');
+      expect(review.conflicts.length).toBeGreaterThan(0);
+      const keepDk = valid(mergeWorkspace(b, left, right, context, choose(review, left === l ? 'remote' : 'local')));
+      expect(keepDk.teams[0]!.rulesetBinding).toEqual(b.teams[0]!.rulesetBinding);
+      expect(keepDk.plans[0]!.bindingFingerprint).toBe(b.plans[0]!.bindingFingerprint);
+      expect(keepDk.plans[0]!.tumbling[0]!.rounds[1]!.entries[0]!.athleteSkillId).toBeNull();
+      expect(keepDk.athleteSkills[0]!.stability).toBe(4);
+      const keepReg = valid(mergeWorkspace(b, left, right, context, choose(review, left === l ? 'local' : 'remote')));
+      expect(keepReg.teams[0]!.rulesetBinding.rulesetId).toBe('reg');
+      expect(keepReg.plans[0]!.bindingFingerprint).toBe(bindingFingerprint(keepReg.teams[0]!.rulesetBinding));
+      expect(keepReg.plans[0]!.tumbling[0]!.rounds[1]!.entries[0]!.athleteSkillId).not.toBeNull();
+      // Afledte REG-værdier genberegnes fra den valgte plan; intet REG-tal er gemt.
+      const scenarioId = keepReg.plans[0]!.tumbling[0]!.id;
+      const analysis = REG_V1.analyze(keepReg, keepReg.teams[0]!.id, 'tumbling', scenarioId);
+      expect(analysis.diagnostics.filter((item) => item.code === 'plan-context')).toEqual([]);
+      expect(analysis.contributions.some((item) => item.id.startsWith('C-ORDEN'))).toBe(false);
     }
   });
   it('to samtidige domænekommandoer bevarer begge ændringer', () => {

@@ -8,11 +8,12 @@ import type { CompositionGuideOverview, CompositionGuideRow } from './dk-guide';
 import type { SpringSkillEvaluation } from './dk-spring';
 import type { BonusPotential, PotentialOptions } from './potential';
 import type { RhythmBinding, RhythmRow } from './rhythm';
+import type { SpringRules } from './spring-rules';
 
 export interface PackageManifest {
   rulesetId: string; packageVersion: string; name: string; officialEdition: string; season: string; production: boolean;
   algorithms: Readonly<Record<string, string>>;
-  sources: readonly { id: string; sha256: string; edition: string; file: string; officialUrl: string }[];
+  sources: readonly { id: string; sha256: string; edition: string; file: string; officialUrl: string | null }[];
   changeDescription: string;
 }
 export interface RulePackage {
@@ -23,6 +24,8 @@ export interface RulePackage {
   knownIssues: readonly KnownIssue[];
   /** Satser for planlagt modtagning; null betyder, at konsekvensen er uafklaret. */
   spotRates: SpotRates | null;
+  /** Pakkens springparametre; brugerfladen læser deltagergrænser, rækkefølge og tillæg herfra i stedet for at kende reglementet. */
+  springRules: SpringRules;
   evaluateSkill: (skill: Exclude<SkillDefinition, { discipline: 'rhythm' }>, registration?: AthleteSkill) => SpringSkillEvaluation;
   bindRhythm: (skill: Extract<SkillDefinition, { discipline: 'rhythm' }>) => RhythmBinding;
   analyze: (workspace: Workspace, teamId: string, discipline: SpringDiscipline, scenarioId: string) => DisciplineEvaluation;
@@ -34,7 +37,7 @@ export interface RulePackage {
 
 const behaviorKeys = ['evaluateSkill', 'bindRhythm', 'analyze', 'guide', 'guideOverview', 'rhythm', 'potentials'] as const;
 function packageData(rulePackage: RulePackage) {
-  return { manifest: rulePackage.manifest, profiles: rulePackage.profiles, springCatalog: rulePackage.springCatalog, rhythmCatalog: rulePackage.rhythmCatalog, knownIssues: rulePackage.knownIssues, spotRates: rulePackage.spotRates };
+  return { manifest: rulePackage.manifest, profiles: rulePackage.profiles, springCatalog: rulePackage.springCatalog, rhythmCatalog: rulePackage.rhythmCatalog, knownIssues: rulePackage.knownIssues, spotRates: rulePackage.spotRates, springRules: rulePackage.springRules };
 }
 
 export class RuleRegistry {

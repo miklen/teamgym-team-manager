@@ -1,3 +1,4 @@
+import type { KnownIssue } from '@teamgym/rules';
 import './rule-uncertainty.css';
 
 const explanations: Record<string, string> = {
@@ -23,15 +24,21 @@ const explanations: Record<string, string> = {
     'Samme blandede omgang er nærmest både forlæns- og baglænskravet. Det er uafklaret, om én omgang må bruges til begge.',
 };
 
-export function hasRuleUncertainty(ids: readonly string[]) {
-  return ids.some((id) => explanations[id]);
+type Issues = readonly Pick<KnownIssue, 'id' | 'detail'>[];
+/** Faste forklaringer har forrang; ellers bruges holdets pakkes kendte tvivl, så nye pakker ikke kræver UI-tekster. */
+const explanationFor = (id: string, knownIssues: Issues = []) =>
+  explanations[id] ?? knownIssues.find((issue) => issue.id === id)?.detail;
+
+export function hasRuleUncertainty(ids: readonly string[], knownIssues?: Issues) {
+  return ids.some((id) => explanationFor(id, knownIssues));
 }
 
 export function rhythmUncertaintyIds(
-  moment: { id: string; officialCode: string; category: string; rowRequirements: readonly string[] },
+  moment: { id: string; officialCode: string; category: string; rowRequirements: readonly string[]; issueId?: string | null },
   variant: Readonly<Record<string, string | number | boolean>>,
 ) {
   return [
+    ...(moment.issueId ? [moment.issueId] : []),
     ...(moment.officialCode === 'DB804' ? ['K01'] : []),
     ...(moment.officialCode === 'J822' ? ['A1DK-U03'] : []),
     ...(['HB', 'SB'].includes(moment.category) &&
@@ -64,12 +71,14 @@ export function RuleUncertainty({
   ids,
   context,
   compact = false,
+  knownIssues,
 }: {
   ids: readonly string[];
   context?: string;
   compact?: boolean;
+  knownIssues?: Issues;
 }) {
-  const unique = [...new Set(ids)].filter((id) => explanations[id]);
+  const unique = [...new Set(ids)].filter((id) => explanationFor(id, knownIssues));
   if (!unique.length) return null;
   return (
     <details className={`rule-uncertainty${compact ? ' rule-uncertainty-compact' : ''}`}>
@@ -88,11 +97,11 @@ export function RuleUncertainty({
         <div className="rule-uncertainty-popover">
           <strong>{context ? `Om ${context}-tallet` : 'Om regelgrundlaget'}</strong>
           {unique.map((id) => (
-            <p key={id}>{explanations[id]}</p>
+            <p key={id}>{explanationFor(id, knownIssues)}</p>
           ))}
         </div>
       ) : (
-        unique.map((id) => <p key={id}>{explanations[id]}</p>)
+        unique.map((id) => <p key={id}>{explanationFor(id, knownIssues)}</p>)
       )}
     </details>
   );

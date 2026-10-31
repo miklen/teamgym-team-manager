@@ -27,6 +27,7 @@ export function RhythmPage({ workspace, change, writable, teamId }: DataProps & 
   const [selected, setSelected] = useState<{ row: RhythmRow; cell: RhythmCell } | null>(null);
   const [details, setDetails] = useState<RhythmRow | null>(null);
   const rows = resolved.status === 'known' ? resolved.rulePackage.rhythm(workspace, teamId, threshold) : [];
+  const knownIssues = resolved.status === 'known' ? resolved.rulePackage.knownIssues : [];
   const filtered = filterRhythmRows(rows, { mode, category, search, threshold });
   const athletes = workspace.athletes.filter((item) => item.teamId === teamId && !item.archived);
   return (
@@ -128,7 +129,7 @@ export function RhythmPage({ workspace, change, writable, teamId }: DataProps & 
                   <tr key={row.key}>
                     <th scope="row">
                       <button className="moment-name" onClick={() => setDetails(row)}>
-                        <strong>{row.moment.name} {hasRuleUncertainty(rhythmUncertaintyIds(row.moment, row.variant)) && <UncertaintyMark />}</strong>
+                        <strong>{row.moment.name} {hasRuleUncertainty(rhythmUncertaintyIds(row.moment, row.variant), knownIssues) && <UncertaintyMark />}</strong>
                         <small>
                           {row.moment.officialCode} · {row.moment.value} · {row.moment.category}
                         </small>
@@ -173,7 +174,7 @@ export function RhythmPage({ workspace, change, writable, teamId }: DataProps & 
             {filtered.map((row) => (
               <section key={row.key}>
                 <button className="moment-name" onClick={() => setDetails(row)}>
-                  <strong>{row.moment.name} {hasRuleUncertainty(rhythmUncertaintyIds(row.moment, row.variant)) && <UncertaintyMark />}</strong>
+                  <strong>{row.moment.name} {hasRuleUncertainty(rhythmUncertaintyIds(row.moment, row.variant), knownIssues) && <UncertaintyMark />}</strong>
                   <small>
                     {row.moment.officialCode} · {row.moment.value} · {variantText(row.variant)}
                   </small>
@@ -207,7 +208,7 @@ export function RhythmPage({ workspace, change, writable, teamId }: DataProps & 
           title={`${details.moment.officialCode} · ${details.moment.name}`}
           close={() => setDetails(null)}
         >
-          <RuleUncertainty ids={rhythmUncertaintyIds(details.moment, details.variant)} />
+          <RuleUncertainty ids={rhythmUncertaintyIds(details.moment, details.variant)} knownIssues={knownIssues} />
           <p>{details.moment.specificRequirement}</p>
           <p>{variantText(details.variant)}</p>
           <dl>

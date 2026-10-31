@@ -14,6 +14,8 @@ export * from './registry';
 export * from './catalog';
 export * from './dk-data';
 export * from './dk-v1';
+export * from './reg-v1';
+export * from './spring-rules';
 export * from './dk-engine';
 export type { NumericDecision } from './dk-numeric';
 export type { SpringSkillEvaluation } from './dk-spring';

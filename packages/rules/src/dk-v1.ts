@@ -9,12 +9,13 @@ import type { EngineSettings } from './dk-engine';
 import { compositionGuide, compositionGuideOverview } from './dk-guide';
 import { evaluateSpringSkill, normalizeElement } from './dk-spring';
 import type { SpringSkillEvaluation } from './dk-spring';
-import { known, trampetTwistQualifies, uncertain } from './dk-numeric';
+import { baneTwistQualifies, known, trampetTwistQualifies, uncertain } from './dk-numeric';
 import type { NumericDecision } from './dk-numeric';
 import { searchBonusPotentials } from './potential';
 import type { BonusDefinition } from './potential';
 import type { PackageManifest, RulePackage } from './registry';
 import { bindRhythmSkill, rhythmCommonality } from './rhythm';
+import { resolveSpringRules } from './spring-rules';
 
 const manifest: PackageManifest = {
   rulesetId: 'dk', packageVersion: '1.0.0', name: 'Danmarksserien', officialEdition: 'DK/REG v1.4; vedtaget august 2026', season: '2026/27', production: true,
@@ -33,6 +34,10 @@ export function createDKFamilyPackage(options: DKPackageOptions = {}): RulePacka
   const rhythmCatalog = options.rhythmCatalog ?? DK_RHYTHM_CATALOG;
   const spotRates = options.spotRates === undefined ? DK_SPOT_RATES : options.spotRates;
   const settings: EngineSettings = Object.freeze({ ...structuredClone(options.settings ?? {}), spotRates });
+  const rules = resolveSpringRules(settings);
+  // Pakker med egne springregler skal have profiler, der følger deltagerreglerne.
+  const mismatch = settings.springRules && profiles.find((profile) => profile.counting !== rules.participants.counting || profile.extra !== rules.participants.maxExtra);
+  if (mismatch) throw new Error(`Profilen ${mismatch.label} afviger fra pakkens deltagerregler.`);
   function profileFor(workspace: Workspace, teamId: string) {
     const binding = workspace.teams.find((item) => item.id === teamId)?.rulesetBinding;
     const profile = profiles.find((item) => item.ageGroup === binding?.ageGroup && item.teamType === binding.teamType);
@@ -46,15 +51,19 @@ export function createDKFamilyPackage(options: DKPackageOptions = {}): RulePacka
       decision.issues, decision.knownSubtotal.multiply(factor), Object.fromEntries(Object.entries(decision.alternatives).map(([key, value]) => [key, value.multiply(factor)])));
   }
   const evaluateSkill = (skill: Exclude<SkillDefinition, { discipline: 'rhythm' }>, registration?: AthleteSkill): SpringSkillEvaluation => {
-    const evaluation = evaluateSpringSkill(skill, registration?.connectionConfirmation, settings.ruleCorrections, settings.vaultPikeHalfTwistResolved);
+    const evaluation = evaluateSpringSkill(skill, registration?.connectionConfirmation, settings.ruleCorrections, settings.vaultPikeHalfTwistResolved, rules);
     return { ...evaluation, difficulty: scaled(evaluation.difficulty) };
   };
   const analyze = (workspace: Workspace, teamId: string, discipline: SpringDiscipline, scenarioId: string) => evaluateDiscipline(workspace, teamId, discipline, scenarioId, profileFor(workspace, teamId), settings);
   function bonuses(profile: TeamProfile, discipline: SpringDiscipline): BonusDefinition[] {
-    const maximum = Fraction.from(settings.bonusRate ?? '0.10').multiply(profile.counting);
+    const ruleSet = rules[discipline];
+    const maximum = Fraction.from(ruleSet.twistBonus.rate).multiply(profile.counting);
+    const doubleMaximum = ruleSet.doubleBonuses === null ? null : Fraction.from(ruleSet.doubleBonuses).multiply(profile.counting);
+    const doubles = (definitions: BonusDefinition[]) => doubleMaximum === null ? [] : definitions;
     return discipline === 'tumbling' ? [
-      { id: 'B-SKRUE', label: 'Skruetillæg', maximum, weight: (candidate) => Number(candidate.evaluation.hasBaneTwist), unresolvedIssue: null },
-      { id: 'B-DOBBELT', label: 'Dobbelttillæg', maximum, weight: (candidate) => Number(candidate.evaluation.hasDouble), unresolvedIssue: null },
+      { id: 'B-SKRUE', label: 'Skruetillæg', maximum, unresolvedIssue: null, weight: (candidate) => Number(candidate.definition.discipline === 'tumbling' &&
+        baneTwistQualifies(profile.ageGroup, candidate.definition.elements.map((element) => element.twistsHalfTurns), ruleSet.twistBonus)) },
+      ...doubles([{ id: 'B-DOBBELT', label: 'Dobbelttillæg', maximum: doubleMaximum, weight: (candidate) => Number(candidate.evaluation.hasDouble), unresolvedIssue: null }]),
       { id: 'B-ELEMENT', label: settings.elementBonusResolved ? 'Elementtillæg' : 'Elementtillæg — kræver afklaring', maximum: null,
         weight: (candidate) => settings.elementBonusResolved ? Math.max(0, candidate.evaluation.distinctElementCount - 1) : candidate.evaluation.distinctElementCount,
         unresolvedIssue: settings.elementBonusResolved ? null : 'Q01' },
@@ -63,15 +72,17 @@ export function createDKFamilyPackage(options: DKPackageOptions = {}): RulePacka
         if (candidate.definition.discipline !== 'trampet') return 0;
         const element = normalizeElement(candidate.definition.jump);
         const turns = typeof element.variant.twistAfterHandsHalfTurns === 'number' ? element.variant.twistAfterHandsHalfTurns : element.twistsHalfTurns;
-        return Number(trampetTwistQualifies(profile.ageGroup, element.rotationQuarterTurns / 4, turns, element.family));
+        return Number(trampetTwistQualifies(profile.ageGroup, element.rotationQuarterTurns / 4, turns, element.family, ruleSet.twistBonus));
       } },
-      { id: 'T-DOBBELT-FRI', label: 'Dobbelttillæg uden redskab', maximum, unresolvedIssue: null, weight: (candidate) => Number(candidate.evaluation.rotationCategory === 2 && candidate.evaluation.apparatus === 'free') },
-      { id: 'T-DOBBELT-REDSKAB', label: 'Dobbelttillæg med redskab', maximum, unresolvedIssue: null, weight: (candidate) => Number(candidate.evaluation.rotationCategory === 2 && candidate.evaluation.apparatus === 'vault') },
+      ...doubles([
+        { id: 'T-DOBBELT-FRI', label: 'Dobbelttillæg uden redskab', maximum: doubleMaximum, unresolvedIssue: null, weight: (candidate) => Number(candidate.evaluation.rotationCategory === 2 && candidate.evaluation.apparatus === 'free') },
+        { id: 'T-DOBBELT-REDSKAB', label: 'Dobbelttillæg med redskab', maximum: doubleMaximum, unresolvedIssue: null, weight: (candidate) => Number(candidate.evaluation.rotationCategory === 2 && candidate.evaluation.apparatus === 'vault') },
+      ]),
     ];
   }
   return {
-    manifest: packageManifest, profiles, springCatalog, rhythmCatalog, knownIssues: options.knownIssues ?? DK_KNOWN_ISSUES, spotRates,
-    evaluateSkill, analyze, guide: (analysis, profile, potentials) => compositionGuide(analysis, profile, springCatalog, settings.bonusRate ?? '0.10', Boolean(settings.elementBonusResolved), potentials),
+    manifest: packageManifest, profiles, springCatalog, rhythmCatalog, knownIssues: options.knownIssues ?? DK_KNOWN_ISSUES, spotRates, springRules: rules,
+    evaluateSkill, analyze, guide: (analysis, profile, potentials) => compositionGuide(analysis, profile, springCatalog, rules, Boolean(settings.elementBonusResolved), potentials),
     guideOverview: compositionGuideOverview,
     bindRhythm: (skill) => bindRhythmSkill(skill, rhythmCatalog),
     rhythm: (workspace, teamId, threshold = null) => { profileFor(workspace, teamId); return rhythmCommonality(workspace, teamId, rhythmCatalog, threshold); },

@@ -71,6 +71,7 @@ export function SpringPage(props: DataProps & { teamId: string }) {
         discipline={discipline}
         scenarioId={scenarioId}
         profile={resolved.status === 'known' ? resolved.profile : null}
+        rulePackage={resolved.status === 'known' ? resolved.rulePackage : null}
         select={(id) => request(() => selectScenario(id))}
       />
       <div
@@ -147,8 +148,10 @@ function SpringDisciplineView({
   const scenario = plan[discipline].find((item) => item.id === scenarioId)!;
   const evaluation = rulePackage.analyze(workspace, teamId, discipline, scenarioId);
   const hasPlannedEntries = evaluation.rounds.some((round) => round.entries.length > 0);
-  const dUncertainties = hasPlannedEntries ? [...evaluation.difficulty.issues, ...(rulePackage.manifest.packageVersion === '1.1.0' && evaluation.difficulty.value && evaluation.difficulty.value.multiply(100).denominator !== 1n ? ['H-U06'] : [])] : [];
-  const cUncertainties = hasPlannedEntries ? [...new Set(evaluation.contributions.flatMap((item) => item.decision.issues)), ...(rulePackage.manifest.packageVersion === '1.1.0' && evaluation.composition.value && evaluation.composition.value.multiply(100).denominator !== 1n ? ['H-U06'] : [])] : [];
+  const orderRule = rulePackage.springRules[discipline].orderDeduction;
+  const roundsDown = rulePackage.knownIssues.some((issue) => issue.id === 'H-U06');
+  const dUncertainties = hasPlannedEntries ? [...evaluation.difficulty.issues, ...(roundsDown && evaluation.difficulty.value && evaluation.difficulty.value.multiply(100).denominator !== 1n ? ['H-U06'] : [])] : [];
+  const cUncertainties = hasPlannedEntries ? [...new Set(evaluation.contributions.flatMap((item) => item.decision.issues)), ...(roundsDown && evaluation.composition.value && evaluation.composition.value.multiply(100).denominator !== 1n ? ['H-U06'] : [])] : [];
   const [activeRound, setActiveRound] = useState(0);
   const rowNodes = useRef(new Map<string, HTMLLIElement>());
   const rowPositions = useRef(new Map<string, { x: number; y: number }>());
@@ -601,7 +604,7 @@ function SpringDisciplineView({
               />
               <StabilitySummary value={result.stability.counting} />
               <details>
-                <summary>D-grundlag og rækkefølge</summary>
+                <summary>{orderRule ? 'D-grundlag og rækkefølge' : 'D-grundlag'}</summary>
                 <Decision value={result.difficulty} />
                 <p>
                   Omgangssum af de tællende gymnasters justerede D. Ekstra indgår ikke. Disciplinens D er de
@@ -625,35 +628,39 @@ function SpringDisciplineView({
                     </li>
                   ))}
                 </ul>
-                <p>
-                  Rækkefølge:{' '}
-                  {!result.order.applies
-                    ? 'gælder ikke i 1. omgang'
-                    : result.order.deduction.status === 'known' && result.orderFaultIds.length === 0
-                      ? 'korrekt'
-                      : result.order.deduction.status === 'known'
-                        ? `${result.orderFaultIds.length} fejl · fradrag ${points(result.order.deduction.value)}`
-                        : statusText[result.order.deduction.status]}
-                </p>
-                {result.orderFaultIds.length > 0 && (
-                  <p className="muted">
-                    Står efter et højere spring:{' '}
-                    {result.orderFaultIds
-                      .map((id) => result.counting.find((item) => item.entry.id === id)?.athleteName ?? 'Ukendt')
-                      .join(', ')}
-                  </p>
+                {orderRule && (
+                  <>
+                    <p>
+                      Rækkefølge:{' '}
+                      {!result.order.applies
+                        ? 'gælder ikke i 1. omgang'
+                        : result.order.deduction.status === 'known' && result.orderFaultIds.length === 0
+                          ? 'korrekt'
+                          : result.order.deduction.status === 'known'
+                            ? `${result.orderFaultIds.length} fejl · fradrag ${points(result.order.deduction.value)}`
+                            : statusText[result.order.deduction.status]}
+                    </p>
+                    {result.orderFaultIds.length > 0 && (
+                      <p className="muted">
+                        Står efter et højere spring:{' '}
+                        {result.orderFaultIds
+                          .map((id) => result.counting.find((item) => item.entry.id === id)?.athleteName ?? 'Ukendt')
+                          .join(', ')}
+                      </p>
+                    )}
+                    <button
+                      className="quiet"
+                      disabled={!writable || result.sortedEntryIds.length !== round.entries.length}
+                      onClick={() => setSortRoundId(round.id)}
+                    >
+                      Vis sorteringsforslag
+                    </button>
+                    <p className="muted">
+                      Uden salto, enkelt-, dobbelt- og trippelsalto; blandet serie i højeste kategori. Derefter stigende D.
+                      Sortering anvendes kun efter dit valg.
+                    </p>
+                  </>
                 )}
-                <button
-                  className="quiet"
-                  disabled={!writable || result.sortedEntryIds.length !== round.entries.length}
-                  onClick={() => setSortRoundId(round.id)}
-                >
-                  Vis sorteringsforslag
-                </button>
-                <p className="muted">
-                  Uden salto, enkelt-, dobbelt- og trippelsalto; blandet serie i højeste kategori. Derefter stigende D.
-                  Sortering anvendes kun efter dit valg.
-                </p>
                 {result.entries.some((item) => item.entry.role === 'extra') && (
                   <>
                     <h3>Ekstra · særskilt</h3>
@@ -694,7 +701,7 @@ function SpringDisciplineView({
               </p>
               <SourceLinks sources={item.sources} rulePackage={rulePackage} />
               <p>
-                {item.id === 'C-GENTAG' && rulePackage.manifest.packageVersion === '1.1.0' ? 'Berørte omgange' : 'Berørte valg'}:{' '}
+                {item.id === 'C-GENTAG' && !rulePackage.knownIssues.some((issue) => issue.id === 'Q03') ? 'Berørte omgange' : 'Berørte valg'}:{' '}
                 {item.affectedIds
                   .map((id) => {
                     const roundIndex = evaluation.rounds.findIndex((round) => round.id === id);

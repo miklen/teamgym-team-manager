@@ -425,7 +425,7 @@ export function SkillEditor({
           </label>
           {moment && (
             <>
-              <RuleUncertainty ids={rhythmUncertaintyIds(moment, variant)} />
+              <RuleUncertainty ids={rhythmUncertaintyIds(moment, variant)} knownIssues={rulePackage.knownIssues} />
               <p>{moment.specificRequirement}</p>
               {moment.options.map((option) => (
                 <label key={option.key}>
@@ -601,7 +601,7 @@ export function SkillEditor({
                         {item.status === 'allowed'
                           ? 'Kendt variant'
                           : item.status === 'forbidden'
-                            ? 'Forbudt i DK'
+                            ? `Ikke tilladt i ${rulePackage.manifest.name}`
                             : `Uafklaret ${item.issueId}`}
                         {item.appliedValue && ` · reglementet gælder (A4 trykt ${item.printedValue.replace('.', ',')})`}
                       </small>

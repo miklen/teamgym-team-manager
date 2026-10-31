@@ -46,19 +46,27 @@ Der SHALL være præcis én holdomgang i hvert scenarie, placeret først. Valg a
 - **THEN** flyttes denne omgang til førstepladsen efter en synlig handling, de andre omgange følger deres nye rækkefølge, og alle deltagere, valgte spring og reserveprioriteter bevares i dette scenarie.
 
 ### Requirement: Tællende og ekstra gymnaster
-For den aktuelle DK-pakke SHALL en fuld udførende omgang have seks tællende gymnaster og op til to ekstra først. Ekstra gymnaster SHALL være synligt markeret og SHALL indgå i de krav, der gælder dem, herunder rækkefølge, men MUST NOT øge tællende D, tillæg eller stabilitetsdækning. Mixholdets relevante fordelingskrav SHALL valideres fra holdprofilen. Reserver SHALL være adskilt fra udførende pladser og MUST NOT optage tællende eller ekstra pladser eller ændre disse grænser.
+En fuld udførende omgang SHALL have seks tællende gymnaster og det antal ekstra gymnaster først, som holdets regelpakke tillader. For DK er det op til to ekstra. For REG er det op til seks ekstra, en afledt grænse fra TR 1.3.1.
+
+Ekstra gymnaster SHALL være synligt markeret og SHALL indgå i de krav, som holdets pakke lader gælde for dem, herunder DK's rækkefølgekrav. De MUST NOT øge tællende D, tillæg eller stabilitetsdækning. Brugerfladens tekster om grænsen og om rækkefølge SHALL komme fra pakken og MUST NOT nævne et fast antal eller et rækkefølgekrav, som pakken ikke har.
+
+Mixholdets relevante fordelingskrav SHALL valideres fra holdprofilen. Reserver SHALL være adskilt fra udførende pladser og MUST NOT optage tællende eller ekstra pladser eller ændre disse grænser.
 
 #### Scenario: Otte gymnaster i korrekt rækkefølge
-- **WHEN** to ekstra gymnaster efterfølges af seks tællende
+- **WHEN** to ekstra gymnaster efterfølges af seks tællende på et DK-hold
 - **THEN** er kun de sidste seks grundlag for point og tællende stabilitet, og de første to er stadig omfattet af relevant rækkefølgekontrol.
 
 #### Scenario: Niende gymnast
 - **WHEN** træneren forsøger at tilføje en niende udførende gymnast i en DK-omgang
 - **THEN** afvises handlingen med forklaring af grænsen, og der skabes ikke en syvende tællende plads.
 
+#### Scenario: Tolv gymnaster i REG
+- **WHEN** seks ekstra gymnaster efterfølges af seks tællende på et REG-hold
+- **THEN** er omgangen gyldig uden rækkefølgekontrol, og guiden angiver »højst 6 ekstra først« som afledt grænse.
+
 #### Scenario: Reserve til en fyldt omgang
-- **WHEN** omgangen har to ekstra og seks tællende, og træneren tilføjer en anden aktiv gymnast som reserve
-- **THEN** tillades reserven uden at ændre de otte udførende pladser eller deres beregningsgrundlag.
+- **WHEN** omgangen har det maksimale antal ekstra og seks tællende, og træneren tilføjer en anden aktiv gymnast som reserve
+- **THEN** tillades reserven uden at ændre de udførende pladser eller deres beregningsgrundlag.
 
 ### Requirement: Rækkefølge kan redigeres tilgængeligt
 Gymnaster SHALL kunne flyttes i en omgang med mus, berøring og tastatur-/knapbaserede handlinger. En foreslået sortering SHALL tage rotationskategori før D og SHALL anvendes ved et bevidst valg; systemet MUST NOT stiltiende omarrangere trænerens valg.
@@ -232,4 +240,3 @@ Et konkret forslag, som ændrer springet eller gymnasten på en plads med planla
 #### Scenario: Forslag ændrer modtaget spring
 - **WHEN** et potentialeforslag udskifter springet på en plads med planlagt modtagning
 - **THEN** viser forhåndsvisningen, at modtagningen fjernes, og efter anvendelse har pladsen ingen modtagning.
-

@@ -26,7 +26,7 @@ Status: kildebaseret gennemgang 2026-10-30. Ikke en officiel fortolkning eller e
 
 **NYT-U01:** S. 2 siger DK som Liga med undtagelser; det kunne læses som overførsel af 1:30-kravet, men H v1.4 8.3 opstiller ikke dette krav. Bekræft, hvis der ønskes historisk 25/26-profil; brug ikke orienteringen til at tilføje et tidskrav i den gennemgåede DK v1.4-profil.
 
-**NYT-U02:** S. 2 annoncerer bl.a. F402=0,4 og F1005 i REG; den leverede A1.2 har F402=0,1 og ingen F1005. Det kan være en tilsigtet senere ændring. Afklar versionshistorikken ved migration; korrigér ikke den nyere lokale tabel ud fra det foreløbige brev.
+**NYT-U02:** S. 2 annoncerer nye REG-elementer med værdien 0,2 (SB202) og 0,4 (SB401, F402, F804, F405, F805, F1005). Den leverede A1.2 har SB202=0,2, F804=0,4 og F805=0,4, men SB401=0,2, F402=0,3, F405=0,3 og ingen F1005 (rettet 2026-10-31 efter cellekontrol, se [A1.2](05-rytme-reg.md)). Det kan være en tilsigtet senere ændring. Afklar versionshistorikken ved migration; korrigér ikke den nyere lokale tabel ud fra det foreløbige brev.
 
 **NYT-U03:** Pladsholderhenvisninger og ufuldstændig ændringsliste gør brevet uegnet som eneste kilde til en historisk regelpakke. Hvilken endelig 25/26-udgave og hvilke rettelsesblade skal en sådan pakke følge?
 

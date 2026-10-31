@@ -4,8 +4,16 @@ import type { ReactNode, RefObject } from 'react';
 import { formatPoints, STABILITY_ANCHORS } from '@teamgym/domain';
 import type { SourceReference, Stability } from '@teamgym/domain';
 import type { Fraction } from '@teamgym/domain';
-import type { NumericDecision, RulePackage, SpringSkillEvaluation } from '@teamgym/rules';
+import type { NumericDecision, RulePackage, SpringSkillEvaluation, TeamProfile } from '@teamgym/rules';
 import { hasRuleUncertainty, UncertaintyMark } from './rule-uncertainty';
+
+/** Deltagergrænsen fra pakken; en afledt grænse vises med sit kildegrundlag fra pakkens kendte tvivl. */
+export function extraLimitText(rulePackage: RulePackage, profile: TeamProfile): string {
+  const issueId = rulePackage.springRules.participants.extraLimitIssue;
+  const issue = issueId ? rulePackage.knownIssues.find((item) => item.id === issueId) : undefined;
+  const basis = issue?.sources.filter((source) => source.sourceId === 'TR').map((source) => `TR ${source.section}`).join(', ');
+  return `højst ${profile.extra} ekstra først${issueId ? ` · afledt grænse${basis ? ` (${basis})` : ''}` : ''}`;
+}
 
 export function SkillBreakdown({ evaluation }: { evaluation: SpringSkillEvaluation }) {
   return (
@@ -41,6 +49,7 @@ const issueLabels: Record<string, string> = {
   'UNKNOWN-ELEMENT': 'Ukendt springvariant',
   'UNKNOWN-VARIANT': 'Ukendt udførelsesvariant',
   'DK-TRIPLE-FORBIDDEN': 'Trippelrotation er ikke tilladt',
+  'REG-MULTI-ROTATION-FORBIDDEN': 'Ikke tilladt i pakken: kun enkeltrotationer, og på Pegasus kun mølleoverslag og overslag',
   'TWIST-PLACEMENT': 'Skrueplacering kræver gennemgang',
   'ELEMENT-EXECUTION': 'Udførelsen er ikke gyldig',
   'ELEMENT-DIRECTION': 'Retningen passer ikke til springet',

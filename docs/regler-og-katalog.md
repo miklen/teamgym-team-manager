@@ -2,6 +2,18 @@
 
 Første pakke er `dk@1.0.0`, baseret på de otte fastlåste [kilder](../openspec/changes/archive/2026-10-25-build-teamgym-team-manager/reference/source-manifest.json). Hovedreglementet er v1.4, og de nominelle DK-profiler kommer fra Teknisk Regulativ 26/27, afsnit 1.3 på PDF-side 4. U14, junior og senior med piger/drenge/mix udbydes; U11 udbydes ikke som DK. Aldersprofilerne er ikke fuld licens-/konkurrenceberettigelse.
 
+## Regionsrækken (`reg@1.0.0`)
+
+Regionsrækken er en selvstændig pakke på samme DK-motor, men med egne parametre, profiler, kilder og katalog. Kilderne er H v1.4, A3, A4, A5, A6, TR 2026/27 og Appendix A1.2; der bruges ingen runtime-fallback til DK-værdier. Profilerne er U11, U14 og junior × piger/drenge/mix; senior udbydes ikke.
+
+- **Spring:** kun enkeltrotationer; på Pegasus kun mølleoverslag og overslag (H 9.3.2/10.3.2). Ikke-tilladte spring bevares som registreringer og vises som ikke tilladt.
+- **C:** REG's egne satser for skrue-, element-, gentagelses-, holdomgangs- og redskabsposter. Rækkefølgefradrag, flow og dobbelttillæg findes ikke.
+- **Deltagere:** seks tællende; højst seks ekstra er en afledt planlægningsgrænse fra TR 1.3.1 (REG-EXTRA-LIMIT-DERIVED).
+- **Rytme:** de 75 A1.2-momenter med tabelcellens værdi (H-U11/A1REG-U01). Appen beregner ingen samlet rytmekarakter (H-U08).
+- **Arv:** Q01, Q03 og Q04 arves fra DK 1.1.0 med REG's satser; Q02 og Q06 er ikke relevante. Se [afklaringer](reglement/afklaringer.md#regionsrækken-arvede-afklaringer-og-ikke-relevante-punkter).
+
+Hver REG-kildepost har en kontrolpost i `packages/rules/data/reg/control-posts.json` med håndregnet facittest; `npm run check` kontrollerer dækningen, og `npm run test:mutations` indeholder REG-mutationer.
+
 ## Identitet og katalog
 
 Alle 103 springkildeposter bevares med trykt kode/værdi, kildeposition og status: 83 tilladte, 19 forbudte og én uafklaret. En kildepost er ikke nødvendigvis en ny færdighed. Startmarkeringerne deler udførelsesidentitet med de tilsvarende normale elementer. Alias som flik/flic er søgeord. De dokumenterede Kasamatsu-varianter normaliseres til tilsvarende Tsukahara; andre ligheder opfindes ikke.

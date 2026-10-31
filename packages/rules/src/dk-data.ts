@@ -4,7 +4,9 @@ import { freezeData } from './catalog';
 
 export interface TeamProfile {
   ageGroup: string; teamType: string; label: string; counting: number; extra: number;
-  nominalAge: { min: number; max: number | null };
+  nominalAge: { min: number | null; max: number | null };
+  /** Supplerende aldersbestemmelse, fx dispensation, der ikke kan udtrykkes som interval. */
+  ageNote?: string;
   mixQuota: { girl: number; boy: number } | null;
   sources: readonly SourceReference[];
 }

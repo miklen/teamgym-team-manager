@@ -1,0 +1,76 @@
+reg_id;dk_id;equivalence_evidence;differences
+rh-hb-headstand;rh-hb-headstand;A1.1 s. 2 og A1.2 s. 2 HB201: A1.2 mangler rækkeoverskriften »Hovedstand, dynamisk håndstand og håndstand« – cellekravet »samlede ben« og rækkens krav er ens.;Ingen.
+rh-hb-dynamic-handstand;rh-hb-dynamic-handstand;A1.1 s. 2 og A1.2 s. 2 HB401: A1.2 mangler rækkeoverskriften – HB401-kravet (som HB1001, håndskridt tilladt, stillestående er stadig HB401) er ens.;Ingen.
+rh-hb-handstand;rh-hb-handstand;A1.1 s. 2 og A1.2 s. 2 HB1001: A1.2 mangler rækkeoverskriften – strakte arme (45°) og ben over hoftehøjde (45°) er ens.;Værdi A1.1 1.00 og A1.2 0.60.
+rh-reg-hb-frog;;;Findes ikke i A1.1.
+rh-hb-bridge;rh-hb-bridge;A1.1 s. 2 og A1.2 s. 2 HB203: Rækketekst, celletekst og figur er ens.;Ingen.
+rh-hb-elbow-planche;rh-hb-elbow-planche;A1.1 s. 2 og A1.2 s. 2 HB403: Rækketekst, celletekst og figur er ens.;Ingen.
+rh-hb-bridge-leg-45;rh-hb-bridge-leg-45;A1.1 s. 2 og A1.2 s. 2 HB603: Rækketekst, celletekst og figur er ens.;Værdi A1.1 0.60 og A1.2 0.40.
+rh-hb-bridge-leg-vertical;rh-hb-bridge-leg-vertical;A1.1 s. 2 og A1.2 s. 2 HB803: Rækketekst, celletekst og figur er ens.;Værdi A1.1 0.80 og A1.2 0.40.
+rh-hb-straddle-l;rh-hb-straddle-l;A1.1 s. 2 og A1.2 s. 2 HB204: Figur og rækketekst er ens (figurer sammenlignet visuelt 2026-10-31). Kun forskel i store/små bogstaver i rækketeksten.;Ingen.
+rh-hb-l;rh-hb-l;A1.1 s. 2 og A1.2 s. 2 HB404: Celletekst »Samlede ben« og figur er ens. Kun forskel i store/små bogstaver i rækketeksten.;Ingen.
+rh-hb-v-45;rh-hb-v-45;A1.1 s. 2 og A1.2 s. 2 HB604: Celletekst »Vinkel mellem ben og gulv 45°« er ens. Kun forskel i store/små bogstaver i rækketeksten.;Værdi A1.1 0.60 og A1.2 0.40.
+rh-hb-v-90;rh-hb-v-90;A1.1 s. 2 og A1.2 s. 2 HB804: Celletekst »Vinkel mellem ben og gulv 90°« er ens. Kun forskel i store/små bogstaver i rækketeksten.;Værdi A1.1 0.80 og A1.2 0.40.
+rh-db-turn-forward-360;rh-db-turn-forward-360;A1.1 s. 3 og A1.2 s. 3 DB201: Pirouetteafsnittets tekst og celletekst »Rotation 360°« er ens.;Ingen.
+rh-db-turn-forward-540;rh-db-turn-forward-540;A1.1 s. 3 og A1.2 s. 3 DB601: Pirouetteafsnittets tekst og celletekst »Rotation 540°« er ens.;Værdi A1.1 0.60 og A1.2 0.40.
+rh-db-turn-forward-720;rh-db-turn-forward-720;A1.1 s. 3 og A1.2 s. 3 DB801: Pirouetteafsnittets tekst og celletekst »Rotation 720°« er ens.;Værdi A1.1 0.80 og A1.2 0.40.
+rh-db-turn-backward-360;rh-db-turn-backward-360;A1.1 s. 3 og A1.2 s. 3 DB202: Pirouetteafsnittets tekst og celletekst »Rotation 360°« er ens.;Ingen.
+rh-db-turn-backward-540;rh-db-turn-backward-540;A1.1 s. 3 og A1.2 s. 3 DB602: Pirouetteafsnittets tekst og celletekst »Rotation 540°« er ens.;Værdi A1.1 0.60 og A1.2 0.40.
+rh-db-turn-backward-720;rh-db-turn-backward-720;A1.1 s. 3 og A1.2 s. 3 DB802: Pirouetteafsnittets tekst og celletekst »Rotation 720°« er ens.;Værdi A1.1 0.80 og A1.2 0.40.
+rh-reg-db-headstand-frog;;;Findes ikke i A1.1.
+rh-db-headstand-planche;rh-db-headstand-planche;A1.1 s. 4 og A1.2 s. 3 DB405: Power-afsnittet, DB405-rækkekravet og celletekst »Hovedstand til planche« er ens. Kun forskel i store/små bogstaver i rækketeksten.;Ingen.
+rh-reg-db-handstand-frog;;;Findes ikke i A1.1.
+rh-db-handstand-planche;rh-db-handstand-planche;A1.1 s. 4 og A1.2 s. 3 DB805: Power-afsnittet, DB805-rækkekravet og celletekst »Håndstand til planche« er ens. Kun forskel i store/små bogstaver i rækketeksten.;Værdi A1.1 0.80 og A1.2 0.40.
+rh-reg-sb-side-under-90;;;Findes ikke i A1.1, hvor SB201 er sidelæns balance med håndstøtte 90°. A1.2-rækken hedder »med eller uden håndstøtte« (A1REG-U03).
+rh-reg-sb-side-90;;;Findes ikke i A1.1. A1.2-rækken hedder »med eller uden håndstøtte« (A1REG-U03).
+rh-reg-sb-side-135;;;A1.1 SB601 er »Sidelæns balance med håndstøtte« – A1.2-rækken hedder »med eller uden håndstøtte« (A1REG-U03). Varianterne er derfor ikke dokumenteret identiske.
+rh-sb-forward-supported-90;rh-sb-forward-supported-90;A1.1 s. 5 og A1.2 s. 4 SB202: Rækketekst »Forlæns balance« og celletekst »Bendeling 90°« er ens.;Ingen.
+rh-sb-forward-supported-135;rh-sb-forward-supported-135;A1.1 s. 5 og A1.2 s. 4 SB602: Rækketekst »Forlæns balance« og celletekst »Bendeling 135°« er ens.;Værdi A1.1 0.60 og A1.2 0.40.
+rh-sb-scale-90;rh-sb-scale-90;A1.1 s. 5 og A1.2 s. 4 SB203: Rækketekst »Ligevægt/scale« og celletekst »Bendeling 90°« er ens.;Ingen.
+rh-sb-scale-135;rh-sb-scale-135;A1.1 s. 5 og A1.2 s. 4 SB603: Rækketekst »Ligevægt/scale« og celletekst »Bendeling 135°« er ens.;Værdi A1.1 0.60 og A1.2 0.40.
+rh-sb-side-scale-90;rh-sb-side-scale-90;A1.1 s. 5 og A1.2 s. 4 SB604: Rækketekst »Sidelæns ligevægt/scale uden hjælp fra hånd« og celletekst er ens.;Værdi A1.1 0.60 og A1.2 0.40.
+rh-sb-side-scale-120;rh-sb-side-scale-120;A1.1 s. 5 og A1.2 s. 4 SB804: Rækketekst »Sidelæns ligevægt/scale uden hjælp fra hånd« og celletekst er ens.;Værdi A1.1 0.80 og A1.2 0.60.
+rh-sb-side-balance-90;rh-sb-side-balance-90;A1.1 s. 5 og A1.2 s. 4 SB605: Rækketekst »Sidelæns balance« og celletekst er ens.;Værdi A1.1 0.60 og A1.2 0.40.
+rh-sb-side-balance-120;rh-sb-side-balance-120;A1.1 s. 5 og A1.2 s. 4 SB805: Rækketekst »Sidelæns balance« og celletekst er ens.;Værdi A1.1 0.80 og A1.2 0.60.
+rh-reg-j-jump-straight-180;;;Findes ikke i A1.1.
+rh-j-jump-straight-360;rh-j-jump-straight-360;A1.1 s. 6 og A1.2 s. 5 J401: Hopafsnit, rækketekst »Strakt hop med skrue« og celletekst »Skrue 360°« er ens.;Værdi A1.1 0.40 og A1.2 0.30.
+rh-j-jump-straight-540;rh-j-jump-straight-540;A1.1 s. 6 og A1.2 s. 5 J601: Hopafsnit, rækketekst og celletekst »Skrue 540°« er ens.;Værdi A1.1 0.60 og A1.2 0.40.
+rh-reg-j-jump-tuck;;;Findes ikke i A1.1.
+rh-reg-j-jump-tuck-180;;;Findes ikke i A1.1.
+rh-j-jump-tuck-360;rh-j-jump-tuck-360;A1.1 s. 6 og A1.2 s. 5 J602: Hopafsnit, rækketekst »Lukket hop med skrue« og celletekst »Skrue 360°« er ens.;Værdi A1.1 0.60 og A1.2 0.40.
+rh-reg-j-x-jump;;;Findes ikke i A1.1.
+rh-j-jump-straddle;rh-j-jump-straddle;A1.1 s. 6 og A1.2 s. 5 J403: Hopafsnit, rækketekst om splithop (bendeling 90°, klar hoftebøjning 90°, strakte ben uden spark) og tom celletekst er ens.;Ingen.
+rh-j-cat;rh-j-cat;A1.1 s. 7 og A1.2 s. 6 J205: Springafsnit, rækketekst om kattespring (bøjede ben, benskift, begge lår vandret uden tolerance) og tom celletekst er ens.;Ingen.
+rh-reg-j-cat-180;;;Samme kode, anden udførelse: A1.1 J405 er kattespring med strakte ben efter benskift og 135° bendeling – A1.2 J405 er kattespring med bøjede ben og skrue 180°.
+rh-j-cat-360;rh-j-cat-360;A1.1 s. 7 og A1.2 s. 6 J605: Springafsnit, kattespringsrækken og celletekst »Skrue 360°« er ens.;Værdi A1.1 0.60 og A1.2 0.40.
+rh-j-scissor-90;rh-j-scissor-90;A1.1 s. 7 og A1.2 s. 6 J206: Springafsnit, saksespringsrækken og celletekst »Bendeling 90°« er ens.;Ingen.
+rh-j-scissor-135;rh-j-scissor-135;A1.1 s. 7 og A1.2 s. 6 J606: Springafsnit, saksespringsrækken og celletekst »Bendeling 135°« er ens.;Værdi A1.1 0.60 og A1.2 0.40.
+rh-reg-j-leap-straddle;;;Findes ikke i A1.1.
+rh-j-leap-straddle-90;rh-j-leap-straddle-90;A1.1 s. 8 og A1.2 s. 6 J410: Celletekst »Skrue 90° Bendeling 90°« er ens. Rækketeksten siger »Tydelig hoftebøjning på 90°« (A1.1) og »Klar hoftebøjning 90°« (A1.2) – vurderet som samme krav.;Værdi A1.1 0.40 og A1.2 0.30.
+rh-j-leap-straddle-180-90;rh-j-leap-straddle-180-90;A1.1 s. 8 og A1.2 s. 6 J610: Celletekst »180° drejning Bendeling 90°« er ens. Rækketeksten siger »Tydelig hoftebøjning på 90°« (A1.1) og »Klar hoftebøjning 90°« (A1.2) – vurderet som samme krav.;Værdi A1.1 0.60 og A1.2 0.40.
+rh-j-split-leap-90;rh-j-split-leap-90;A1.1 s. 8 og A1.2 s. 6 J211: Rækketekst »Spagatspring: ben strakte uden et spark« og celletekst »Bendeling 90°« er ens.;Ingen.
+rh-j-split-leap-135;rh-j-split-leap-135;A1.1 s. 8 og A1.2 s. 6 J611: Rækketekst »Spagatspring: ben strakte uden et spark« og celletekst »Bendeling 135°« er ens.;Værdi A1.1 0.60 og A1.2 0.40.
+rh-j-straight-hop-360;rh-j-straight-hop-360;A1.1 s. 9 og A1.2 s. 7 J614: Hinkafsnit, rækketekst »Strakt hink med skrue« og celletekst »Skrue 360°« er ens.;Værdi A1.1 0.60 og A1.2 0.40.
+rh-j-bent-leg-hop-360;rh-j-bent-leg-hop-360;A1.1 s. 9 og A1.2 s. 7 J415: Hinkafsnit, rækketekst »Strakt hink med skrue, et ben bøjet« og celletekst er ens.;Ingen.
+rh-j-tuck-hop-360;rh-j-tuck-hop-360;A1.1 s. 9 og A1.2 s. 7 J816: Hinkafsnit, rækketekst »Lukket hink med skrue« og celletekst er ens.;Værdi A1.1 0.80 og A1.2 0.40.
+rh-a-forward-sit;rh-a-forward-sit;A1.1 s. 10 og A1.2 s. 8 A401: Rækketekst om forlæns salto og A401-kravet om hænder og fod før siddende landing er ens. Kun forskel i store/små bogstaver i rækketeksten.;Ingen.
+rh-a-forward-tuck;rh-a-forward-tuck;A1.1 s. 10 og A1.2 s. 8 A601: Rækketekst om forlæns salto (valgfrit afsæt og landing) og celletekst »Salto lukket« er ens. Kun forskel i store/små bogstaver i rækketeksten.;Værdi A1.1 0.60 og A1.2 0.40.
+rh-a-handspring;rh-a-handspring;A1.1 s. 10 og A1.2 s. 8 A402: A402-kravet (afsæt fra ét ben, valgfri landing) er ens – A1.2-rækken nævner kun A402, fordi A802 ikke findes i REG. Kun forskel i store/små bogstaver i rækketeksten.;Ingen.
+rh-a-back-tuck;rh-a-back-tuck;A1.1 s. 10 og A1.2 s. 8 A603: Celletekst »Lukket salto« og A5-genkendelse er ens – A1.1-rækkens A803-krav vedrører ikke A603.;Værdi A1.1 0.60 og A1.2 0.40.
+rh-reg-a-roundoff;;;Findes ikke i A1.1.
+rh-a-back-walkover;rh-a-back-walkover;A1.1 s. 10 og A1.2 s. 8 A404: Rækketekst og celletekst »Walkover baglæns« er ens. Kun forskel i store/små bogstaver i rækketeksten.;Værdi A1.1 0.40 og A1.2 0.30.
+rh-a-flic;rh-a-flic;A1.1 s. 10 og A1.2 s. 8 A604: A604-kravet (afsæt fra to ben, landing på ét eller to) og celletekst er ens. Kun forskel i store/små bogstaver i rækketeksten.;Værdi A1.1 0.60 og A1.2 0.40.
+rh-a-gainer-flic;rh-a-gainer-flic;A1.1 s. 10 og A1.2 s. 8 A804: A804-kravet (afsæt fra ét ben, landing på ét eller to) og celletekst er ens. Kun forskel i store/små bogstaver i rækketeksten.;Værdi A1.1 0.80 og A1.2 0.40.
+rh-a-cartwheel;rh-a-cartwheel;A1.1 s. 11 og A1.2 s. 9 A206: Rækketekst om møller og celletekst »Mølle« er ens.;Ingen.
+rh-a-onehand-cartwheel;rh-a-onehand-cartwheel;A1.1 s. 11 og A1.2 s. 9 A406: A406-kravet om fælles valg af første eller anden hånd og celletekst er ens.;Ingen.
+rh-a-aerial;rh-a-aerial;A1.1 s. 11 og A1.2 s. 9 A806: Rækketekst og celletekst »Fri vejrmølle« er ens.;Værdi A1.1 0.80 og A1.2 0.40.
+rh-f-straddle-fold-45;rh-f-straddle-fold-45;A1.1 s. 13 og A1.2 s. 11 F401: Rækketekst »Foroverbøjet bredsiddende, bendeling 90°« og celletekst om 45° hoftevinkel er ens.;Værdi A1.1 0.40 og A1.2 0.30.
+rh-f-straddle-fold-floor;rh-f-straddle-fold-floor;A1.1 s. 13 og A1.2 s. 11 F801: Rækketekst og F801-kravet om bryst/skuldre i gulvet er ens.;Værdi A1.1 0.80 og A1.2 0.40.
+rh-f-pike-fold-45;rh-f-pike-fold-45;A1.1 s. 13 og A1.2 s. 11 F402: Rækketekst om hoftebøjet lukning med samlede ben og celletekst om 45° hoftevinkel er ens.;Værdi A1.1 0.40 og A1.2 0.30.
+rh-f-standing-fold;rh-f-standing-fold;A1.1 s. 13 og A1.2 s. 11 F602: Rækketekst, F602-kravet og figur for stående lukning er ens.;Værdi A1.1 0.60 og A1.2 0.40.
+rh-f-sitting-fold;rh-f-sitting-fold;A1.1 s. 13 og A1.2 s. 11 F802: Rækketekst, F802-kravet og figur for siddende lukning er ens.;Værdi A1.1 0.80 og A1.2 0.40.
+rh-f-front-split;rh-f-front-split;A1.1 s. 13 og A1.2 s. 11 F1003: Rækketekst og celletekst om lår til gulv er ens.;Værdi A1.1 1.00 og A1.2 0.60.
+rh-f-side-split-135;rh-f-side-split-135;A1.1 s. 13 og A1.2 s. 11 F804: Rækketekst om split (ben og hofte i lige linje) og celletekst »Bendeling 135°« er ens.;Værdi A1.1 0.80 og A1.2 0.40.
+rh-f-side-split-floor;rh-f-side-split-floor;A1.1 s. 13 og A1.2 s. 11 F1004: Rækketekst om split og celletekst om lår til gulv er ens.;Værdi A1.1 1.00 og A1.2 0.60.
+rh-f-kneeling-side-90;rh-f-kneeling-side-90;A1.1 s. 13 og A1.2 s. 11 F405: Rækketekst om knælende sidelæns benløft og celletekst »Bendeling 90°« er ens.;Værdi A1.1 0.40 og A1.2 0.30.
+rh-f-kneeling-side-135;rh-f-kneeling-side-135;A1.1 s. 13 og A1.2 s. 11 F805: Rækketekst om knælende sidelæns benløft og celletekst »Bendeling 135°« er ens.;Værdi A1.1 0.80 og A1.2 0.40.

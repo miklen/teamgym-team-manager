@@ -3,9 +3,11 @@ import type { AthleteSkill, Diagnostic, EvaluationStatus, PlannedSpot, RoundEntr
 import type { SpotRate, SpotRates, TeamProfile } from './dk-data';
 import type { NumericDecision, OrderResult } from './dk-numeric';
 import { apparatusDeduction, bestBonus, combineStatus, compositionTotal, divideDecision, elementBonus, holdRound, known, mixQuotaCheck, mixQuotaWithAmbitions, orderCheck, resolvedOrderCheck, participantStructure,
-  PLANNING_BOUNDARIES, plannedExecutionCeiling, plannedMaximumScore, pureDirectionDeduction, spottedTopThreeDifficulty, repetitionDeduction, resolvedElementBonus, resolvedRepetitionDeduction, sumDecisions, trampetTwistQualifies, uncertain } from './dk-numeric';
+  PLANNING_BOUNDARIES, plannedExecutionCeiling, plannedMaximumScore, pureDirectionDeduction, spottedTopThreeDifficulty, repetitionDeduction, resolvedElementBonus, resolvedRepetitionDeduction, sumDecisions, trampetTwistQualifies, baneTwistQualifies, uncertain } from './dk-numeric';
 import { evaluateSpringSkill, normalizeElement } from './dk-spring';
 import type { SpringSkillEvaluation } from './dk-spring';
+import { minTwistHalfTurns, resolveSpringRules } from './spring-rules';
+import type { SpringRules } from './spring-rules';
 
 export interface RuleContribution {
   id: string; label: string; kind: 'base' | 'bonus' | 'deduction' | 'observation';
@@ -77,6 +79,8 @@ export interface EngineSettings {
   /** Q02 afklaret: reglementets formel gælder for H>1 (1,10). */
   vaultPikeHalfTwistResolved?: boolean;
   spotRates?: SpotRates | null;
+  /** Pakkens springregler; uden dem gælder DK-standarden (design beslutning 1). */
+  springRules?: SpringRules;
 }
 
 function scaleDecision(value: NumericDecision, scale: string): NumericDecision {
@@ -97,7 +101,8 @@ export function evaluateDiscipline(workspace: Workspace, teamId: string, discipl
   const definitions = new Map(workspace.skills.map((item) => [item.id, item]));
   const diagnostics: Diagnostic[] = [];
   const contributions: RuleContribution[] = [];
-  const bonusRate = settings.bonusRate ?? '0.10';
+  const rules = resolveSpringRules(settings);
+  const ruleSet = rules[discipline];
   const scenario = plan[discipline].find((item) => item.id === scenarioId);
   if (!scenario) throw new Error('Scenariet findes ikke i holdets disciplin.');
   const rawRounds = scenario.rounds;
@@ -109,7 +114,7 @@ export function evaluateDiscipline(workspace: Workspace, teamId: string, discipl
     const local: Diagnostic[] = [diagnostic('athlete-missing', 'Mangler gymnast', [entry.id], 'incomplete')];
     if (!skill) local.push(diagnostic('skill-missing', 'Vælg et spring i denne disciplin.', [entry.id], 'incomplete'));
     if (skill?.archived) local.push(diagnostic('skill-archived', 'Færdigheden er arkiveret.', [entry.id, skill.id]));
-    const evaluation = skill ? evaluateSpringSkill(skill, null, settings.ruleCorrections, settings.vaultPikeHalfTwistResolved) : null;
+    const evaluation = skill ? evaluateSpringSkill(skill, null, settings.ruleCorrections, settings.vaultPikeHalfTwistResolved, rules) : null;
     let originalD = evaluation?.difficulty ?? uncertain('incomplete');
     if (settings.difficultyMultiplier) originalD = scaleDecision(originalD, settings.difficultyMultiplier);
     // Mangler gymnast er en planlægningsmangel, ikke et utilgængeligt bidrag.
@@ -133,7 +138,7 @@ export function evaluateDiscipline(workspace: Workspace, teamId: string, discipl
     if (!athlete || athlete.archived || athlete.teamId !== teamId) local.push(diagnostic('athlete-unavailable', 'Gymnasten er arkiveret eller ikke længere på holdet.', [entry.id, entry.athleteId]));
     if (!registration || !skill) local.push(diagnostic('skill-missing', 'Vælg gymnastens registrerede færdighed i denne disciplin.', [entry.id], 'incomplete'));
     if (registration?.archived || skill?.archived) local.push(diagnostic('skill-archived', 'Færdigheden er arkiveret.', [entry.id, ...(registration ? [registration.id] : [])]));
-    const evaluation = skill ? evaluateSpringSkill(skill, registration?.connectionConfirmation, settings.ruleCorrections, settings.vaultPikeHalfTwistResolved) : null;
+    const evaluation = skill ? evaluateSpringSkill(skill, registration?.connectionConfirmation, settings.ruleCorrections, settings.vaultPikeHalfTwistResolved, rules) : null;
     let originalD = evaluation?.difficulty ?? uncertain('incomplete');
     if (settings.difficultyMultiplier) originalD = scaleDecision(originalD, settings.difficultyMultiplier);
     const status = combineStatus([evaluation?.status ?? 'incomplete', ...local.map((item) => item.status)]);
@@ -168,7 +173,7 @@ export function evaluateDiscipline(workspace: Workspace, teamId: string, discipl
   const rounds: RoundEvaluation[] = rawRounds.map((round, roundIndex) => {
     const entries = round.entries.map(evaluateEntry);
     const counting = entries.filter((item) => item.entry.role === 'counting');
-    const invalidStructure = !participantStructure(entries.map((item) => item.entry.role), profile.counting, profile.extra);
+    const invalidStructure = !participantStructure(entries.map((item) => item.entry.role), profile.counting, profile.extra, rules.participants.extraOrderApplies);
     let status = combineStatus([counting.length === profile.counting ? 'known' : 'incomplete', ...counting.map((item) => item.status)]);
     if (invalidStructure) { status = 'invalid'; diagnostics.push(diagnostic('participant-limits', 'Antal tællende/ekstra eller rækkefølgen opfylder ikke holdprofilen.', [round.id])); }
     const ambitionCount = counting.filter((item) => item.entry.athleteId === null).length;
@@ -192,7 +197,7 @@ export function evaluateDiscipline(workspace: Workspace, teamId: string, discipl
     const compositionReady = !invalidStructure && !mixedApparatus && counting.length === profile.counting && counting.every((item) => item.eligibleForC) && mixAttainable;
     let holdDeduction = known(0);
     if (roundIndex === 0) {
-      const hold = holdRound(counting.map((item) => item.identity), counting.map((item) => item.originalD.value), profile.counting);
+      const hold = holdRound(counting.map((item) => item.identity), counting.map((item) => item.originalD.value), profile.counting, ruleSet.deductionRates.hold);
       holdDeduction = hold.deduction;
       for (const item of counting) {
         if (hold.referenceIdentity === null) item.adjustedD = uncertain(hold.status === 'known' ? 'incomplete' : hold.status, hold.issues);
@@ -212,11 +217,12 @@ export function evaluateDiscipline(workspace: Workspace, teamId: string, discipl
     const spotted = counting.filter((item) => item.plannedSpot);
     const executionDeduction = sumDecisions(spotted.map((item) => item.plannedSpot!.executionDeduction));
     const plannedExecution: PlannedExecution = { deduction: executionDeduction, count: spotted.length, ceiling: plannedExecutionCeiling(executionDeduction) };
-    const order = settings.orderResolved
-      ? resolvedOrderCheck(counting.map((item) => item.evaluation?.orderCategory ?? null), counting.map((item) => item.originalD), roundIndex + 1)
+    // Uden rækkefølgefradrag i pakken vurderes rækkefølgen ikke.
+    const order: OrderResult = !ruleSet.orderDeduction ? { compliant: true, applies: false, deduction: known(0), faultIndexes: [] } : settings.orderResolved
+      ? resolvedOrderCheck(counting.map((item) => item.evaluation?.orderCategory ?? null), counting.map((item) => item.originalD), roundIndex + 1, ruleSet.deductionRates.order ?? undefined)
       : orderCheck(entries.map((item) => item.evaluation?.rotationCategory ?? null), entries.map((item) => item.originalD.value), roundIndex + 1);
     const orderFaultIds = order.faultIndexes.map((index) => counting[index]!.entry.id);
-    if (counting.length !== profile.counting && roundIndex > 0 && (settings.ruleCorrections || order.deduction.status === 'known')) order.deduction = uncertain('incomplete');
+    if (ruleSet.orderDeduction && counting.length !== profile.counting && roundIndex > 0 && (settings.ruleCorrections || order.deduction.status === 'known')) order.deduction = uncertain('incomplete');
     const sorted = [...entries].sort((a, b) => (a.entry.role === 'extra' ? 0 : 1) - (b.entry.role === 'extra' ? 0 : 1) ||
       ((settings.orderResolved ? a.evaluation?.orderCategory : a.evaluation?.rotationCategory) ?? Number.MAX_SAFE_INTEGER) -
         ((settings.orderResolved ? b.evaluation?.orderCategory : b.evaluation?.rotationCategory) ?? Number.MAX_SAFE_INTEGER) ||
@@ -226,35 +232,35 @@ export function evaluateDiscipline(workspace: Workspace, teamId: string, discipl
       holdDeduction, order, orderFaultIds, sortedEntryIds: sorted.map((item) => item.entry.id), stability: roundStability(workspace, round.entries, profile, teamId) };
   });
 
-  function add(id: string, label: string, kind: RuleContribution['kind'], decision: NumericDecision, section: string, affectedIds: string[], page: number, guideCounts?: readonly (readonly number[])[]) {
-    contributions.push({ id, label, kind, decision, sources: [{ sourceId: 'H', section, page }], affectedIds, ...(guideCounts ? { guideCounts } : {}) });
+  function add(id: string, label: string, kind: RuleContribution['kind'], decision: NumericDecision, affectedIds: string[], guideCounts?: readonly (readonly number[])[]) {
+    const source = ruleSet.sources[id.startsWith('C-ORDEN-') ? 'C-ORDEN' : id];
+    if (!source) throw new Error(`Regelpakken mangler kilde til ${id}.`);
+    contributions.push({ id, label, kind, decision, sources: [{ ...source }], affectedIds, ...(guideCounts ? { guideCounts } : {}) });
   }
-  const prefix = discipline === 'tumbling' ? '9' : '10';
-  const page = discipline === 'tumbling' ? 30 : 40;
   const allEntryIds = rounds.flatMap((round) => round.counting.map((item) => item.entry.id));
-  const base = Fraction.from(discipline === 'tumbling' ? settings.baseTumbling ?? '0' : settings.baseTrampet ?? '1');
-  add('C-GRUND', 'Grundværdi', 'base', known(base), `${prefix}.2.1`, [plan.id], page);
-  add('C-HOLD', 'Afvigelser i holdomgangen', 'deduction', rounds[0]!.holdDeduction, `${prefix}.2.2.1`, [rounds[0]!.id, ...rounds[0]!.counting.filter((item) => item.adjustedD.value?.compare(0) === 0).map((item) => item.entry.id)], page);
+  const base = Fraction.from(ruleSet.baseC);
+  add('C-GRUND', 'Grundværdi', 'base', known(base), [plan.id]);
+  add('C-HOLD', 'Afvigelser i holdomgangen', 'deduction', rounds[0]!.holdDeduction, [rounds[0]!.id, ...rounds[0]!.counting.filter((item) => item.adjustedD.value?.compare(0) === 0).map((item) => item.entry.id)]);
 
   const identities = [...new Set(rounds.flatMap((round) => round.counting.filter((item) => item.eligibleForC && item.identity).map((item) => item.identity!)))];
   const repeatResults = identities.map((identity) => {
     const matches = rounds.map((round) => round.counting.filter((item) => item.eligibleForC && item.identity === identity));
     const identityCounts = matches.map((items) => items.length);
-    if (settings.repetitionResolved) return resolvedRepetitionDeduction(identityCounts, profile.counting);
+    if (settings.repetitionResolved) return resolvedRepetitionDeduction(identityCounts, profile.counting, ruleSet.deductionRates.repetition);
     const nonempty = matches.filter((items) => items.length > 0);
     const filled = (items: readonly ParticipantEvaluation[]) => items.flatMap((item) => item.entry.athleteId === null ? [] : [item.entry.athleteId]);
     if (nonempty.some((items) => items.some((item) => item.entry.athleteId === null))) {
       // Ambitioner kan besættes af hvem som helst: begge udfald beregnes, når de begge er mulige.
       const union = new Set(nonempty.flatMap(filled));
       const canBeSame = nonempty.every((items) => items.length === nonempty[0]!.length) && union.size <= nonempty[0]!.length;
-      const different = repetitionDeduction(identityCounts, nonempty.length <= 1, profile.counting);
+      const different = repetitionDeduction(identityCounts, nonempty.length <= 1, profile.counting, ruleSet.deductionRates.repetition);
       if (!canBeSame) return different;
-      const same = repetitionDeduction(identityCounts, true, profile.counting);
+      const same = repetitionDeduction(identityCounts, true, profile.counting, ruleSet.deductionRates.repetition);
       if (same.status === different.status && (same.value === null ? different.value === null : different.value !== null && same.value.compare(different.value) === 0)) return same;
       return uncertain('incomplete', ['AMBITION-ATHLETES'], 0, { sameAthletes: same.value ?? same.knownSubtotal, differentAthletes: different.value ?? different.knownSubtotal });
     }
     const sameAthletes = nonempty.length <= 1 || nonempty.every((items) => filled(items).sort().join('|') === filled(nonempty[0]!).sort().join('|'));
-    return repetitionDeduction(identityCounts, sameAthletes, profile.counting);
+    return repetitionDeduction(identityCounts, sameAthletes, profile.counting, ruleSet.deductionRates.repetition);
   });
   let repeat = sumDecisions(repeatResults);
   const allComplete = rounds.every((round) => round.compositionReady);
@@ -269,13 +275,13 @@ export function evaluateDiscipline(workspace: Workspace, teamId: string, discipl
     });
     return relevant ? [round.id] : [];
   }) : allEntryIds;
-  add('C-GENTAG', 'Gentagne serier eller spring mellem omgange', 'deduction', repeat, `${prefix}.2.2.3`, repeatRoundIds, page);
-  for (const [index, round] of rounds.entries()) if (index > 0) add(`C-ORDEN-${index + 1}`, `Rækkefølge i omgang ${index + 1}`, 'deduction', round.order.deduction, `${prefix}.2.2.2`,
-    settings.orderResolved ? [round.id, ...round.orderFaultIds] : [round.id, ...round.entries.map((item) => item.entry.id)], page);
+  add('C-GENTAG', 'Gentagne serier eller spring mellem omgange', 'deduction', repeat, repeatRoundIds);
+  if (ruleSet.orderDeduction) for (const [index, round] of rounds.entries()) if (index > 0) add(`C-ORDEN-${index + 1}`, `Rækkefølge i omgang ${index + 1}`, 'deduction', round.order.deduction,
+    settings.orderResolved ? [round.id, ...round.orderFaultIds] : [round.id, ...round.entries.map((item) => item.entry.id)]);
 
-  function qualifyingBonus(predicate: (participant: ParticipantEvaluation) => boolean) {
+  function qualifyingBonus(predicate: (participant: ParticipantEvaluation) => boolean, rate: string) {
     const counts = rounds.map((round) => round.counting.filter((item) => item.eligibleForC && predicate(item)).length);
-    const value = bestBonus(counts, profile.counting, bonusRate);
+    const value = bestBonus(counts, profile.counting, rate);
     // Et fuldt maksimum kan være kendt trods mangler i andre omgange.
     return { decision: allComplete || rounds.some((round, index) => round.compositionReady && counts[index] === profile.counting) ? known(value) : uncertain('incomplete', [], value), counts };
   }
@@ -283,7 +289,7 @@ export function evaluateDiscipline(workspace: Workspace, teamId: string, discipl
     const forwards = rounds.map((round) => round.counting.filter((item) => item.eligibleForC && item.evaluation?.pureForward).length);
     const backwards = rounds.map((round) => round.counting.filter((item) => item.eligibleForC && item.evaluation?.pureBackward).length);
     let direction = allComplete || rounds.some((round, index) => round.compositionReady && forwards[index] === profile.counting) && rounds.some((round, index) => round.compositionReady && backwards[index] === profile.counting) ?
-      pureDirectionDeduction(forwards, backwards, profile.counting) : uncertain('incomplete');
+      pureDirectionDeduction(forwards, backwards, profile.counting, ruleSet.deductionRates.requirement) : uncertain('incomplete');
     const bestForward = forwards.flatMap((count, index) => count === Math.max(...forwards) ? [index] : []);
     const bestBackward = backwards.flatMap((count, index) => count === Math.max(...backwards) ? [index] : []);
     if (settings.ruleCorrections && allComplete && direction.value !== null &&
@@ -291,36 +297,41 @@ export function evaluateDiscipline(workspace: Workspace, teamId: string, discipl
       !bestForward.some((forwardIndex) => bestBackward.some((backwardIndex) => forwardIndex !== backwardIndex))) {
       direction = uncertain('unresolved', ['C-RETNING-VALG'], 0, { independentMaxima: direction.value });
     }
-    add('C-RETNING', 'Ren forlæns og ren baglæns omgang', 'deduction', direction, '9.2.2.4', allEntryIds, page, [forwards, backwards]);
-    const twist = qualifyingBonus((item) => Boolean(item.evaluation?.hasBaneTwist));
-    add('B-SKRUE', 'Mindst 360° i ét element', 'bonus', twist.decision, '9.2.3.1', allEntryIds, 31, [twist.counts]);
-    const double = qualifyingBonus((item) => Boolean(item.evaluation?.hasDouble));
-    add('B-DOBBELT', 'Dobbeltsalto', 'bonus', double.decision, '9.2.3.2', allEntryIds, 31, [double.counts]);
+    add('C-RETNING', 'Ren forlæns og ren baglæns omgang', 'deduction', direction, allEntryIds, [forwards, backwards]);
+    const twistRule = ruleSet.twistBonus;
+    const twist = qualifyingBonus((item) => item.skill?.discipline === 'tumbling' && baneTwistQualifies(profile.ageGroup, item.skill.elements.map((element) => element.twistsHalfTurns), twistRule), twistRule.rate);
+    add('B-SKRUE', `Mindst ${minTwistHalfTurns(twistRule, profile.ageGroup) * 180}° i ét element`, 'bonus', twist.decision, allEntryIds, [twist.counts]);
+    if (ruleSet.doubleBonuses !== null) {
+      const double = qualifyingBonus((item) => Boolean(item.evaluation?.hasDouble), ruleSet.doubleBonuses);
+      add('B-DOBBELT', 'Dobbeltsalto', 'bonus', double.decision, allEntryIds, [double.counts]);
+    }
     const countedElements = rounds.map((round) => round.counting.filter((item) => item.eligibleForC).map((item) => item.evaluation!.distinctElementCount));
-    const bonus = settings.elementBonusResolved ? resolvedElementBonus(countedElements, allComplete) :
+    const bonus = settings.elementBonusResolved ? resolvedElementBonus(countedElements, allComplete, ruleSet.elementBonusRate ?? undefined) :
       settings.ruleCorrections && countedElements.every((round) => round.length === 0) ? uncertain('incomplete') : elementBonus(countedElements);
-    add('B-ELEMENT', settings.elementBonusResolved ? 'Forskellige elementer efter seriens første' : 'Forskellige elementer — to fortolkningsspor', 'bonus', bonus, '9.2.3.3', allEntryIds, 31,
+    add('B-ELEMENT', settings.elementBonusResolved ? 'Forskellige elementer efter seriens første' : 'Forskellige elementer — to fortolkningsspor', 'bonus', bonus, allEntryIds,
       [countedElements.map((round) => round.reduce((sum, value) => sum + Math.max(0, value - 1), 0))]);
   } else {
     const vault = rounds.map((round) => round.counting.filter((item) => item.eligibleForC && item.evaluation?.apparatus === 'vault').length);
     const free = rounds.map((round) => round.counting.filter((item) => item.eligibleForC && item.evaluation?.apparatus === 'free').length);
     const apparatusSatisfied = rounds.some((round, index) => round.compositionReady && vault[index] === profile.counting) && rounds.some((round, index) => round.compositionReady && free[index] === profile.counting);
     const mixedRoundIds = settings.apparatusRoundsResolved ? diagnostics.filter((item) => item.code === 'mixed-apparatus').flatMap((item) => item.affectedIds) : [];
-    const apparatus = mixedRoundIds.length > 0 ? uncertain('invalid') : allComplete ? apparatusDeduction(vault, free, profile.counting) : apparatusSatisfied ? known(0) : uncertain('incomplete');
-    add('C-REDSKAB', 'Omgang med og uden Pegasus', 'deduction', apparatus, '10.2.2.5', mixedRoundIds.length > 0 ? mixedRoundIds : allEntryIds, page, [vault, free]);
+    const apparatus = mixedRoundIds.length > 0 ? uncertain('invalid') : allComplete ? apparatusDeduction(vault, free, profile.counting, ruleSet.deductionRates.requirement) : apparatusSatisfied ? known(0) : uncertain('incomplete');
+    add('C-REDSKAB', 'Omgang med og uden Pegasus', 'deduction', apparatus, mixedRoundIds.length > 0 ? mixedRoundIds : allEntryIds, [vault, free]);
     const twist = qualifyingBonus((item) => {
       if (item.skill?.discipline !== 'trampet') return false;
       const element = normalizeElement(item.skill.jump);
       const halfTurnsAfterHands = typeof element.variant.twistAfterHandsHalfTurns === 'number' ? element.variant.twistAfterHandsHalfTurns : element.twistsHalfTurns;
-      return trampetTwistQualifies(profile.ageGroup, element.rotationQuarterTurns / 4, halfTurnsAfterHands, element.family);
-    });
-    add('T-SKRUE', 'Skruetillæg efter aldersprofil', 'bonus', twist.decision, '10.2.3.1 og 10.2.4', allEntryIds, 41, [twist.counts]);
-    const freeDouble = qualifyingBonus((item) => item.evaluation?.rotationCategory === 2 && item.evaluation.apparatus === 'free');
-    add('T-DOBBELT-FRI', 'Dobbeltspring uden redskab', 'bonus', freeDouble.decision, '10.2.3.2', allEntryIds, 41, [freeDouble.counts]);
-    const vaultDouble = qualifyingBonus((item) => item.evaluation?.rotationCategory === 2 && item.evaluation.apparatus === 'vault');
-    add('T-DOBBELT-REDSKAB', 'Dobbeltspring med redskab', 'bonus', vaultDouble.decision, '10.2.3.3', allEntryIds, 41, [vaultDouble.counts]);
+      return trampetTwistQualifies(profile.ageGroup, element.rotationQuarterTurns / 4, halfTurnsAfterHands, element.family, ruleSet.twistBonus);
+    }, ruleSet.twistBonus.rate);
+    add('T-SKRUE', 'Skruetillæg efter aldersprofil', 'bonus', twist.decision, allEntryIds, [twist.counts]);
+    if (ruleSet.doubleBonuses !== null) {
+      const freeDouble = qualifyingBonus((item) => item.evaluation?.rotationCategory === 2 && item.evaluation.apparatus === 'free', ruleSet.doubleBonuses);
+      add('T-DOBBELT-FRI', 'Dobbeltspring uden redskab', 'bonus', freeDouble.decision, allEntryIds, [freeDouble.counts]);
+      const vaultDouble = qualifyingBonus((item) => item.evaluation?.rotationCategory === 2 && item.evaluation.apparatus === 'vault', ruleSet.doubleBonuses);
+      add('T-DOBBELT-REDSKAB', 'Dobbeltspring med redskab', 'bonus', vaultDouble.decision, allEntryIds, [vaultDouble.counts]);
+    }
   }
-  add('C-FLOW', 'Flow kræver observation', 'observation', uncertain('incomplete', ['REQUIRES-OBSERVATION']), `${prefix}.2.2.${discipline === 'tumbling' ? '5' : '4'}`, [], page);
+  if (ruleSet.flowDeduction) add('C-FLOW', 'Flow kræver observation', 'observation', uncertain('incomplete', ['REQUIRES-OBSERVATION']), []);
   const bonuses = contributions.filter((item) => item.kind === 'bonus').map((item) => item.decision);
   const deductions = contributions.filter((item) => item.kind === 'deduction').map((item) => item.decision);
   const composition = compositionTotal(base, bonuses, deductions);

@@ -7,9 +7,9 @@ import {
   suggestScenarioCopyName,
 } from '@teamgym/domain';
 import type { SpringDiscipline } from '@teamgym/domain';
-import type { TeamProfile } from '@teamgym/rules';
+import type { RulePackage, TeamProfile } from '@teamgym/rules';
 import type { DataProps } from './athletes';
-import { Dialog } from './components';
+import { Dialog, extraLimitText } from './components';
 import './scenarios.css';
 
 export function ScenarioBar({
@@ -20,12 +20,14 @@ export function ScenarioBar({
   discipline,
   scenarioId,
   profile,
+  rulePackage,
   select,
 }: DataProps & {
   planId: string;
   discipline: SpringDiscipline;
   scenarioId: string;
   profile: TeamProfile | null;
+  rulePackage: RulePackage | null;
   select: (id: string) => void;
 }) {
   const scenarios = workspace.plans.find((item) => item.id === planId)![discipline];
@@ -216,7 +218,7 @@ export function ScenarioBar({
         </div>
       </div>
       <div className="scenario-context">
-        {profile && <p className="scenario-profile"><span>Holdprofil</span><strong>{profile.label}</strong><span>{profile.counting} tællende + højst {profile.extra} ekstra først</span></p>}
+        {profile && rulePackage && <p className="scenario-profile"><span>Holdprofil</span><strong>{profile.label}</strong><span>{profile.counting} tællende + {extraLimitText(rulePackage, profile)}</span></p>}
         <button
           className="quiet"
           onClick={() => {

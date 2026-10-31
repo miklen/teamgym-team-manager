@@ -37,12 +37,13 @@ for (const viewport of [
   });
 }
 
-test('kun DK 1.1.0 kan vælges i appen', async ({ page }) => {
+test('DK 1.1.0 og Regionsrækken 1.0.0 kan vælges i appen, men ikke udfaset DK 1.0.0', async ({ page }) => {
   await openWorkspace(page);
   await page.getByRole('link', { name: 'Reglement', exact: true }).click();
   const packages = page.getByRole('combobox', { name: 'Installeret regelpakke' });
-  await expect(packages.locator('option')).toHaveCount(1);
+  await expect(packages.locator('option')).toHaveCount(2);
   await expect(packages).toContainText('Danmarksserien · 1.1.0');
+  await expect(packages).toContainText('Regionsrækken · 1.0.0');
 });
 
 test('hold på udfaset DK 1.0.0 kan skiftes til 1.1.0 med før og efter', async ({ page }) => {
@@ -53,7 +54,7 @@ test('hold på udfaset DK 1.0.0 kan skiftes til 1.1.0 med før og efter', async 
   await page.getByRole('link', { name: 'Reglement', exact: true }).click();
   await expect(page.getByText('1.0.0 er udfaset og kan ikke vælges til nye hold.')).toBeVisible();
   const packages = page.getByRole('combobox', { name: 'Installeret regelpakke' });
-  await expect(packages.locator('option')).toHaveCount(1);
+  await expect(packages.locator('option')).toHaveCount(2);
   await expect(packages).toHaveValue('dk@1.1.0');
   await page.getByRole('button', { name: 'Vis før og efter', exact: true }).click();
   await page.getByRole('dialog', { name: 'Før og efter regelskift' }).getByRole('button', { name: 'Opdater', exact: true }).click();

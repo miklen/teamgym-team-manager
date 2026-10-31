@@ -4,9 +4,11 @@ import type { SpringCatalogEntry } from './catalog';
 import type { TeamProfile } from './dk-data';
 import type { DisciplineEvaluation, RuleContribution } from './dk-engine';
 import type { NumericDecision } from './dk-numeric';
-import { sumDecisions, trampetTwistQualifies } from './dk-numeric';
+import { baneTwistQualifies, sumDecisions, trampetTwistQualifies } from './dk-numeric';
 import { evaluateSpringSkill, normalizeElement } from './dk-spring';
 import type { BonusPotential } from './potential';
+import { minTwistHalfTurns, rateText } from './spring-rules';
+import type { SpringRules } from './spring-rules';
 
 export interface GuideExample { label: string; code: string; sources: readonly SourceReference[] }
 export interface CompositionGuideRow {
@@ -40,7 +42,7 @@ export function compositionGuideOverview(analysis: DisciplineEvaluation): Compos
 const bonusIds = new Set(['B-SKRUE', 'B-DOBBELT', 'B-ELEMENT', 'T-SKRUE', 'T-DOBBELT-FRI', 'T-DOBBELT-REDSKAB']);
 const requirementIds = new Set(['C-HOLD', 'C-RETNING', 'C-REDSKAB', 'C-FLOW']);
 
-function exampleFor(id: string, discipline: SpringDiscipline, profile: TeamProfile, catalog: readonly SpringCatalogEntry[], elementRuleResolved: boolean): GuideExample | null {
+function exampleFor(id: string, discipline: SpringDiscipline, profile: TeamProfile, catalog: readonly SpringCatalogEntry[], elementRuleResolved: boolean, rules: SpringRules): GuideExample | null {
   if (!bonusIds.has(id)) return null;
   if (id === 'B-ELEMENT') {
     if (!elementRuleResolved) return null;
@@ -51,7 +53,7 @@ function exampleFor(id: string, discipline: SpringDiscipline, profile: TeamProfi
       id: 'guide-example', name: 'Rondat – flik-flak – lukket salto', archived: false, discipline: 'tumbling',
       elements: safe.map((entry) => entry.execution), connection: { kind: 'standard', transitions: ['direct', 'direct'] },
     };
-    const evaluation = evaluateSpringSkill(definition);
+    const evaluation = evaluateSpringSkill(definition, null, false, false, rules);
     if (evaluation.validity !== 'known' || evaluation.difficulty.value === null || evaluation.distinctElementCount !== 3) return null;
     return { label: definition.name, code: safe.map((entry) => entry.officialCode).join('–'), sources: safe.map((entry) => entry.source) };
   }
@@ -61,37 +63,45 @@ function exampleFor(id: string, discipline: SpringDiscipline, profile: TeamProfi
     const definition: Exclude<SkillDefinition, { discipline: 'rhythm' }> = discipline === 'tumbling'
       ? { id: 'guide-example', name: item.name, archived: false, discipline, elements: [item.execution], connection: { kind: 'standard', transitions: [] } }
       : { id: 'guide-example', name: item.name, archived: false, discipline, jump: item.execution };
-    const evaluation = evaluateSpringSkill(definition);
+    const evaluation = evaluateSpringSkill(definition, null, false, false, rules);
     if (evaluation.validity !== 'known' || evaluation.difficulty.value === null) return false;
-    if (id === 'B-SKRUE') return evaluation.hasBaneTwist;
+    if (id === 'B-SKRUE') return baneTwistQualifies(profile.ageGroup, [normalizeElement(item.execution).twistsHalfTurns], rules.tumbling.twistBonus);
     if (id === 'B-DOBBELT') return evaluation.hasDouble;
     if (id === 'T-DOBBELT-FRI') return evaluation.rotationCategory === 2 && evaluation.apparatus === 'free';
     if (id === 'T-DOBBELT-REDSKAB') return evaluation.rotationCategory === 2 && evaluation.apparatus === 'vault';
     if (id === 'T-SKRUE') {
       const element = normalizeElement(item.execution);
       const turns = typeof element.variant.twistAfterHandsHalfTurns === 'number' ? element.variant.twistAfterHandsHalfTurns : element.twistsHalfTurns;
-      return trampetTwistQualifies(profile.ageGroup, element.rotationQuarterTurns / 4, turns, element.family);
+      return trampetTwistQualifies(profile.ageGroup, element.rotationQuarterTurns / 4, turns, element.family, rules.trampet.twistBonus);
     }
     return false;
   });
   return entry ? { label: entry.name, code: entry.officialCode, sources: [entry.source] } : null;
 }
 
-function metadata(id: string, profile: TeamProfile, elementRuleResolved: boolean): { label: string; counting: string; requirement: string } {
-  const ageTwist = profile.ageGroup === 'U14' ? '360° ved enkeltsalto' : '540° ved enkeltsalto';
+function trampetTwistText(rules: SpringRules, profile: TeamProfile): string {
+  const rule = rules.trampet.twistBonus;
+  return `${minTwistHalfTurns(rule, profile.ageGroup) * 180}° ved enkeltsalto` +
+    (rule.doubleMinHalfTurns === null ? '' : `, eller ${rule.doubleMinHalfTurns * 180}° ved dobbeltsalto`) +
+    (rule.tsukaharaMinHalfTurns === null ? '' : `; Tsukahara kræver ${rule.tsukaharaMinHalfTurns * 180}° efter håndisæt`);
+}
+
+function metadata(id: string, profile: TeamProfile, elementRuleResolved: boolean, rules: SpringRules): { label: string; counting: string; requirement: string } {
+  const bane = rules.tumbling;
+  const doubleRate = (set: SpringRules['tumbling']) => rateText(set.doubleBonuses ?? '0');
   switch (id) {
     case 'C-HOLD': return { label: 'Holdomgang', counting: 'Hel 1. omgang', requirement: 'Samme spring for de tællende i holdomgangen; afvigelser vurderes efter reglementet.' };
     case 'C-RETNING': return { label: 'Retninger', counting: 'To hele omgange', requirement: 'Én ren forlæns og én ren baglæns omgang.' };
     case 'C-REDSKAB': return { label: 'Med og uden Pegasus', counting: 'To hele omgange', requirement: 'Én hel omgang med Pegasus og én hel omgang uden.' };
     case 'C-FLOW': return { label: 'Flow', counting: 'Observation', requirement: 'Flow vurderes ved udførelsen, ikke ud fra den planlagte opstilling.' };
-    case 'B-SKRUE': return { label: 'Skrue', counting: 'Pr. gymnast · bedste omgang', requirement: 'Mindst 360° skrue i ét baneelement. Hver kvalificerende tællende gymnast giver 0,10 i tillæggets bedste omgang.' };
-    case 'B-DOBBELT': return { label: 'Dobbeltsalto', counting: 'Pr. gymnast · bedste omgang', requirement: 'Dobbeltsalto i banen. Hver kvalificerende tællende gymnast giver 0,10 i tillæggets bedste omgang.' };
+    case 'B-SKRUE': return { label: 'Skrue', counting: 'Pr. gymnast · bedste omgang', requirement: `Mindst ${minTwistHalfTurns(bane.twistBonus, profile.ageGroup) * 180}° skrue i ét baneelement. Hver kvalificerende tællende gymnast giver ${rateText(bane.twistBonus.rate)} i tillæggets bedste omgang.` };
+    case 'B-DOBBELT': return { label: 'Dobbeltsalto', counting: 'Pr. gymnast · bedste omgang', requirement: `Dobbeltsalto i banen. Hver kvalificerende tællende gymnast giver ${doubleRate(bane)} i tillæggets bedste omgang.` };
     case 'B-ELEMENT': return elementRuleResolved
-      ? { label: 'Elementer', counting: 'Pr. serie · over tre omgange', requirement: 'Hvert forskelligt gyldigt element ud over seriens første giver 0,10 i tillæg. Gentagelser tæller ikke igen; summen gennemsnittes over tre omgange.' }
+      ? { label: 'Elementer', counting: 'Pr. serie · over tre omgange', requirement: `Hvert forskelligt gyldigt element ud over seriens første giver ${rateText(bane.elementBonusRate ?? '0')} i tillæg. Gentagelser tæller ikke igen; summen gennemsnittes over tre omgange.` }
       : { label: 'Elementer', counting: 'Uafklaret · over tre omgange', requirement: 'Forskellige gyldige elementer gennemsnittes over tre omgange. Satsen er uafklaret mellem regeltekst og eksempel.' };
-    case 'T-SKRUE': return { label: 'Skrue', counting: 'Pr. gymnast · bedste omgang', requirement: `${ageTwist}, eller 180° ved dobbeltsalto; Tsukahara kræver 360° efter håndisæt. Hver kvalificerende tællende gymnast giver 0,10.` };
-    case 'T-DOBBELT-FRI': return { label: 'Dobbelt uden redskab', counting: 'Pr. gymnast · bedste omgang', requirement: 'Dobbeltsalto uden Pegasus. Hver kvalificerende tællende gymnast giver 0,10 i tillæggets bedste omgang.' };
-    case 'T-DOBBELT-REDSKAB': return { label: 'Dobbelt med Pegasus', counting: 'Pr. gymnast · bedste omgang', requirement: 'Dobbeltsalto med Pegasus. Hver kvalificerende tællende gymnast giver 0,10 i tillæggets bedste omgang.' };
+    case 'T-SKRUE': return { label: 'Skrue', counting: 'Pr. gymnast · bedste omgang', requirement: `${trampetTwistText(rules, profile)}. Hver kvalificerende tællende gymnast giver ${rateText(rules.trampet.twistBonus.rate)}.` };
+    case 'T-DOBBELT-FRI': return { label: 'Dobbelt uden redskab', counting: 'Pr. gymnast · bedste omgang', requirement: `Dobbeltsalto uden Pegasus. Hver kvalificerende tællende gymnast giver ${doubleRate(rules.trampet)} i tillæggets bedste omgang.` };
+    case 'T-DOBBELT-REDSKAB': return { label: 'Dobbelt med Pegasus', counting: 'Pr. gymnast · bedste omgang', requirement: `Dobbeltsalto med Pegasus. Hver kvalificerende tællende gymnast giver ${doubleRate(rules.trampet)} i tillæggets bedste omgang.` };
     default: throw new Error(`Ukendt guiderække: ${id}`);
   }
 }
@@ -102,19 +112,20 @@ function bestRound(contribution: RuleContribution): { count: number; index: numb
   return { count, index: values.findIndex((value) => value === count && count > 0) };
 }
 
-export function compositionGuide(analysis: DisciplineEvaluation, profile: TeamProfile, catalog: readonly SpringCatalogEntry[], bonusRate: string, elementRuleResolved: boolean, potentials: readonly BonusPotential[] | null = null): CompositionGuideRow[] {
+export function compositionGuide(analysis: DisciplineEvaluation, profile: TeamProfile, catalog: readonly SpringCatalogEntry[], rules: SpringRules, elementRuleResolved: boolean, potentials: readonly BonusPotential[] | null = null): CompositionGuideRow[] {
   const started = analysis.rounds.some((round) => round.entries.length > 0);
   const complete = analysis.rounds.every((round) => round.compositionReady);
   const contextInvalid = analysis.diagnostics.some((diagnostic) => diagnostic.code === 'plan-context');
-  const maximum = Fraction.from(bonusRate).multiply(profile.counting);
+  const ruleSet = rules[analysis.discipline];
+  const maximumFor = (id: string) => Fraction.from(id.endsWith('SKRUE') ? ruleSet.twistBonus.rate : ruleSet.doubleBonuses ?? '0').multiply(profile.counting);
   const frame: CompositionGuideRow = { id: 'G-RAMME', label: 'Planens ramme', category: 'frame', counting: 'Tre omgange',
-    requirement: `${profile.counting} tællende og højst ${profile.extra} ekstra pr. omgang; første omgang er holdomgang.`,
+    requirement: `${profile.counting} tællende og højst ${profile.extra} ekstra pr. omgang${rules.participants.extraLimitIssue ? ' (afledt planlægningsgrænse)' : ''}; første omgang er holdomgang.`,
     status: contextInvalid ? 'Regelgrundlag kræver gennemgang' : !started ? 'Ikke påbegyndt' : complete ? 'Planlagt' : 'Foreløbig plan',
     detail: `${analysis.rounds.filter((round) => round.compositionReady).length}/3 hele omgange klar.`, sources: profile.sources,
     counts: [analysis.rounds.map((round) => round.counting.length)], roundIds: analysis.rounds.map((round) => round.id),
-    current: null, preliminary: null, ruleMaximum: null, documented: null, documentedStatus: null, example: null, issues: [] };
+    current: null, preliminary: null, ruleMaximum: null, documented: null, documentedStatus: null, example: null, issues: rules.participants.extraLimitIssue ? [rules.participants.extraLimitIssue] : [] };
   const rows = analysis.contributions.filter((item) => requirementIds.has(item.id) || bonusIds.has(item.id)).map((item): CompositionGuideRow => {
-    const meta = metadata(item.id, profile, elementRuleResolved);
+    const meta = metadata(item.id, profile, elementRuleResolved, rules);
     const isBonus = item.kind === 'bonus';
     const unresolved = item.decision.status === 'unresolved';
     const { count, index } = bestRound(item);
@@ -145,9 +156,9 @@ export function compositionGuide(analysis: DisciplineEvaluation, profile: TeamPr
           : item.id === 'C-FLOW' ? 'Udførelsen skal observeres.' : 'Vurderes på den planlagte holdomgang.';
     return { id: item.id, label: meta.label, category: isBonus ? 'bonus' : 'requirement', counting: meta.counting,
       requirement: meta.requirement, status, detail, sources: item.sources, counts, roundIds: [...related].map((i) => analysis.rounds[i]!.id),
-      current, preliminary, ruleMaximum: isBonus && item.id !== 'B-ELEMENT' && !unresolved ? maximum : null,
+      current, preliminary, ruleMaximum: isBonus && item.id !== 'B-ELEMENT' && !unresolved ? maximumFor(item.id) : null,
       documented: potential?.documentedValue ?? null, documentedStatus: potential?.status ?? null,
-      example: exampleFor(item.id, analysis.discipline, profile, catalog, elementRuleResolved), issues: item.decision.issues };
+      example: exampleFor(item.id, analysis.discipline, profile, catalog, elementRuleResolved, rules), issues: item.decision.issues };
   });
   return [frame, ...rows];
 }

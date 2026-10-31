@@ -1,0 +1,76 @@
+reference_id;official_code;category;page;value;description;variant_requirements;issue_id;source_page;column_header;dk_moment_id
+rh-hb-headstand;HB201;HB;2;0.20;Hovedstand;samlede ben;;2;0,2;rh-hb-headstand
+rh-hb-dynamic-handstand;HB401;HB;2;0.40;Dynamisk håndstand;håndskridt tilladt efter bilaget;;2;0,4;rh-hb-dynamic-handstand
+rh-hb-handstand;HB1001;HB;2;0.60;Håndstand;strakte arme og angivet benposition;;2;0,6;rh-hb-handstand
+rh-reg-hb-frog;HB202;HB;2;0.20;Frø;knæ eller lår støttes på albuer eller overarme;;2;0,2;
+rh-hb-bridge;HB203;HB;2;0.20;Brogang;skuldre mindst over hænder;;2;0,2;rh-hb-bridge
+rh-hb-elbow-planche;HB403;HB;2;0.40;Planche på albuer;vandret kropslinje;;2;0,4;rh-hb-elbow-planche
+rh-hb-bridge-leg-45;HB603;HB;2;0.40;Brogang med benløft;frit ben 45 grader fra lodret;;2;0,4;rh-hb-bridge-leg-45
+rh-hb-bridge-leg-vertical;HB803;HB;2;0.40;Brogang med lodret ben;frit ben lodret;;2;0,4;rh-hb-bridge-leg-vertical
+rh-hb-straddle-l;HB204;HB;2;0.20;Katete med spredte ben;se figur for stilling;;2;0,2;rh-hb-straddle-l
+rh-hb-l;HB404;HB;2;0.40;Katete med samlede ben;samlede ben;;2;0,4;rh-hb-l
+rh-hb-v-45;HB604;HB;2;0.40;Katete med ben 45 grader;samlede eller spredte ben efter krav;;2;0,4;rh-hb-v-45
+rh-hb-v-90;HB804;HB;2;0.40;Katete med ben 90 grader;samlede eller spredte ben efter krav;;2;0,4;rh-hb-v-90
+rh-db-turn-forward-360;DB201;DB-pirouette;3;0.20;Forlæns pirouette 360;på tå;;3;0,2;rh-db-turn-forward-360
+rh-db-turn-forward-540;DB601;DB-pirouette;3;0.40;Forlæns pirouette 540;på tå;;3;0,4;rh-db-turn-forward-540
+rh-db-turn-forward-720;DB801;DB-pirouette;3;0.40;Forlæns pirouette 720;på tå;;3;0,4;rh-db-turn-forward-720
+rh-db-turn-backward-360;DB202;DB-pirouette;3;0.20;Baglæns pirouette 360;på tå;;3;0,2;rh-db-turn-backward-360
+rh-db-turn-backward-540;DB602;DB-pirouette;3;0.40;Baglæns pirouette 540;på tå;;3;0,4;rh-db-turn-backward-540
+rh-db-turn-backward-720;DB802;DB-pirouette;3;0.40;Baglæns pirouette 720;på tå;;3;0,4;rh-db-turn-backward-720
+rh-reg-db-headstand-frog;DB205;DB-power;3;0.20;Hovedstand til frø;kontrolleret kontinuerlig styrkebevægelse;;3;0,2;
+rh-db-headstand-planche;DB405;DB-power;3;0.40;Hovedstand til planche;vandret slutposition;;3;0,4;rh-db-headstand-planche
+rh-reg-db-handstand-frog;DB605;DB-power;3;0.40;Håndstand til frø;kontrolleret kontinuerlig styrkebevægelse;;3;0,4;
+rh-db-handstand-planche;DB805;DB-power;3;0.40;Håndstand til planche;vandret slutposition;;3;0,4;rh-db-handstand-planche
+rh-reg-sb-side-under-90;SB201;SB;4;0.10;Sidelæns balance med eller uden håndstøtte under 90;ben under 90 grader og lodret overkrop;A1REG-U03;4;0,1;
+rh-reg-sb-side-90;SB401;SB;4;0.20;Sidelæns balance med eller uden håndstøtte 90;lodret overkrop;A1REG-U03;4;0,2;
+rh-reg-sb-side-135;SB601;SB;4;0.40;Sidelæns balance med eller uden håndstøtte 135;lodret overkrop;A1REG-U03;4;0,4;
+rh-sb-forward-supported-90;SB202;SB;4;0.20;Forlæns balance med håndstøtte 90;lodret overkrop;;4;0,2;rh-sb-forward-supported-90
+rh-sb-forward-supported-135;SB602;SB;4;0.40;Forlæns balance med håndstøtte 135;lodret overkrop;;4;0,4;rh-sb-forward-supported-135
+rh-sb-scale-90;SB203;SB;4;0.20;Ligevægt 90;overkrop vandret eller over;;4;0,2;rh-sb-scale-90
+rh-sb-scale-135;SB603;SB;4;0.40;Ligevægt 135;overkrop vandret eller over;;4;0,4;rh-sb-scale-135
+rh-sb-side-scale-90;SB604;SB;4;0.40;Sidelæns ligevægt uden hånd 90;overkrop vandret og krop i frontalplan;;4;0,4;rh-sb-side-scale-90
+rh-sb-side-scale-120;SB804;SB;4;0.60;Sidelæns ligevægt uden hånd 120;overkrop vandret og krop i frontalplan;;4;0,6;rh-sb-side-scale-120
+rh-sb-side-balance-90;SB605;SB;4;0.40;Sidelæns balance 90;overkrop vandret;;4;0,4;rh-sb-side-balance-90
+rh-sb-side-balance-120;SB805;SB;4;0.60;Sidelæns balance 120;overkrop vandret;;4;0,6;rh-sb-side-balance-120
+rh-reg-j-jump-straight-180;J201;J-hop;5;0.20;Strakt hop 180;afsæt to fødder;;5;0,2;
+rh-j-jump-straight-360;J401;J-hop;5;0.30;Strakt hop 360;afsæt to fødder;;5;0,3;rh-j-jump-straight-360
+rh-j-jump-straight-540;J601;J-hop;5;0.40;Strakt hop 540;afsæt to fødder;;5;0,4;rh-j-jump-straight-540
+rh-reg-j-jump-tuck;J202;J-hop;5;0.20;Lukket hop;hofte og knæ 90 uden skrue;;5;0,2;
+rh-reg-j-jump-tuck-180;J402;J-hop;5;0.30;Lukket hop 180;hofte og knæ 90;;5;0,3;
+rh-j-jump-tuck-360;J602;J-hop;5;0.40;Lukket hop 360;hofte og knæ 90;;5;0,4;rh-j-jump-tuck-360
+rh-reg-j-x-jump;J203;J-hop;5;0.10;X-hop;står i splithoprækken og det er uafklaret om rækkens hoftebøjning gælder;A1REG-U05;5;0,1;
+rh-j-jump-straddle;J403;J-hop;5;0.40;Hoftebøjet splithop;ben og hofte 90;;5;0,4;rh-j-jump-straddle
+rh-j-cat;J205;J-spring;6;0.20;Kattespring;begge lår når vandret uden tolerance;;6;0,2;rh-j-cat
+rh-reg-j-cat-180;J405;J-spring;6;0.30;Kattespring 180;bøjede ben og begge lår når vandret uden tolerance;;6;0,3;
+rh-j-cat-360;J605;J-spring;6;0.40;Kattespring 360;bøjede ben og begge lår når vandret uden tolerance;;6;0,4;rh-j-cat-360
+rh-j-scissor-90;J206;J-spring;6;0.20;Saksespring 90;strakte ben og første ben til vandret uden tolerance;;6;0,2;rh-j-scissor-90
+rh-j-scissor-135;J606;J-spring;6;0.40;Saksespring 135;strakte ben og første ben til vandret uden tolerance;;6;0,4;rh-j-scissor-135
+rh-reg-j-leap-straddle;J210;J-spring;6;0.20;Splitspring;bendeling 90 og hoftebøjning 90 uden skrue;;6;0,2;
+rh-j-leap-straddle-90;J410;J-spring;6;0.30;Splitspring med 90 drejning;hofte 90 og bendeling efter figur;;6;0,3;rh-j-leap-straddle-90
+rh-j-leap-straddle-180-90;J610;J-spring;6;0.40;Splitspring med 180 drejning og bendeling 90;hoftebøjning 90;;6;0,4;rh-j-leap-straddle-180-90
+rh-j-split-leap-90;J211;J-spring;6;0.20;Spagatspring 90;strakte ben uden spark;;6;0,2;rh-j-split-leap-90
+rh-j-split-leap-135;J611;J-spring;6;0.40;Spagatspring 135;strakte ben uden spark;;6;0,4;rh-j-split-leap-135
+rh-j-straight-hop-360;J614;J-hink;7;0.40;Strakt hink 360;samme afsæts- og landingsfod;;7;0,4;rh-j-straight-hop-360
+rh-j-bent-leg-hop-360;J415;J-hink;7;0.40;Strakt hink 360 med ét ben bøjet;hofte og bøjet ben 90;;7;0,4;rh-j-bent-leg-hop-360
+rh-j-tuck-hop-360;J816;J-hink;7;0.40;Lukket hink 360;hofte og knæ 90;;7;0,4;rh-j-tuck-hop-360
+rh-a-forward-sit;A401;A-forlaens;8;0.40;Forlæns salto til siddende;hænder og fod før øvrig kropskontakt;;8;0,4;rh-a-forward-sit
+rh-a-forward-tuck;A601;A-forlaens;8;0.40;Forlæns salto lukket;afsæt og landing vælges efter bilaget;;8;0,4;rh-a-forward-tuck
+rh-a-handspring;A402;A-forlaens;8;0.40;Kraftspring i rytme;afsæt ét ben og landing én eller to fødder;;8;0,4;rh-a-handspring
+rh-a-back-tuck;A603;A-baglaens;8;0.40;Baglæns salto lukket;A5-genkendelse;;8;0,4;rh-a-back-tuck
+rh-reg-a-roundoff;A204;A-baglaens;8;0.20;Rondat;se figur og A5;;8;0,2;
+rh-a-back-walkover;A404;A-baglaens;8;0.30;Walkover baglæns;se figur og A5;;8;0,3;rh-a-back-walkover
+rh-a-flic;A604;A-baglaens;8;0.40;Flik-flak i rytme;afsæt to ben og landing ét eller to ben;;8;0,4;rh-a-flic
+rh-a-gainer-flic;A804;A-baglaens;8;0.40;Gainer flik-flak;afsæt ét ben og landing ét eller to ben;;8;0,4;rh-a-gainer-flic
+rh-a-cartwheel;A206;A-sidelaens;9;0.20;Mølle i rytme;to hænder;;9;0,2;rh-a-cartwheel
+rh-a-onehand-cartwheel;A406;A-sidelaens;9;0.40;Mølle med én hånd;holdet vælger samme første eller anden hånd;;9;0,4;rh-a-onehand-cartwheel
+rh-a-aerial;A806;A-sidelaens;9;0.40;Fri vejrmølle;uden håndstøtte;;9;0,4;rh-a-aerial
+rh-f-straddle-fold-45;F401;F;11;0.30;Foroverbøjet bredsiddende med hofte 45;bendeling 90;;11;0,3;rh-f-straddle-fold-45
+rh-f-straddle-fold-floor;F801;F;11;0.40;Foroverbøjet bredsiddende til gulv;bendeling 90 og bryst eller skuldre til gulv;;11;0,4;rh-f-straddle-fold-floor
+rh-f-pike-fold-45;F402;F;11;0.30;Siddende hoftebøjet lukning 45;samlede strakte ben;;11;0,3;rh-f-pike-fold-45
+rh-f-standing-fold;F602;F;11;0.40;Stående hoftebøjet lukning;bryst eller skuldre til strakte ben;;11;0,4;rh-f-standing-fold
+rh-f-sitting-fold;F802;F;11;0.40;Siddende hoftebøjet lukning;bryst eller skuldre til strakte ben;;11;0,4;rh-f-sitting-fold
+rh-f-front-split;F1003;F;11;0.60;Spagat;lår til gulv og overkrop og arme valgfri;;11;0,6;rh-f-front-split
+rh-f-side-split-135;F804;F;11;0.40;Split 135;ben og hofte i lige linje;;11;0,4;rh-f-side-split-135
+rh-f-side-split-floor;F1004;F;11;0.60;Split til gulv;lår til gulv;;11;0,6;rh-f-side-split-floor
+rh-f-kneeling-side-90;F405;F;11;0.30;Knælende sidelæns benløft 90;håndhjælp og strakt hofte;;11;0,3;rh-f-kneeling-side-90
+rh-f-kneeling-side-135;F805;F;11;0.40;Knælende sidelæns benløft 135;håndhjælp og strakt hofte;;11;0,4;rh-f-kneeling-side-135

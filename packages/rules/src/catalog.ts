@@ -12,7 +12,7 @@ export function freezeData<T>(value: T): T {
 }
 
 /** Afgrænset import af de fastlåste semikolonfiler; afvis ændret format. */
-function readRows(text: string): Record<string, string>[] {
+export function readRows(text: string): Record<string, string>[] {
   const [header, ...lines] = text.replace(/^\uFEFF/, '').trim().split(/\r?\n/);
   const fields = header!.split(';');
   return lines.map((line) => {
@@ -93,7 +93,7 @@ export const RHYTHM_GENERAL_REQUIREMENTS = freezeData([
   'Samtidighed og højst ét skridt før momentet kræver observation af koreografi; kartoteket godkender ikke udførelsen.',
 ]);
 
-const categoryRequirements: Record<string, string[]> = {
+export const RHYTHM_CATEGORY_REQUIREMENTS: Readonly<Record<string, readonly string[]>> = {
   HB: ['Genkendelig figur i statisk position i mindst 2 sekunder uden ekstra bevægelser.', 'Kun hænder i gulvet undtagen HB201, HB203, HB603 og HB803. Strakte ben undtagen HB1001. Små benbevægelser accepteres, når hænderne ikke flyttes.'],
   'DB-pirouette': ['På én fod på tå uden hop. Forlæns/baglæns er relativt til støttebenet.', 'Frit ben skal bevare krævet position mindst 3/4 af rotationen; ved bøjet frit ben definerer hælen hoftevinklen.', 'Rotation starter med løftet fri fod og støttehæl, og slutter ved færdig rotation, hælkontakt eller fri fod i gulvet.', 'Alle gymnaster starter med ansigtet samme vej.'],
   'DB-power': ['Kontrolleret kontinuerlig aktiv muskelstyrke, ikke tyngdekraft. Ingen pause ≥2 sekunder, fald, mere end ét skridt eller støtte på benene.', 'Start/slut er tydelige uden krav om 2 sekunders hold. Håndstand har strakte arme med 45° tolerance, strakte samlede ben og strakt hofte.'],
@@ -107,7 +107,7 @@ const categoryRequirements: Record<string, string[]> = {
   F: ['Veldefineret form vises tydeligt uden krav om at holde positionen i ro. Bendeling definerer momentet; benene er strakte.', 'Krav til hoftevinkel skal være opfyldt. Overkroppens bøjning skal være helt opfyldt uden tolerance; større fleksibilitet giver ikke ekstra værdi.'],
 };
 
-function rhythmRowRequirements(id: string, category: string): string[] {
+export function rhythmRowRequirements(id: string, category: string): string[] {
   const result: string[] = [];
   if (/rh-hb-(?:dynamic-handstand|handstand)$/.test(id)) result.push('Strakte arme med 45° tolerance; benene over hoftehøjde med 45° tolerance. HB401 tillader håndskridt og må også udføres stille.');
   if (id.includes('bridge')) result.push('Skuldre mindst over hænder, målt ved linjen gennem skuldercentret. Ingen tolerance for det frie bens højde.');
@@ -147,7 +147,7 @@ function rhythmRowRequirements(id: string, category: string): string[] {
   return result;
 }
 
-function rhythmOptions(row: Record<string, string>): RhythmOption[] {
+export function rhythmOptions(row: Record<string, string>): RhythmOption[] {
   const id = row.reference_id!;
   const category = row.category!;
   const options: RhythmOption[] = [];
@@ -188,7 +188,7 @@ export const DK_RHYTHM_CATALOG: readonly RhythmCatalogEntry[] = freezeData(readR
     id: row.reference_id!, officialCode: row.official_code!, category: row.category!, page: Number(row.page), value: row.value!, name: row.description!,
     specificRequirement: row.variant_requirements!, issueId: row.issue_id || null,
     source: { sourceId: 'A1.1', section: row.official_code!, page: Number(row.page) }, generalRequirements: RHYTHM_GENERAL_REQUIREMENTS,
-    categoryRequirements: categoryRequirements[row.category!] ?? [], rowRequirements: rhythmRowRequirements(row.reference_id!, row.category!),
+    categoryRequirements: RHYTHM_CATEGORY_REQUIREMENTS[row.category!] ?? [], rowRequirements: rhythmRowRequirements(row.reference_id!, row.category!),
     options, mirrorAllowed: true, commonFacingRequired: options.some((option) => option.key === 'facing'),
   };
 }));

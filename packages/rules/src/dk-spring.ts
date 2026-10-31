@@ -3,6 +3,8 @@ import type { AthleteSkill, ElementExecution, EvaluationStatus, SkillDefinition,
 import { DK_SPRING_CATALOG } from './catalog';
 import type { NumericDecision } from './dk-numeric';
 import { known, topThreeDifficulty, twistIncrement, uncertain, combineStatus } from './dk-numeric';
+import { DK_SPRING_RULES, ruleSetForApparatus } from './spring-rules';
+import type { SpringRules } from './spring-rules';
 
 type Position = ElementExecution['bodyPositions'][number];
 const ranks: Record<Position, number> = { tuck: 0, pike: 1, straight: 2 };
@@ -35,15 +37,20 @@ export function springIdentity(skill: SkillDefinition, corrected = false): strin
   return skill.discipline === 'trampet' ? elementIdentity(skill.jump, corrected) : canonicalJson(skill.elements.map((element) => elementIdentity(element, corrected)));
 }
 
-/** `formulaForVaultPikeHalfTwist`: DK 1.1.0 følger reglementets formel for H>1 frem for A4-tabellen (Q02). */
-export function elementDifficulty(input: ElementExecution, formulaForVaultPikeHalfTwist = false): NumericDecision {
+/**
+ * `formulaForVaultPikeHalfTwist`: DK 1.1.0 følger reglementets formel for H>1 frem for A4-tabellen (Q02).
+ * Elementer over pakkens `maxRotations` eller uden for Pegasus-hvidlisten er ugyldige med pakkens fund.
+ */
+export function elementDifficulty(input: ElementExecution, formulaForVaultPikeHalfTwist = false, rules: SpringRules = DK_SPRING_RULES): NumericDecision {
   const element = normalizeElement(input);
   const fullRotations = element.rotationQuarterTurns / 4;
   const afterHands = element.variant.twistAfterHandsHalfTurns;
   if (Object.keys(element.variant).some((key) => key !== 'twistAfterHandsHalfTurns')) return uncertain('unresolved', ['UNKNOWN-VARIANT']);
   if (afterHands !== undefined && (element.apparatus !== 'pegasus' || typeof afterHands !== 'number' || !Number.isInteger(afterHands) || afterHands < 0 || afterHands > element.twistsHalfTurns)) return uncertain('invalid', ['TWIST-PLACEMENT']);
   if (afterHands !== undefined && afterHands !== element.twistsHalfTurns) return uncertain('unresolved', ['TWIST-PLACEMENT']);
-  if (fullRotations >= 3) return uncertain('invalid', ['DK-TRIPLE-FORBIDDEN']);
+  const ruleSet = ruleSetForApparatus(rules, element.apparatus);
+  if (fullRotations >= ruleSet.maxRotations + 1) return uncertain('invalid', [rules.forbiddenRotationIssue]);
+  if (element.apparatus === 'pegasus' && ruleSet.apparatusWhitelist && !ruleSet.apparatusWhitelist.includes(element.family)) return uncertain('invalid', [rules.forbiddenRotationIssue]);
   if (!Number.isInteger(fullRotations) || fullRotations < 1 || element.landing !== 'feet') return uncertain('invalid', ['ELEMENT-EXECUTION']);
   const position = positionBasis(element.bodyPositions);
   const shapeIndex = ranks[position];
@@ -124,9 +131,9 @@ export interface SpringSkillEvaluation {
   explanation: { countedElementIds: readonly string[]; excludedElementIds: readonly string[]; duplicateCount: number; sources: readonly SourceReference[]; notes: readonly string[] };
 }
 
-export function evaluateSpringSkill(skill: Exclude<SkillDefinition, { discipline: 'rhythm' }>, confirmation: AthleteSkill['connectionConfirmation'] = null, corrected = false, formulaForVaultPikeHalfTwist = false): SpringSkillEvaluation {
+export function evaluateSpringSkill(skill: Exclude<SkillDefinition, { discipline: 'rhythm' }>, confirmation: AthleteSkill['connectionConfirmation'] = null, corrected = false, formulaForVaultPikeHalfTwist = false, rules: SpringRules = DK_SPRING_RULES): SpringSkillEvaluation {
   const elements = skill.discipline === 'tumbling' ? skill.elements : [skill.jump];
-  const evaluated = elements.map((element) => ({ identity: elementIdentity(element, corrected), value: elementDifficulty(element, formulaForVaultPikeHalfTwist) }));
+  const evaluated = elements.map((element) => ({ identity: elementIdentity(element, corrected), value: elementDifficulty(element, formulaForVaultPikeHalfTwist, rules) }));
   const baseStatus = combineStatus(evaluated.map((element) => element.value.status));
   const knownElements = evaluated.filter((element): element is { identity: string; value: NumericDecision & { value: Fraction } } => element.value.value !== null);
   const top = topThreeDifficulty(knownElements.map((element) => ({ identity: element.identity, value: element.value.value })));
@@ -144,8 +151,8 @@ export function evaluateSpringSkill(skill: Exclude<SkillDefinition, { discipline
   const orderCategory = skill.discipline === 'trampet' ? skill.jump.rotationQuarterTurns / 4 : Math.max(0, ...categories);
   const sources: SourceReference[] = elements.flatMap((element) => {
     const record = officialSpringRecord(element);
-    return record ? [record.source, { sourceId: 'H', section: skill.discipline === 'tumbling' ? '9.3.5–6' : '10.3.5–6', page: skill.discipline === 'tumbling' ? 33 : 43 }] :
-      [{ sourceId: 'H', section: skill.discipline === 'tumbling' ? '9.3.5–6; formelvariant uden trykt kode' : '10.3.5–6; formelvariant uden trykt kode', page: skill.discipline === 'tumbling' ? 33 : 43 }];
+    const valueSource = rules[skill.discipline].valueSource;
+    return record ? [record.source, valueSource] : [{ ...valueSource, section: `${valueSource.section}; formelvariant uden trykt kode` }];
   });
   return { difficulty, status, validity, identity: springIdentity(skill, corrected), rotationCategory, orderCategory, connection, elementValues: evaluated,
     distinctElementCount: new Set(evaluated.filter((item) => item.value.status === 'known').map((item) => item.identity)).size,

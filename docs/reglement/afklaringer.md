@@ -246,6 +246,24 @@ Dette er især spørgsmål om, hvorvidt et hold og dets anmeldelse opfylder konk
 | Redskabsgrænser                            | Hvilke øvrige godkendelses-/minimumskrav gælder for Pegasus ud over den angivne maksimale højde?                                                                                                  | [RED-U03](11-redskaber.md)                                              |
 | Eksterne bestemmelser                      | Er de fælles bestemmelser fra 2016 fortsat gældende uændret, og hvilke eksterne DIF-regler skal indgå i en fuld kontrol?                                                                          | [FK-U03](17-faelles-bestemmelser.md)                                    |
 
+## Regionsrækken: arvede afklaringer og ikke relevante punkter
+
+Regelpakken `reg@1.0.0` arver ingen DK-værdier stiltiende. En DK-afklaring gælder kun i Regionsrækken, når REG-reglementet ikke fastsætter andre rammer, og hver arv er registreret som kontrolpost i `packages/rules/data/reg/control-posts.json` med kilde og test. Satser og grænser er altid REG's egne.
+
+| Punkt | Status i Regionsrækken | Begrundelse |
+| --- | --- | --- |
+| Q01 · Elementtillæg | Arvet afklaring | Hvert forskelligt gyldigt element ud over seriens første tæller, gennemsnit over tre omgange. Kontrolpost REG-B-ELEMENT. |
+| Q03 · Gentagelser | Arvet afklaring med REG-sats | Holdoptælling pr. præcis identitet; omgangen med flest forekomster friholdes. Satsen er REG's 0,1. Kontrolposter REG-C-GENTAG-BANE og REG-T-GENTAG. |
+| Q04 · Blandet Pegasus-omgang | Arvet afklaring | En omgang er hel med eller hel uden Pegasus; en blandet omgang er ugyldig planlægning. Kontrolpost REG-T-REDSKAB. |
+| Q02 · Overslag-salto hoftebøjet 180° | Ikke relevant | REG tillader kun enkeltrotationer og på Pegasus kun mølleoverslag og overslag (H 9.3.2/10.3.2). Kontrolposter REG-B-DOBBELT-BANE og REG-T-DOBBELT. |
+| Q06 · Rækkefølgefejl | Ikke relevant | REG har hverken rækkefølgefradrag eller rækkefølgekrav for tællende spring (H 9.2/10.2). Kontrolposter REG-C-ORDEN-BANE og REG-T-ORDEN. |
+| Q05 · Holdomgang uden flertal | Arvet som åben tvivl | Samme åbne spørgsmål som i Danmarksserien. Kontrolposter REG-C-HOLD-BANE og REG-T-HOLD. |
+| H-U06, A3-U01, Q-SPOT-DUP, C-RETNING-VALG | Arvet som åben tvivl | Samme tekst og samme åbne spørgsmål; vises under **Reglement → Kendt tvivl** for REG-hold. |
+| Flow og dobbelttillæg | Ikke relevant | Findes ikke i REG's bane- og trampetkomposition. Kontrolposter REG-C-FLOW-BANE, REG-T-FLOW, REG-B-DOBBELT-BANE og REG-T-DOBBELT. |
+| REG-EXTRA-LIMIT-DERIVED · Højst seks ekstra | Afledt planlægningsgrænse | REG-afsnittene nævner ekstra gymnaster uden antal. Grænsen er afledt af TR 1.3.1 (højst 12 gymnaster) og vises i appen som afledt. |
+
+REG's egne åbne punkter (H-U08, H-U11, A1REG-U01–U05 og A6-U02) står i tabellen nedenfor og i appens kendte tvivl.
+
 ## Andre rækker og senere udvidelser
 
 Disse punkter er bevaret, så de ikke bliver glemt. De behøver ikke alle være løst, før vi kan gennemgå DK's nuværende springberegninger.

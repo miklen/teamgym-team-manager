@@ -32,7 +32,7 @@
 | V14  | A5-09         | Dobbelt strakt med skruefordeling 540°/720° mod 720°/540°   | Samme element efter reglen for mindst tre hele skruer                                                    |
 | V15  | H-R10         | Markerede rytmeelement D=0,8; alle forsøger, 0/1/2/3 fejler | 0,8/0,4/0,4/0; G undtaget fra halv-værdi-reglen                                                          |
 | V16  | H-R11         | DK J-basis 0,8, én fejl i elementet; alle opfylder ind/ud   | 0,8/2+0,2=0,6; ikke (0,8+0,2)/2                                                                          |
-| V17  | A1.2 s. 2/11  | HB1001 og F402 i REG                                        | Tabelværdier 0,6 og 0,1; kodecifre må ikke give 1,0 og 0,4                                               |
+| V17  | A1.2 s. 2/11  | HB1001 og F402 i REG                                        | Tabelværdier 0,6 og 0,3; kodecifre må ikke give 1,0 og 0,4                                               |
 | V18  | A6 1.8.B      | DK seks tællende: 2 drenge+4 piger                          | Kildens antalfradrag 3,0, ikke 6,0                                                                       |
 | V19  | ASP 1.7       | Fradrag 7,3 blandt otte                                     | Formlen giver 5,475 og omgang 4,525; trykt eksempel 3,9/6,1 er konflikt, ikke alternativt godkendt facit |
 | V20  | ASP 3.2       | Rondat-flik-lukket                                          | Ikke i tilladte komplette kombinationer; anses som gennemløb                                             |
@@ -40,17 +40,17 @@
 
 ## Cases, hvor forventningen skal være en synlig afklaring
 
-| Case | Input                                                     | Åben afhængighed                                         |
-| ---- | --------------------------------------------------------- | -------------------------------------------------------- |
-| U01  | Seks ens rondat-flik-serier i en baneomgang               | H-U01: 0,1 eller 0,2 pr. gymnast i elementtillæg         |
-| U02  | Overslag salto hoftebøjet 180°                            | A4-U01 afklaret for DK 1.1.0: reglementet gælder, D=1,10 |
-| U03  | Holdomgang fordelt 3/3, 2/2/2 eller 3/2/1                 | H-U03: reference og D/C                                  |
+| Case | Input                                                     | Åben afhængighed                                                                                                                        |
+| ---- | --------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------- |
+| U01  | Seks ens rondat-flik-serier i en baneomgang               | H-U01: 0,1 eller 0,2 pr. gymnast i elementtillæg                                                                                        |
+| U02  | Overslag salto hoftebøjet 180°                            | A4-U01 afklaret for DK 1.1.0: reglementet gælder, D=1,10                                                                                |
+| U03  | Holdomgang fordelt 3/3, 2/2/2 eller 3/2/1                 | H-U03: reference og D/C                                                                                                                 |
 | U04  | Delvis gentagelse på tværs af skiftende gymnaster         | H-U02: afklaret for DK 1.1.0; holdoptælling, 0,20 × (sum − største omgang) pr. identitet. Ved lighed er omgangsplacering ikke fastlagt. |
-| U05  | Tre blandede redskabsomgange, hver 3 med/3 uden           | H-U05 afklaret for DK 1.1.0: ugyldig omgang, intet fradrag |
-| U06  | Faldende/stigende D inden for samme rotation: 0,8;0,6;0,7 | H-U04 afklaret for DK 1.1.0: to fejl, 0,20              |
-| U07  | Fuldt REG-rytmeprogram med alle C-komponenter             | H-U08: 1,2-maksimum versus 1,3-komponentsum              |
-| U08  | REG med én hånd på Pegasus                                | A6-U02: 0 eller 0,6 i E; kan stadig være legitimt forsøg |
-| U09  | Alle har trænerlicens, dokumenteret kun til 25/26         | A71-U01: ingen sikker gyldighed i 26/27                  |
+| U05  | Tre blandede redskabsomgange, hver 3 med/3 uden           | H-U05 afklaret for DK 1.1.0: ugyldig omgang, intet fradrag                                                                              |
+| U06  | Faldende/stigende D inden for samme rotation: 0,8;0,6;0,7 | H-U04 afklaret for DK 1.1.0: to fejl, 0,20                                                                                              |
+| U07  | Fuldt REG-rytmeprogram med alle C-komponenter             | H-U08: 1,2-maksimum versus 1,3-komponentsum                                                                                             |
+| U08  | REG med én hånd på Pegasus                                | A6-U02: 0 eller 0,6 i E; kan stadig være legitimt forsøg                                                                                |
+| U09  | Alle har trænerlicens, dokumenteret kun til 25/26         | A71-U01: ingen sikker gyldighed i 26/27                                                                                                 |
 
 ## Sporbarhed ved næste trin
 
