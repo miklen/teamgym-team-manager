@@ -64,13 +64,17 @@ function setup() {
   const children = added.filter((item) => item.assessmentOrigin.kind === 'inherited');
   return { ...fixture, workspace, parent, children };
 }
+function legacyRound({ reserves: _reserves, ...round }: Workspace['plans'][number]['tumbling'][number]['rounds'][number]) {
+  void _reserves;
+  return { ...round, entries: round.entries.map(({ plannedSpot: _spot, ...entry }) => { void _spot; return entry; }) };
+}
 function v1(workspace: Workspace) {
   const { inheritanceRelations: _relations, inheritanceExclusions: _exclusions, ...rest } = workspace;
   void _relations;
   void _exclusions;
   return {
     ...rest,
-    plans: rest.plans.map((plan) => ({ ...plan, tumbling: plan.tumbling[0]!.rounds.map(({ reserves: _reserves, ...round }) => { void _reserves; return round; }), trampet: plan.trampet[0]!.rounds.map(({ reserves: _reserves, ...round }) => { void _reserves; return round; }) })),
+    plans: rest.plans.map((plan) => ({ ...plan, tumbling: plan.tumbling[0]!.rounds.map(legacyRound), trampet: plan.trampet[0]!.rounds.map(legacyRound) })),
     schemaVersion: 1,
     athleteSkills: workspace.athleteSkills.map(({ assessmentOrigin: _origin, ...item }) => {
       void _origin;

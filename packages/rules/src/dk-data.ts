@@ -9,6 +9,24 @@ export interface TeamProfile {
   sources: readonly SourceReference[];
 }
 
+/** Regelpakkens konsekvens af en planlagt modtagning. Beløb er planlagte, ikke observerede, E-fradrag. */
+export interface SpotRate {
+  grade: 'support' | 'assist' | 'heavy'; label: string; executionDeduction: string; halvesDifficulty: boolean;
+  explanation: string; sources: readonly SourceReference[];
+}
+export type SpotRates = readonly SpotRate[];
+
+const FEET_FIRST = 'Planen forudsætter, at gymnasten lander med fødderne først. En mislykket landing er en observation uden for planen.';
+export const DK_SPOT_RATES: SpotRates = freezeData([
+  { grade: 'support', label: 'Let støtte', executionDeduction: '0.5', halvesDifficulty: false,
+    explanation: `Planlagt E-fradrag 0,5 pr. gymnast. D er uændret. ${FEET_FIRST}`, sources: [{ sourceId: 'A6', section: '1.7 Støtte (A6-07)', page: 5 }] },
+  { grade: 'assist', label: 'Hjælp til udførelse', executionDeduction: '1.0', halvesDifficulty: false,
+    explanation: `Planlagt E-fradrag 1,0 pr. gymnast. D er uændret. ${FEET_FIRST}`, sources: [{ sourceId: 'A6', section: '1.7 Hjælp til udførelse (A6-07)', page: 5 }] },
+  { grade: 'heavy', label: 'Kraftig hjælp i svæv/landing', executionDeduction: '1.0', halvesDifficulty: true,
+    explanation: `Planlagt E-fradrag 1,0, og det modtagne elements D halveres. E-fradraget og halveringen vurderes hver for sig. ${FEET_FIRST}`,
+    sources: [{ sourceId: 'A6', section: '1.7 Hjælp til udførelse (A6-07)', page: 5 }, { sourceId: 'H', section: '9.3.3', page: 33 }, { sourceId: 'H', section: '10.3.3', page: 42 }] },
+]);
+
 export const DK_DEFAULT_BINDING: RulesetBinding = freezeData({ rulesetId: 'dk', packageVersion: '1.1.0', ageGroup: 'junior', teamType: 'girls' });
 
 export const DK_PROFILES: readonly TeamProfile[] = freezeData(['U14', 'junior', 'senior'].flatMap((ageGroup) => ['girls', 'boys', 'mix'].map((teamType) => ({
@@ -34,6 +52,7 @@ export const DK_KNOWN_ISSUES: readonly KnownIssue[] = freezeData([
   { id: 'Q06', title: 'Optælling af rækkefølgefejl', detail: 'Sats 0,10 er kendt; præcis tælleenhed ved flere fejl, blandede baneserier og ekstra gymnaster er uafklaret. Forklar rækkefølgen og foreslå sortering uden at opfinde præcist fradrag.', scope: 'rule', sources: [{ sourceId: 'H', section: '9.2.2.2', page: 30 }, { sourceId: 'H', section: '10.2.2.2', page: 40 }] },
   { id: 'K01', title: 'To trykte DB804', detail: 'Pirouette og stem til håndstand har begge trykt kode DB804 og værdi 0,80; de bevarer forskellige interne identiteter og krav.', scope: 'catalog', sources: [{ sourceId: 'A1.1', section: 'DB804', page: 3 }, { sourceId: 'A1.1', section: 'DB804', page: 4 }] },
   { id: 'K02', title: 'Kattespring 540° mangler som trykt felt', detail: 'Ingen officiel kode, værdi eller registrerbar variant opfindes. De 94 faktisk trykte individuelle felter er katalogets grundlag.', scope: 'catalog', sources: [{ sourceId: 'H', section: 'Revisionshistorik', page: 5 }, { sourceId: 'A1.1', section: 'Kattespring', page: 7 }] },
+  { id: 'Q-SPOT-DUP', title: 'Kraftig hjælp på et gentaget element', detail: 'Kraftig hjælp halverer det modtagne elements D. Når samme element også står uhalveret andetsteds i serien, er det uafklaret, hvilken værdi der tæller. Appen viser intervallet mellem halveret og uhalveret D.', scope: 'rule', sources: [{ sourceId: 'H', section: '9.3.3', page: 33 }, { sourceId: 'H', section: '9.3.5', page: 33 }] },
 ]);
 
 export const DK_SOURCE_MANIFEST = freezeData(sourceManifest);

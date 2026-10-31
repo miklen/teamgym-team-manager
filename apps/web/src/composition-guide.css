@@ -1,5 +1,5 @@
 .composition-guide { margin: 0 0 18px; background: #fff; border: 1px solid var(--line); border-radius: 14px; overflow: clip; }
-.composition-guide-overview { display: grid; grid-template-areas: 'title bonus deduction toggle'; grid-template-columns: minmax(0, 1fr) auto auto auto; align-items: center; gap: 18px; padding: 14px 18px; cursor: pointer; list-style: none; }
+.composition-guide-overview { display: grid; grid-template-areas: 'title bonus deduction maximum toggle'; grid-template-columns: minmax(0, 1fr) auto auto auto auto; align-items: center; gap: 18px; padding: 14px 18px; cursor: pointer; list-style: none; }
 .composition-guide-overview::-webkit-details-marker { display: none; }
 .composition-guide-overview::marker { content: ''; }
 .composition-guide-overview:hover { background: #f7f9fd; }
@@ -10,6 +10,8 @@
 .guide-overview-metric { display: flex; flex-direction: column; min-width: 6.5rem; padding-left: 16px; border-left: 1px solid var(--line); }
 .guide-overview-metric:nth-of-type(2) { grid-area: bonus; }
 .guide-overview-metric:nth-of-type(3) { grid-area: deduction; }
+.guide-overview-maximum { grid-area: maximum; }
+.guide-overview-note { color: var(--muted); font-size: .72rem; font-weight: 500; }
 .guide-overview-metric strong { font-size: .84rem; white-space: nowrap; }
 .guide-overview-toggle { grid-area: toggle; color: var(--accent); font-size: .73rem; font-weight: 650; white-space: nowrap; }
 .guide-overview-toggle span { display: inline-block; margin-left: 4px; }
@@ -47,9 +49,12 @@
 .analysis-strip > div > strong { font-size: 1.35rem; }
 .analysis-strip > div { gap: 1px; }
 @media (max-width: 780px) {
-  .composition-guide-overview { grid-template-areas: 'title toggle' 'bonus deduction'; grid-template-columns: minmax(0, 1fr) auto; gap: 10px 12px; padding: 13px 14px; }
+  .composition-guide-overview { grid-template-areas: 'title title toggle' 'bonus deduction maximum'; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px 12px; padding: 13px 14px; }
   .guide-overview-metric { min-width: 0; padding-left: 0; border-left: 0; }
   .guide-overview-metric:nth-of-type(3) { padding-left: 12px; border-left: 1px solid var(--line); }
+  .guide-overview-maximum { padding-left: 12px; border-left: 1px solid var(--line); }
+  .guide-overview-metric strong { white-space: normal; }
+  .guide-overview-note { display: block; }
   .composition-guide-expanded { padding: 14px 16px; }
   .composition-guide-groups { grid-template-columns: 1fr; gap: 14px; }
   .composition-guide-row summary { grid-template-columns: minmax(0, 1fr) minmax(0, 8rem); }

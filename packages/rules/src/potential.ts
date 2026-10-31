@@ -22,6 +22,8 @@ export interface PotentialKernel {
 }
 export interface PlannedChange {
   roundId: string; athleteId: string; athleteName: string; beforeRegistrationId: string | null; afterRegistrationId: string | null;
+  /** Pladsens planlagte modtagning bortfalder, fordi gymnast eller spring ændres. */
+  plannedSpotRemoved: boolean;
 }
 export interface PotentialPreview {
   teamId: string; discipline: SpringDiscipline; scenarioId: string; basisPayload: string; bindingFingerprint: string;
@@ -55,12 +57,17 @@ function bestTeam(candidates: readonly PotentialCandidate[], profile: TeamProfil
   return unique.length >= profile.counting ? unique.slice(0, profile.counting) : null;
 }
 
+/** Kandidaterne vælges uden modtagning; bagefter følger pladsen samme regel som en manuel ændring. */
 function witnessEntries(candidates: readonly PotentialCandidate[], current: readonly RoundEntry[], roundId: string): RoundEntry[] {
   return [...candidates].sort((a, b) => a.evaluation.orderCategory - b.evaluation.orderCategory ||
-    a.evaluation.difficulty.value!.compare(b.evaluation.difficulty.value!)).map((candidate) => ({
-      id: current.find((entry) => entry.athleteId === candidate.athleteId)?.id ?? `witness:${roundId}:${candidate.athleteId}`,
-      athleteId: candidate.athleteId, athleteSkillId: candidate.registration.id, role: 'counting',
-    }));
+    a.evaluation.difficulty.value!.compare(b.evaluation.difficulty.value!)).map((candidate) => {
+      const previous = current.find((entry) => entry.athleteId === candidate.athleteId);
+      return {
+        id: previous?.id ?? `witness:${roundId}:${candidate.athleteId}`,
+        athleteId: candidate.athleteId, athleteSkillId: candidate.registration.id, role: 'counting',
+        plannedSpot: previous?.athleteSkillId === candidate.registration.id ? structuredClone(previous.plannedSpot) : null,
+      };
+    });
 }
 
 export async function searchBonusPotentials(workspace: Workspace, teamId: string, discipline: SpringDiscipline, scenarioId: string, kernel: PotentialKernel, options: PotentialOptions = {}): Promise<BonusPotential[]> {
@@ -99,7 +106,7 @@ export async function searchBonusPotentials(workspace: Workspace, teamId: string
     group.push(candidate); groups.set(candidate.evaluation.identity, group);
   }
   const currentFirst = before.rounds[0]!;
-  const firstIsIdentical = currentFirst.compositionReady && currentFirst.difficulty.status === 'known' && new Set(currentFirst.counting.map((item) => item.identity)).size === 1;
+  const firstIsIdentical = currentFirst.compositionReady && currentFirst.unspottedDifficulty.status === 'known' && new Set(currentFirst.counting.map((item) => item.identity)).size === 1;
   const uniform = [...groups.values()].map((group) => bestTeam(group, kernel.profile, () => 0)).find((group) => group !== null) ?? null;
   const basisPayload = workspacePayload(workspace);
   const fingerprint = bindingFingerprint(team.rulesetBinding);
@@ -129,7 +136,7 @@ export async function searchBonusPotentials(workspace: Workspace, teamId: string
       copyPlan.bindingFingerprint = fingerprint;
       validateWorkspace(copy);
       const after = kernel.analyze(copy);
-      if (!after.rounds.every((round) => round.compositionReady && round.difficulty.status === 'known')) continue;
+      if (!after.rounds.every((round) => round.compositionReady && round.unspottedDifficulty.status === 'known')) continue;
       const result = after.contributions.find((item) => item.id === bonus.id)?.decision;
       const amount = result?.value ?? result?.alternatives.literal ?? null;
       if (amount === null) continue;
@@ -142,6 +149,7 @@ export async function searchBonusPotentials(workspace: Workspace, teamId: string
           const newEntry = round.entries.find((entry) => entry.athleteId === athleteId);
           if (oldEntry?.athleteSkillId !== newEntry?.athleteSkillId || oldEntry?.role !== newEntry?.role || previous.entries.findIndex((entry) => entry.athleteId === athleteId) !== round.entries.findIndex((entry) => entry.athleteId === athleteId)) changes.push({
             roundId: round.id, athleteId, athleteName: athletes.get(athleteId)?.name ?? 'Tidligere holdmedlem', beforeRegistrationId: oldEntry?.athleteSkillId ?? null, afterRegistrationId: newEntry?.athleteSkillId ?? null,
+            plannedSpotRemoved: Boolean(oldEntry?.plannedSpot) && !newEntry?.plannedSpot,
           });
         }
       }

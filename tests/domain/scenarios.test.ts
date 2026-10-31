@@ -15,6 +15,8 @@ import {
   validateWorkspaceV2,
   migrateWorkspaceV1,
   migrateWorkspaceV2,
+  migrateWorkspaceV3,
+  validateWorkspaceV3,
   serializeWorkspace,
   parseWorkspace,
   workspacePayload,
@@ -65,16 +67,16 @@ describe('format 3, scenarier og reserver', () => {
       migrated.athleteSkills.some((item) => item.assessmentOrigin.kind === 'own' && item.stability === null),
     ).toBe(true);
     expect(JSON.stringify(legacyInheritance)).toBe(original);
-    const example = validateWorkspace(scenarioExample);
+    const example = migrateWorkspaceV3(scenarioExample);
     expect(example.plans[0]!.tumbling).toHaveLength(12);
     expect(parseWorkspace(serializeWorkspace(example))).toEqual(example);
   });
   it('har selvstændige strikte gamle skemaer og accepterer ikke nye felter under gamle versionsmærker', () => {
     const { workspace } = setup();
-    expect(validateWorkspace(workspace).schemaVersion).toBe(3);
-    for (const version of [1, 2]) {
+    expect(validateWorkspace(workspace).schemaVersion).toBe(4);
+    for (const version of [1, 2, 3]) {
       const mixed = { ...workspace, schemaVersion: version };
-      expect(() => (version === 1 ? validateWorkspaceV1(mixed) : validateWorkspaceV2(mixed))).toThrow();
+      expect(() => (version === 1 ? validateWorkspaceV1(mixed) : version === 2 ? validateWorkspaceV2(mixed) : validateWorkspaceV3(mixed))).toThrow();
     }
     const mixed = structuredClone(v2);
     Object.assign(mixed.plans[0]!.tumbling[0]!, { reserves: [] });

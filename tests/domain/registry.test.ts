@@ -93,6 +93,19 @@ describe('uforanderlige pakker og forskellige reglementer i samme arbejdsrum', (
     expect(parseWorkspace(serializeWorkspace(builder.workspace))).toEqual(builder.workspace);
   });
 
+  it('udfaset pakke beregner eksisterende hold og kan skiftes fra, men tilbydes ikke som valg', () => {
+    const builder = workspaceBuilder(); const team = builder.team('Gammel', { ...DK_DEFAULT_BINDING, packageVersion: '1.0.0' });
+    const registry = new RuleRegistry(); registry.register(DK_V2); registry.register(DK_V1, { retired: true });
+    expect(registry.list().map((item) => item.manifest.packageVersion)).toEqual(['1.1.0']);
+    expect(registry.list(false).map((item) => item.manifest.packageVersion)).toEqual(['1.1.0', '1.0.0']);
+    expect(registry.isRetired('dk', '1.0.0')).toBe(true);
+    expect(registry.resolve(team.rulesetBinding).status).toBe('known');
+    const next = { ...team.rulesetBinding, packageVersion: '1.1.0' };
+    const changed = applyVersionChange(builder.workspace, previewVersionChange(builder.workspace, team.id, next, registry));
+    expect(changed.teams.find((item) => item.id === team.id)!.rulesetBinding.packageVersion).toBe('1.1.0');
+    expect(changed.plans.find((plan) => plan.teamId === team.id)!.bindingFingerprint).toBe(bindingFingerprint(next));
+  });
+
   it('ukendt pakke vælger ikke nyeste og forhindrer ikke gemning af kendte andre hold', () => {
     const builder = workspaceBuilder(); const knownTeam = builder.team('Kendt');
     const unknownTeam = builder.team('Ukendt', { ...DK_DEFAULT_BINDING, packageVersion: '999.0.0' });

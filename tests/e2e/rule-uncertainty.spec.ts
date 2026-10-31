@@ -1,4 +1,4 @@
-import { registerAthleteSkill } from '@teamgym/domain';
+import { bindingFingerprint, registerAthleteSkill } from '@teamgym/domain';
 import { syntheticWorkspace, tumblingSkill } from '../fixtures/synthetic-workspace';
 import { openWorkspace } from './drive-fixture';
 import { expect, test } from './test';
@@ -21,14 +21,14 @@ for (const viewport of [
     await page.getByRole('link', { name: 'Springplan', exact: true }).click();
     const note = page.locator('.analysis-strip .rule-uncertainty').last();
     await expect(note.locator('.rule-uncertainty-mark')).toBeVisible();
-    expect((await page.locator('.analysis-strip').boundingBox())?.height ?? 0).toBeLessThan(200);
+    expect((await page.locator('.analysis-strip').boundingBox())?.height ?? 0).toBeLessThan(230);
     expect((await note.boundingBox())?.width ?? 0).toBeLessThan(28);
     await note.locator('summary').click();
     await expect(note.locator('.rule-uncertainty-popover')).toContainText('Ingen serie har flertal');
     const popover = await note.locator('.rule-uncertainty-popover').boundingBox();
     expect(popover!.x).toBeGreaterThanOrEqual(8);
     expect(popover!.x + popover!.width).toBeLessThanOrEqual(viewport.width - 8);
-    expect((await page.locator('.analysis-strip').boundingBox())?.height ?? 0).toBeLessThan(200);
+    expect((await page.locator('.analysis-strip').boundingBox())?.height ?? 0).toBeLessThan(230);
     await page.screenshot({
       path: testInfo.outputPath(`regelusikkerhed-${viewport.width}.png`),
       fullPage: true,
@@ -43,6 +43,25 @@ test('kun DK 1.1.0 kan vælges i appen', async ({ page }) => {
   const packages = page.getByRole('combobox', { name: 'Installeret regelpakke' });
   await expect(packages.locator('option')).toHaveCount(1);
   await expect(packages).toContainText('Danmarksserien · 1.1.0');
+});
+
+test('hold på udfaset DK 1.0.0 kan skiftes til 1.1.0 med før og efter', async ({ page }) => {
+  const { workspace } = syntheticWorkspace();
+  workspace.teams[0]!.rulesetBinding.packageVersion = '1.0.0';
+  workspace.plans[0]!.bindingFingerprint = bindingFingerprint(workspace.teams[0]!.rulesetBinding);
+  const source = await openWorkspace(page, workspace);
+  await page.getByRole('link', { name: 'Reglement', exact: true }).click();
+  await expect(page.getByText('1.0.0 er udfaset og kan ikke vælges til nye hold.')).toBeVisible();
+  const packages = page.getByRole('combobox', { name: 'Installeret regelpakke' });
+  await expect(packages.locator('option')).toHaveCount(1);
+  await expect(packages).toHaveValue('dk@1.1.0');
+  await page.getByRole('button', { name: 'Vis før og efter', exact: true }).click();
+  await page.getByRole('dialog', { name: 'Før og efter regelskift' }).getByRole('button', { name: 'Opdater', exact: true }).click();
+  await expect(page.locator('.rail-context')).toContainText('dk 1.1.0');
+  await expect(page.getByText('er udfaset')).toHaveCount(0);
+  await page.getByRole('button', { name: /Lokale ændringer/ }).click();
+  await expect(page.getByRole('button', { name: 'Gemt', exact: true })).toBeVisible();
+  expect(source.workspace.teams[0]!.rulesetBinding.packageVersion).toBe('1.1.0');
 });
 
 test('gentagelser vises som holdfradrag med berørte omgange', async ({ page }) => {

@@ -1,4 +1,4 @@
-import { migrateWorkspaceV1, migrateWorkspaceV2, parseWorkspace, serializeWorkspace, validateWorkspace } from '@teamgym/domain';
+import { migrateWorkspace, parseWorkspace, serializeWorkspace, validateWorkspace } from '@teamgym/domain';
 import type { Workspace } from '@teamgym/domain';
 import type { BrowserFetch, DriveBasis } from './index';
 import type { AccountReference, FileReference } from './storage';
@@ -17,7 +17,7 @@ export interface FileMetadata extends FileReference {
 }
 export interface LoadedWorkspace {
   originalBytes?: string;
-  sourceSchemaVersion?: 1 | 2;
+  sourceSchemaVersion?: 1 | 2 | 3;
   basis: DriveBasis;
   metadata: FileMetadata;
   workspace: Workspace;
@@ -158,8 +158,8 @@ export class DriveClient implements WorkspaceClient {
       let raw: unknown;
       try { raw = JSON.parse(bytes); } catch { throw new DriveError('format', 'Filen indeholder ugyldig JSON. Originalen ændres ikke.'); }
       const version = raw && typeof raw === 'object' && 'schemaVersion' in raw ? raw.schemaVersion : undefined;
-      const migration = version === 1 || version === 2;
-      const workspace = version === 1 ? migrateWorkspaceV1(raw) : version === 2 ? migrateWorkspaceV2(raw) : parseWorkspace(bytes);
+      const migration = version === 1 || version === 2 || version === 3;
+      const workspace = migration ? migrateWorkspace(raw) : parseWorkspace(bytes);
       const contentHash = await sha256(bytes);
       this.checkContext(generation);
       return {

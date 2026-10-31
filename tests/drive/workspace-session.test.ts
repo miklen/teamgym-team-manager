@@ -113,14 +113,20 @@ function deferred() {
   return { promise, resolve };
 }
 
-describe.each([1, 2])('format %i migration på den faktisk læste basis', (version) => {
+function withoutSpots(workspace: ReturnType<typeof createWorkspace>) {
+  const strip = (scenarios: typeof workspace.plans[number]['tumbling']) =>
+    scenarios.map((scenario) => ({ ...scenario, rounds: scenario.rounds.map((round) => ({ ...round, entries: round.entries.map(({ plannedSpot: _spot, ...entry }) => { void _spot; return entry; }) })) }));
+  return { ...workspace, schemaVersion: 3, plans: workspace.plans.map((plan) => ({ ...plan, tumbling: strip(plan.tumbling), trampet: strip(plan.trampet) })) };
+}
+
+describe.each([1, 2, 3])('format %i migration på den faktisk læste basis', (version) => {
   function legacy() {
     const source = server();
     const fixture = syntheticWorkspace();
-    const { inheritanceRelations: _relations, inheritanceExclusions: _exclusions, ...rest } = fixture.workspace;
+    const { inheritanceRelations: _relations, inheritanceExclusions: _exclusions, ...rest } = withoutSpots(fixture.workspace);
     void _relations; void _exclusions;
     const legacyV1 = { ...rest, plans: rest.plans.map((plan) => ({ ...plan, tumbling: plan.tumbling[0]!.rounds.map(({ reserves: _reserves, ...round }) => { void _reserves; return round; }), trampet: plan.trampet[0]!.rounds.map(({ reserves: _reserves, ...round }) => { void _reserves; return round; }) })), schemaVersion: 1, athleteSkills: rest.athleteSkills.map(({ assessmentOrigin: _origin, ...item }) => { void _origin; return item; }) };
-    const original = JSON.stringify(version === 1 ? legacyV1 : { ...fixture.workspace, schemaVersion: 2, plans: legacyV1.plans });
+    const original = JSON.stringify(version === 1 ? legacyV1 : version === 2 ? { ...withoutSpots(fixture.workspace), schemaVersion: 2, plans: legacyV1.plans } : withoutSpots(fixture.workspace));
     source.replaceBytes(original);
     return { source, original };
   }
@@ -136,13 +142,14 @@ describe.each([1, 2])('format %i migration på den faktisk læste basis', (versi
     expect(session.exportOriginal()).toBe(original);
     session.cancelMigration(); expect(session.snapshot().draft).toBeNull();
     await session.open('file'); session.acceptMigration();
-    expect(session.snapshot().draft?.schemaVersion).toBe(3);
+    expect(session.snapshot().draft?.schemaVersion).toBe(4);
+    expect(session.snapshot().draft?.plans.flatMap((plan) => [...plan.tumbling, ...plan.trampet]).flatMap((scenario) => scenario.rounds).flatMap((round) => round.entries).every((entry) => entry.plannedSpot === null)).toBe(true);
     expect(session.snapshot().loaded?.basis).toEqual(basis);
     expect(session.dirty()).toBe(true);
     expect(source.puts).toBe(0); expect(source.bytes).toBe(original);
     await session.save();
     expect(source.conditions).toEqual(['"2"']);
-    expect(JSON.parse(source.bytes).schemaVersion).toBe(3);
+    expect(JSON.parse(source.bytes).schemaVersion).toBe(4);
     expect(session.dirty()).toBe(false);
   });
   it('annulleret migration og afvist nyere/beskadiget fil bevarer en eksisterende kladde', async () => {
@@ -151,7 +158,7 @@ describe.each([1, 2])('format %i migration på den faktisk læste basis', (versi
     const { original } = legacy(); source.replaceBytes(original);
     await session.open('file', true); session.cancelMigration();
     expect(session.exportDraft()).toBe(draft);
-    for (const bytes of ['{', JSON.stringify({ ...createWorkspace(), schemaVersion: 99 })]) {
+    for (const bytes of ['{', JSON.stringify({ ...createWorkspace(), schemaVersion: 5 }), JSON.stringify({ ...createWorkspace(), schemaVersion: 99 })]) {
       source.replaceBytes(bytes); await session.open('file', true); expect(session.exportDraft()).toBe(draft);
     }
     expect(source.puts).toBe(0);
@@ -159,7 +166,8 @@ describe.each([1, 2])('format %i migration på den faktisk læste basis', (versi
   it('migration med læseadgang kan eksporteres, men ikke overskrive originalen', async () => {
     const { source, original } = legacy(); source.setWritable(false);
     const session = new WorkspaceSession(source.client()); await session.open('file'); session.acceptMigration();
-    expect(JSON.parse(session.exportDraft()).schemaVersion).toBe(3);
+    expect(JSON.parse(session.exportDraft()).schemaVersion).toBe(4);
+    expect(session.exportOriginal()).toBe(original);
     await session.save(); expect(source.puts).toBe(0); expect(source.bytes).toBe(original);
   });
   it('konkurrerende gemning efter migration afviser den gamle basis', async () => {
@@ -402,5 +410,26 @@ describe('samlet scenariesamling med reserver', () => {
     session.edit(renameScenario(workspace, plan.id, 'tumbling', plan.tumbling[1]!.id, 'B lokalt'));
     const draft = session.exportDraft(); source.external(); const newer = source.bytes;
     await session.save(); expect(session.snapshot().state).toBe('conflict'); expect(session.exportDraft()).toBe(draft); expect(source.bytes).toBe(newer);
+  });
+  it('gennemgang fletter en nyere fil i format 3 mod den migrerede basis og gemmer format 4', async () => {
+    const { source, session } = await scenarios(); const workspace = session.snapshot().draft!; const plan = workspace.plans[0]!;
+    session.edit(renameScenario(workspace, plan.id, 'tumbling', plan.tumbling[1]!.id, 'B lokalt'));
+    const remote = renameScenario(workspace, plan.id, 'tumbling', plan.tumbling[0]!.id, 'A eksternt');
+    source.replaceBytes(JSON.stringify(withoutSpots(remote))); const legacy = source.bytes;
+    await session.beginReview();
+    expect(session.snapshot().review?.result?.status).toBe('valid');
+    expect(await session.applyReview()).toBe(true);
+    expect(session.snapshot().draft?.plans[0]!.tumbling.map((item) => item.name).slice(0, 2)).toEqual(['A eksternt', 'B lokalt']);
+    expect(session.snapshot().state).toBe('changed'); expect(source.puts).toBe(0); expect(source.bytes).toBe(legacy);
+    await session.save();
+    expect(JSON.parse(source.bytes).schemaVersion).toBe(4); expect(session.dirty()).toBe(false);
+  });
+  it('gennemgang afviser en nyere fil i format 1 eller 2 uden at ændre kladden', async () => {
+    const { source, session } = await scenarios(); add(session); const draft = session.exportDraft();
+    const legacy = withoutSpots(session.snapshot().loaded!.workspace);
+    source.replaceBytes(JSON.stringify({ ...legacy, schemaVersion: 2, plans: legacy.plans.map((plan) => ({ ...plan, tumbling: plan.tumbling[0]!.rounds.map(({ reserves: _reserves, ...round }) => { void _reserves; return round; }), trampet: plan.trampet[0]!.rounds.map(({ reserves: _reserves, ...round }) => { void _reserves; return round; }) })) }));
+    await session.beginReview();
+    expect(session.snapshot().review).toMatchObject({ status: 'error', message: 'Den nyeste fil kræver migration og kan ikke flettes.' });
+    expect(session.exportDraft()).toBe(draft); expect(source.puts).toBe(0);
   });
 });

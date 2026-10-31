@@ -1,6 +1,6 @@
 # Vedligeholdelse af sammenligning og fletning
 
-`packages/domain/src/workspace-merge.ts` sammenligner basis B, lokal L og fil R uden mutation, netværk, ur eller tilfældige id'er. Alle tre skal være gyldige format 3-filer med samme workspaceId. Konteksten injicerer en stabil fingerprint og ren afstemning med de aktuelle regelpakker. Uafgjorte/ugyldige resultater har ingen `candidate`; kun `status: 'valid'` kan anvendes. Konflikt-id'er er bundet til input og kontekst. Ingen valg er forhåndsudfyldt. Genberegn ved ændrede valg.
+`packages/domain/src/workspace-merge.ts` sammenligner basis B, lokal L og fil R uden mutation, netværk, ur eller tilfældige id'er. Alle tre skal være gyldige format 4-filer med samme workspaceId. En basis eller fil i format 3 migreres først deterministisk uden nye id'er; format 1 og 2 flettes ikke. Konteksten injicerer en stabil fingerprint og ren afstemning med de aktuelle regelpakker. Uafgjorte/ugyldige resultater har ingen `candidate`; kun `status: 'valid'` kan anvendes. Konflikt-id'er er bundet til input og kontekst. Ingen valg er forhåndsudfyldt. Genberegn ved ændrede valg.
 
 ## Dækningsoversigt
 
@@ -15,7 +15,7 @@
 | Registrering | id; sikkerhed/dato/ophav én gruppe, note særskilt, forbindelsesbekræftelse atomisk, revurderingsliste atomisk. updatedAt vælger ingen vinder. |
 | Plan | id og teamId; regel-fingerprint; discipliner indeholder scenarier med id. |
 | Scenarie | id; navn selvstændigt; rækkefølge eksplicit; tre omgange identificeres ved id. |
-| Omgang | id; deltagere og reserver hver en atomisk ordnet liste inklusive medlemmernes id, gymnast, spring og rolle. Flytning mellem lister kan samle valget. |
+| Omgang | id; deltagere og reserver hver en atomisk ordnet liste inklusive medlemmernes id, gymnast, spring og rolle. Deltagerens planlagte modtagning (grad, element og springreference) er én atomisk værdi i deltagerlisten. Flytning mellem lister kan samle valget. |
 | Arverelation | nøgle sourceId/targetId/catalogId/relationId; hele accepterede relation atomisk. |
 | Fravalg | nøgle athleteId/targetIdentity; hele fravalget atomisk. |
 | Ophav | own/inherited med eksplicit sourceId/sourceChoice/context; aktive arveværdier afstemmes, kildevalg bevares. |
@@ -54,6 +54,20 @@ Den eksplicitte politik er fortsat én atomisk gruppe for sikkerhed/dato/ophav o
 Samtidighedskontrakten verificeres af `tests/domain/workspace-merge.test.ts` (forskellige atomiske vurderinger, uafhængige noter, arvekilde mod note/egen vurdering/fravalg), suppleret af arveprøverne og skalaprøverne. Browserprøver kontrollerer de nye tekster ved valg og redigering samt bevarelse af eksisterende vurderinger og annullering.
 
 Eksempel på samtidige kommandoer: `renameTeam(B, hold, navn)` og `updateAssessment(B, registrering, vurdering)` skal begge overleve. To `updateAssessment` på samme registrering med forskellig sikkerhed skal kræve ét valg med sikkerhed/dato/ophav samlet. Disse eksempler dækkes i `tests/domain/workspace-merge.test.ts`.
+
+### Planlagt modtagning, format 4
+
+**Fælles data:** Hver plads i en bane- eller trampetomgang har `plannedSpot`, som enten er `null` eller `{ grade, skillId, elementIndex }`. Grad er `support`, `assist` eller `heavy`. `elementIndex` bruges kun ved kraftig hjælp på bane og er ellers `null`. Reserver og rytme har ikke feltet. Format 3 migreres deterministisk til format 4 med `plannedSpot: null` på alle pladser uden nye id'er, ur eller tilfældighed. Ældre apps afviser format 4 som nyere.
+
+**Identiteter og rækkefølge:** Modtagningen har ingen egen id. Den tilhører pladsens id og peger på registreringens `skillId`. Pladsrækkefølge, rolle og omgangens id ændres ikke af en modtagning. Ændring af rækkefølge eller rolle samt `moveRoundFirst` og `duplicateScenario` bevarer den.
+
+**Politik:** `merge-policy.ts` klassificerer feltet som atomisk værdi med betegnelsen "Planlagt modtagning". Fordi deltagerlisten er atomisk, kræver forskellige samtidige ændringer i samme omgang, herunder modtagning mod rækkefølgeskift, ét valg for hele listen i begge fletteretninger. Ændringer i forskellige omgange eller scenarier flettes. Ens ændringer giver ingen konflikt. Konfliktvisningen viser modtagningen på dansk, f.eks. "Kraftig hjælp · <element>" eller "Ingen".
+
+**Afhængigheder og afledte værdier:** `setRoundEntries` nulstiller modtagningen, når pladsens gymnast eller registrering skifter. Det dækker manuelle skift, reserveindsættelse og potentialeforslag. `replaceAthleteSkill` nulstiller modtagninger på registreringen i alle planer, når udførelsen ændres. Ved samtidig modtagning og udskiftet spring flettes begge ændringer uden konflikt. Den gemte `skillId` matcher så ikke længere registreringen, og `plannedSpotState` giver afledt status `reset`. Reglerne bruger kun `activePlannedSpot`, så en nulstillet modtagning giver hverken halveret D eller planlagt E-fradrag. Transitive referencer i sammenligningen slås op i basis først, så fletteretningen ikke afgør grupperingen. Omgangens D med modtagning, D uden modtagning, planlagte E-fradrag, Maks. mulig karakter og modtagningens pris er afledte værdier, som genberegnes efter fletning og aldrig gemmes. Potentialesøgningen bruger D uden modtagning.
+
+**Præsentation:** Pladsen viser grad, eventuelt element og justeret D med tekst. En nulstillet modtagning vises som afledt status med handlinger til at fjerne den eller planlægge igen og præsenteres ikke som en trænerbeslutning. Formularer bruger `setPlannedSpot`/`clearPlannedSpot` og indfører ingen egne regler for nulstilling eller fletning.
+
+**Tests:** `tests/domain/workspace-merge.test.ts` (planlagt modtagning i trevejsfletning: samme omgang, forskellige omgange, to forskellige modtagninger på samme plads og ens ændringer i begge retninger samt udskiftet spring med afledt nulstilling), `tests/domain/planned-spotting.test.ts` (validering, migration og kommandoer), `tests/domain/planned-spotting-rules.test.ts` (D, E-loft og Maks. mulig karakter med faste facit) og `tests/drive/workspace-session.test.ts` (migration fra format 3, gennemgang mod en fil i format 3 og afvisning af format 5).
 
 ## Sessionens levetid og gemning
 

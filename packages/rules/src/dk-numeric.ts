@@ -206,3 +206,29 @@ export function compositionTotal(base: Fraction, bonuses: readonly NumericDecisi
   const raw = base.add(sumFractions(bonuses.map((decision) => decision.knownSubtotal))).subtract(sumFractions(deductions.map((decision) => decision.knownSubtotal)));
   return { status, raw: status === 'known' ? raw : null, knownSubtotal: raw, value: status === 'known' ? raw.max(0) : null, panel: status === 'known' ? raw.max(0).panelFloor() : null };
 }
+
+/** Kraftig hjælp på bane: seriens tre bedste genberegnes med det modtagne elements D halveret (H 9.3.3). */
+export function spottedTopThreeDifficulty(elements: readonly { identity: string; value: Fraction }[], spottedIndex: number): NumericDecision {
+  const spotted = elements[spottedIndex];
+  if (!spotted) throw new Error('Det modtagne element findes ikke i serien.');
+  const halve = (predicate: (index: number, identity: string) => boolean) =>
+    elements.map((element, index) => predicate(index, element.identity) ? { ...element, value: element.value.divide(2) } : element);
+  if (!elements.some((element, index) => index !== spottedIndex && element.identity === spotted.identity)) return known(topThreeDifficulty(halve((index) => index === spottedIndex)).value);
+  const halved = topThreeDifficulty(halve((_index, identity) => identity === spotted.identity)).value;
+  const unhalved = topThreeDifficulty(elements).value;
+  return uncertain('unresolved', ['Q-SPOT-DUP'], halved, { halved, unhalved });
+}
+
+/** Planlagt E-loft for én omgang: 10,0 minus planlagte fradrag, mindst 0,0. */
+export function plannedExecutionCeiling(deduction: NumericDecision): NumericDecision {
+  const ten = new Fraction(10);
+  return deduction.value !== null ? known(ten.subtract(deduction.value).max(0)) :
+    uncertain(deduction.status === 'known' ? 'incomplete' : deduction.status, deduction.issues, ten.subtract(deduction.knownSubtotal).max(0));
+}
+
+/** Maks. mulig karakter: C (mindst 0) + D + gennemsnittet af omgangenes planlagte E-loft. Et loft, ikke en forventet karakter. */
+export function plannedMaximumScore(composition: { status: EvaluationStatus; value: Fraction | null; knownSubtotal: Fraction }, difficulty: NumericDecision, ceilings: readonly NumericDecision[]): NumericDecision {
+  if (ceilings.length !== 3) throw new Error('Maks. mulig karakter kræver tre omgange.');
+  const c = composition.value !== null ? known(composition.value) : uncertain(composition.status === 'known' ? 'incomplete' : composition.status, [], composition.knownSubtotal.max(0));
+  return sumDecisions([c, difficulty, divideDecision(sumDecisions(ceilings), 3)]);
+}

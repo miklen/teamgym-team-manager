@@ -1,6 +1,6 @@
 import { canonicalJson, skillIdentity, bindingFingerprint, newEntityId } from './identity';
-import { CURRENT_SCHEMA_VERSION, WORKSPACE_FORMAT, workspaceSchema, workspaceV1Schema, workspaceV2Schema } from './schema';
-import type { WorkspaceV1, WorkspaceV2, SpringDiscipline, ReserveEntry, RoundEntry } from './schema';
+import { CURRENT_SCHEMA_VERSION, WORKSPACE_FORMAT, workspaceSchema, workspaceV1Schema, workspaceV2Schema, workspaceV3Schema } from './schema';
+import type { WorkspaceV1, WorkspaceV2, WorkspaceV3, SpringDiscipline, ReserveEntry, RoundEntry } from './schema';
 import type { Workspace } from './schema';
 import type { Diagnostic } from './index';
 
@@ -109,6 +109,16 @@ export function validateWorkspace(input: unknown): Workspace {
           if (skills.get(registration.skillId)?.discipline !== discipline) fail('Pladsens færdighed har forkert disciplin.');
         }
       }
+      for (const entry of round.entries) {
+        const spot = entry.plannedSpot;
+        if (!spot) continue;
+        if (entry.athleteSkillId === null) fail('En planlagt modtagning kræver et valgt spring på pladsen.');
+        const spotSkill = skills.get(spot.skillId);
+        if (!spotSkill || spotSkill.discipline !== discipline) fail('Den planlagte modtagning henviser til et ukendt spring eller en anden disciplin.');
+        const needsElement = spot.grade === 'heavy' && spotSkill.discipline === 'tumbling';
+        if (needsElement !== (spot.elementIndex !== null)) fail('Elementvalg hører kun til kraftig hjælp på bane.');
+        if (spotSkill.discipline === 'tumbling' && spot.elementIndex !== null && spot.elementIndex >= spotSkill.elements.length) fail('Det modtagne element findes ikke i serien.');
+      }
     }
       }
     }
@@ -132,16 +142,19 @@ export function parseWorkspace(bytes: string): Workspace {
 export function validateWorkspaceV1(input: unknown): WorkspaceV1 {
   const parsed = workspaceV1Schema.safeParse(input);
   if (!parsed.success) fail('Ugyldige format 1-data. Originalen bevares.');
-  const value = parsed.data;
-  migrateWorkspaceV2({ ...value, schemaVersion: 2, athleteSkills: value.athleteSkills.map((item) => ({ ...item, assessmentOrigin: { kind: 'own' } })), inheritanceRelations: [], inheritanceExclusions: [] });
-  return value;
+  upgradeV1(parsed.data);
+  return parsed.data;
 }
 
-export function migrateWorkspaceV1(input: unknown): Workspace {
-  const original = validateWorkspaceV1(input);
+function upgradeV1(original: WorkspaceV1): Workspace {
   return migrateWorkspaceV2({ ...original, schemaVersion: 2, athleteSkills: original.athleteSkills.map((item) => ({ ...item, assessmentOrigin: { kind: 'own' } })), inheritanceRelations: [], inheritanceExclusions: [] });
 }
 
+export function migrateWorkspaceV1(input: unknown): Workspace {
+  return upgradeV1(validateWorkspaceV1(input));
+}
+
+/** Format 2 → 3 giver hver disciplin ét nyt Plan A-scenarie; kun de nye scenarier får nye id'er. */
 function upgradeV2(original: WorkspaceV2): Workspace {
   const used = new Set<string>();
   const collect = (value: unknown): void => {
@@ -151,7 +164,7 @@ function upgradeV2(original: WorkspaceV2): Workspace {
   };
   collect(original); used.add(original.workspaceId);
   const id = () => { let value: string; do { value = newEntityId(); } while (used.has(value)); used.add(value); return value; };
-  return validateWorkspace({ ...structuredClone(original), schemaVersion: 3, plans: original.plans.map((plan) => ({ ...plan,
+  return migrateWorkspaceV3({ ...structuredClone(original), schemaVersion: 3, plans: original.plans.map((plan) => ({ ...plan,
     ...Object.fromEntries((['tumbling', 'trampet'] as const).map((discipline) => [discipline, [{ id: id(), name: 'Plan A', rounds: plan[discipline].map((round) => ({ ...structuredClone(round), reserves: [] })) }]])),
   })) });
 }
@@ -167,6 +180,38 @@ export function migrateWorkspaceV2(input: unknown): Workspace {
   const parsed = workspaceV2Schema.safeParse(input);
   if (!parsed.success) fail('Ugyldige format 2-data. Originalen bevares.');
   return upgradeV2(parsed.data);
+}
+
+/** Deterministisk og tabsfri: ingen nye id'er, ur eller tilfældighed, så en format 3-basis kan bruges i fletning. */
+function upgradeV3(original: WorkspaceV3): Workspace {
+  const copy = structuredClone(original);
+  return validateWorkspace({ ...copy, schemaVersion: 4, plans: copy.plans.map((plan) => ({ ...plan,
+    ...Object.fromEntries((['tumbling', 'trampet'] as const).map((discipline) => [discipline, plan[discipline].map((scenario) => ({ ...scenario,
+      rounds: scenario.rounds.map((round) => ({ ...round, entries: round.entries.map((entry) => ({ ...entry, plannedSpot: null })) })),
+    }))])),
+  })) });
+}
+
+export function validateWorkspaceV3(input: unknown): WorkspaceV3 {
+  const parsed = workspaceV3Schema.safeParse(input);
+  if (!parsed.success) fail('Ugyldige format 3-data. Originalen bevares.');
+  upgradeV3(parsed.data);
+  return parsed.data;
+}
+
+export function migrateWorkspaceV3(input: unknown): Workspace {
+  const parsed = workspaceV3Schema.safeParse(input);
+  if (!parsed.success) fail('Ugyldige format 3-data. Originalen bevares.');
+  return upgradeV3(parsed.data);
+}
+
+/** Migrerer en ældre, gyldig arbejdsrumsværdi til det aktuelle format; aktuelle filer valideres uændret. */
+export function migrateWorkspace(input: unknown): Workspace {
+  const version = input && typeof input === 'object' && 'schemaVersion' in input ? input.schemaVersion : undefined;
+  if (version === 1) return migrateWorkspaceV1(input);
+  if (version === 2) return migrateWorkspaceV2(input);
+  if (version === 3) return migrateWorkspaceV3(input);
+  return validateWorkspace(input);
 }
 
 /** Fælles referencegrundlag for kartotek, konsekvenser og diagnoser. */

@@ -180,6 +180,20 @@ A gentager springet. Omgang 2 har flest lukkede saltoer, men B har ikke gentaget
 
 **Kilde:** Hovedreglementet, side 30, punkt 9.2.2.4. Reference **H-C05** i [kildeopslaget](01-hovedreglement.md) og **C-RETNING-VALG** i [rettelser og advarsler](rettelser-og-advarsler-2026-10-30.md).
 
+### Q-SPOT-DUP · Hvilken værdi tæller, når et modtaget element også står uhalveret i serien?
+
+**Problemet:** Kraftig hjælp i svæv eller landing halverer det modtagne elements sværhedsværdi. Seriens D tæller hvert forskelligt element én gang. Reglen siger ikke, hvad der sker, når samme element både udføres med kraftig hjælp og uden hjælp i samme serie.
+
+**Eksempel:** En serie har to ens flikflak og en salto. Træneren planlægger kraftig hjælp på den sidste flikflak. Den første flikflak udføres uden hjælp.
+
+**Spørgsmålet, vi skal have svar på:**
+
+> Tæller elementet med halv eller fuld værdi, når det står både med og uden kraftig hjælp i samme serie?
+
+**Betydning:** Appen viser seriens D som uafklaret med intervallet mellem halveret og uhalveret værdi. Pladsens bidrag, omgangens D og Maks. mulig karakter bliver uafklarede.
+
+**Kilde:** Hovedreglementet, side 33, punkt 9.3.3 og 9.3.5.
+
 ## Danmarksseriens rytme
 
 Disse spørgsmål handler om elementvalg og deres værdi. Hvert spørgsmål henviser til en mere detaljeret kildebeskrivelse.

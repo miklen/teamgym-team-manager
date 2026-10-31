@@ -17,6 +17,8 @@ const explanations: Record<string, string> = {
   K01: 'To forskellige rytmemomenter har begge den trykte kode DB804. Det er uafklaret, hvordan de må anmeldes sammen.',
   'A3-U01':
     'Startmarkeringen giver samme D som den almindelige salto. Vi tæller den som samme element; identiteten er endnu ikke bekræftet officielt.',
+  'Q-SPOT-DUP':
+    'Kraftig hjælp halverer det modtagne element. Samme element står også uhalveret andetsteds i serien, og det er uafklaret, hvilken værdi der tæller. Appen viser D med og uden halvering.',
   'C-RETNING-VALG':
     'Samme blandede omgang er nærmest både forlæns- og baglænskravet. Det er uafklaret, om én omgang må bruges til begge.',
 };

@@ -160,8 +160,11 @@ export function RulesPage({ workspace, change, writable, teamId }: DataProps & {
   const team = workspace.teams.find((item) => item.id === teamId)!;
   const resolved = registry.resolve(team.rulesetBinding);
   const packages = registry.list();
+  const retired = registry.isRetired(team.rulesetBinding.rulesetId, team.rulesetBinding.packageVersion);
   const [target, setTarget] = useState(
-    `${team.rulesetBinding.rulesetId}@${team.rulesetBinding.packageVersion}`,
+    retired && packages[0]
+      ? `${packages[0].manifest.rulesetId}@${packages[0].manifest.packageVersion}`
+      : `${team.rulesetBinding.rulesetId}@${team.rulesetBinding.packageVersion}`,
   );
   const selected = packages.find(
     (item) => `${item.manifest.rulesetId}@${item.manifest.packageVersion}` === target,
@@ -185,6 +188,12 @@ export function RulesPage({ workspace, change, writable, teamId }: DataProps & {
           ? resolved.profile.label
           : `${team.rulesetBinding.ageGroup}/${team.rulesetBinding.teamType} · Ikke installeret`}
       </p>
+      {retired && (
+        <p className="notice">
+          {team.rulesetBinding.packageVersion} er udfaset og kan ikke vælges til nye hold. Holdets data bevares og
+          beregnes fortsat. Vælg {packages[0]?.manifest.packageVersion} nedenfor, og se før og efter, inden du skifter.
+        </p>
+      )}
       {resolved.status !== 'known' && (
         <p className="notice">
           Bindingen bevares præcist. Installér den krævede pakke for at beregne eller sammenligne; andre hold

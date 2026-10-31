@@ -20,6 +20,8 @@ import {
   skillIdentity,
   confirmConnection,
   bindingFingerprint,
+  setPlannedSpot,
+  plannedSpotState,
 } from '@teamgym/domain';
 import type { MergeContext, MergeResult, Workspace } from '@teamgym/domain';
 import { syntheticWorkspace, binding } from '../fixtures/synthetic-workspace';
@@ -48,7 +50,7 @@ function fixture() {
 }
 
 describe('eksplicit schema- og politikdækning', () => {
-  it('dækker alle format 3-felter og indlejrede unioner', () => {
+  it('dækker alle format 4-felter og indlejrede unioner', () => {
     expect(checkMergePolicy()).toEqual([]);
   });
   it.each(['top', 'nested', 'atomic', 'atomic-nested', 'union'])(
@@ -499,5 +501,83 @@ describe('trevejsmotor', () => {
     const w = valid(mergeWorkspace(b, l, r, context));
     expect(w.teams[0]!.name).toBe('Lokalt hold');
     expect(w.athleteSkills[0]!.stability).toBe(3);
+  });
+});
+
+describe('planlagt modtagning i trevejsfletning', () => {
+  function spotSetup() {
+    const f = fixture();
+    const plan = f.b.plans[0]!, scenario = plan.tumbling[0]!;
+    const spot = (workspace: Workspace, roundIndex: number, entryIndex: number, grade: 'support' | 'assist' | 'heavy') => {
+      const round = workspace.plans[0]!.tumbling[0]!.rounds[roundIndex]!;
+      return setPlannedSpot(workspace, plan.id, 'tumbling', scenario.id, round.id, round.entries[entryIndex]!.id, { grade }, f.environment);
+    };
+    const entry = (workspace: Workspace, roundIndex = 0, entryIndex = 0) => workspace.plans[0]!.tumbling[0]!.rounds[roundIndex]!.entries[entryIndex]!;
+    return { ...f, plan, scenario, spot, entry };
+  }
+  const directions = [['lokal', false], ['fil', true]] as const;
+
+  it.each(directions)('modtagning mod rækkefølgeskift i samme omgang giver ét valg (modtagning %s)', (_side, swap) => {
+    const { b, spot, entry } = spotSetup();
+    const spotted = spot(b, 0, 0, 'assist');
+    const reordered = structuredClone(b);
+    reordered.plans[0]!.tumbling[0]!.rounds[0].entries.reverse();
+    const [l, r] = swap ? [reordered, spotted] : [spotted, reordered];
+    const review = mergeWorkspace(b, l, r, context);
+    expect(review.conflicts).toHaveLength(1);
+    const kept = valid(mergeWorkspace(b, l, r, context, choose(review, swap ? 'remote' : 'local')));
+    expect(entry(kept).plannedSpot?.grade).toBe('assist');
+    expect(kept.plans[0]!.tumbling[0]!.rounds[0].entries.map((item) => item.id)).toEqual(b.plans[0]!.tumbling[0]!.rounds[0].entries.map((item) => item.id));
+    const moved = valid(mergeWorkspace(b, l, r, context, choose(review, swap ? 'local' : 'remote')));
+    expect(moved.plans[0]!.tumbling[0]!.rounds[0].entries.every((item) => item.plannedSpot === null)).toBe(true);
+    expect(moved.plans[0]!.tumbling[0]!.rounds[0].entries[0]!.id).toBe(entry(b, 0, 5).id);
+  });
+
+  it.each(directions)('modtagninger i forskellige omgange flettes uden valg (lokal først: %s)', (_side, swap) => {
+    const { b, spot, entry } = spotSetup();
+    const first = spot(b, 0, 0, 'support'), second = spot(b, 1, 2, 'heavy');
+    const w = valid(mergeWorkspace(b, swap ? second : first, swap ? first : second, context));
+    expect(entry(w, 0, 0).plannedSpot?.grade).toBe('support');
+    expect(entry(w, 1, 2).plannedSpot).toMatchObject({ grade: 'heavy', elementIndex: entry(second, 1, 2).plannedSpot!.elementIndex });
+  });
+
+  it.each(directions)('to forskellige modtagninger på samme plads kræver valg (%s)', (_side, swap) => {
+    const { b, spot, entry } = spotSetup();
+    const support = spot(b, 0, 0, 'support'), heavy = spot(b, 0, 0, 'heavy');
+    const [l, r] = swap ? [heavy, support] : [support, heavy];
+    const review = mergeWorkspace(b, l, r, context);
+    expect(review.conflicts).toHaveLength(1);
+    expect(review.status).not.toBe('valid');
+    expect(entry(valid(mergeWorkspace(b, l, r, context, choose(review, 'local')))).plannedSpot?.grade).toBe(swap ? 'heavy' : 'support');
+    expect(entry(valid(mergeWorkspace(b, l, r, context, choose(review, 'remote')))).plannedSpot?.grade).toBe(swap ? 'support' : 'heavy');
+  });
+
+  it('ens modtagninger på begge sider giver ingen konflikt', () => {
+    const { b, spot, entry } = spotSetup();
+    const l = spot(b, 0, 0, 'heavy'), r = spot(b, 0, 0, 'heavy');
+    const w = valid(mergeWorkspace(b, l, r, context));
+    expect(entry(w).plannedSpot).toEqual(entry(l).plannedSpot);
+  });
+
+  it.each(directions)('modtagning mod udskiftet spring giver gyldig kandidat med afledt nulstillet modtagning (%s)', (_side, swap) => {
+    const { b, spot, entry, environment, teamA } = spotSetup();
+    const registration = b.athleteSkills.find((item) => item.id === entry(b).athleteSkillId)!;
+    const old = b.skills.find((skill) => skill.id === registration.skillId)!;
+    if (old.discipline !== 'tumbling') throw Error('fixture');
+    const replaced = replaceAthleteSkill(b, registration.id, { ...old, id: 'syntetisk-udskiftning', elements: old.elements.map((e) => ({ ...e, twistsHalfTurns: 0, twistDistribution: [] })) }, environment);
+    const spotted = spot(b, 0, 0, 'heavy');
+    const result = mergeWorkspace(b, swap ? spotted : replaced, swap ? replaced : spotted, context);
+    const w = valid(result);
+    expect(result.conflicts).toEqual([]);
+    const merged = entry(w), mergedRegistration = w.athleteSkills.find((item) => item.id === registration.id)!;
+    expect(mergedRegistration.skillId).toBe('syntetisk-udskiftning');
+    expect(merged.plannedSpot?.skillId).toBe(old.id);
+    expect(plannedSpotState(merged, mergedRegistration)).toBe('reset');
+    const analysis = DK_V1.analyze(w, teamA.id, 'tumbling', w.plans[0]!.tumbling[0]!.id);
+    const participant = analysis.rounds[0]!.entries.find((item) => item.entry.id === merged.id)!;
+    expect(participant.plannedSpot).toBeNull();
+    expect(participant.spotD).toEqual(participant.adjustedD);
+    expect(analysis.rounds[0]!.plannedExecution.count).toBe(0);
+    expect(analysis.rounds[0]!.difficulty).toEqual(analysis.rounds[0]!.unspottedDifficulty);
   });
 });

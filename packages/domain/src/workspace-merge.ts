@@ -127,6 +127,14 @@ export function mergeWorkspace(
       for (const item of Object.values(value)) index(item);
     }
     for (const workspace of all) index(workspace);
+    // Transitive referencer slås op i basis først, så fletteretningen ikke afgør, hvilken sides udgave der bruges.
+    const stableById = new Map<string, Record<string, unknown>>();
+    function indexStable(value: unknown) {
+      if (!value || typeof value !== 'object') return;
+      if ('id' in value && typeof value.id === 'string') stableById.set(value.id, record(value));
+      for (const item of Object.values(value)) indexStable(item);
+    }
+    for (const workspace of [remote, local, base]) indexStable(workspace);
     const inputKey = canonicalJson([base, local, remote, context.fingerprint]);
     let hash = 14695981039346656037n;
     for (let i = 0; i < inputKey.length; i++)
@@ -208,7 +216,7 @@ export function mergeWorkspace(
       if (path.at(-1)?.endsWith('Id'))
         for (const value of [b, l, r]) if (typeof value === 'string') u.refs.add(value);
       for (const id of [...u.refs]) {
-        const entity = byId.get(id);
+        const entity = stableById.get(id);
         if (entity) for (const ref of references(entity)) u.refs.add(ref);
       }
       units.push(u);

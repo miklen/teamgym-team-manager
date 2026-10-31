@@ -2,7 +2,7 @@ import { canonicalJson } from '@teamgym/domain';
 import type { AthleteSkill, Diagnostic, RulesetBinding, SkillDefinition, SpringDiscipline, Workspace } from '@teamgym/domain';
 import type { RhythmCatalogEntry, SpringCatalogEntry } from './catalog';
 import { freezeData } from './catalog';
-import type { KnownIssue, TeamProfile } from './dk-data';
+import type { KnownIssue, SpotRates, TeamProfile } from './dk-data';
 import type { DisciplineEvaluation } from './dk-engine';
 import type { CompositionGuideOverview, CompositionGuideRow } from './dk-guide';
 import type { SpringSkillEvaluation } from './dk-spring';
@@ -21,6 +21,8 @@ export interface RulePackage {
   springCatalog: readonly SpringCatalogEntry[];
   rhythmCatalog: readonly RhythmCatalogEntry[];
   knownIssues: readonly KnownIssue[];
+  /** Satser for planlagt modtagning; null betyder, at konsekvensen er uafklaret. */
+  spotRates: SpotRates | null;
   evaluateSkill: (skill: Exclude<SkillDefinition, { discipline: 'rhythm' }>, registration?: AthleteSkill) => SpringSkillEvaluation;
   bindRhythm: (skill: Extract<SkillDefinition, { discipline: 'rhythm' }>) => RhythmBinding;
   analyze: (workspace: Workspace, teamId: string, discipline: SpringDiscipline, scenarioId: string) => DisciplineEvaluation;
@@ -32,12 +34,13 @@ export interface RulePackage {
 
 const behaviorKeys = ['evaluateSkill', 'bindRhythm', 'analyze', 'guide', 'guideOverview', 'rhythm', 'potentials'] as const;
 function packageData(rulePackage: RulePackage) {
-  return { manifest: rulePackage.manifest, profiles: rulePackage.profiles, springCatalog: rulePackage.springCatalog, rhythmCatalog: rulePackage.rhythmCatalog, knownIssues: rulePackage.knownIssues };
+  return { manifest: rulePackage.manifest, profiles: rulePackage.profiles, springCatalog: rulePackage.springCatalog, rhythmCatalog: rulePackage.rhythmCatalog, knownIssues: rulePackage.knownIssues, spotRates: rulePackage.spotRates };
 }
 
 export class RuleRegistry {
-  private readonly packages = new Map<string, { value: RulePackage; fingerprint: string }>();
-  register(rulePackage: RulePackage) {
+  private readonly packages = new Map<string, { value: RulePackage; fingerprint: string; retired: boolean }>();
+  /** En udfaset pakke kan stadig beregne eksisterende bindinger, men tilbydes ikke som nyt valg. */
+  register(rulePackage: RulePackage, options: { retired?: boolean } = {}) {
     const key = canonicalJson([rulePackage.manifest.rulesetId, rulePackage.manifest.packageVersion]);
     const fingerprint = canonicalJson(packageData(rulePackage));
     const existing = this.packages.get(key);
@@ -46,11 +49,12 @@ export class RuleRegistry {
       return existing.value;
     }
     freezeData(rulePackage);
-    this.packages.set(key, { value: rulePackage, fingerprint });
+    this.packages.set(key, { value: rulePackage, fingerprint, retired: options.retired ?? false });
     return rulePackage;
   }
   get(rulesetId: string, packageVersion: string): RulePackage | null { return this.packages.get(canonicalJson([rulesetId, packageVersion]))?.value ?? null; }
-  list(productionOnly = true): RulePackage[] { return [...this.packages.values()].map((entry) => entry.value).filter((entry) => !productionOnly || entry.manifest.production); }
+  list(productionOnly = true): RulePackage[] { return [...this.packages.values()].filter((entry) => !productionOnly || entry.value.manifest.production && !entry.retired).map((entry) => entry.value); }
+  isRetired(rulesetId: string, packageVersion: string): boolean { return this.packages.get(canonicalJson([rulesetId, packageVersion]))?.retired ?? false; }
   resolve(binding: RulesetBinding): { status: 'known'; rulePackage: RulePackage; profile: TeamProfile } | { status: 'unresolved'; diagnostics: Diagnostic[] } {
     const rulePackage = this.get(binding.rulesetId, binding.packageVersion);
     const profile = rulePackage?.profiles.find((item) => item.ageGroup === binding.ageGroup && item.teamType === binding.teamType);

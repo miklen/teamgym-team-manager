@@ -7,6 +7,11 @@ import { expect, test } from './test';
 
 function legacy(workspace: Workspace, version: number) {
   const value = structuredClone(workspace);
+  for (const plan of value.plans)
+    for (const scenario of [...plan.tumbling, ...plan.trampet])
+      for (const round of scenario.rounds)
+        for (const entry of round.entries) delete (entry as Partial<typeof entry>).plannedSpot;
+  if (version === 3) return JSON.stringify({ ...value, schemaVersion: 3 });
   const plans = value.plans.map((plan) => ({
     ...plan,
     ...Object.fromEntries(
@@ -37,7 +42,7 @@ function legacy(workspace: Workspace, version: number) {
   );
 }
 
-for (const version of [1, 2]) {
+for (const version of [1, 2, 3]) {
   test(`format ${version}: originaleksport, annullering med åben kladde og lokal migration uden upload`, async ({
     page,
   }) => {
@@ -58,7 +63,8 @@ for (const version of [1, 2]) {
     await page.getByRole('button', { name: 'Åbn link', exact: true }).click();
     const migration = page.getByRole('dialog', { name: 'Opgradér arbejdsrummet', exact: true });
     await expect(migration).toContainText(`Filen bruger format ${version}.`);
-    await expect(migration).toContainText('format 3');
+    await expect(migration).toContainText('Opgradér til format 4');
+    await expect(migration).toContainText('Ældre appudgaver kan ikke åbne format 4.');
     const downloadEvent = page.waitForEvent('download');
     await migration.getByRole('button', { name: 'Eksportér original', exact: true }).click();
     const download = await downloadEvent;
@@ -77,7 +83,7 @@ for (const version of [1, 2]) {
     expect(source.workspace.schemaVersion).toBe(version);
     await page.getByRole('button', { name: /Lokale ændringer/ }).click();
     await expect(page.getByRole('button', { name: 'Gemt', exact: true })).toBeVisible();
-    expect(source.workspace.schemaVersion).toBe(3);
+    expect(source.workspace.schemaVersion).toBe(4);
     expect(source.failures).toEqual([]);
   });
 }
@@ -87,7 +93,7 @@ test('reserve til fyldt omgang er adskilt fra deltagere og kan fjernes igen', as
   const plan = workspace.plans[0]!;
   const scenario = plan.tumbling[0]!;
   const round = scenario.rounds[0];
-  round.entries.unshift(...round.reserves.map((reserve) => ({ ...reserve, role: 'extra' as const })));
+  round.entries.unshift(...round.reserves.map((reserve) => ({ ...reserve, role: 'extra' as const, plannedSpot: null })));
   round.reserves = [];
   const source = await openWorkspace(page, workspace);
   await expect(page.getByRole('heading', { name: 'Hold', exact: true })).toBeVisible();
@@ -418,7 +424,7 @@ test('ugyldig pladsformular bliver åben ved Opdater før skift og kan rettes ud
 }) => {
   const workspace = scenarioWorkspace();
   const round = workspace.plans[0]!.tumbling[0]!.rounds[0];
-  round.entries.unshift(...round.reserves.map((entry) => ({ ...entry, role: 'extra' as const })));
+  round.entries.unshift(...round.reserves.map((entry) => ({ ...entry, role: 'extra' as const, plannedSpot: null })));
   round.reserves = [];
   const source = await openWorkspace(page, workspace);
   await expect(page.getByRole('heading', { name: 'Hold', exact: true })).toBeVisible();

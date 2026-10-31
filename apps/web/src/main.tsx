@@ -2,7 +2,7 @@ import { ScenarioProvider } from './scenario-context';
 import { useEffect, useRef, useState, useSyncExternalStore } from 'react';
 import { createRoot } from 'react-dom/client';
 import { flushSync } from 'react-dom';
-import { createWorkspace } from '@teamgym/domain';
+import { CURRENT_SCHEMA_VERSION, createWorkspace } from '@teamgym/domain';
 import { DriveError, parseDriveLink, pickGoogleResource, prepareGoogle } from '@teamgym/drive';
 import type { DriveLink } from '@teamgym/drive';
 import { Athletes } from './athletes';
@@ -706,13 +706,15 @@ function App() {
         {data.migration && (
           <Dialog title="Opgradér arbejdsrummet" close={() => workspaceSession.cancelMigration()}>
             <p>
-              Filen bruger format {data.migration.sourceSchemaVersion}. Opgradér til format 3 for at arbejde
-              med scenarier og reserver.
+              Filen bruger format {data.migration.sourceSchemaVersion}. Opgradér til format {CURRENT_SCHEMA_VERSION} for at
+              arbejde med appens nyeste muligheder, blandt andet planlagt modtagning.
             </p>
             <p>
-              Eksisterende planer bevares som Plan A i hver disciplin. Vurderinger, arv og fravalg bevares.
-              Originalen på Drive ændres først, når du vælger Gem på Drive. Ældre appudgaver kan ikke åbne
-              format 3.
+              {data.migration.sourceSchemaVersion !== undefined && data.migration.sourceSchemaVersion < 3
+                ? 'Eksisterende planer bevares som Plan A i hver disciplin. '
+                : 'Alle scenarier og reserver bevares. '}
+              Vurderinger, arv og fravalg bevares, og ingen plads får en modtagning. Originalen på Drive ændres
+              først, når du vælger Gem på Drive. Ældre appudgaver kan ikke åbne format {CURRENT_SCHEMA_VERSION}.
             </p>
             <div className="actions">
               <button className="quiet" onClick={() => downloadCopy(workspaceSession.exportOriginal())}>

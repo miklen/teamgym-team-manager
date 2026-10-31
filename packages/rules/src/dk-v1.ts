@@ -2,8 +2,8 @@ import { Fraction } from '@teamgym/domain';
 import type { AthleteSkill, SkillDefinition, SpringDiscipline, Workspace } from '@teamgym/domain';
 import { DK_RHYTHM_CATALOG, DK_RHYTHM_CATALOG_V2, DK_SPRING_CATALOG } from './catalog';
 import type { RhythmCatalogEntry } from './catalog';
-import { DK_KNOWN_ISSUES, DK_PROFILES, DK_SOURCE_MANIFEST } from './dk-data';
-import type { KnownIssue, TeamProfile } from './dk-data';
+import { DK_KNOWN_ISSUES, DK_PROFILES, DK_SOURCE_MANIFEST, DK_SPOT_RATES } from './dk-data';
+import type { KnownIssue, SpotRates, TeamProfile } from './dk-data';
 import { evaluateDiscipline } from './dk-engine';
 import type { EngineSettings } from './dk-engine';
 import { compositionGuide, compositionGuideOverview } from './dk-guide';
@@ -23,14 +23,15 @@ const manifest: PackageManifest = {
   changeDescription: 'Første fastlåste DK-pakke med Q01–Q06 som eksplicitte uafklarede regler og K01/K02 bevaret.',
 };
 
-export interface DKPackageOptions { manifest?: PackageManifest; profiles?: readonly TeamProfile[]; rhythmCatalog?: readonly RhythmCatalogEntry[]; knownIssues?: readonly KnownIssue[]; settings?: EngineSettings }
+export interface DKPackageOptions { manifest?: PackageManifest; profiles?: readonly TeamProfile[]; rhythmCatalog?: readonly RhythmCatalogEntry[]; knownIssues?: readonly KnownIssue[]; settings?: EngineSettings; spotRates?: SpotRates | null }
 
 /** Afgrænset factory til DK-algoritmefamilien og tydelige kontrakttestpakker. */
 export function createDKFamilyPackage(options: DKPackageOptions = {}): RulePackage {
   const packageManifest = options.manifest ?? manifest;
   const profiles = options.profiles ?? DK_PROFILES;
   const rhythmCatalog = options.rhythmCatalog ?? DK_RHYTHM_CATALOG;
-  const settings = Object.freeze(structuredClone(options.settings ?? {}));
+  const spotRates = options.spotRates === undefined ? DK_SPOT_RATES : options.spotRates;
+  const settings: EngineSettings = Object.freeze({ ...structuredClone(options.settings ?? {}), spotRates });
   function profileFor(workspace: Workspace, teamId: string) {
     const binding = workspace.teams.find((item) => item.id === teamId)?.rulesetBinding;
     const profile = profiles.find((item) => item.ageGroup === binding?.ageGroup && item.teamType === binding.teamType);
@@ -68,7 +69,7 @@ export function createDKFamilyPackage(options: DKPackageOptions = {}): RulePacka
     ];
   }
   return {
-    manifest: packageManifest, profiles, springCatalog: DK_SPRING_CATALOG, rhythmCatalog, knownIssues: options.knownIssues ?? DK_KNOWN_ISSUES,
+    manifest: packageManifest, profiles, springCatalog: DK_SPRING_CATALOG, rhythmCatalog, knownIssues: options.knownIssues ?? DK_KNOWN_ISSUES, spotRates,
     evaluateSkill, analyze, guide: (analysis, profile, potentials) => compositionGuide(analysis, profile, DK_SPRING_CATALOG, settings.bonusRate ?? '0.10', Boolean(settings.elementBonusResolved), potentials),
     guideOverview: compositionGuideOverview,
     bindRhythm: (skill) => bindRhythmSkill(skill, rhythmCatalog),

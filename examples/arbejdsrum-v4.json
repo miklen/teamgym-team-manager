@@ -1,0 +1,170 @@
+{
+  "format": "teamgym-team-manager",
+  "schemaVersion": 4,
+  "workspaceId": "example-workspace",
+  "revision": 0,
+  "updatedAt": "2026-10-25T12:00:00.000Z",
+  "recentOperations": [],
+  "teams": [
+    {
+      "id": "example-team",
+      "name": "Syntetisk juniorhold",
+      "archived": false,
+      "rulesetBinding": {
+        "rulesetId": "dk",
+        "packageVersion": "1.0.0",
+        "ageGroup": "junior",
+        "teamType": "girls"
+      }
+    }
+  ],
+  "athletes": [
+    {
+      "id": "example-athlete",
+      "name": "Syntetisk gymnast",
+      "discriminator": "Eksempel",
+      "teamId": "example-team",
+      "archived": false,
+      "mixCategory": null
+    }
+  ],
+  "skills": [
+    {
+      "id": "example-skill",
+      "name": "Hovedstand",
+      "archived": false,
+      "discipline": "rhythm",
+      "momentId": "rh-hb-headstand",
+      "variant": {
+        "legs": "together"
+      }
+    },
+    {
+      "id": "example-tumbling-skill",
+      "name": "Syntetisk baneserie",
+      "archived": false,
+      "discipline": "tumbling",
+      "elements": [
+        {
+          "family": "salto",
+          "direction": "backward",
+          "rotationQuarterTurns": 4,
+          "bodyPositions": [
+            "straight"
+          ],
+          "twistsHalfTurns": 2,
+          "twistDistribution": [
+            2
+          ],
+          "apparatus": "floor",
+          "takeoff": "two-feet",
+          "landing": "feet",
+          "variant": {}
+        }
+      ],
+      "connection": {
+        "kind": "standard",
+        "transitions": []
+      }
+    }
+  ],
+  "athleteSkills": [
+    {
+      "id": "example-registration",
+      "athleteId": "example-athlete",
+      "skillId": "example-skill",
+      "archived": false,
+      "stability": null,
+      "assessedAt": null,
+      "updatedAt": "2026-10-25T12:00:00.000Z",
+      "note": "Registreret, men endnu ikke vurderet.",
+      "connectionConfirmation": null,
+      "reviewRequiredFor": [],
+      "assessmentOrigin": {
+        "kind": "own"
+      }
+    },
+    {
+      "id": "example-tumbling-registration",
+      "athleteId": "example-athlete",
+      "skillId": "example-tumbling-skill",
+      "archived": false,
+      "stability": 5,
+      "assessedAt": "2026-10-25",
+      "updatedAt": "2026-10-25T12:00:00.000Z",
+      "note": "",
+      "connectionConfirmation": null,
+      "reviewRequiredFor": [],
+      "assessmentOrigin": {
+        "kind": "own"
+      }
+    }
+  ],
+  "plans": [
+    {
+      "id": "example-plan",
+      "teamId": "example-team",
+      "bindingFingerprint": "{\"ageGroup\":\"junior\",\"packageVersion\":\"1.0.0\",\"rulesetId\":\"dk\",\"teamType\":\"girls\"}",
+      "tumbling": [
+        {
+          "id": "example-plan-scenario-tumbling",
+          "name": "Plan A",
+          "rounds": [
+            {
+              "id": "example-bane-1",
+              "entries": [
+                {
+                  "id": "example-bane-1-entry",
+                  "athleteId": "example-athlete",
+                  "athleteSkillId": "example-tumbling-registration",
+                  "role": "counting",
+                  "plannedSpot": {
+                    "grade": "heavy",
+                    "skillId": "example-tumbling-skill",
+                    "elementIndex": 0
+                  }
+                }
+              ],
+              "reserves": []
+            },
+            {
+              "id": "example-bane-2",
+              "entries": [],
+              "reserves": []
+            },
+            {
+              "id": "example-bane-3",
+              "entries": [],
+              "reserves": []
+            }
+          ]
+        }
+      ],
+      "trampet": [
+        {
+          "id": "example-plan-scenario-trampet",
+          "name": "Plan A",
+          "rounds": [
+            {
+              "id": "example-trampet-1",
+              "entries": [],
+              "reserves": []
+            },
+            {
+              "id": "example-trampet-2",
+              "entries": [],
+              "reserves": []
+            },
+            {
+              "id": "example-trampet-3",
+              "entries": [],
+              "reserves": []
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "inheritanceRelations": [],
+  "inheritanceExclusions": []
+}

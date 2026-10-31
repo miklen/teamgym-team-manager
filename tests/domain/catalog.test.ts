@@ -74,7 +74,7 @@ describe('versionsbundet katalog og diagnoser', () => {
   });
 
   it('bevarer seks uafklarede regelspørgsmål og to katalogbemærkninger uden opdigtet moment', () => {
-    expect(DK_KNOWN_ISSUES.map((issue) => issue.id)).toEqual(['Q01', 'Q02', 'Q03', 'Q04', 'Q05', 'Q06', 'K01', 'K02']);
+    expect(DK_KNOWN_ISSUES.map((issue) => issue.id)).toEqual(['Q01', 'Q02', 'Q03', 'Q04', 'Q05', 'Q06', 'K01', 'K02', 'Q-SPOT-DUP']);
     expect(DK_KNOWN_ISSUES.find((issue) => issue.id === 'Q02')?.alternatives).toEqual({ table: '6/5', formula: '11/10' });
     expect(canonicalJson(DK_RHYTHM_CATALOG).includes('Kattespring 540')).toBe(false);
   });

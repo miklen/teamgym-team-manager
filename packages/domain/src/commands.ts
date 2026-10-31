@@ -1,6 +1,6 @@
 import { bindingFingerprint, newEntityId, skillIdentity } from './identity';
 import { CURRENT_SCHEMA_VERSION, WORKSPACE_FORMAT, athleteSkillSchema, rulesetBindingSchema, skillDefinitionSchema } from './schema';
-import type { Athlete, AthleteSkill, RoundEntry, ReserveEntry, Scenario, RulesetBinding, SkillDefinition, SpringDiscipline, Stability, Workspace } from './schema';
+import type { Athlete, AthleteSkill, PlannedSpot, RoundEntry, RoundEntryInput, ReserveEntry, SpotGrade, Scenario, RulesetBinding, SkillDefinition, SpringDiscipline, Stability, Workspace } from './schema';
 import { validateWorkspace, workspacePayload } from './workspace';
 import { aggregateStability } from './stability';
 import { reconcileInheritance } from './inheritance';
@@ -121,6 +121,11 @@ export function replaceAthleteSkill(workspace: Workspace, registrationId: string
       registration.stability = null; registration.assessedAt = null; registration.connectionConfirmation = null; registration.reviewRequiredFor = [];
     }
     registration.skillId = targetId; registration.updatedAt = environment.now();
+    if (skillIdentity(previous) !== identity) {
+      for (const plan of copy.plans) for (const discipline of ['tumbling', 'trampet'] as const) for (const scenario of plan[discipline]) for (const round of scenario.rounds) {
+        for (const entry of round.entries) if (entry.athleteSkillId === registrationId && entry.plannedSpot) entry.plannedSpot = null;
+      }
+    }
   }, environment);
 }
 
@@ -232,7 +237,7 @@ export function deleteScenario(workspace: Workspace, planId: string, discipline:
   }, environment);
 }
 
-export function setRoundEntries(workspace: Workspace, planId: string, discipline: SpringDiscipline, scenarioId: string, roundId: string, entries: RoundEntry[], limits: ParticipantLimits, environment = defaultEnvironment) {
+export function setRoundEntries(workspace: Workspace, planId: string, discipline: SpringDiscipline, scenarioId: string, roundId: string, entries: RoundEntryInput[], limits: ParticipantLimits, environment = defaultEnvironment) {
   return edit(workspace, (copy) => {
     const plan = requireItem(copy.plans, planId);
     const team = requireItem(copy.teams, plan.teamId);
@@ -254,8 +259,41 @@ export function setRoundEntries(workspace: Workspace, planId: string, discipline
           if (!retained && (registration.archived || requireItem(copy.skills, registration.skillId).archived)) throw new Error('Vælg en aktiv færdighed.');
       }
     }
-    requireItem(scenario.rounds, roundId).entries = structuredClone(entries);
+    const round = requireItem(scenario.rounds, roundId);
+    // Modtagningen gælder netop gymnast og spring på pladsen; rækkefølge og rolle bevarer den.
+    round.entries = entries.map(({ id, athleteId, athleteSkillId, role }) => {
+      const previous = round.entries.find((item) => item.id === id);
+      const retained = previous && previous.athleteId === athleteId && previous.athleteSkillId === athleteSkillId;
+      return { id, athleteId, athleteSkillId, role, plannedSpot: retained ? structuredClone(previous.plannedSpot) : null };
+    });
   }, environment);
+}
+
+export interface PlannedSpotInput { grade: SpotGrade; elementIndex?: number | null }
+
+function requireEntry(copy: Workspace, planId: string, discipline: SpringDiscipline, scenarioId: string, roundId: string, entryId: string): RoundEntry {
+  const plan = requireItem(copy.plans, planId);
+  if (requireItem(copy.teams, plan.teamId).archived) throw new Error('Genaktivér holdet før redigering.');
+  return requireItem(requireItem(requireScenario(copy, planId, discipline, scenarioId).rounds, roundId).entries, entryId);
+}
+
+export function setPlannedSpot(workspace: Workspace, planId: string, discipline: SpringDiscipline, scenarioId: string, roundId: string, entryId: string, input: PlannedSpotInput, environment = defaultEnvironment) {
+  return edit(workspace, (copy) => {
+    const entry = requireEntry(copy, planId, discipline, scenarioId, roundId, entryId);
+    if (entry.athleteSkillId === null) throw new Error('Vælg et spring på pladsen før en modtagning.');
+    const skill = requireItem(copy.skills, requireItem(copy.athleteSkills, entry.athleteSkillId).skillId);
+    if (skill.discipline !== discipline) throw new Error('Modtagning kan kun planlægges på bane og trampet.');
+    let elementIndex: number | null = null;
+    if (input.grade === 'heavy' && skill.discipline === 'tumbling') {
+      elementIndex = input.elementIndex ?? skill.elements.length - 1;
+      if (!Number.isInteger(elementIndex) || elementIndex < 0 || elementIndex >= skill.elements.length) throw new Error('Vælg et element i serien.');
+    } else if (input.elementIndex !== undefined && input.elementIndex !== null) throw new Error('Elementvalg hører kun til kraftig hjælp på bane.');
+    entry.plannedSpot = { grade: input.grade, skillId: skill.id, elementIndex } satisfies PlannedSpot;
+  }, environment);
+}
+
+export function clearPlannedSpot(workspace: Workspace, planId: string, discipline: SpringDiscipline, scenarioId: string, roundId: string, entryId: string, environment = defaultEnvironment) {
+  return edit(workspace, (copy) => { requireEntry(copy, planId, discipline, scenarioId, roundId, entryId).plannedSpot = null; }, environment);
 }
 
 export function moveRoundFirst(workspace: Workspace, planId: string, discipline: SpringDiscipline, scenarioId: string, roundId: string, environment = defaultEnvironment) {
@@ -304,11 +342,11 @@ export function insertReserve(workspace: Workspace, planId: string, discipline: 
   return setRoundEntries(removed, planId, discipline, scenarioId, roundId, round.entries.map((entry) => entry.id === entryId ? { ...entry, athleteId: reserve.athleteId, athleteSkillId: reserve.athleteSkillId } : entry), limits, environment);
 }
 
-export function roundStability(workspace: Workspace, entries: readonly RoundEntry[], limits: ParticipantLimits, teamId: string) {
+export function roundStability(workspace: Workspace, entries: readonly RoundEntryInput[], limits: ParticipantLimits, teamId: string) {
   const registrations = new Map(workspace.athleteSkills.map((item) => [item.id, item]));
   const athletes = new Map(workspace.athletes.map((item) => [item.id, item]));
   const skills = new Map(workspace.skills.map((item) => [item.id, item]));
-  function slots(selected: readonly RoundEntry[]) {
+  function slots(selected: readonly RoundEntryInput[]) {
     return selected.map((entry) => {
       const registration = entry.athleteSkillId ? registrations.get(entry.athleteSkillId) : undefined;
       const athlete = athletes.get(entry.athleteId);

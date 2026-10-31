@@ -20,6 +20,14 @@ Rondat–flik–strakt baglæns helskrue giver 0,80; en ekstra flik giver fortsa
 
 Panelværdien nedrundes efter den eksakte disciplinberegning: `floor(200*x)/200` efter H 4.6. Rå `127/30` giver panelværdi 4,230; almindelig afrunding til 4,235 er forkert. Negativ rå C bevares i forklaringen, mens den beregnelige C begrænses til nul før panelnedrunding. Stabilitet ændrer ingen officielle point. C+D er ikke en fuld karakter uden E.
 
+## Planlagt modtagning og Maks. mulig karakter
+
+Regelpakken fastlægger modtagningens satser og kilder (`DK_SPOT_RATES` i `packages/rules/src/dk-data.ts`). DK 1.0.0 og 1.1.0 deler tabellen. Let støtte giver et planlagt E-fradrag på 0,5 og Hjælp til udførelse 1,0 (A6 1.7, A6-07, s. 5). Kraftig hjælp i svæv/landing giver 1,0 og halverer D for det modtagne element (H 9.3.3/10.3.3, s. 33/42). E-fradrag og halvering vurderes hver for sig. En pakke uden satser giver `SPOT-RATES` og Uafklaret i stedet for lånte tal.
+
+Halveringen gælder kun pladsens bidrag til omgangssummen og dermed disciplinens D (`spotD`). Holdomgangens afvigelse vurderes først; et bidrag på 0 forbliver 0. Trampet har ét element. På bane halveres det valgte element, og de tre højeste unikke identiteter beregnes igen. Står samme identitet uhalveret andetsteds i serien, er valget mellem halveret og uhalveret værdi åbent (`Q-SPOT-DUP`), og begge alternativer vises. Rækkefølge (Q06), Pegasus (Q04), gentagelser (Q03), identiteter og tillæg bruger den uhalverede `originalD`.
+
+Omgangens planlagte E-loft er 10,0 minus summen af de tællende pladsers fradrag, dog mindst 0,0. Ekstra gymnaster vises med modtagning, men giver 0 i fradrag (A6-08). **Maks. mulig karakter** er C + D + gennemsnittet af tre omganges E-loft, nedrundet efter H 4.6. Den vises som et loft og aldrig som forventet eller faktisk karakter. Overdommerfradrag og observerede E-fradrag indgår ikke. Modtagningens pris er forskellen mellem loftet uden og med modtagninger. Tom, ufuldstændig og uafklaret plan giver status; en omgang, der blander spring med og uden Pegasus, gør loftet ugyldigt. En modtagning, hvis springreference ikke længere svarer til pladsens udførelse, er nulstillet og indgår hverken i D eller E-loft.
+
 ## Regelspor og faste eksempler
 
 Den fulde [regelmatrix](../openspec/changes/archive/2026-10-25-build-teamgym-team-manager/reference/rule-matrix.md) fastlægger inputunivers, profilgrænser, formler, kildepunkter, tælleenheder og K/U/O/X-status. `packages/rules/src/traceability.ts` bevarer matrixens tekst og knytter hver regel til konkrete kode- og testfiler. Testen kontrollerer også, at alle 77 facitcases har et regelspor.
@@ -48,7 +56,7 @@ Den fulde [regelmatrix](../openspec/changes/archive/2026-10-25-build-teamgym-tea
 | T-DOBBELT-FRI/-REDSKAB | H 10.2.3.2–3 | Hver 0,10 gange bedste antal dobbeltspring, separat med/uden redskab. C06–C08. |
 | POT | Produktkrav | Forskellige gymnaster, registreret komplet kunnen og fuld vidneopstilling. 4/6 kan blive 6/6 ved to konkrete registreringsændringer; integrationstest. |
 | Rytme/stabilitet | A1.1 og produktkrav | H01–H06: 8/10 er ikke alle; 5,5,5,5,5,1 er ikke alle mindst 4; null er ikke 1. |
-| X | Eksplicit produktgrænse | Ingen E, fuld rytmekarakter, G, licensafgørelse eller automatisk bedømmelse af observeret udførelse. |
+| X | Eksplicit produktgrænse | Ingen observeret E, fuld rytmekarakter, G, licensafgørelse eller automatisk bedømmelse af observeret udførelse. Kun trænerens planlagte modtagninger giver planlagte E-fradrag og et loft. |
 
 ## Uafklaret er et resultat
 

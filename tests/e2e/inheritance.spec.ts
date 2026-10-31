@@ -205,7 +205,7 @@ test('migration er et bevidst valg med eksport af original, annullering og separ
   const workspace = repertoire(1);
   const legacy = JSON.parse(JSON.stringify(workspace)) as Record<string, unknown>;
   legacy.schemaVersion = 1;
-  legacy.plans = workspace.plans.map((plan) => ({ ...plan, ...Object.fromEntries((['tumbling', 'trampet'] as const).map((discipline) => [discipline, plan[discipline][0]!.rounds.map(({ reserves: _reserves, ...round }) => { void _reserves; return round; })])) }));
+  legacy.plans = workspace.plans.map((plan) => ({ ...plan, ...Object.fromEntries((['tumbling', 'trampet'] as const).map((discipline) => [discipline, plan[discipline][0]!.rounds.map(({ reserves: _reserves, ...round }) => { void _reserves; return { ...round, entries: round.entries.map(({ plannedSpot: _spot, ...entry }) => { void _spot; return entry; }) }; })])) }));
   delete legacy.inheritanceRelations;
   delete legacy.inheritanceExclusions;
   for (const registration of legacy.athleteSkills as Record<string, unknown>[])
@@ -225,7 +225,7 @@ test('migration er et bevidst valg med eksport af original, annullering og separ
   expect(source.workspace.schemaVersion).toBe(1);
   await page.getByRole('button', { name: /Lokale ændringer/ }).click();
   await expect(page.getByRole('button', { name: 'Gemt', exact: true })).toBeVisible();
-  expect(source.workspace.schemaVersion).toBe(3);
+  expect(source.workspace.schemaVersion).toBe(4);
   expect(source.workspace.athleteSkills[0]!.assessmentOrigin.kind).toBe('own');
   expect(source.failures).toEqual([]);
 });
@@ -418,6 +418,7 @@ test('kendt egen D 0,80 med bidrag 0,00 samt ekstra og ukendt egen D', async ({ 
     athleteId: extra.id,
     athleteSkillId: extraSkill.athleteSkillId,
     role: 'extra',
+    plannedSpot: null,
   });
   if (full.discipline !== 'tumbling') throw Error('fixture');
   const unknown = {

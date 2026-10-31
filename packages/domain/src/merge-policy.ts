@@ -130,6 +130,12 @@ const entry = object<RoundEntry>('Udførende', {
   athleteId: identity(),
   athleteSkillId: value('Valgt spring'),
   role: value('Rolle'),
+  // Grad, element og springreference er én beslutning; deltagerlisten forbliver atomisk.
+  plannedSpot: object<NonNullable<RoundEntry['plannedSpot']>>(
+    'Planlagt modtagning',
+    { grade: value('Modtagningsgrad'), skillId: value('Modtaget spring'), elementIndex: value('Modtaget element') },
+    'atomic',
+  ),
 });
 const reserve = object<ReserveEntry>('Reserve', {
   id: identity(),

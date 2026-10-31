@@ -2,7 +2,19 @@ import { useId, useLayoutEffect, useRef, useState } from 'react';
 import type { Stability } from '@teamgym/domain';
 import './spring-plan.css';
 
-export function PlanDifficulty({ value }: { value: string | null }) {
+export function PlanDifficulty({ value, spotted }: { value: string | null; spotted?: string | undefined }) {
+  if (spotted && value)
+    return (
+      <span
+        className="plan-difficulty spotted"
+        role="img"
+        aria-label={`Sværhed: Egen D ${value}, bidrag med planlagt kraftig hjælp ${spotted}`}
+        title={`Egen D ${value} · halveret af planlagt kraftig hjælp: ${spotted}`}
+      >
+        <s>{value}</s>
+        {spotted}
+      </span>
+    );
   return (
     <span
       className="plan-difficulty"

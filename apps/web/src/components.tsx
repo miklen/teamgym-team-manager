@@ -46,6 +46,8 @@ const issueLabels: Record<string, string> = {
   'ELEMENT-DIRECTION': 'Retningen passer ikke til springet',
   'ELEMENT-TAKEOFF': 'Afsættet passer ikke til springet',
   'INTERRUPTED-CONNECTION': 'Elementer efter mellemtrin eller pause tæller ikke',
+  'SPOT-RATES': 'Regelpakken har ingen kendte satser for modtagning',
+  'Q-SPOT-DUP': 'Kraftig hjælp på et gentaget element',
 };
 const alternativeLabels: Record<string, string> = {
   table: 'Tabel',
@@ -53,6 +55,8 @@ const alternativeLabels: Record<string, string> = {
   literal: 'Ordlydsspor',
   example: 'Eksempelspor',
   independentMaxima: 'Nuværende optælling',
+  halved: 'Med halvering',
+  unhalved: 'Uden halvering',
 };
 export function Decision({ value }: { value: NumericDecision }) {
   const calculated = value.knownSubtotal.compare(0) !== 0;

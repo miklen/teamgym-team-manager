@@ -23,6 +23,7 @@ const labels: Record<string, string> = {
   skillId: 'Spring',
   athleteSkillId: 'Valgt spring',
   role: 'Rolle',
+  plannedSpot: 'Planlagt modtagning',
   counting: 'Tællende',
   extra: 'Ekstra',
   entries: 'Deltagere',
@@ -83,6 +84,11 @@ const labels: Record<string, string> = {
   catalogVersion: 'Katalogversion',
   relationId: 'Accepteret relation',
 };
+const spotGradeLabels: Record<string, string> = {
+  support: 'Let støtte',
+  assist: 'Hjælp til udførelse',
+  heavy: 'Kraftig hjælp',
+};
 function locationText(location: MergeLocation) {
   return [
     location.team,
@@ -128,6 +134,16 @@ function Value({ value, names }: { value: unknown; names: Map<string, string> })
       </div>
     );
   }
+  if (typeof value === 'object' && 'grade' in value && 'elementIndex' in value && 'skillId' in value) {
+    const spot = value as { grade: string; skillId: string; elementIndex: number | null };
+    const grade = spotGradeLabels[spot.grade] ?? spot.grade;
+    return (
+      <span className="review-spot">
+        <strong>{grade + (spot.elementIndex === null ? '' : ' · ' + (spot.elementIndex + 1) + '. element')}</strong>
+        <small>{names.get(spot.skillId) ?? 'Planlagt for et tidligere spring'}</small>
+      </span>
+    );
+  }
   if (typeof value === 'boolean') return <span>{value ? 'Ja' : 'Nej'}</span>;
   if (Array.isArray(value))
     return value.length ? (
@@ -150,7 +166,7 @@ function Value({ value, names }: { value: unknown; names: Map<string, string> })
             <div key={key}>
               <dt>{labels[key] ?? key}</dt>
               <dd>
-                <Value value={item} names={names} />
+                {key === 'plannedSpot' && item === null ? <span className="muted">Ingen</span> : <Value value={item} names={names} />}
               </dd>
             </div>
           ))}

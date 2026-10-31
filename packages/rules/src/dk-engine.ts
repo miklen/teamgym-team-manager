@@ -1,9 +1,9 @@
-import { Fraction, bindingFingerprint, roundStability, sumFractions } from '@teamgym/domain';
-import type { AthleteSkill, Diagnostic, EvaluationStatus, RoundEntry, ReserveEntry, SkillDefinition, SourceReference, SpringDiscipline, Workspace } from '@teamgym/domain';
-import type { TeamProfile } from './dk-data';
+import { Fraction, activePlannedSpot, bindingFingerprint, roundStability, sumFractions } from '@teamgym/domain';
+import type { AthleteSkill, Diagnostic, EvaluationStatus, PlannedSpot, RoundEntry, ReserveEntry, SkillDefinition, SourceReference, SpringDiscipline, Workspace } from '@teamgym/domain';
+import type { SpotRate, SpotRates, TeamProfile } from './dk-data';
 import type { NumericDecision, OrderResult } from './dk-numeric';
 import { apparatusDeduction, bestBonus, combineStatus, compositionTotal, divideDecision, elementBonus, holdRound, known, mixQuotaCheck, orderCheck, resolvedOrderCheck, participantStructure,
-  PLANNING_BOUNDARIES, pureDirectionDeduction, repetitionDeduction, resolvedElementBonus, resolvedRepetitionDeduction, sumDecisions, trampetTwistQualifies, uncertain } from './dk-numeric';
+  PLANNING_BOUNDARIES, plannedExecutionCeiling, plannedMaximumScore, pureDirectionDeduction, spottedTopThreeDifficulty, repetitionDeduction, resolvedElementBonus, resolvedRepetitionDeduction, sumDecisions, trampetTwistQualifies, uncertain } from './dk-numeric';
 import { evaluateSpringSkill, normalizeElement } from './dk-spring';
 import type { SpringSkillEvaluation } from './dk-spring';
 
@@ -23,14 +23,28 @@ export interface ParticipantEvaluation {
   identity: string | null;
   originalD: NumericDecision;
   adjustedD: NumericDecision;
+  /** Pladsens bidrag til omgangens D efter planlagt modtagning. Rækkefølge, C-HOLD og C bruger fortsat originalD/adjustedD. */
+  spotD: NumericDecision;
+  plannedSpot: PlannedSpotEvaluation | null;
   eligibleForC: boolean;
   diagnostics: readonly Diagnostic[];
 }
+
+/** En gyldig, aktiv planlagt modtagning. Ekstra gymnaster vises, men deres fradrag tæller 0 (A6-08). */
+export interface PlannedSpotEvaluation {
+  spot: PlannedSpot; rate: SpotRate | null; counts: boolean;
+  executionDeduction: NumericDecision;
+}
+
+export interface PlannedExecution { deduction: NumericDecision; count: number; ceiling: NumericDecision }
 
 export interface RoundEvaluation {
   id: string; entries: readonly ParticipantEvaluation[]; counting: readonly ParticipantEvaluation[];
   reserves: readonly ReserveEvaluation[];
   difficulty: NumericDecision; panelD: Fraction | null; status: EvaluationStatus;
+  /** Samme omgangssum uden planlagte modtagninger; bruges til modtagningens pris. */
+  unspottedDifficulty: NumericDecision;
+  plannedExecution: PlannedExecution;
   compositionReady: boolean;
   holdDeduction: NumericDecision; order: OrderResult; orderFaultIds: readonly string[]; sortedEntryIds: readonly string[];
   stability: ReturnType<typeof roundStability>;
@@ -42,6 +56,11 @@ export interface DisciplineEvaluation {
   difficulty: NumericDecision; panelD: Fraction | null;
   composition: ReturnType<typeof compositionTotal>;
   contributions: readonly RuleContribution[]; diagnostics: readonly Diagnostic[];
+  /** Loft: C + D + gennemsnitligt planlagt E-loft. Aldrig en forventet karakter. */
+  maximumScore: NumericDecision;
+  /** Forskellen til samme loft uden planlagte modtagninger. */
+  spotCost: NumericDecision;
+  invalidRoundIds: readonly string[];
   planned: true; fullExecutionScore: false;
 }
 
@@ -55,6 +74,7 @@ export interface EngineSettings {
   repetitionResolved?: boolean;
   orderResolved?: boolean;
   apparatusRoundsResolved?: boolean;
+  spotRates?: SpotRates | null;
 }
 
 function scaleDecision(value: NumericDecision, scale: string): NumericDecision {
@@ -98,8 +118,27 @@ export function evaluateDiscipline(workspace: Workspace, teamId: string, discipl
     if (!available || evaluation?.validity === 'invalid' || settings.ruleCorrections && evaluation?.validity !== 'known')
       originalD = uncertain(status === 'known' ? 'incomplete' : status, originalD.issues, originalD.knownSubtotal, originalD.alternatives);
     return { entry, athleteName: athlete?.name ?? 'Ukendt gymnast', registration: registration ?? null, skill, evaluation, status,
-      identity: available && evaluation?.validity === 'known' ? evaluation.identity : null, originalD, adjustedD: originalD,
+      identity: available && evaluation?.validity === 'known' ? evaluation.identity : null, originalD, adjustedD: originalD, spotD: originalD, plannedSpot: null,
       eligibleForC: available && evaluation?.validity === 'known', diagnostics: local };
+  }
+
+  function applyPlannedSpot(item: ParticipantEvaluation) {
+    const spot = item.registration ? activePlannedSpot(item.entry, item.registration) : null;
+    if (!spot || !item.skill) return;
+    const counts = item.entry.role === 'counting';
+    const rate = settings.spotRates?.find((candidate) => candidate.grade === spot.grade) ?? null;
+    const missing = uncertain('unresolved', ['SPOT-RATES']);
+    item.plannedSpot = { spot, rate, counts, executionDeduction: !counts ? known(0) : rate ? known(rate.executionDeduction) : missing };
+    if (!rate) { item.spotD = uncertain('unresolved', ['SPOT-RATES'], item.adjustedD.knownSubtotal); return; }
+    // Afvigelse i holdomgangen vurderes før modtagningen; et nulstillet bidrag forbliver 0.
+    if (!rate.halvesDifficulty || item.adjustedD !== item.originalD) { item.spotD = item.adjustedD; return; }
+    if (item.skill.discipline === 'trampet' || item.adjustedD.value === null) {
+      item.spotD = item.skill.discipline === 'trampet' ? scaleDecision(item.adjustedD, '1/2') : item.adjustedD;
+      return;
+    }
+    const elements = item.evaluation!.elementValues.map((element) => ({ identity: element.identity, value: element.value.value! }));
+    const halved = spottedTopThreeDifficulty(elements, spot.elementIndex ?? elements.length - 1);
+    item.spotD = settings.difficultyMultiplier ? scaleDecision(halved, settings.difficultyMultiplier) : halved;
   }
 
   const rounds: RoundEvaluation[] = rawRounds.map((round, roundIndex) => {
@@ -131,9 +170,18 @@ export function evaluateDiscipline(workspace: Workspace, teamId: string, discipl
         else item.adjustedD = item.originalD;
       }
     }
-    let difficulty = sumDecisions(counting.map((item) => item.adjustedD));
-    if (counting.length !== profile.counting && difficulty.status === 'known') difficulty = uncertain('incomplete', [], difficulty.knownSubtotal);
-    if (status === 'invalid') difficulty = uncertain('invalid', difficulty.issues, difficulty.knownSubtotal, difficulty.alternatives);
+    for (const item of entries) { item.spotD = item.adjustedD; applyPlannedSpot(item); }
+    const roundSum = (values: readonly NumericDecision[]) => {
+      let sum = sumDecisions(values);
+      if (counting.length !== profile.counting && sum.status === 'known') sum = uncertain('incomplete', [], sum.knownSubtotal);
+      if (status === 'invalid') sum = uncertain('invalid', sum.issues, sum.knownSubtotal, sum.alternatives);
+      return sum;
+    };
+    const difficulty = roundSum(counting.map((item) => item.spotD));
+    const unspottedDifficulty = roundSum(counting.map((item) => item.adjustedD));
+    const spotted = counting.filter((item) => item.plannedSpot);
+    const executionDeduction = sumDecisions(spotted.map((item) => item.plannedSpot!.executionDeduction));
+    const plannedExecution: PlannedExecution = { deduction: executionDeduction, count: spotted.length, ceiling: plannedExecutionCeiling(executionDeduction) };
     const order = settings.orderResolved
       ? resolvedOrderCheck(counting.map((item) => item.evaluation?.orderCategory ?? null), counting.map((item) => item.originalD), roundIndex + 1)
       : orderCheck(entries.map((item) => item.evaluation?.rotationCategory ?? null), entries.map((item) => item.originalD.value), roundIndex + 1);
@@ -144,7 +192,7 @@ export function evaluateDiscipline(workspace: Workspace, teamId: string, discipl
         ((settings.orderResolved ? b.evaluation?.orderCategory : b.evaluation?.rotationCategory) ?? Number.MAX_SAFE_INTEGER) ||
       (a.originalD.value && b.originalD.value ? a.originalD.value.compare(b.originalD.value) : 0));
     diagnostics.push(...entries.flatMap((item) => item.diagnostics));
-    return { id: round.id, entries, counting, reserves: round.reserves.map((entry) => evaluateEntry(entry)), difficulty, panelD: difficulty.value?.panelFloor() ?? null, status, compositionReady,
+    return { id: round.id, entries, counting, reserves: round.reserves.map((entry) => evaluateEntry(entry)), difficulty, panelD: difficulty.value?.panelFloor() ?? null, status, unspottedDifficulty, plannedExecution, compositionReady,
       holdDeduction, order, orderFaultIds, sortedEntryIds: sorted.map((item) => item.entry.id), stability: roundStability(workspace, round.entries, profile, teamId) };
   });
 
@@ -237,13 +285,23 @@ export function evaluateDiscipline(workspace: Workspace, teamId: string, discipl
   const composition = compositionTotal(base, bonuses, deductions);
   if (rounds.some((round) => round.status === 'invalid')) Object.assign(composition, { status: 'invalid', raw: null, value: null, panel: null });
   let difficulty = divideDecision(sumDecisions(rounds.map((round) => round.difficulty)), 3);
+  let unspottedDifficulty = divideDecision(sumDecisions(rounds.map((round) => round.unspottedDifficulty)), 3);
   if (team.archived || plan.bindingFingerprint !== bindingFingerprint(team.rulesetBinding)) {
     const status = team.archived ? 'invalid' : 'unresolved';
     difficulty = uncertain(status, ['PLAN-CONTEXT'], difficulty.knownSubtotal, difficulty.alternatives);
+    unspottedDifficulty = uncertain(status, ['PLAN-CONTEXT'], unspottedDifficulty.knownSubtotal);
     Object.assign(composition, { status, raw: null, value: null, panel: null });
     diagnostics.push(diagnostic('plan-context', team.archived ? 'Holdet er arkiveret.' : 'Planens regelgrundlag kræver gennemgang.', [plan.id], status));
   }
-  return { discipline, rounds, difficulty, panelD: difficulty.value?.panelFloor() ?? null, composition, contributions, diagnostics,
+  const invalidRoundIds = rounds.filter((round) => round.status === 'invalid').map((round) => round.id);
+  const roundStatus = combineStatus(rounds.map((round) => round.status));
+  const withRounds = (decision: NumericDecision) => invalidRoundIds.length > 0 ? uncertain('invalid', decision.issues, decision.knownSubtotal) :
+    roundStatus !== 'known' && decision.value !== null ? uncertain(roundStatus, decision.issues, decision.knownSubtotal) : decision;
+  const maximumScore = withRounds(plannedMaximumScore(composition, difficulty, rounds.map((round) => round.plannedExecution.ceiling)));
+  const unspottedMaximum = withRounds(plannedMaximumScore(composition, unspottedDifficulty, rounds.map(() => known(10))));
+  const spotCost = maximumScore.value !== null && unspottedMaximum.value !== null ? known(unspottedMaximum.value.subtract(maximumScore.value)) :
+    uncertain(combineStatus([maximumScore.status, unspottedMaximum.status, 'incomplete']) as Exclude<EvaluationStatus, 'known'>, [...new Set([...maximumScore.issues, ...unspottedMaximum.issues])], unspottedMaximum.knownSubtotal.subtract(maximumScore.knownSubtotal));
+  return { discipline, rounds, difficulty, panelD: difficulty.value?.panelFloor() ?? null, composition, contributions, diagnostics, maximumScore, spotCost, invalidRoundIds,
     status: combineStatus([difficulty.status, composition.status, ...rounds.map((round) => round.status)]), planned: true, fullExecutionScore: false };
 }
 

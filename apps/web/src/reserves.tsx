@@ -1,5 +1,6 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { insertReserve, setRoundReserves, workspacePayload } from '@teamgym/domain';
+import { spotGradeLabel } from './planned-spot';
 import type { ReserveEntry, Round, Scenario, SpringDiscipline, Workspace } from '@teamgym/domain';
 import type { DisciplineEvaluation, RoundEvaluation, RulePackage, TeamProfile } from '@teamgym/rules';
 import type { DataProps } from './athletes';
@@ -396,6 +397,15 @@ export function ReserveList({
             </select>
           </label>
           {error && <p role="alert">{error}</p>}
+          {(() => {
+            const spot = round.entries.find((entry) => entry.id === targetId)?.plannedSpot;
+            return spot ? (
+              <p className="spot-removed">
+                Pladsens planlagte modtagning ({spotGradeLabel(spot.grade, rulePackage)}) bortfalder. Reserver
+                indsættes uden modtagning.
+              </p>
+            ) : null;
+          })()}
           {preview && (
             <>
               <div className="comparison">

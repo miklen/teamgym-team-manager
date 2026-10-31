@@ -1,6 +1,7 @@
-import type { BonusPotential, CompositionGuideOverview, CompositionGuideRow, RulePackage, TeamProfile } from '@teamgym/rules';
+import type { BonusPotential, CompositionGuideOverview, CompositionGuideRow, DisciplineEvaluation, RulePackage, TeamProfile } from '@teamgym/rules';
 import { points, SourceLinks } from './components';
 import { RuleUncertainty } from './rule-uncertainty';
+import { maximumScoreText } from './planned-spot';
 import './composition-guide.css';
 
 function overviewAmount(overview: CompositionGuideOverview, kind: 'bonus' | 'deduction'): string {
@@ -11,8 +12,8 @@ function overviewAmount(overview: CompositionGuideOverview, kind: 'bonus' | 'ded
   return decision.knownSubtotal.compare(0) > 0 ? `Foreløbigt ${sign}${points(decision.knownSubtotal)}` : 'Afventer';
 }
 
-export function CompositionGuide({ rows, overview, profile, rulePackage, potentials, potentialError, onCancelSearch, onPreview, onRound, onAnalysis }: {
-  rows: readonly CompositionGuideRow[]; overview: CompositionGuideOverview; profile: TeamProfile; rulePackage: RulePackage;
+export function CompositionGuide({ rows, overview, maximum, profile, rulePackage, potentials, potentialError, onCancelSearch, onPreview, onRound, onAnalysis }: {
+  rows: readonly CompositionGuideRow[]; overview: CompositionGuideOverview; maximum?: DisciplineEvaluation; profile: TeamProfile; rulePackage: RulePackage;
   potentials: readonly BonusPotential[] | null; potentialError: string;
   onCancelSearch: () => void; onPreview: (potential: BonusPotential) => void;
   onRound: (roundId: string) => void; onAnalysis: () => void;
@@ -30,6 +31,7 @@ export function CompositionGuide({ rows, overview, profile, rulePackage, potenti
         <span className="guide-overview-title"><strong>Kompositionsguide</strong><small>{progress}</small></span>
         <span className="guide-overview-metric"><small>Tillæg</small><strong>{overviewAmount(overview, 'bonus')}</strong></span>
         <span className="guide-overview-metric"><small>Fradrag</small><strong>{overviewAmount(overview, 'deduction')}</strong></span>
+        {maximum && <span className="guide-overview-metric guide-overview-maximum"><small>Maks. mulig karakter · loft</small><strong>{maximumScoreText(maximum)}{maximum.rounds.some((round) => round.plannedExecution.count > 0) && maximum.spotCost.value && <span className="guide-overview-note"> · modtagning {points(maximum.spotCost.value)}</span>}</strong></span>}
         <span className="guide-overview-toggle">Vis detaljer <span aria-hidden="true">⌄</span></span>
       </summary>
       <div className="composition-guide-expanded">
