@@ -35,3 +35,6 @@ Brug kun syntetiske persondata i kode, tests og billeder. Eksisterende fælles t
 Kildernes bytes og uafklarede regler skal bevares. Numeriske forventninger må ikke genereres fra produktionsreglerne. Efter [brugerens testbeslutning](docs/testbeslutning-2026-10-25.md) fortsætter implementering og første publicering med én konto; brugeren udfører live test med trænerteamet efter publicering. T01 og to-konto-test må ikke kaldes bestået uden faktisk evidens. Ingen ubetinget upload eller serverfallback.
 
 Læs projektets [frontend-skill](.agents/skills/frontend-skill/SKILL.md) ved UI-arbejde. Hold opgavestatus sandfærdig; markér kun fuldt implementerede og verificerede opgaver færdige.
+
+# UI
+Alt implementering af UI skal bruge frontend-skill'en her i projektet. Useende skal være elegant, smukt og intuitivt. Det skal være en moderne app med innoverende og moderne UI og UX løsninger. Brugerne skal blive chokeret over hvor flot og elegant det grafiske udtryk i app'en er.

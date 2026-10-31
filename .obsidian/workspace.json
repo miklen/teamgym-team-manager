@@ -1,0 +1,239 @@
+{
+  "main": {
+    "id": "4c43b40f75da5ce0",
+    "type": "split",
+    "children": [
+      {
+        "id": "805127245e4e138b",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "7e38d5ea5827fabd",
+            "type": "leaf",
+            "state": {
+              "type": "markdown",
+              "state": {
+                "file": "docs/reglement/afklaringer.md",
+                "mode": "source",
+                "source": false
+              },
+              "icon": "lucide-file",
+              "title": "afklaringer"
+            }
+          }
+        ]
+      }
+    ],
+    "direction": "vertical"
+  },
+  "left": {
+    "id": "aa2a26a0d20470ff",
+    "type": "split",
+    "children": [
+      {
+        "id": "8c13409860a679b3",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "299c946bc5a48de5",
+            "type": "leaf",
+            "state": {
+              "type": "file-explorer",
+              "state": {
+                "sortOrder": "alphabetical",
+                "autoReveal": false,
+                "showSearch": false,
+                "searchQuery": ""
+              },
+              "icon": "lucide-folder-closed",
+              "title": "Files"
+            }
+          },
+          {
+            "id": "bd5621eeb593440c",
+            "type": "leaf",
+            "state": {
+              "type": "search",
+              "state": {
+                "query": "",
+                "matchingCase": false,
+                "explainSearch": false,
+                "collapseAll": false,
+                "extraContext": false,
+                "sortOrder": "alphabetical"
+              },
+              "icon": "lucide-search",
+              "title": "Search"
+            }
+          },
+          {
+            "id": "7c51ecdef3c27fc9",
+            "type": "leaf",
+            "state": {
+              "type": "bookmarks",
+              "state": {
+                "showSearch": false,
+                "searchQuery": ""
+              },
+              "icon": "lucide-bookmark",
+              "title": "Bookmarks"
+            }
+          }
+        ]
+      }
+    ],
+    "direction": "horizontal",
+    "width": 300
+  },
+  "right": {
+    "id": "d742b76776385626",
+    "type": "split",
+    "children": [
+      {
+        "id": "c94dddfe9ef17680",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "dc7fe56e6ad8badd",
+            "type": "leaf",
+            "state": {
+              "type": "backlink",
+              "state": {
+                "file": "docs/reglement/afklaringer.md",
+                "collapseAll": false,
+                "extraContext": false,
+                "sortOrder": "alphabetical",
+                "showSearch": false,
+                "searchQuery": "",
+                "backlinkCollapsed": false,
+                "unlinkedCollapsed": true
+              },
+              "icon": "links-coming-in",
+              "title": "Backlinks"
+            }
+          },
+          {
+            "id": "40d92210ada0bb93",
+            "type": "leaf",
+            "state": {
+              "type": "outgoing-link",
+              "state": {
+                "file": "docs/reglement/afklaringer.md",
+                "linksCollapsed": false,
+                "unlinkedCollapsed": true
+              },
+              "icon": "links-going-out",
+              "title": "Outgoing links"
+            }
+          },
+          {
+            "id": "2dbd924f62308992",
+            "type": "leaf",
+            "state": {
+              "type": "tag",
+              "state": {
+                "sortOrder": "frequency",
+                "useHierarchy": true,
+                "showSearch": false,
+                "searchQuery": ""
+              },
+              "icon": "lucide-tags",
+              "title": "Tags"
+            }
+          },
+          {
+            "id": "b5dd0cbd0bb558af",
+            "type": "leaf",
+            "state": {
+              "type": "all-properties",
+              "state": {
+                "sortOrder": "frequency",
+                "showSearch": false,
+                "searchQuery": ""
+              },
+              "icon": "lucide-archive",
+              "title": "All properties"
+            }
+          },
+          {
+            "id": "8d76c555db715cca",
+            "type": "leaf",
+            "state": {
+              "type": "outline",
+              "state": {
+                "file": "docs/reglement/afklaringer.md",
+                "followCursor": false,
+                "showSearch": false,
+                "searchQuery": ""
+              },
+              "icon": "lucide-list",
+              "title": "Outline"
+            }
+          }
+        ]
+      }
+    ],
+    "direction": "horizontal",
+    "width": 300,
+    "collapsed": true
+  },
+  "left-ribbon": {
+    "hiddenItems": {
+      "switcher:Open quick switcher": false,
+      "graph:Open graph view": false,
+      "canvas:Create new canvas": false,
+      "daily-notes:Open today's daily note": false,
+      "templates:Insert template": false,
+      "command-palette:Open command palette": false,
+      "bases:Create new base": false
+    }
+  },
+  "active": "7e38d5ea5827fabd",
+  "lastOpenFiles": [
+    "dist-local/assets/potential.worker-rQhumDZd.js",
+    "dist-local/assets/app-DOZfRlJU.js",
+    "dist/assets/potential.worker-rQhumDZd.js",
+    "dist/assets/app-DOZfRlJU.js",
+    "test-results/rule-uncertainty-åben-regelusikkerhed-kan-læses-ved-390px-chromium/regelusikkerhed-390.png",
+    "test-results/rule-uncertainty-åben-regelusikkerhed-kan-læses-ved-390px-chromium",
+    "test-results/rule-uncertainty-åben-regelusikkerhed-kan-læses-ved-1440px-chromium/regelusikkerhed-1440.png",
+    "test-results/rule-uncertainty-åben-regelusikkerhed-kan-læses-ved-1440px-chromium",
+    "test-results/composition-guide-guiden-v-ebae1-t-og-tilgængeligt-ved-390px-chromium/springguide-panel-390.png",
+    "test-results/composition-guide-guiden-v-ebae1-t-og-tilgængeligt-ved-390px-chromium/springguide-390.png",
+    "test-results/composition-guide-guiden-v-ebae1-t-og-tilgængeligt-ved-390px-chromium",
+    "test-results/composition-guide-guiden-v-b4ed6--og-tilgængeligt-ved-1440px-chromium/springguide-panel-1440.png",
+    "test-results/composition-guide-guiden-v-b4ed6--og-tilgængeligt-ved-1440px-chromium/springguide-1440.png",
+    "test-results/composition-guide-guiden-v-b4ed6--og-tilgængeligt-ved-1440px-chromium",
+    "test-results",
+    "test-results/spring-library-ingen-Grund-5fd1e--er-tilgængelige-i-Byg-selv-chromium/trace.zip",
+    "test-results/scenario-integrity-sene-wo-d4518-s-som-den-nye-plans-forslag-chromium/trace.zip",
+    "test-results/spring-library-ingen-Grund-5fd1e--er-tilgængelige-i-Byg-selv-chromium/error-context.md",
+    "test-results/scenario-integrity-sene-wo-d4518-s-som-den-nye-plans-forslag-chromium/error-context.md",
+    "test-results/drive-links-mappelink-starter-filvalg-inde-i-mappen-ved-390-chromium/error-context.md",
+    "test-results/rule-uncertainty-gentagels-c495b-fradrag-med-berørte-omgange-chromium/error-context.md",
+    "test-results/inheritance-forlæns-kæde-d-a6725-t-registrering-og-genåbning-chromium/error-context.md",
+    "test-results/plan-skill-select-springva-f2a54-bevarer-kladden-ved-lukning-chromium/error-context.md",
+    "test-results/composition-guide-guide-vi-7a200-lse-ved-reduceret-bevægelse-chromium/error-context.md",
+    "test-results/athlete-corrections-vælg-b-f25e0-dem-efter-genåbning-ved-390-chromium/error-context.md",
+    "test-results/unified-picker-én-samlet-s-f978d--gentaget-fundament-ved-390-chromium/error-context.md",
+    "test-results/standard-connections-strak-a8a6f-rskilte-begyndelser-ved-390-chromium/error-context.md",
+    "test-results/scenarios-ændret-pladsform-906d6--scenariet-og-uploader-ikke-chromium/error-context.md",
+    "test-results/spring-library-vælg-flere--2fdaf--arv-fra-laveste-D-ved-1440-chromium/error-context.md",
+    "test-results/workspace-bane-bygger-komp-6aff5-nde-registrering-ved-dublet-chromium/error-context.md",
+    "test-results/recovery-alle-seks-omgange-07b59-enes-med-tastatur-på-tablet-chromium/error-context.md",
+    "test-results/scenario-integrity-forælde-a7dd6--ændring-og-kan-genberegnes-chromium/error-context.md",
+    "test-results/stability-scale-sikkerheds-c29ae-dligere-vurderinger-ved-390-chromium/error-context.md",
+    "test-results/inheritance-forlæns-kæde-r-9e85e-t-registrering-og-genåbning-chromium/error-context.md",
+    "test-results/plan-skill-select-visuelt--b3d84-D-uden-ekstra-tekst-ved-390-chromium/error-context.md",
+    "test-results/entry-salto-search-indgang-1e331--serie-uden-indgang-ved-390-chromium/error-context.md",
+    "test-results/composition-guide-ufuldstæ-994fb-ækning-uden-endelige-tillæg-chromium/error-context.md",
+    "test-results/composition-guide-ændret-h-7dca0-ravet-uden-egne-guidefelter-chromium/error-context.md",
+    "test-results/athlete-corrections-fjern--17fa7-igen-uden-dubletter-ved-390-chromium/error-context.md",
+    "test-results/unified-picker-én-samlet-s-a66c1-gentaget-fundament-ved-1440-chromium/error-context.md",
+    "test-results/standard-connections-strak-794bf-skilte-begyndelser-ved-1440-chromium/error-context.md",
+    "test-results/rule-uncertainty-tom-sprin-dd91b-ler-for-tidlig-regeltrekant-chromium/error-context.md",
+    "tmp/ui-qa/guide-overblik-med-plan.png",
+    "tmp/ui-qa/guide-potential.png",
+    "playwright-report/trace/playwright-logo.svg"
+  ]
+}
