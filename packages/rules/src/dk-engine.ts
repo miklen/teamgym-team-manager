@@ -3,7 +3,7 @@ import type { AthleteSkill, Diagnostic, EvaluationStatus, RoundEntry, ReserveEnt
 import type { TeamProfile } from './dk-data';
 import type { NumericDecision } from './dk-numeric';
 import { apparatusDeduction, bestBonus, combineStatus, compositionTotal, divideDecision, elementBonus, holdRound, known, mixQuotaCheck, orderCheck, participantStructure,
-  PLANNING_BOUNDARIES, pureDirectionDeduction, repetitionDeduction, resolvedElementBonus, sumDecisions, trampetTwistQualifies, uncertain } from './dk-numeric';
+  PLANNING_BOUNDARIES, pureDirectionDeduction, repetitionDeduction, resolvedElementBonus, resolvedRepetitionDeduction, sumDecisions, trampetTwistQualifies, uncertain } from './dk-numeric';
 import { evaluateSpringSkill, normalizeElement } from './dk-spring';
 import type { SpringSkillEvaluation } from './dk-spring';
 
@@ -52,6 +52,7 @@ export interface EngineSettings {
   baseTumbling?: string;
   baseTrampet?: string;
   elementBonusResolved?: boolean;
+  repetitionResolved?: boolean;
 }
 
 function scaleDecision(value: NumericDecision, scale: string): NumericDecision {
@@ -148,14 +149,26 @@ export function evaluateDiscipline(workspace: Workspace, teamId: string, discipl
   const identities = [...new Set(rounds.flatMap((round) => round.counting.filter((item) => item.eligibleForC && item.identity).map((item) => item.identity!)))];
   const repeatResults = identities.map((identity) => {
     const matches = rounds.map((round) => round.counting.filter((item) => item.eligibleForC && item.identity === identity));
+    const identityCounts = matches.map((items) => items.length);
+    if (settings.repetitionResolved) return resolvedRepetitionDeduction(identityCounts, profile.counting);
     const nonempty = matches.filter((items) => items.length > 0);
     const sameAthletes = nonempty.length <= 1 || nonempty.every((items) => items.map((item) => item.entry.athleteId).sort().join('|') === nonempty[0]!.map((item) => item.entry.athleteId).sort().join('|'));
-    return repetitionDeduction(matches.map((items) => items.length), sameAthletes, profile.counting);
+    return repetitionDeduction(identityCounts, sameAthletes, profile.counting);
   });
   let repeat = sumDecisions(repeatResults);
   const allComplete = rounds.every((round) => round.compositionReady);
   if (!allComplete && repeat.status === 'known') repeat = uncertain('incomplete', [], repeat.knownSubtotal);
-  add('C-GENTAG', 'Gentagne serier eller spring mellem omgange', 'deduction', repeat, `${prefix}.2.2.3`, allEntryIds, page);
+  const repeatRoundIds = settings.repetitionResolved ? rounds.flatMap((round, roundIndex) => {
+    const relevant = identities.some((identity) => {
+      const identityCounts = rounds.map((candidate) => candidate.counting.filter((item) => item.eligibleForC && item.identity === identity).length);
+      const maximum = Math.max(...identityCounts);
+      const tiedMaximum = identityCounts.filter((count) => count === maximum).length > 1;
+      return identityCounts[roundIndex]! > 0 && identityCounts.filter((count) => count > 0).length > 1 &&
+        (tiedMaximum || identityCounts[roundIndex] !== maximum);
+    });
+    return relevant ? [round.id] : [];
+  }) : allEntryIds;
+  add('C-GENTAG', 'Gentagne serier eller spring mellem omgange', 'deduction', repeat, `${prefix}.2.2.3`, repeatRoundIds, page);
   for (const [index, round] of rounds.entries()) if (index > 0) add(`C-ORDEN-${index + 1}`, `Rækkefølge i omgang ${index + 1}`, 'deduction', round.order.deduction, `${prefix}.2.2.2`, [round.id, ...round.entries.map((item) => item.entry.id)], page);
 
   function qualifyingBonus(predicate: (participant: ParticipantEvaluation) => boolean) {

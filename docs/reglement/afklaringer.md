@@ -45,6 +45,10 @@ Det ser derfor ud til, at eksemplet først tæller fra element nummer to. Det st
 
 ### 3. Hvem får fradrag, når kun nogle gymnaster gentager et spring?
 
+**Afklaret af træneren for DK 1.1.0 den 31. oktober 2026:** Gentagelsen tælles for holdets samlede sammensætning pr. præcis spring- eller serieidentitet, uanset hvilke gymnaster der udfører den. Omgangen med flest forekomster af identiteten friholdes; alle forekomster i de øvrige omgange giver 0,20 hver. Ved 2 forekomster i én omgang og 3 i en anden bliver fradraget derfor 2 × 0,20 = **0,40**. Ved lige mange forekomster er beløbet det samme, uanset hvilken af de lige store omgange der friholdes. En eventuel placering af fradraget på en bestemt omgang er ikke fastlagt ved lighed. Den gamle problemformulering nedenfor er bevaret som baggrund.
+
+Eksemplet nedenfor mangler en holdomgang og er derfor ikke en gyldig fuld opstilling. Hvis de øvrige omgange og spring er gyldige uden yderligere gentagelser, giver den viste fordeling ét fradrag på **0,20** for den lukkede salto i omgang 1. Gymnast A's identitet afgør ikke optællingen.
+
 **Problemet:** Reglen handler om, at en gymnast gentager samme spring eller baneserie i en anden omgang. Men den siger også, at omgangen, hvor springet udføres flest gange, er fri for fradrag. Vi mangler en præcis forklaring på, hvordan de to betingelser bruges sammen, når besætningen skifter.
 
 **Eksempel:**
@@ -61,7 +65,7 @@ A gentager springet. Omgang 2 har flest lukkede saltoer, men B har ikke gentaget
 
 > Hvilken udførelse får gentagelsesfradrag i eksemplet: A's spring i omgang 1 eller 2, og hvor stort bliver det samlede fradrag? Hvad gør man, når to omgange har lige mange af samme spring, men forskellige gymnaster udfører det?
 
-**Betydning:** Vi skal kende både optællingen og de berørte gymnaster, når appen sammenligner forskellige besætninger og omgange.
+**Betydning:** Appen sammenligner antal af samme præcise identitet pr. omgang og kan beregne beløbet ved skiftende besætning. Individuelle gentagelser spores ikke.
 
 **Kilde:** Hovedreglementet, side 30 og 40, punkt 9.2.2.3 og 10.2.2.3. Reference **H-U02** i [kildeopslaget](01-hovedreglement.md).
 

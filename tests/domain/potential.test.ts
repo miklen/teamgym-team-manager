@@ -128,7 +128,7 @@ describe('konkrete individuelle tillægsmuligheder med fulde vidneopstillinger',
   });
 
   it('mix-vidner har seks forskellige gymnaster og 3+3 eksplicitte kategorier', async () => {
-    const builder = workspaceBuilder(); const team = builder.team('Mix', { ...DK_DEFAULT_BINDING, teamType: 'mix' }, 8);
+    const builder = workspaceBuilder(); const team = builder.team('Mix', { ...DK_DEFAULT_BINDING, packageVersion: '1.0.0', teamType: 'mix' }, 8);
     builder.workspace.athletes.forEach((athlete, index) => { athlete.mixCategory = index < 4 ? 'girl' : 'boy'; });
     const basic = fromRows(['a3-b-01', 'a3-b-02', 'a3-b-06'], 'mix-basic');
     const twist = fromRows(['a3-b-01', 'a3-b-02', 'a3-b-11'], 'mix-twist');

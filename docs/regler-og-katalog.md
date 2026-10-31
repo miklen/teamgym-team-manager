@@ -36,7 +36,7 @@ Den fulde [regelmatrix](../openspec/changes/archive/2026-10-25-build-teamgym-tea
 | TAL | H 4.6 | Nedrunding til 0,005 efter eksakt beregning. N01–N03. |
 | C-GRUND | H 9.2.1/10.2.1 | Bane 0, trampet 1; tillæg minus fradrag; ingen gammel fradragsgrænse. C11: rå −0,30, C=0. |
 | C-HOLD | H 9.2.2.1/10.2.2.1 | 0,20 pr. tællende afvigende gymnast fra klar majoritet; gyldigt element beholder C-berettigelse trods D-nulstilling. C09. |
-| C-GENTAG | H 9.2.2.3/10.2.2.3 | Ingen gentagelse: 0. Samme seks gentager fuldt i to/tre omgange: 1,20/2,40. R01–R03. Delvis/skiftende besætning er Q03, U03–U04. |
+| C-GENTAG | H 9.2.2.3/10.2.2.3 | DK 1.1.0: Tæl hver præcis serie-/springidentitet på holdet pr. omgang, uanset gymnast. Frihold én omgang med flest forekomster; giv 0,20 for hver forekomst i de øvrige omgange. 2 mod 3 giver 0,40; fulde gentagelser i to/tre omgange giver 1,20/2,40. Ved lige antal er beløbet kendt uden udpegning af friholdt omgang. |
 | C-RETNING | H 9.2.2.4 | 0,20 gange manglende rene forlæns plus manglende rene baglæns i hver sin nærmeste omgang. 0/4/2 og 6/0/3 giver 0,40; F01–F03. |
 | C-REDSKAB | H 10.2.2.5 | En fuld med- og en fuld uden-omgang giver 0. Alle tre uden eller med giver 1,20; V01–V03. Blandede grænsetilfælde er Q04/U08. |
 | C-ORDEN | H 9.2.2.2/10.2.2.2 | Omgang 2/3: rotationskategori før stigende D. Sats 0,10; præcis optælling af fejl er Q06. O01–O02 og U09. |

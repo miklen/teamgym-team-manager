@@ -1,7 +1,7 @@
 import { createWorkspace, createTeam, createAthlete, registerAthleteSkill, updateAssessment, setRoundEntries } from '@teamgym/domain';
 import type { CommandEnvironment, ElementExecution, SkillDefinition } from '@teamgym/domain';
 
-export const binding = { rulesetId: 'dk', packageVersion: '1.0.0', ageGroup: 'junior', teamType: 'girls' };
+export const binding = { rulesetId: 'dk', packageVersion: '1.1.0', ageGroup: 'junior', teamType: 'girls' };
 export const limits = { counting: 6, extra: 2 };
 
 export const salto: ElementExecution = {
@@ -15,11 +15,11 @@ export const tumblingSkill: SkillDefinition = {
 export const trampetSkill: SkillDefinition = { id: 'skill-trampet', name: 'Syntetisk trampetspring', archived: false, discipline: 'trampet', jump: { ...salto, apparatus: 'trampet' } };
 export const rhythmSkill: SkillDefinition = { id: 'skill-rhythm', name: 'Syntetisk hovedstand', archived: false, discipline: 'rhythm', momentId: 'rh-hb-headstand', variant: { legs: 'together' } };
 
-export function syntheticWorkspace() {
+export function syntheticWorkspace(packageVersion = binding.packageVersion) {
   let counter = 0;
   const environment: CommandEnvironment = { id: () => `test-${++counter}`, now: () => '2026-10-25T12:00:00.000Z' };
   let workspace = createWorkspace(environment);
-  workspace = createTeam(workspace, 'Syntetisk hold A', binding, environment);
+  workspace = createTeam(workspace, 'Syntetisk hold A', { ...binding, packageVersion }, environment);
   workspace = createTeam(workspace, 'Syntetisk hold B', { rulesetId: 'test-only', packageVersion: '2.0.0', ageGroup: 'test', teamType: 'test' }, environment);
   const teamA = workspace.teams[0]!;
   const teamB = workspace.teams[1]!;

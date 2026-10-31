@@ -38,7 +38,7 @@ import legacyInheritance from '../fixtures/legacy-v2-inheritance.json';
 import scenarioExample from '../../examples/scenarier-og-reserver-v3.json';
 
 function setup() {
-  const fixture = syntheticWorkspace();
+  const fixture = syntheticWorkspace('1.0.0');
   const plan = fixture.workspace.plans[0]!;
   const scenario = plan.tumbling[0]!;
   const round = scenario.rounds[0];

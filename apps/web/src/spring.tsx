@@ -59,7 +59,6 @@ export function SpringPage(props: DataProps & { teamId: string }) {
           </button>
         </div>
       </div>
-      {team.rulesetBinding.packageVersion === '1.0.0' && <p className="rule-version-note">Regelpakke 1.0.0 · en opdatering med rettelser findes under Reglement.</p>}
       <ScenarioBar
         {...props}
         planId={plan.id}
@@ -561,16 +560,15 @@ function SpringDisciplineView({
               </p>
               <SourceLinks sources={item.sources} rulePackage={rulePackage} />
               <p>
-                Berørte valg:{' '}
+                {item.id === 'C-GENTAG' && rulePackage.manifest.packageVersion === '1.1.0' ? 'Berørte omgange' : 'Berørte valg'}:{' '}
                 {item.affectedIds
-                  .map(
-                    (id) =>
-                      workspace.athletes.find((athlete) => athlete.id === id)?.name ??
-                      evaluation.rounds
-                        .flatMap((round) => round.entries)
-                        .find((entry) => entry.entry.id === id)?.athleteName ??
-                      'Omgang/disciplin',
-                  )
+                  .map((id) => {
+                    const roundIndex = evaluation.rounds.findIndex((round) => round.id === id);
+                    if (roundIndex >= 0) return `Omgang ${roundIndex + 1}`;
+                    return workspace.athletes.find((athlete) => athlete.id === id)?.name ??
+                      evaluation.rounds.flatMap((round) => round.entries).find((entry) => entry.entry.id === id)?.athleteName ??
+                      'Omgang/disciplin';
+                  })
                   .join(', ') || 'Hele disciplinen'}
               </p>
             </details>

@@ -39,7 +39,6 @@ export function RhythmPage({ workspace, change, writable, teamId }: DataProps & 
           </p>
         </div>
       </div>
-      {team.rulesetBinding.packageVersion === '1.0.0' && <p className="rule-version-note">Regelpakke 1.0.0 · en opdatering med rettelser findes under Reglement.</p>}
       <p>
         Individuel kunnen efter præcis udførelse. Gruppeelementer, koreografi og fuld rytmekarakter indgår
         ikke.

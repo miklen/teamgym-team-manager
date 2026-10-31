@@ -75,6 +75,13 @@ export function repetitionDeduction(identityCounts: readonly number[], sameAthle
   return uncertain('unresolved', ['Q03']);
 }
 
+/** DK 1.1.0: Gentagelser tælles på holdets præcise springidentitet på tværs af omgange. */
+export function resolvedRepetitionDeduction(identityCounts: readonly number[], required = 6): NumericDecision {
+  if (identityCounts.length !== 3) throw new Error('Gentagelse kræver tre omgange.');
+  counts(identityCounts, required);
+  return known(new Fraction(identityCounts.reduce((sum, count) => sum + count, 0) - Math.max(...identityCounts), 5));
+}
+
 export function holdReference(identityCounts: readonly number[], required = 6): { status: EvaluationStatus; index: number | null; issues: readonly string[] } {
   counts(identityCounts, required);
   if (identityCounts.reduce((sum, count) => sum + count, 0) > required) throw new Error('Flertalsoptællingen overskrider antallet af tællende.');

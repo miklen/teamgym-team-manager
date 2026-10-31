@@ -15,7 +15,7 @@ function series(ids: string[], id = 'series'): SkillDefinition {
 }
 function spring(id: string, skillId = id): SkillDefinition { return { id: skillId, name: `Syntetisk ${id}`, archived: false, discipline: 'trampet', jump: row(id) }; }
 
-function setup(binding = DK_DEFAULT_BINDING) {
+function setup(binding = { ...DK_DEFAULT_BINDING, packageVersion: '1.0.0' }) {
   const selectedProfile = DK_PROFILES.find((item) => item.ageGroup === binding.ageGroup && item.teamType === binding.teamType)!;
   let next = 0;
   const environment: CommandEnvironment = { id: () => `engine-${++next}`, now: () => '2026-10-25T12:00:00Z' };

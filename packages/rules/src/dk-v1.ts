@@ -91,12 +91,12 @@ export const DK_V1 = createDKFamilyPackage();
 export const DK_V2 = createDKFamilyPackage({
   manifest: {
     ...structuredClone(manifest), packageVersion: '1.1.0',
-    algorithms: { identity: 'dk-identity-2', difficulty: 'dk-d-2', composition: 'dk-c-3', rhythm: 'dk-rhythm-2', potential: 'witness-2' },
-    changeDescription: 'Korrigerer forbindelsesgyldighed, identitet, rytmens skridtkrav og sissones startfront. Afklarer banens elementtillæg efter reglementets eksempel; øvrige åbne regelfortolkninger vises ved berørte resultater.',
+    algorithms: { identity: 'dk-identity-2', difficulty: 'dk-d-2', composition: 'dk-c-4', rhythm: 'dk-rhythm-2', potential: 'witness-2' },
+    changeDescription: 'Korrigerer forbindelsesgyldighed, identitet, rytmens skridtkrav og sissones startfront. Afklarer banens elementtillæg og gentagelsesfradrag; øvrige åbne regelfortolkninger vises ved berørte resultater.',
   },
   rhythmCatalog: DK_RHYTHM_CATALOG_V2,
   knownIssues: [
-    ...DK_KNOWN_ISSUES.filter((issue) => issue.id !== 'Q01'),
+    ...DK_KNOWN_ISSUES.filter((issue) => issue.id !== 'Q01' && issue.id !== 'Q03'),
     { id: 'H-U06', title: 'Afrunding af dommernes tal', detail: 'Planlagt D og C beregnes eksakt og rundes direkte ned til nærmeste 0,005. Det er uafklaret, om dommernes værdier først skal behandles til to decimaler.', scope: 'rule', sources: [{ sourceId: 'H', section: '4.4.a og 4.6' }] },
     { id: 'A71-U01', title: 'Licens ved visse dobbeltspring', detail: 'Nogle dobbeltspring kræver licens og særskilt godkendelse. Appen kontrollerer ikke licens, og den gældende ordning for 2026/27 er ikke bekræftet. Bilag A7.1 indgår endnu ikke i pakkens fastlåste kilder.', scope: 'rule', sources: [] },
     { id: 'A1DK-U06', title: 'Gumbis startvalg', detail: 'Den nyere tabel og et ældre spørgsmål og svar beskriver startvalgene forskelligt. Appen tillader knælende start, men den fortolkning er endnu ikke bekræftet.', scope: 'catalog', sources: [{ sourceId: 'A1.1', section: 'Gumbi' }] },
@@ -105,5 +105,5 @@ export const DK_V2 = createDKFamilyPackage({
     { id: 'A3-U01', title: 'Startsaltoens identitet', detail: 'Appen regner en startsalto og en tilsvarende almindelig salto som samme element. En officiel afklaring mangler.', scope: 'catalog', sources: [{ sourceId: 'A3', section: 'Startsalto' }] },
     { id: 'C-RETNING-VALG', title: 'Blandet omgang i begge retningskrav', detail: 'Når samme blandede omgang er nærmest begge retningskrav, bruger appen den i begge optællinger. Det er uafklaret, om to forskellige omgange kræves.', scope: 'rule', sources: [{ sourceId: 'H', section: '9.2.2.4' }] },
   ],
-  settings: { ruleCorrections: true, elementBonusResolved: true },
+  settings: { ruleCorrections: true, elementBonusResolved: true, repetitionResolved: true },
 });

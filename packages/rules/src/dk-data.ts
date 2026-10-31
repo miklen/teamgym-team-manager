@@ -9,7 +9,7 @@ export interface TeamProfile {
   sources: readonly SourceReference[];
 }
 
-export const DK_DEFAULT_BINDING: RulesetBinding = freezeData({ rulesetId: 'dk', packageVersion: '1.0.0', ageGroup: 'junior', teamType: 'girls' });
+export const DK_DEFAULT_BINDING: RulesetBinding = freezeData({ rulesetId: 'dk', packageVersion: '1.1.0', ageGroup: 'junior', teamType: 'girls' });
 
 export const DK_PROFILES: readonly TeamProfile[] = freezeData(['U14', 'junior', 'senior'].flatMap((ageGroup) => ['girls', 'boys', 'mix'].map((teamType) => ({
   ageGroup, teamType, label: `${ageGroup === 'junior' ? 'Junior' : ageGroup === 'senior' ? 'Senior' : ageGroup} ${teamType === 'girls' ? 'piger' : teamType === 'boys' ? 'drenge' : 'mix'}`,

@@ -53,7 +53,7 @@ test('regelskift kan annulleres og anvendes for kun ét hold', async ({ page }) 
   await page.getByRole('button', { name: 'Vis før og efter' }).click();
   await page.getByRole('button', { name: 'Opdater' }).click();
   await expect(page.locator('.rail-context')).toContainText('Junior mix');
-  await expect(page.locator('.rail-context')).toContainText('dk 1.0.0');
+  await expect(page.locator('.rail-context')).toContainText('dk 1.1.0');
   await page.getByRole('button', { name: /Lokale ændringer/ }).click();
   await expect(page.getByRole('button', { name: 'Gemt', exact: true })).toBeVisible();
   expect(source.workspace.teams[0]!.rulesetBinding.teamType).toBe('mix');

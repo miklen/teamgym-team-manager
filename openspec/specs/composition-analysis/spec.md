@@ -22,7 +22,7 @@ DK-analysen SHALL kontrollere identisk holdomgang først, gentagne identiske ser
 
 #### Scenario: Gentagelse mellem omgange
 - **WHEN** samme normaliserede serie forekommer i flere omgange
-- **THEN** anvendes pakkens gentagelsesregel med omgangen med flest forekomster fri, og de fradragsudløsende forekomster forklares uden at forveksle dem med en gentagen flik inde i serien; berøres den uafklarede optælling i Q03, vises uafklaret beløb frem for en selvvalgt formel.
+- **THEN** tæller DK 1.1.0 den præcise identitet samlet for holdet i hver omgang uden hensyn til gymnast, friholder én omgang med flest forekomster og fradrager 0,20 for hver forekomst i de øvrige omgange. En gentagen flik inde i en serie er ikke en gentaget hel serie. Ved lige antal er fradragsbeløbet kendt, mens den konkrete friholdte omgang ikke udpeges.
 
 ### Requirement: Trampettens kompositionskrav
 DK-analysen SHALL kontrollere identisk holdomgang først, gentagelser, rækkefølge og mindst én omgang med og én uden Pegasus. Holdomgang, gentagelse og manglende redskabsvariation SHALL bruge 0,20 pr. relevant gymnast/gang, og rækkefølge SHALL bruge 0,10 pr. gang. Reglerne SHALL anvende præcis elementidentitet og den korrekte rotationskategori.

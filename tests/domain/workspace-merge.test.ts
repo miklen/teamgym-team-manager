@@ -24,6 +24,8 @@ import {
 import type { MergeContext, MergeResult, Workspace } from '@teamgym/domain';
 import { syntheticWorkspace, binding } from '../fixtures/synthetic-workspace';
 import { DK_V1, DK_V2 } from '../../packages/rules/src/dk-v1';
+import { DK_SPRING_CATALOG } from '../../packages/rules/src/catalog';
+import { workspaceBuilder } from '../fixtures/rule-workspace';
 
 const context: MergeContext = {
   fingerprint: 'synthetic-rules-v1',
@@ -41,7 +43,7 @@ function choose(result: MergeResult, side: 'local' | 'remote') {
   return Object.fromEntries(result.conflicts.map((item) => [item.id, side]));
 }
 function fixture() {
-  const f = syntheticWorkspace();
+  const f = syntheticWorkspace('1.0.0');
   return { ...f, b: f.workspace, l: structuredClone(f.workspace), r: structuredClone(f.workspace) };
 }
 
@@ -68,6 +70,29 @@ describe('eksplicit schema- og politikdækning', () => {
 });
 
 describe('trevejsmotor', () => {
+  it('genberegner holdets gentagelser efter samtidige ændringer i forskellige omgange', () => {
+    const builder = workspaceBuilder();
+    const team = builder.team('Syntetisk flettegentagelse', { rulesetId: 'dk', packageVersion: '1.1.0', ageGroup: 'junior', teamType: 'girls' });
+    const jump = (sourceId: string) => ({ id: `merge-${sourceId}`, name: `Syntetisk ${sourceId}`, archived: false,
+      discipline: 'trampet' as const, jump: structuredClone(DK_SPRING_CATALOG.find((item) => item.referenceId === sourceId)!.execution) });
+    const x = jump('a4-f-01');
+    builder.fill(team.id, 'trampet', 0, Array.from({ length: 6 }, () => x));
+    builder.fill(team.id, 'trampet', 1, ['a4-f-02', 'a4-f-03', 'a4-f-04', 'a4-f-05', 'a4-f-06', 'a4-f-07'].map(jump));
+    builder.fill(team.id, 'trampet', 2, ['a4-f-08', 'a4-f-09', 'a4-v-01', 'a4-v-02', 'a4-v-03', 'a4-v-04'].map(jump));
+    const b = builder.workspace;
+    const l = structuredClone(b);
+    const r = structuredClone(b);
+    const rounds = b.plans[0]!.trampet[0]!.rounds;
+    l.plans[0]!.trampet[0]!.rounds[1]!.entries[0]!.athleteSkillId = rounds[0]!.entries[0]!.athleteSkillId;
+    r.plans[0]!.trampet[0]!.rounds[2]!.entries[1]!.athleteSkillId = rounds[0]!.entries[1]!.athleteSkillId;
+    for (const [left, right] of [[l, r], [r, l]] as const) {
+      const merged = valid(mergeWorkspace(b, left, right, context));
+      const result = DK_V2.analyze(merged, team.id, 'trampet', merged.plans[0]!.trampet[0]!.id);
+      expect(result.contributions.find((item) => item.id === 'C-GENTAG')?.decision.value?.toString()).toBe('2/5');
+      expect(merged.plans[0]!.trampet[0]!.rounds[1]!.entries[0]!.athleteSkillId).toBe(rounds[0]!.entries[0]!.athleteSkillId);
+      expect(merged.plans[0]!.trampet[0]!.rounds[2]!.entries[1]!.athleteSkillId).toBe(rounds[0]!.entries[1]!.athleteSkillId);
+    }
+  });
   it('bevarer ensidig/ens ændring og forskellige felter, er deterministisk og muterer intet', () => {
     const { b, l, r } = fixture();
     l.teams[0]!.name = 'Lokalt navn';
