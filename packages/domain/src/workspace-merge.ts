@@ -403,6 +403,17 @@ export function mergeWorkspace(
           a.location.teamId === b.location.teamId
         )
           reason = 'Regelbinding og revurderingsmarkeringer hører sammen.';
+        for (const [team, athlete] of [
+          [a, b],
+          [b, a],
+        ])
+          if (
+            team!.path[0] === 'teams' &&
+            hasField(team!, ['archived']) &&
+            athlete!.path[0] === 'athletes' &&
+            athlete!.refs.has(String(subject(team!)))
+          )
+            reason = 'Sletning af hold og gymnaster på holdet skal vælges samlet.';
         if (crosses(a, b)) {
           if (
             ((hasField(a, ['archived', 'teamId']) && b.path[0] === 'plans') ||

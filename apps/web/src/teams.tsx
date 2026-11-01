@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { createTeam, renameTeam } from '@teamgym/domain';
+import { createTeam, deleteTeam, renameTeam } from '@teamgym/domain';
 import type { RulesetBinding } from '@teamgym/domain';
 import { applyVersionChange, previewVersionChange } from '@teamgym/rules';
 import { reconcileVersionPreview } from './inheritance-context';
@@ -17,7 +17,12 @@ export function Teams({
 }: DataProps & { select: (teamId: string) => void }) {
   const [creating, setCreating] = useState(false);
   const [editing, setEditing] = useState<string | null>(null);
+  const [deleting, setDeleting] = useState<string | null>(null);
   const teams = workspace.teams.filter((team) => !team.archived);
+  const deletingTeam = teams.find((team) => team.id === deleting);
+  const deletingAthletes = workspace.athletes.filter(
+    (athlete) => athlete.teamId === deleting && !athlete.archived,
+  ).length;
   return (
     <>
       <div className="page-title">
@@ -98,6 +103,46 @@ export function Teams({
             </label>
           </ActionForm>
           <p className="muted">Reglement og profil ændres med forhåndsvisning på holdets reglementside.</p>
+          <div className="actions">
+            <button
+              className="quiet danger"
+              disabled={!writable}
+              onClick={() => {
+                setDeleting(editing);
+                setEditing(null);
+              }}
+            >
+              Slet hold
+            </button>
+          </div>
+        </Dialog>
+      )}
+      {deletingTeam && (
+        <Dialog title="Slet hold" close={() => setDeleting(null)}>
+          <p>
+            Slet <strong>{deletingTeam.name}</strong>?
+          </p>
+          <p className="muted">
+            Holdets scenarier og opstillinger forsvinder fra appen.{' '}
+            {deletingAthletes === 0
+              ? 'Holdet har ingen aktive gymnaster.'
+              : `${deletingAthletes} ${deletingAthletes === 1 ? 'gymnast flyttes' : 'gymnaster flyttes'} til Uden hold og bevarer deres færdigheder.`}
+          </p>
+          <div className="actions">
+            <button className="quiet" onClick={() => setDeleting(null)}>
+              Annuller
+            </button>
+            <button
+              className="danger"
+              disabled={!writable}
+              onClick={() => {
+                change(deleteTeam(workspace, deletingTeam.id));
+                setDeleting(null);
+              }}
+            >
+              Slet hold
+            </button>
+          </div>
         </Dialog>
       )}
     </>

@@ -83,6 +83,16 @@ Eksempel på samtidige kommandoer: `renameTeam(B, hold, navn)` og `updateAssessm
 
 **Tests:** `tests/domain/workspace-merge.test.ts` (ambitioner i trevejsfletning i begge retninger), `tests/domain/routine-ambitions.test.ts` (validering, migration og kommandoer), `tests/domain/routine-ambitions-rules.test.ts` (D, holdomgang, mix, gentagelse, sikkerhed, *kan nu* og forslag med faste facit) og `tests/drive/workspace-session.test.ts` (migration fra format 4, gennemgang mod en fil i format 4 og afvisning af format 6).
 
+### Slet hold
+
+**Fælles data:** Ingen nye gemte felter og ingen ny formatversion. `deleteTeam` sætter det eksisterende `archived` på holdet og flytter holdets aktive gymnaster til `teamId: null` i samme ændring. Arkiverede gymnaster beholder deres hold. Hold-, plan-, scenarie-, plads-, gymnast- og registrerings-id'er og al rækkefølge bevares; planen fjernes ikke fra filen.
+
+**Politik:** Holdets `archived` forbindes med enhver gymnastændring, der refererer til holdet (ny gymnast på holdet, holdskift til/fra holdet og sletningens egne flytninger), og som hidtil med ændringer i holdets plan. Sletning mod ny gymnast eller planændring på holdet er derfor ét valg i begge fletteretninger: vælges sletningen, ligger ingen aktiv gymnast på holdet; vælges den anden side, bevares holdet og alle gymnaster. Omdøbning af holdet og uafhængige vurderinger flettes uden valg.
+
+**Afledte værdier og præsentation:** Holdlisten, holdfiltre og standardvalg af hold viser kun aktive hold. Dialogen viser antal aktive gymnaster, der flyttes. Formularen bruger kun `deleteTeam` og indfører ingen egen fletteregel.
+
+**Tests:** `tests/domain/workspace-merge.test.ts` (kommandoen, uafhængige ændringer og samlede valg i begge retninger).
+
 ## Sessionens levetid og gemning
 
 ### DK-regelpakke 1.1.0

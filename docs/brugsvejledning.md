@@ -18,6 +18,8 @@ Mens Googles filvælger er åben, skjules appens dialog, så du kan vælge cooki
 
 Opret et hold med navn, præcis regelpakke og profil. Appen har to installerede pakker: Danmarksserien (`dk@1.1.0`, U14, junior og senior) og Regionsrækken (`reg@1.0.0`, U11, U14 og junior). Profilvalget viser kun den valgte pakkes aldersgrupper; juniorpiger er standard. Hvert hold starter med Plan A på bane og trampet, med tre omgange i hvert scenarie. Du kan oprette flere uafhængige scenarier i hver disciplin. Navne og profiler på andre hold ændres ikke ved redigering af ét hold.
 
+Vælg **Redigér** og **Slet hold** for at fjerne et hold. Bekræftelsen viser, hvor mange aktive gymnaster der flyttes til **Uden hold**; deres færdigheder bevares. Holdets scenarier forsvinder fra appen, og sletningen afventer **Gem på Drive** ligesom andre ændringer.
+
 Kartoteket starter med **Alle hold**, som også viser gymnaster uden hold. Du kan filtrere på et bestemt hold eller **Uden hold** og søge på navn/kendetegn. Brug kendetegn, når to gymnaster hedder det samme. Gymnastens identitet og færdigheder følger med ved flytning. Gamle omgangspladser og reserver bevares med advarsel i alle scenarier, indtil træneren retter dem.
 
 Åbn gymnasten og vælg **Tilføj færdighed**. Sæt flueben ved flere spring fra den søgbare liste, fx rondat–flik–1/1 og kraft–barani, og angiv sikkerhed 1–5 ud for hvert spring. Fluebenet betyder, at gymnasten kan udføre hele serien uden mellemtrin. Listen rummer 239 færdige banesammensætninger samt selvstændige spring med indgang fra tilløb og trampetspring. Valgene bevares mellem søgninger, grupper og bane/trampet. Vælg vurderingsdato, og registrér alle valgene samlet.

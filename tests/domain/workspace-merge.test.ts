@@ -17,6 +17,8 @@ import {
   setOwnAssessment,
   setArchived,
   moveAthlete,
+  deleteTeam,
+  createAthlete,
   skillIdentity,
   confirmConnection,
   bindingFingerprint,
@@ -354,6 +356,43 @@ describe('trevejsmotor', () => {
     const w = valid(mergeWorkspace(b, l, r, context, choose(review, 'local')));
     expect(w.athleteSkills[3]!.stability).toBe(2);
     expect(w.plans[0]!.tumbling[0]!.rounds[0].entries).toEqual(b.plans[0]!.tumbling[0]!.rounds[0].entries);
+  });
+  it('sletning af hold skjuler holdet og flytter kun aktive gymnaster til Uden hold', () => {
+    const { b, environment, teamA, athleteA, athleteB } = fixture();
+    const deleted = deleteTeam(setArchived(b, 'athletes', athleteB.id, true, environment), teamA.id, environment);
+    expect(deleted.teams.find((team) => team.id === teamA.id)!.archived).toBe(true);
+    expect(deleted.athletes.find((item) => item.id === athleteA.id)!.teamId).toBeNull();
+    expect(deleted.athletes.find((item) => item.id === athleteB.id)!.teamId).toBe(teamA.id);
+    expect(deleted.plans).toEqual(b.plans);
+  });
+  it('sletning af hold fletter med uafhængige ændringer i begge retninger', () => {
+    const { b, environment, teamA } = fixture();
+    const l = deleteTeam(b, teamA.id, environment);
+    const r = renameTeam(b, teamA.id, 'Syntetisk nyt navn', environment);
+    r.athleteSkills[3]!.stability = 2;
+    for (const [left, right] of [[l, r], [r, l]] as const) {
+      const w = valid(mergeWorkspace(b, left, right, context));
+      expect(w.teams.find((team) => team.id === teamA.id)).toMatchObject({ archived: true, name: 'Syntetisk nyt navn' });
+      expect(w.athletes.every((athlete) => athlete.teamId === null)).toBe(true);
+      expect(w.athleteSkills[3]!.stability).toBe(2);
+    }
+  });
+  it.each(['new', 'plan'])('sletning af hold mod %s på holdet er ét samlet valg', (kind) => {
+    const { b, environment, teamA } = fixture();
+    const l = deleteTeam(b, teamA.id, environment);
+    let r = structuredClone(b);
+    if (kind === 'new') r = createAthlete(b, { name: 'Syntetisk ny gymnast', teamId: teamA.id }, environment);
+    else r.plans[0]!.tumbling[0]!.rounds[0].entries.reverse();
+    for (const [left, right, deletion, other] of [[l, r, 'local', 'remote'], [r, l, 'remote', 'local']] as const) {
+      const review = mergeWorkspace(b, left, right, context);
+      expect(review.conflicts).toHaveLength(1);
+      const removed = valid(mergeWorkspace(b, left, right, context, choose(review, deletion)));
+      expect(removed.teams.find((team) => team.id === teamA.id)!.archived).toBe(true);
+      expect(removed.athletes.filter((athlete) => athlete.teamId === teamA.id)).toEqual([]);
+      const kept = valid(mergeWorkspace(b, left, right, context, choose(review, other)));
+      expect(kept.teams.find((team) => team.id === teamA.id)!.archived).toBe(false);
+      expect(kept.athletes.filter((athlete) => athlete.teamId === teamA.id)).toHaveLength(r.athletes.length);
+    }
   });
   it('arvekilde mod note afstemmes som følgevirkning, mod eget valg kræver konflikt', () => {
     const { b, environment } = fixture();

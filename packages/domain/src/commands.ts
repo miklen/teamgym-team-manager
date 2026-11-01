@@ -44,6 +44,14 @@ export function renameTeam(workspace: Workspace, teamId: string, name: string, e
   return edit(workspace, (copy) => { requireItem(copy.teams, teamId).name = name; }, environment);
 }
 
+/** Sletning skjuler holdet (arkivering), så id og planreferencer bevares til fletning; aktive gymnaster flyttes til Uden hold. */
+export function deleteTeam(workspace: Workspace, teamId: string, environment = defaultEnvironment) {
+  return edit(workspace, (copy) => {
+    requireItem(copy.teams, teamId).archived = true;
+    for (const athlete of copy.athletes) if (athlete.teamId === teamId && !athlete.archived) athlete.teamId = null;
+  }, environment);
+}
+
 export function createAthlete(workspace: Workspace, input: Pick<Athlete, 'name'> & Partial<Pick<Athlete, 'teamId' | 'discriminator' | 'mixCategory'>>, environment = defaultEnvironment): Workspace {
   return edit(workspace, (copy) => {
     if (input.teamId && requireItem(copy.teams, input.teamId).archived) throw new Error('Vælg et aktivt hold.');
