@@ -25,7 +25,9 @@
     "test:drive": "vitest run tests/drive",
     "test:e2e": "playwright test",
     "test:mutations": "node scripts/check-rule-mutations.mjs",
-    "test": "npm run test:domain && npm run test:drive"
+    "test": "npm run test:domain && npm run test:drive",
+    "verify": "npm run check && vitest run",
+    "verify:full": "npm run verify && npm run test:mutations && npm run build && npm run test:e2e"
   },
   "dependencies": {
     "react": "19.3.1",

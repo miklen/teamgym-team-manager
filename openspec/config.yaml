@@ -30,3 +30,12 @@ schema: spec-driven
 #     archive:
 #       guidance:
 #         - Summarize the archive outcome before finishing
+
+rules:
+  tasks:
+    - Følg kontrolniveauerne i AGENTS.md. Brug én afsluttende kontrolopgave med `npm run verify:full` før lokal brugertest; tilføj ikke separate kør-alle-tests-opgaver pr. sektion.
+    - Tilføj kun nye tests for adfærd, ændringen indfører eller retter, primært i eksisterende testfiler. Browserprøver dækker kerneforløbet; gentag ikke samme forløb i flere bredder uden layoutgrund.
+    - Visuel kontrol (skærmbilleder, axe-rapport) kun ved større UI-ændringer og højst ved 390 og 1440 px.
+    - Opgaver må ikke kræve testantal, kørselsstatus eller kontroldatoer skrevet i docs eller tasks.md.
+  design:
+    - Beskriv verifikation kort og proportionalt. Henvis til kontrolniveauerne i AGENTS.md frem for at opremse alle kontroller.

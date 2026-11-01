@@ -9,6 +9,24 @@ async function connectedStart(page: Page) {
   await page.getByRole('button', { name: 'Arbejdsrum', exact: true }).click();
   await page.getByRole('button', { name: 'Afbryd forbindelse / skift konto' }).click();
   await expect(page.getByRole('dialog')).toHaveCount(0);
+  // Den huskede forbindelse ryddes asynkront efter visningen; genindlæs først, når den er væk.
+  await expect
+    .poll(() =>
+      page.evaluate(
+        () =>
+          new Promise<boolean>((resolve) => {
+            const request = indexedDB.open('teamgym-team-manager.connection.v1', 1);
+            request.onsuccess = () => {
+              const row = request.result.transaction('connection').objectStore('connection').get('active');
+              row.onsuccess = () => {
+                request.result.close();
+                resolve(Boolean((row.result as { connection?: unknown } | undefined)?.connection));
+              };
+            };
+          }),
+      ),
+    )
+    .toBe(false);
   await page.goto('./');
   await page.getByRole('button', { name: 'Forbind til Google Drive', exact: true }).click();
   await expect(page.getByRole('heading', { name: 'Åbn holdets arbejdsrum' })).toBeVisible();

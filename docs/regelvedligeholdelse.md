@@ -17,7 +17,7 @@ En frigivet `(rulesetId, packageVersion)` er uforanderlig. Registry afviser ænd
 
 En værdiændring ændrer pakkens værdikobling og facit, ikke gymnastens færdigheds-id. En algoritmeændring lægges i et nyt afgrænset modul/version. Gamle regressioner køres samtidig med de nye. `packageChangeReport` viser ændrede algoritmeversioner, profiler og rytmefelter; versionspreview beregner særskilt før/efter-D og C for hvert navngivet scenarie, reservevalgenes egne værdier og anvendelighed samt rytmefællesnævnere. Reserver indgår ikke i de udførendes beregningsgrundlag.
 
-Ingen forventningsværdi må genereres fra produktionspakken. Bevar de gamle fixtures; tilføj nye med kilde, fortolkning og separat beregnet facit. Kør `npm run check`, `npm run test:domain`, `npm run test:mutations` og produktionsbyg. En fælles ændring, der utilsigtet påvirker gammel DK-version, skal fanges af de gamle tests.
+Ingen forventningsværdi må genereres fra produktionspakken. Bevar de gamle fixtures; tilføj nye med kilde, fortolkning og separat beregnet facit. Kør `npm run verify` og `npm run test:mutations` under arbejdet og `npm run verify:full` før lokal brugertest. En fælles ændring, der utilsigtet påvirker gammel DK-version, skal fanges af de gamle tests.
 
 ## Kontrolleret skift på ét hold
 

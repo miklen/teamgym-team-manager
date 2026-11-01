@@ -10,7 +10,7 @@ Alle fremtidige funktioner skal dokumentere deres betydning for fælles data, sa
 
 Brugerbeslutning 25. oktober 2026: Ændringer skal fremover afprøves lokalt af brugeren før push til GitHub. Dette erstatter tidligere generel tilladelse til at pushe og publicere automatisk.
 
-1. Implementér ændringen, og kør relevante automatiske kontroller.
+1. Implementér ændringen, og kør kontrollerne efter [kontrolniveauerne](#kontrolniveauer) nedenfor.
 2. Start `npm.cmd run preview:local` på `http://127.0.0.1:5173/teamgym-team-manager/`, og kontrollér at den lokale app åbner. Brug det separate `dist-local/`; port 4173 og `dist/` er til de automatiske browserprøver.
 3. Giv brugeren adressen og en kort beskrivelse af, hvad der skal afprøves. Lad den lokale testserver køre. Vent med yderligere ændringer og genbygning, mens brugeren tester denne udgave.
 4. Afvent brugerens lokale test og et udtrykkeligt klarsignal til commit/push/publicering. En afsluttet implementering eller grønne automatiske tests er ikke i sig selv tilladelse til at pushe. Også dokumentationsændringer venter på klarsignal.
@@ -26,7 +26,19 @@ Se [lokal test](docs/lokal-test.md). Ingen eksisterende fælles trænerfiler må
 - `tools/t01`: særskilt teknisk Drive-test; ingen rigtige gymnastdata.
 - `openspec/changes/archive/2026-10-25-build-teamgym-team-manager`: krav, design, opgaver og fastlåst kildegrundlag.
 
-Brug `npm ci`, `npm run check`, `npm run test:domain`, `npm run test:drive`, `npm run build` og `npm run test:e2e`. Installér testbrowseren med `npx playwright install chromium`.
+Kør kun `npm ci` ved ændrede afhængigheder eller manglende pakker. Installér testbrowseren med `npx playwright install chromium`.
+
+### Kontrolniveauer
+
+Brugerbeslutning 1. november 2026: Kontrollen skal sikre det essentielle og fange regression uden at gøre små ændringer langsomme.
+
+- **Under udvikling:** `npm run verify` (~30 sek.: typer, lint, flettedækning, regeldækning, domæne- og Drive-tests) plus kun de berørte browserprøver, fx `npx playwright test tests/e2e/<fil>.spec.ts`. Byg først med `npm run build`, når appkoden er ændret.
+- **Én gang før lokal brugertest:** `npm run verify:full` (~3 min: verify, regelmutationer, build og alle browserprøver). Alt skal være grønt.
+- **Regelmutationer** (`npm run test:mutations`) køres kun lokalt ved ændringer i `packages/rules`; ellers er det nok, at de indgår i `verify:full`/CI.
+- **Røde eller ustabile prøver** rettes straks eller rapporteres til brugeren. Brug ikke tid på at sammenligne med HEAD eller genkøre i håb om grønt. En ustabil prøve er en fejl, der skal rettes.
+- **Visuel kontrol** (skærmbilleder, visuel gennemgang, axe-rapport) kun ved større UI-ændringer og højst ved 390 og 1440 px. Automatiske browserprøver dækker resten. Ingen PNG-logning i docs.
+- **Ingen statuslogning:** Skriv ikke testantal, kørselsresultater eller kontroldatoer i docs, `tasks.md` eller `lokal-test.md`. Rapportér resultatet kort til brugeren i stedet.
+- CI kører fortsat alle kontroller ved push.
 
 ## Data og regler
 

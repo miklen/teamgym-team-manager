@@ -345,7 +345,7 @@ test.describe('200 % visning med 720 CSS-pixels på 1440 fysiske pixels', () => 
     await page.keyboard.press('Enter');
     await page.keyboard.press('Enter');
     await expect(page.getByLabel('Navn på kopi')).toBeFocused();
-    await page.keyboard.press('Control+A');
+    await page.keyboard.press('ControlOrMeta+A');
     await page.keyboard.type('Tastaturplan');
     await page.keyboard.press('Enter');
     await expect(page.getByRole('tab', { name: 'Tastaturplan', exact: true })).toBeFocused();
@@ -357,12 +357,13 @@ test.describe('200 % visning med 720 CSS-pixels på 1440 fysiske pixels', () => 
     await page.keyboard.press('Enter');
     await reserves.getByRole('button', { name: /^Flyt Syntetisk reserve.* op som reserve$/ }).focus();
     await page.keyboard.press('Enter');
+    await expect(page.getByText(/^Syntetisk reserve.* er nu 2\. reserve\.$/)).toBeVisible();
     await reserves.getByRole('button', { name: 'Sæt ind', exact: true }).nth(1).focus();
     await page.keyboard.press('Enter');
     const insert = page.getByRole('dialog', { name: 'Sæt reserve ind', exact: true });
     await insert.getByRole('combobox', { name: 'Gymnast der udgår', exact: true }).focus();
-    await page.keyboard.press('ArrowDown');
-    await page.keyboard.press('Enter');
+    // Typeahead vælger ens på alle platforme; pil ned åbner en popup på macOS.
+    await page.keyboard.type('1');
     await insert.getByRole('button', { name: 'Bekræft indsættelse', exact: true }).focus();
     await page.screenshot({ path: 'tmp/ui-qa/scenarios-zoom-200.png', animations: 'disabled' });
     await page.keyboard.press('Enter');

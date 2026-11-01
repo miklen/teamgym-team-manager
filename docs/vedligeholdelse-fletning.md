@@ -27,7 +27,7 @@ Atomiske lister kræver valg ved forskellige samtidige ændringer i samme liste.
 1. Beskriv fælles data, stabile identiteter, listeorden, afhængigheder, afledte værdier og dansk præsentation.
 2. Tilføj feltet i schema og en eksplicit klassifikation med betydning i politikken, også inde i eksisterende atomiske grupper.
 3. Vurder samtidige kommandoer fra samme basis. Test begge retninger, ens ændringer, uafhængige ændringer og blandede konfliktvalg. Kandidaten skal valideres samlet uden skjult datafjernelse.
-4. Kør `npm.cmd run check`, `npm.cmd run test:domain`, `npm.cmd run test:drive`, `npm.cmd run build` og `npm.cmd run test:e2e` efter ændringens omfang. `npm.cmd run verify:merge-policy` er den målrettede strukturelle kontrol, som også indgår i check.
+4. Kør `npm.cmd run verify` under udviklingen og `npm.cmd run verify:full` én gang før lokal brugertest. `npm.cmd run verify:merge-policy` er den målrettede strukturelle kontrol, som også indgår i check.
 
 **Nyt datafelt:** En ekstra gymnastoplysning får en selvstændig feltpolitik og en dansk betegnelse. Test samtidig ændring af oplysningen og en vurdering samt to forskellige ændringer af samme oplysning. En ny reference kræver også sletning/mod-reference-tests.
 

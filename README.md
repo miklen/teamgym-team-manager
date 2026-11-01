@@ -20,16 +20,12 @@ npm run preview:local
 ## Kontrol
 
 ```sh
-npm run check
-npm run test:domain
-npm run test:drive
-npm run test:mutations
-npm run build
+npm run verify        # under udvikling: typer, lint, dækning, domæne- og Drive-tests (~30 sek.)
 npx playwright install chromium
-npm run test:e2e
+npm run verify:full   # før lokal brugertest: verify, regelmutationer, build og browserprøver (~3 min)
 ```
 
-CI kører de samme separate kontroller uden Google-credentials og uden filer fra parent-mappen. Domænekontrollen omfatter filmodel, katalogintegritet, alle 77 faste facitcases, D/C, muligheder, rytme og versionsregression. Mutationskontrollen afprøver fire bevidste regelfejl i en isoleret kopi. Dette er ikke ekstern dommergodkendelse. Drive-tests bruger injiceret netværk og er ikke bevis for faktisk CORS eller atomisk Drive-upload.
+Enkeltkontrollerne (`check`, `test:domain`, `test:drive`, `test:mutations`, `build`, `test:e2e`) kan stadig køres hver for sig. Se kontrolniveauerne i `AGENTS.md`. CI kører de samme separate kontroller uden Google-credentials og uden filer fra parent-mappen. Domænekontrollen omfatter filmodel, katalogintegritet, alle 77 faste facitcases, D/C, muligheder, rytme og versionsregression. Mutationskontrollen afprøver fire bevidste regelfejl i en isoleret kopi. Dette er ikke ekstern dommergodkendelse. Drive-tests bruger injiceret netværk og er ikke bevis for faktisk CORS eller atomisk Drive-upload.
 
 ## Struktur
 
