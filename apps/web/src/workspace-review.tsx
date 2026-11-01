@@ -1,5 +1,7 @@
 import { useEffect, useRef, useState, useSyncExternalStore } from 'react';
+import { skillDefinitionSchema } from '@teamgym/domain';
 import type { MergeLocation, WorkspaceChange, MergeConflict, MergeSide } from '@teamgym/domain';
+import { springDisplayName } from './spring-library';
 import { Icon } from './ui';
 import { Dialog } from './components';
 import { downloadDraft, workspaceSession } from './runtime';
@@ -276,8 +278,11 @@ export function WorkspaceReview({ applied }: { applied: () => void }) {
   const names = new Map<string, string>();
   function collect(value: unknown) {
     if (!value || typeof value !== 'object') return;
-    if ('id' in value && typeof value.id === 'string' && 'name' in value)
-      names.set(value.id, String(value.name));
+    if ('id' in value && typeof value.id === 'string' && 'name' in value) {
+      const skill = 'discipline' in value ? skillDefinitionSchema.safeParse(value) : null;
+      // Gemte automatiske springnavne vises i den fælles grammatik; data og fletning er uændrede.
+      names.set(value.id, skill?.success ? springDisplayName(skill.data, null) : String(value.name));
+    }
     for (const child of Object.values(value)) collect(child);
   }
   collect(data.loaded?.workspace);
@@ -292,7 +297,7 @@ export function WorkspaceReview({ applied }: { applied: () => void }) {
           (athlete?.name ?? 'Gymnast') +
             (athlete?.discriminator ? ' · ' + athlete.discriminator : '') +
             ' · ' +
-            (skill?.name ?? 'Spring'),
+            (skill ? springDisplayName(skill, null) : 'Spring'),
         );
       }
   for (const change of result?.changes ?? []) {

@@ -27,6 +27,7 @@ import {
   springLibrary,
   springRegistrationPlan,
   matchesSpring,
+  springSearchRank,
 } from '../../apps/web/src/spring-library';
 import type { SpringDefinition } from '../../apps/web/src/spring-library';
 import { skillOverview } from '../../apps/web/src/skill-overview';
@@ -190,12 +191,12 @@ describe('versionsmærket, afgrænset fundament', () => {
           item.definition.jump.direction === 'forward',
       ),
     ).toBe(true);
-    expect(rudy.name).toContain('Rudy · strakt 540°');
-    expect(
-      library
-        .filter((choice) => choice.definition.discipline === 'trampet' && matchesSpring(choice, 'rudi'))
-        .map((choice) => choice.definition),
-    ).toEqual([rudy]);
+    expect(rudy.name).toBe('Rudy (strakt 540°)');
+    const rudiMatches = library
+      .filter((choice) => choice.definition.discipline === 'trampet' && matchesSpring(choice, 'rudi'))
+      .sort((a, b) => springSearchRank(a, 'rudi')! - springSearchRank(b, 'rudi')!)
+      .map((choice) => choice.definition.name);
+    expect(rudiMatches).toEqual(['Rudy (strakt 540°)', 'Overslag rudy (strakt 540°)']);
     expect(
       library
         .filter((choice) => choice.definition.discipline === 'trampet')

@@ -1,6 +1,6 @@
 import { useId, useMemo, useState } from 'react';
 import type { RefObject } from 'react';
-import { changeAmbitionSkill } from '@teamgym/domain';
+import { changeAmbitionSkill, skillIdentity } from '@teamgym/domain';
 import type { Round, RoundEntry, SpringDiscipline, Workspace } from '@teamgym/domain';
 import { ambitionCandidates, ambitionEnvironment } from '@teamgym/rules';
 import type { AmbitionCandidate, RulePackage, TeamProfile } from '@teamgym/rules';
@@ -8,7 +8,9 @@ import { ActionForm, points } from './components';
 import { PlanDifficulty, PlanSafety, PlanSkillSelect } from './plan-skill-select';
 import type { PlanSkillOption } from './plan-skill-select';
 import { springDirectionText, springDisplayName, springLibrary } from './spring-library';
-import type { SpringDefinition } from './spring-library';
+import type { SpringChoice, SpringDefinition } from './spring-library';
+import { listedSpring } from './spring-chain-model';
+import { sortByTeamKnown, teamSpringCounts } from './spring-picker-model';
 import './ambition.css';
 
 export type SlotMode = 'athlete' | 'ambition';
@@ -38,7 +40,9 @@ export function SlotModeSwitch({ value, onChange, disabled }: { value: SlotMode;
 }
 
 function catalogChoices(workspace: Workspace, rulePackage: RulePackage, discipline: SpringDiscipline) {
-  return springLibrary(rulePackage, workspace).filter((choice) => choice.definition.discipline === discipline);
+  return springLibrary(rulePackage, workspace).filter(
+    (choice) => choice.definition.discipline === discipline && listedSpring(choice),
+  );
 }
 
 function catalogOption(definition: SpringDefinition, id: string, rulePackage: RulePackage): PlanSkillOption {
@@ -53,11 +57,16 @@ function catalogOption(definition: SpringDefinition, id: string, rulePackage: Ru
 }
 
 /** Kataloget som valg; en gængs opskrift får et nyt id, så den aldrig kolliderer med arbejdsrummets definitioner. */
-function useCatalog(workspace: Workspace, rulePackage: RulePackage, discipline: SpringDiscipline) {
+function useCatalog(workspace: Workspace, rulePackage: RulePackage, discipline: SpringDiscipline, teamId: string) {
   return useMemo(() => {
-    const choices = catalogChoices(workspace, rulePackage, discipline);
+    const counts = teamSpringCounts(workspace, teamId);
+    const known = (choice: SpringChoice) => counts.get(skillIdentity(choice.definition)) ?? 0;
+    const choices = sortByTeamKnown(catalogChoices(workspace, rulePackage, discipline), counts);
     return {
-      options: choices.map((choice) => catalogOption(choice.definition, choice.id, rulePackage)),
+      options: choices.map((choice) => ({
+        ...catalogOption(choice.definition, choice.id, rulePackage),
+        ...(known(choice) ? { known: known(choice) } : {}),
+      })),
       definition: (id: string): SpringDefinition | null => {
         const choice = choices.find((item) => item.id === id);
         return choice ? { ...structuredClone(choice.definition), id: choice.own ? choice.definition.id : crypto.randomUUID() } : null;
@@ -67,7 +76,7 @@ function useCatalog(workspace: Workspace, rulePackage: RulePackage, discipline: 
         return choices.find((item) => rulePackage.evaluateSkill(item.definition).identity === identity)?.id ?? '';
       },
     };
-  }, [workspace, rulePackage, discipline]);
+  }, [workspace, rulePackage, discipline, teamId]);
 }
 
 function RoleField({ value, onChange }: { value: RoundEntry['role']; onChange?: () => void }) {
@@ -86,11 +95,11 @@ const roleOf = (data: FormData): RoundEntry['role'] => (data.get('role') === 'ex
 const missingSpring = 'En ambition kræver et spring. Vælg springet i kataloget.';
 
 /** Ny ambition: springet vælges i disciplinens katalog. */
-export function AmbitionCreateForm({ workspace, discipline, rulePackage, writable, request, formRef, onDirty }: {
-  workspace: Workspace; discipline: SpringDiscipline; rulePackage: RulePackage; writable: boolean;
+export function AmbitionCreateForm({ workspace, teamId, discipline, rulePackage, writable, request, formRef, onDirty }: {
+  workspace: Workspace; teamId: string; discipline: SpringDiscipline; rulePackage: RulePackage; writable: boolean;
   request: (value: AmbitionRequest) => void; formRef?: RefObject<HTMLFormElement | null> | undefined; onDirty?: (() => void) | undefined;
 }) {
-  const catalog = useCatalog(workspace, rulePackage, discipline);
+  const catalog = useCatalog(workspace, rulePackage, discipline, teamId);
   return (
     <ActionForm
       formRef={formRef}
@@ -126,7 +135,7 @@ export function AmbitionFillForm({ workspace, teamId, discipline, rulePackage, p
   request: (value: AmbitionRequest) => void; inspect: (athleteId: string) => void;
   formRef?: RefObject<HTMLFormElement | null> | undefined; onDirty?: (() => void) | undefined;
 }) {
-  const catalog = useCatalog(workspace, rulePackage, discipline);
+  const catalog = useCatalog(workspace, rulePackage, discipline, teamId);
   const planned = workspace.skills.find((skill) => skill.id === entry.plannedSkillId);
   const current = planned && planned.discipline !== 'rhythm' ? planned : null;
   const [changing, setChanging] = useState(false);

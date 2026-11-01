@@ -9,7 +9,7 @@ import type {
   SpotRate,
 } from '@teamgym/rules';
 import { points, SourceLinks, statusText } from './components';
-import { springElementName } from './spring-library';
+import { springElementInSeries } from './spring-names';
 import './planned-spot.css';
 
 const GRADES: readonly SpotGrade[] = ['support', 'assist', 'heavy'];
@@ -28,13 +28,13 @@ function rateConsequence(rate: SpotRate | null) {
   return `E −${formatPoints(rate.executionDeduction)}${rate.halvesDifficulty ? ' · D halveres' : ' · D uændret'}`;
 }
 
-function elementLabel(participant: ParticipantEvaluation, index: number, rulePackage: RulePackage) {
+function elementLabel(participant: ParticipantEvaluation, index: number) {
   const skill = participant.skill;
   if (skill?.discipline !== 'tumbling') return '';
   const element = skill.elements[index];
   if (!element) return '';
   const value = participant.evaluation?.elementValues[index]?.value.value;
-  return `${index + 1}. ${springElementName(element, rulePackage)}${value ? ` · ${points(value)}` : ''}`;
+  return `${index + 1}. ${springElementInSeries(skill.elements, index)}${value ? ` · ${points(value)}` : ''}`;
 }
 
 export type SpotChange = { grade: SpotGrade; elementIndex?: number } | null;
@@ -103,9 +103,7 @@ export function SlotSpot({
 
   const fullLabel = grade ? spotGradeLabel(grade, rulePackage) : '';
   const elementText =
-    tumbling && grade === 'heavy' && elementIndex !== null
-      ? elementLabel(participant, elementIndex, rulePackage)
-      : '';
+    tumbling && grade === 'heavy' && elementIndex !== null ? elementLabel(participant, elementIndex) : '';
   const triggerLabel =
     state === 'reset'
       ? `Planlæg modtagning igen for ${athleteLabel}`
@@ -234,17 +232,17 @@ export function SlotSpot({
             >
               <legend>Modtaget element</legend>
               <div className="spot-elements">
-                {skill.elements.map((element, index) => (
+                {skill.elements.map((_, index) => (
                   <label key={index} className="spot-element-option">
                     <input
                       type="radio"
                       name={`${id}-element`}
-                      aria-label={elementLabel(participant, index, rulePackage)}
+                      aria-label={elementLabel(participant, index)}
                       checked={(elementIndex ?? skill.elements.length - 1) === index}
                       onChange={() => choose({ grade: 'heavy', elementIndex: index }, true)}
                     />
                     <span>{index + 1}</span>
-                    <small>{springElementName(element, rulePackage)}</small>
+                    <small>{springElementInSeries(skill.elements, index)}</small>
                   </label>
                 ))}
               </div>

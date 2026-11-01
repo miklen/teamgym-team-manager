@@ -2,12 +2,13 @@ import AxeBuilder from '@axe-core/playwright';
 import { createAthlete, registerAthleteSkill, setArchived, updateAssessment } from '@teamgym/domain';
 import type { ElementExecution } from '@teamgym/domain';
 import { salto, syntheticWorkspace } from '../fixtures/synthetic-workspace';
+import { chooseSpring, springRow } from './picker';
 import { expect, test } from './test';
 import { openWorkspace } from './drive-fixture';
 
 const fullName = 'Rondat – flik – strakt 1/1 (360°)';
-const backBackName = 'Rondat – lukket salto baglæns – lukket salto baglæns';
-const backFrontName = 'Rondat – lukket salto baglæns – lukket salto forlæns';
+const backBackName = 'Rondat – lukket salto – lukket salto';
+const backFrontName = 'Rondat – lukket salto – lukket salto forlæns';
 
 for (const width of [1440, 390]) {
   test(`Alle hold er standard og medtager gymnaster uden hold ved ${width}`, async ({ page }) => {
@@ -80,7 +81,8 @@ for (const width of [1440, 390]) {
         item.athleteId === fixture.athleteA.id &&
         workspace.skills.find((skill) => skill.id === item.skillId)?.name === fullName,
     )!;
-    for (const round of workspace.plans[0]!.tumbling[0]!.rounds) round.entries[0]!.athleteSkillId = original.id;
+    for (const round of workspace.plans[0]!.tumbling[0]!.rounds)
+      round.entries[0]!.athleteSkillId = original.id;
     const source = await openWorkspace(page, workspace);
     await expect(page.getByRole('heading', { name: 'Hold', exact: true })).toBeVisible();
     await page.getByRole('link', { name: 'Gymnaster', exact: true }).click();
@@ -123,7 +125,10 @@ for (const width of [1440, 390]) {
         .getByText('Færdigheden er fjernet fra gymnasten. Vælg en anden færdighed.', { exact: true })
         .first(),
     ).toBeVisible();
-    await page.getByRole('button', { name: /^Handlinger for / }).first().click();
+    await page
+      .getByRole('button', { name: /^Handlinger for / })
+      .first()
+      .click();
     await page.getByRole('menuitem', { name: 'Vurdering', exact: true }).click();
     await expect(fullRow).toContainText('Fjernet');
     await expect(page.getByRole('button', { name: 'Fjern færdighed', exact: true })).toBeDisabled();
@@ -132,9 +137,8 @@ for (const width of [1440, 390]) {
     await page.getByRole('button', { name: /Maja Test Test 1/ }).click();
     await page.getByRole('button', { name: 'Tilføj færdighed', exact: true }).click();
     await page.getByLabel('Søg sammensat spring eller alias').fill('rondat-flik-1/1');
-    await page.getByRole('checkbox', { name: /^Rondat – flik – strakt 1\/1/ }).check();
-    await page.getByLabel(`Sikkerhed for ${fullName}`, { exact: true }).selectOption('4');
-    await page.getByLabel('Medtag fundament automatisk').uncheck();
+    await chooseSpring(page, /^Rondat – flik – strakt 1\/1/, 4);
+    await page.getByRole('switch', { name: 'Medtag fundament automatisk' }).uncheck();
     await page.getByRole('button', { name: 'Registrér 1 spring', exact: true }).click();
     await expect(fullRow).toBeVisible();
     await page.getByRole('button', { name: 'Luk dialog', exact: true }).click();
@@ -159,15 +163,14 @@ for (const width of [1440, 390]) {
     await page.getByRole('link', { name: 'Gymnaster', exact: true }).click();
     await page.getByRole('button', { name: /Maja Test Test 1/ }).click();
     await page.getByRole('button', { name: 'Tilføj færdighed', exact: true }).click();
-    await page.getByLabel('Søg sammensat spring eller alias').fill('rondat salto salto');
+    await page.getByLabel('Søg sammensat spring eller alias').fill('rondat lukket salto lukket salto');
     for (const [name, directions] of [
       [backBackName, 'baglæns → baglæns'],
       [backFrontName, 'baglæns → forlæns'],
     ] as const) {
-      const choice = page.getByRole('checkbox', { name: new RegExp(`^${name} Saltoer:`) });
-      await expect(choice).toHaveAccessibleName(new RegExp(directions));
-      await choice.check();
-      await page.getByLabel(`Sikkerhed for ${name}`, { exact: true }).selectOption('3');
+      const rowName = new RegExp(`^${name} (Valgt direkte )?Saltoer:`);
+      await expect(springRow(page, rowName)).toHaveAccessibleName(new RegExp(directions));
+      await chooseSpring(page, rowName, 3);
     }
     await page.screenshot({ path: `tmp/ui-qa/saltoretninger-${width}.png`, animations: 'disabled' });
     await page.getByRole('button', { name: 'Registrér 2 spring', exact: true }).click();

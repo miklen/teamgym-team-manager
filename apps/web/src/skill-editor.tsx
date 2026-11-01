@@ -25,12 +25,12 @@ import {
   registerSpringBatch,
   springRegistrationPlan,
   springLibrary,
-  springElementName,
   springDisplayName,
-  springSeriesName,
 } from './spring-library';
+import { matchesSpring } from './spring-search';
 import type { SpringSelection } from './spring-library';
 import { SpringPicker } from './spring-picker';
+import { springCatalogElementName, springElementInSeries, springExecutionName } from './spring-names';
 import { SpringChoiceRows } from './spring-choice-rows';
 import { springPickerRows } from './spring-picker-model';
 import { restoreRemovedSkill } from './restore-skill';
@@ -171,14 +171,43 @@ export function SkillEditor({
     )
       return false;
     const searchable =
-      `${springElementName(item.execution, rulePackage, item.name)} ${item.name} ${springSeriesName([item.execution], rulePackage)} ${item.officialCode} ${item.aliases.join(' ')}`.toLocaleLowerCase(
+      `${springCatalogElementName(item.execution, { start: item.startRole })} ${item.name} ${item.officialCode} ${item.aliases.join(' ')}`.toLocaleLowerCase(
         'da-DK',
       );
-    return query
-      .toLocaleLowerCase('da-DK')
-      .trim()
-      .split(/\s+/)
-      .every((part) => searchable.includes(part));
+    return (
+      query
+        .toLocaleLowerCase('da-DK')
+        .trim()
+        .split(/\s+/)
+        .every((part) => searchable.includes(part)) ||
+      // Samme synonymer og struktur som springvælgeren, fx miller, barani og 360.
+      matchesSpring(
+        {
+          id: item.referenceId,
+          group: '',
+          aliases: [item.name, item.officialCode, ...item.aliases],
+          own: false,
+          definition:
+            item.execution.apparatus === 'floor'
+              ? {
+                  id: item.referenceId,
+                  name: springCatalogElementName(item.execution),
+                  archived: false,
+                  discipline: 'tumbling',
+                  elements: [item.execution],
+                  connection: { kind: 'standard', transitions: [] },
+                }
+              : {
+                  id: item.referenceId,
+                  name: springCatalogElementName(item.execution),
+                  archived: false,
+                  discipline: 'trampet',
+                  jump: item.execution,
+                },
+        },
+        query,
+      )
+    );
   });
   function definition(): SkillDefinition {
     if (discipline !== 'rhythm' && !building) {
@@ -190,9 +219,7 @@ export function SkillEditor({
         (discipline === 'rhythm' ? original?.name : name.trim()) ||
         (discipline === 'rhythm'
           ? (moment?.name ?? 'Ukendt moment')
-          : discipline === 'trampet' && elements[0]
-            ? springElementName(elements[0], rulePackage)
-            : springSeriesName(elements, rulePackage)),
+          : springExecutionName(discipline, elements)),
       archived: false,
     };
     return skillDefinitionSchema.parse(
@@ -503,6 +530,12 @@ export function SkillEditor({
               setIncludeShorter={setIncludeShorter}
               assessedAt={assessedAt}
               setAssessedAt={setAssessedAt}
+              build={(prefill) => {
+                setBuilding(true);
+                setQuery('');
+                setAdvanced(null);
+                if (prefill.length) setElements(prefill);
+              }}
             />
           )}
           {building && (
@@ -522,9 +555,9 @@ export function SkillEditor({
                 </p>
               )}
               <ol className="element-list">
-                {elements.map((element, index) => (
+                {elements.map((_, index) => (
                   <li key={index}>
-                    <span>{springElementName(element, rulePackage)}</span>
+                    <span>{springElementInSeries(elements, index)}</span>
                     {evaluation?.elementValues[index] && (
                       <small>
                         Element-D: <Decision value={evaluation.elementValues[index].value} />
@@ -595,7 +628,7 @@ export function SkillEditor({
                     }}
                   >
                     <span>
-                      {springElementName(item.execution, rulePackage, item.name)}
+                      {springCatalogElementName(item.execution, { start: item.startRole })}
                       <small>
                         {item.officialCode} · {item.source.sourceId} ·{' '}
                         {item.status === 'allowed'
@@ -656,13 +689,14 @@ export function SkillEditor({
             <section className="unified-picker" aria-label="Springvælger">
               <div className="spring-selection-toolbar">
                 <h3>Spring i registreringen</h3>
-                <label className="check">
+                <label className="picker-switch">
                   <input
                     type="checkbox"
+                    role="switch"
                     checked={includeShorter}
                     onChange={(event) => setIncludeShorter(event.target.checked)}
                   />
-                  Medtag fundament automatisk
+                  <span>Medtag fundament automatisk</span>
                 </label>
               </div>
               <SpringChoiceRows

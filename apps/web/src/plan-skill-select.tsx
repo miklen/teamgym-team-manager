@@ -51,6 +51,8 @@ export interface PlanSkillOption {
   direction: string;
   difficulty: string | null;
   stability: Stability | null;
+  /** Antal andre aktive gymnaster på holdet, der kan springet. Afledt, gemmes ikke. */
+  known?: number;
 }
 
 /** Sikkerhedskolonnen for et spring uden gymnast. Teksten bærer betydningen. */
@@ -209,7 +211,7 @@ export function PlanSkillSelect({
                 aria-selected={(option?.id ?? '') === value}
                 aria-label={
                   option
-                    ? `${option.name}${option.direction ? `, ${option.direction}` : ''}, D ${option.difficulty ?? 'Uafklaret'}, ${catalog ? 'ingen gymnast' : `sikkerhed ${option.stability === null ? 'Ikke vurderet' : `${option.stability}/5`}`}`
+                    ? `${option.name}${option.direction ? `, ${option.direction}` : ''}${option.known ? `, kendt af ${option.known} på holdet` : ''}, D ${option.difficulty ?? 'Uafklaret'}, ${catalog ? 'ingen gymnast' : `sikkerhed ${option.stability === null ? 'Ikke vurderet' : `${option.stability}/5`}`}`
                     : 'Vælg senere · ufuldstændig plads'
                 }
                 data-active={index === activeIndex}
@@ -220,7 +222,12 @@ export function PlanSkillSelect({
               >
                 <span className="plan-choice-name">
                   <strong>{option?.name ?? 'Vælg senere'}</strong>
-                  <small>{option?.direction || (option ? '' : 'Gem pladsen uden spring')}</small>
+                  <small>
+                    {option?.direction || (option ? '' : 'Gem pladsen uden spring')}
+                    {option?.known ? (
+                      <span className="team-known">Kendt af {option.known} på holdet</span>
+                    ) : null}
+                  </small>
                 </span>
                 {option ? (
                   <PlanDifficulty value={option.difficulty} />

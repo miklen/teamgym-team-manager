@@ -1,0 +1,322 @@
+/* Kædebygger: forbundne pladser og en bakke med valg til den aktive plads. */
+.spring-chain {
+  --chain-tint: color-mix(in srgb, var(--accent) 6%, var(--paper));
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 10px;
+  min-width: 0;
+  margin: 4px 0 6px;
+}
+.spring-chain button {
+  min-width: 0;
+  min-height: 0;
+  margin: 0;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 0;
+  background: var(--paper);
+  color: var(--ink);
+  box-shadow: none;
+  font-weight: 550;
+  cursor: pointer;
+  transition:
+    background 160ms ease,
+    border-color 160ms ease,
+    color 160ms ease,
+    box-shadow 160ms ease,
+    transform 120ms ease;
+}
+.spring-chain button:hover:not(:disabled) {
+  border-color: color-mix(in srgb, var(--accent) 40%, var(--line));
+  background: var(--chain-tint);
+  box-shadow: none;
+}
+.spring-chain button:active:not(:disabled) {
+  transform: scale(0.98);
+}
+.spring-chain button:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.chain-bar {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px 14px;
+}
+.chain-nodes {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 0;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  flex: 1 1 auto;
+  min-width: 0;
+}
+.chain-node {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+.chain-node + .chain-node {
+  padding-left: 22px;
+}
+.chain-node + .chain-node::before {
+  content: '';
+  position: absolute;
+  left: 4px;
+  top: 50%;
+  width: 14px;
+  height: 2px;
+  border-radius: 2px;
+  background: var(--line);
+}
+.chain-node.is-filled + .chain-node::before {
+  background: color-mix(in srgb, var(--accent) 55%, var(--line));
+}
+.chain-node.is-ending::before {
+  background: repeating-linear-gradient(90deg, var(--line) 0 3px, transparent 3px 6px) !important;
+}
+.spring-chain .chain-node-main {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  min-height: 44px;
+  padding: 5px 14px 5px 6px;
+  border-radius: 999px;
+  text-align: left;
+}
+.chain-node.is-ending .chain-node-main {
+  border-style: dashed;
+}
+.chain-node-index {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--ink) 6%, transparent);
+  color: var(--muted);
+  font-size: 0.72rem;
+  font-weight: 700;
+  transition:
+    background 160ms ease,
+    color 160ms ease;
+}
+.chain-node-text {
+  display: grid;
+  line-height: 1.2;
+}
+.chain-node-text small {
+  display: block;
+  color: var(--muted);
+  font-size: 0.6rem;
+  font-weight: 650;
+  letter-spacing: 0.03em;
+}
+.chain-node-text > span {
+  font-size: 0.8rem;
+  font-weight: 650;
+  color: var(--muted);
+  white-space: nowrap;
+}
+.chain-node.is-filled .chain-node-text > span {
+  color: var(--ink);
+}
+.chain-node.is-filled .chain-node-index {
+  background: var(--accent);
+  color: #fff;
+}
+.chain-node.is-filled .chain-node-main {
+  padding-right: 34px;
+}
+.spring-chain .chain-node.is-active button.chain-node-main {
+  border-color: var(--accent);
+  background: var(--chain-tint);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 16%, transparent);
+}
+.spring-chain .chain-node-clear {
+  position: absolute;
+  right: 5px;
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--muted);
+  font-size: 1rem;
+  line-height: 1;
+}
+.spring-chain .chain-node-clear:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--ink) 8%, transparent);
+  color: var(--ink);
+}
+
+.chain-tray {
+  display: grid;
+  gap: 12px;
+  padding: 14px;
+  border-radius: 16px;
+  background: color-mix(in srgb, var(--accent) 3.5%, #f7f8fb);
+  border: 1px solid color-mix(in srgb, var(--accent) 10%, var(--line));
+  animation: chain-tray-in 180ms ease-out;
+}
+@keyframes chain-tray-in {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+}
+.chain-empty {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.75rem;
+}
+.chain-tiles {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 8px;
+}
+.spring-chain .chain-tile {
+  position: relative;
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+  min-height: 52px;
+  padding: 10px 12px 14px;
+  overflow: hidden;
+  text-align: left;
+}
+.chain-tile::after {
+  content: '';
+  position: absolute;
+  left: 12px;
+  right: 12px;
+  bottom: 7px;
+  height: 3px;
+  border-radius: 3px;
+  background: linear-gradient(
+    90deg,
+    color-mix(in srgb, var(--accent) 30%, transparent) calc(var(--share, 0) * 100%),
+    color-mix(in srgb, var(--ink) 5%, transparent) 0
+  );
+}
+.chain-tile-label {
+  font-size: 0.8rem;
+  font-weight: 650;
+}
+.chain-tile-count {
+  color: var(--muted);
+  font-size: 0.7rem;
+  font-weight: 650;
+  font-variant-numeric: tabular-nums;
+}
+.spring-chain button.chain-tile[aria-pressed='true'] {
+  border-color: var(--accent);
+  background: var(--accent);
+  color: #fff;
+}
+.spring-chain .chain-tile[aria-pressed='true'] .chain-tile-count {
+  color: #ffffffcc;
+}
+.chain-tile[aria-pressed='true']::after {
+  background: linear-gradient(90deg, #fff calc(var(--share, 0) * 100%), #ffffff40 0);
+}
+.chain-variants {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding-top: 12px;
+  border-top: 1px solid color-mix(in srgb, var(--accent) 10%, var(--line));
+}
+.spring-chain .chain-variant {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  min-height: 34px;
+  padding: 4px 12px;
+  border-radius: 999px;
+  font-size: 0.74rem;
+}
+.chain-variant > span {
+  color: var(--muted);
+  font-size: 0.64rem;
+  font-weight: 650;
+}
+.spring-chain button.chain-variant[aria-pressed='true'] {
+  border-color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 12%, var(--paper));
+  color: color-mix(in srgb, var(--accent) 80%, var(--ink));
+}
+.chain-tray-foot {
+  display: flex;
+  justify-content: flex-end;
+}
+.spring-chain .chain-next {
+  min-height: 36px;
+  padding: 6px 12px;
+  border: 0;
+  border-radius: 10px;
+  background: transparent;
+  color: var(--accent);
+  font-size: 0.74rem;
+  font-weight: 650;
+}
+
+@media (max-width: 640px) {
+  .chain-bar {
+    gap: 8px;
+  }
+  .chain-nodes {
+    flex: 1 1 100%;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    padding: 4px 2px;
+    margin: -4px -2px;
+    scrollbar-width: none;
+    scroll-snap-type: x proximity;
+    mask-image: linear-gradient(90deg, #000 calc(100% - 24px), transparent);
+  }
+  .chain-nodes::-webkit-scrollbar {
+    display: none;
+  }
+  .chain-node {
+    flex: none;
+    scroll-snap-align: start;
+  }
+  .chain-node:not(.is-active) .chain-node-text small {
+    display: none;
+  }
+  .chain-tiles {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .chain-node + .chain-node {
+    padding-left: 14px;
+  }
+  .chain-node + .chain-node::before {
+    left: 2px;
+    width: 10px;
+  }
+  .spring-chain .chain-node-main {
+    padding-right: 12px;
+  }
+  .chain-tray {
+    padding: 10px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .chain-tray {
+    animation: none;
+  }
+  .spring-chain button,
+  .chain-node-index {
+    transition: none;
+  }
+}

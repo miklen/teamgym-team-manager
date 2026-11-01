@@ -1,6 +1,7 @@
 import AxeBuilder from '@axe-core/playwright';
 import { overviewWorkspace } from '../fixtures/overview-workspace';
 import { openWorkspace } from './drive-fixture';
+import { chooseSpring, expectIncluded, rate, ratingGroup, springRow, toggleSpring } from './picker';
 import { expect, test } from './test';
 
 for (const width of [1440, 390]) {
@@ -18,30 +19,26 @@ for (const width of [1440, 390]) {
       element.scrollTop = element.scrollHeight;
     });
     await search.fill('strakt rondat');
-    await expect(list.locator('.spring-batch-choice strong').nth(0)).toHaveText('Strakt – rondat');
-    await expect(list.locator('.spring-batch-choice strong').nth(1)).toHaveText('Strakt – rondat – flik');
+    await expect(list.locator('.spring-batch-choice strong').nth(0)).toHaveText('Strakt salto – rondat');
+    await expect(list.locator('.spring-batch-choice strong').nth(1)).toHaveText('Strakt salto – rondat – flik');
     expect(await list.evaluate((element) => element.scrollTop)).toBe(0);
-    await picker.getByRole('checkbox', { name: 'Kun valgte', exact: true }).check();
-    await expect(picker.getByText('0 spring matcher', { exact: true })).toBeVisible();
-    await picker.getByRole('button', { name: 'Søg i alle spring', exact: true }).click();
+    await picker.getByRole('button', { name: /^Valgte/ }).click();
+    await expect(picker.getByText('Du har ikke valgt nogen spring endnu.', { exact: true })).toBeVisible();
+    await picker.getByRole('button', { name: 'Resultater', exact: true }).click();
     await expect(search).toHaveValue('strakt rondat');
-    const parentName = 'Strakt – rondat – flik – strakt 1/1 (360°)';
-    await picker.getByRole('checkbox', { name: /^Strakt – rondat – flik – strakt 1\/1/ }).check();
-    const parentRating = picker.getByLabel(`Sikkerhed for ${parentName}`, { exact: true });
-    await parentRating.selectOption('3');
-    const suffix = picker.getByRole('checkbox', { name: /^Rondat – flik – helskrue Arvet fra/ });
-    await expect(suffix).toBeChecked();
-    const suffixRating = picker.getByLabel('Vurdering for Rondat – flik – helskrue', { exact: true });
-    await expect(suffixRating).toContainText('Arvet · 3/5');
-    await parentRating.selectOption('5');
-    await expect(suffixRating).toContainText('Arvet · 5/5');
-    await suffix.uncheck();
-    await expect(
-      picker.getByRole('checkbox', { name: /^Rondat – flik – helskrue Fravalgt/ }),
-    ).not.toBeChecked();
-    await picker.getByRole('checkbox', { name: /^Rondat – flik – helskrue Fravalgt/ }).check();
-    await picker.getByRole('checkbox', { name: 'Kun valgte', exact: true }).check();
+    const parentName = 'Strakt salto – rondat – flik – strakt 1/1 (360°)';
+    await chooseSpring(picker, /^Strakt salto – rondat – flik – strakt 1\/1/, 3);
+    const suffix = springRow(picker, /^Rondat – flik – strakt 1\/1 \(360°\) Arvet fra/);
+    await expectIncluded(suffix);
+    const suffixRating = ratingGroup(picker, 'Vurdering for Rondat – flik – strakt 1/1 (360°)');
+    await expect(suffixRating.getByRole('button', { name: /^Arvet/ })).toHaveText('Arvet 3/5');
+    await rate(picker, `Sikkerhed for ${parentName}`, 5);
+    await expect(suffixRating.getByRole('button', { name: /^Arvet/ })).toHaveText('Arvet 5/5');
+    await toggleSpring(picker, 'Vurdering for Rondat – flik – strakt 1/1 (360°)');
+    await expectIncluded(springRow(picker, /^Rondat – flik – strakt 1\/1 \(360°\) Fravalgt/), false);
+    await toggleSpring(picker, 'Vurdering for Rondat – flik – strakt 1/1 (360°)');
     await search.fill('');
+    await picker.getByRole('button', { name: /^Valgte/ }).click();
     await expect(list.locator('[data-spring-identity]')).toHaveCount(10);
     const identities = await list
       .locator('[data-spring-identity]')
@@ -64,8 +61,8 @@ for (const width of [1440, 390]) {
     expect(source.workspace.athleteSkills.every((item) => item.stability === 5)).toBe(true);
     await page.reload();
     await page.getByRole('button', { name: /Alma Eksempel/ }).click();
-    await page.getByLabel('Find færdighed', { exact: true }).fill('Rondat – flik – helskrue');
-    await expect(page.getByRole('button', { name: /^Rondat – flik – helskrue D:.*5\/5/ })).toBeVisible();
+    await page.getByLabel('Find færdighed', { exact: true }).fill('Rondat – flik – strakt 1/1');
+    await expect(page.getByRole('button', { name: /^Rondat – flik – strakt 1\/1 \(360°\) D:.*5\/5/ })).toBeVisible();
     expect(source.failures).toEqual([]);
   });
 }

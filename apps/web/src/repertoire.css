@@ -183,24 +183,376 @@
 .mobile-label {
   display: none;
 }
-.picker-filters {
-  grid-template-columns: minmax(0, 1fr) minmax(150px, 0.65fr) 110px !important;
-}
+/* Springvælger: find (søgning og kæde) → vælg og vurdér i én sammenhængende flade. */
 .unified-picker {
+  container-type: inline-size;
   min-width: 0;
 }
-.spring-picker-columns {
+.picker-layout {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 76px 160px;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 20px;
+  margin-top: 8px;
+}
+.picker-find,
+.picker-results {
+  min-width: 0;
+}
+.picker-step {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 0 0 12px;
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: -0.005em;
+}
+.picker-step > span {
+  display: grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--accent) 12%, var(--paper));
+  color: var(--accent);
+  font-size: 0.68rem;
+}
+.picker-find > input[type='search'] {
+  width: 100%;
+}
+.picker-find-hint {
+  margin: 12px 0 6px;
+  font-size: 0.7rem;
+  color: var(--muted);
+}
+.picker-more {
+  margin-top: 10px;
+  font-size: 0.74rem;
+}
+.picker-more > summary {
+  cursor: pointer;
+  color: var(--muted);
+  font-weight: 600;
+  width: fit-content;
+}
+.picker-more-fields {
+  display: grid;
+  grid-template-columns: 140px minmax(0, 1fr);
+  align-items: end;
+  gap: 8px 16px;
+  padding-top: 10px;
+}
+.picker-more-fields label {
+  margin: 0;
+}
+.picker-more-fields .check {
+  min-height: 44px;
+}
+.unified-picker button.picker-jump {
+  display: none;
+  width: 100%;
+  margin-top: 14px;
+  background: color-mix(in srgb, var(--accent) 10%, var(--paper));
+  color: var(--accent);
+  box-shadow: none;
+}
+.picker-results-head {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px 14px;
+  padding-bottom: 10px;
+}
+.picker-view {
+  display: inline-flex;
+  padding: 3px;
+  border-radius: 11px;
+  background: #eef1f7;
+}
+.unified-picker .picker-view button {
+  min-height: 32px;
+  min-width: 0;
+  padding: 4px 12px;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--muted);
+  font-size: 0.74rem;
+  font-weight: 600;
+  box-shadow: none;
+}
+.unified-picker .picker-view button[aria-pressed='true'] {
+  background: var(--paper);
+  color: var(--ink);
+  box-shadow: 0 1px 3px #16284b1f;
+}
+.picker-view-count {
+  display: inline-block;
+  min-width: 18px;
+  margin-left: 4px;
+  padding: 0 5px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--accent) 12%, transparent);
+  color: var(--accent);
+  font-size: 0.66rem;
+  text-align: center;
+}
+.picker-count {
+  font-size: 0.72rem;
+  color: var(--muted);
+}
+.unified-picker button.picker-reset {
+  margin-left: auto;
+  min-height: 32px;
+  padding-block: 4px;
+  font-size: 0.72rem;
+}
+.spring-picker-columns {
+  display: flex;
+  justify-content: space-between;
   gap: 14px;
-  padding: 4px 12px 8px;
+  padding: 0 12px 6px;
   font-size: 0.62rem;
   font-weight: 650;
   letter-spacing: 0.04em;
   color: var(--muted);
 }
-.spring-picker-columns > span:first-child {
-  padding-left: 34px;
+.unified-spring-list {
+  max-height: clamp(320px, 56vh, 620px);
+  margin: 0;
+  overscroll-behavior: contain;
+  overflow-anchor: none;
+}
+.unified-spring-list .spring-batch-row {
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  grid-template-areas: 'info d rating';
+  gap: 6px 14px;
+  align-items: center;
+  padding: 10px 12px;
+}
+.unified-spring-list .spring-batch-choice {
+  grid-area: info;
+  display: grid;
+  gap: 2px;
+  align-content: start;
+  min-width: 0;
+  min-height: 0;
+  font-size: 0.77rem;
+  font-weight: 500;
+  cursor: default;
+}
+.unified-spring-list .spring-batch-choice strong {
+  font-weight: 650;
+}
+.unified-spring-list .spring-batch-choice small {
+  color: var(--muted);
+  font-size: 0.64rem;
+}
+.spring-row-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 8px;
+  align-items: center;
+}
+.spring-team-known {
+  padding: 1px 8px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--accent) 10%, transparent);
+  color: var(--accent);
+  font-weight: 600;
+}
+.spring-row-d {
+  grid-area: d;
+  justify-self: end;
+  display: flex;
+  align-items: baseline;
+  gap: 4px;
+  white-space: nowrap;
+  font-size: 0.76rem;
+}
+.spring-row-d small {
+  color: var(--muted);
+  font-weight: 500;
+  font-size: 0.62rem;
+  margin-right: 4px;
+}
+.spring-rating {
+  grid-area: rating;
+  display: flex;
+  justify-content: flex-end;
+  gap: 3px;
+}
+.unified-picker .spring-rating button {
+  min-height: 34px;
+  min-width: 34px;
+  padding: 0 6px;
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  background: var(--paper);
+  color: var(--muted);
+  font-size: 0.74rem;
+  font-weight: 650;
+  box-shadow: none;
+}
+.unified-picker .spring-rating button:hover:not(:disabled, [aria-pressed='true']) {
+  border-color: color-mix(in srgb, var(--accent) 45%, var(--line));
+  background: color-mix(in srgb, var(--accent) 6%, var(--paper));
+  color: var(--accent);
+}
+.unified-picker .spring-rating button[aria-pressed='true'] {
+  border-color: var(--accent);
+  background: var(--accent);
+  color: #fff;
+}
+.unified-picker .spring-rating button.spring-rating-toggle {
+  margin-left: 4px;
+  border-style: dashed;
+  min-width: 48px;
+}
+.unified-picker .selected .spring-rating button.spring-rating-toggle,
+.unified-picker .is-excluded .spring-rating button.spring-rating-toggle {
+  min-width: 34px;
+  border-style: solid;
+  font-size: 0.9rem;
+}
+.unified-picker .spring-rating button.spring-rating-inherit {
+  margin-right: 4px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+.unified-picker .spring-rating button:disabled {
+  opacity: 0.4;
+}
+.unified-spring-list .spring-foundation-row {
+  padding-left: 28px;
+}
+.unified-spring-list .spring-foundation-row.selected {
+  background: #f6f8fd;
+  box-shadow: inset 4px 0 color-mix(in srgb, var(--accent) 35%, transparent);
+}
+.unified-spring-list .spring-foundation-row .spring-batch-choice strong {
+  font-weight: 600;
+}
+.unified-spring-list .spring-foundation-row .spring-batch-choice strong::before {
+  content: '↳ ';
+  color: var(--muted);
+}
+.unified-spring-list .is-excluded .spring-batch-choice strong {
+  color: var(--muted);
+  text-decoration: line-through;
+}
+.unified-spring-list .empty {
+  padding: 28px 12px;
+  color: var(--muted);
+  font-size: 0.8rem;
+  text-align: center;
+}
+.spring-row-detail {
+  grid-column: 1 / -1;
+  margin: 0 0 2px;
+  font-size: 0.7rem;
+}
+.spring-row-detail select {
+  max-width: 100%;
+  min-width: 0;
+  font-size: 0.75rem;
+}
+.picker-build {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 2px 8px;
+  margin: 12px 0 0;
+  padding: 12px 14px;
+  border: 1px dashed var(--line);
+  border-radius: 12px;
+  font-size: 0.76rem;
+  color: var(--muted);
+}
+.unified-picker .picker-build button {
+  min-height: 32px;
+  padding: 4px 6px;
+  font-size: 0.76rem;
+}
+.picker-build small {
+  flex-basis: 100%;
+  font-size: 0.66rem;
+}
+.picker-selection {
+  display: grid;
+  gap: 12px;
+  margin-top: 14px;
+  padding: 14px;
+  border-radius: 12px;
+  background: #f6f8fc;
+}
+.picker-selection-summary {
+  margin: 0;
+  font-size: 0.8rem;
+  font-weight: 650;
+}
+.picker-switch {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  margin: 0;
+  font-size: 0.76rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+.picker-switch-field small {
+  display: block;
+  margin: 2px 0 0 48px;
+  color: var(--muted);
+  font-size: 0.66rem;
+  font-weight: 500;
+  line-height: 1.5;
+}
+.picker-switch input[role='switch'] {
+  appearance: none;
+  flex: 0 0 36px;
+  width: 36px;
+  height: 20px;
+  min-height: 0;
+  margin: 1px 0 0;
+  padding: 0;
+  border: 0;
+  border-radius: 999px;
+  background: #c9d1e0;
+  position: relative;
+  cursor: pointer;
+  transition: background 150ms ease;
+}
+.picker-switch input[role='switch']::after {
+  content: '';
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 1px 2px #16284b33;
+  transition: transform 150ms ease;
+}
+.picker-switch input[role='switch']:checked {
+  background: var(--accent);
+}
+.picker-switch input[role='switch']:checked::after {
+  transform: translateX(16px);
+}
+.picker-date {
+  margin: 0;
+  max-width: 220px;
+  font-size: 0.74rem;
+}
+.picker-scale {
+  margin-top: 12px;
+  font-size: 0.72rem;
+  color: var(--muted);
+}
+.picker-scale > summary {
+  cursor: pointer;
+  width: fit-content;
 }
 .spring-selection-toolbar {
   display: flex;
@@ -209,130 +561,54 @@
   gap: 10px 20px;
   padding: 12px 0;
 }
-.spring-selection-toolbar .batch-summary,
 .spring-selection-toolbar h3 {
   margin: 0;
   flex: 1 1 220px;
   font-size: 0.8rem;
 }
-.spring-selection-toolbar label.check {
-  margin: 0;
-  font-size: 0.72rem;
-  font-weight: 500;
+@container (min-width: 760px) {
+  .picker-layout {
+    grid-template-columns: minmax(280px, 340px) minmax(0, 1fr);
+    gap: 28px;
+    align-items: start;
+  }
+  .picker-more-fields {
+    grid-template-columns: minmax(0, 1fr);
+  }
 }
-.unified-spring-list {
-  max-height: clamp(320px, 52vh, 560px);
-  margin: 0;
-  overscroll-behavior: contain;
-  overflow-anchor: none;
-}
-.picker-search-feedback {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  flex-wrap: wrap;
-  font-size: 0.72rem;
-  color: var(--muted);
-  margin: 0 0 8px;
-}
-.picker-search-feedback button {
-  font-size: 0.72rem;
-}
-.unified-spring-list .spring-batch-row {
-  grid-template-columns: minmax(0, 1fr) 76px 160px;
-  gap: 14px;
-  padding: 12px;
-}
-.unified-spring-list .spring-batch-choice {
-  min-width: 0;
-  font-size: 0.77rem;
-  font-weight: 500;
-  align-items: flex-start;
-}
-.unified-spring-list .spring-batch-choice strong {
-  font-weight: 650;
-}
-.unified-spring-list .spring-batch-choice input {
-  margin-top: 1px;
-}
-.unified-spring-list .spring-batch-choice small {
-  display: block;
-  color: var(--muted);
-  font-size: 0.64rem;
-  margin-top: 3px;
-}
-.unified-spring-list .spring-foundation-row.selected {
-  background: #f6f8fd;
-  box-shadow: none;
-}
-.unified-spring-list .is-excluded strong {
-  color: var(--muted);
-}
-.unified-spring-list .is-excluded .spring-batch-choice strong {
-  text-decoration: line-through;
-}
-.unified-spring-list .spring-batch-rating > span {
-  display: none;
-}
-.unified-spring-list .spring-batch-rating select {
-  font-size: 0.72rem;
-}
-.spring-row-d {
-  align-self: center;
-  font-size: 0.76rem;
-}
-.spring-row-d small {
-  display: none;
-  color: var(--muted);
-  font-weight: 500;
-  font-size: 0.62rem;
-  margin-bottom: 4px;
-}
-.spring-row-detail {
-  grid-column: 1 / -1;
-  margin: 0 0 2px 34px;
-  font-size: 0.7rem;
-}
-.spring-row-detail select {
-  max-width: 100%;
-  min-width: 0;
-  font-size: 0.75rem;
+@container (max-width: 759px) {
+  .unified-picker button.picker-jump {
+    display: block;
+  }
 }
 @media (max-width: 650px) {
   .spring-picker-columns {
     display: none;
   }
-  .spring-row-d small {
-    display: inline;
-    margin-right: 4px;
-  }
   .unified-spring-list .spring-batch-row {
-    grid-template-columns: minmax(0, 1fr) minmax(130px, 1fr);
-    gap: 8px 12px;
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-areas:
+      'info d'
+      'rating rating';
+    align-items: start;
+    align-items: center;
     padding: 12px 8px;
   }
-  .unified-spring-list .spring-batch-choice {
-    grid-column: 1 / -1;
-    gap: 10px;
+  .unified-spring-list .spring-foundation-row {
+    padding-left: 20px;
   }
-  .spring-row-d {
-    padding-left: 32px;
+  .spring-rating {
+    justify-content: stretch;
   }
-  .spring-row-detail {
-    margin-left: 32px;
+  .unified-picker .spring-rating button {
+    flex: 1 1 0;
+    min-height: 40px;
+    min-width: 0;
   }
-  .spring-selection-toolbar {
-    gap: 12px 18px;
+  .unified-picker .spring-rating button.spring-rating-inherit {
+    flex: 0 0 auto;
+    padding-inline: 10px;
   }
-  .spring-selection-toolbar .batch-summary {
-    flex-basis: 100%;
-  }
-}
-.picker-filters > .check {
-  grid-column: 1 / -1;
-  margin: 0;
-  font-size: 0.75rem;
 }
 .spring-batch-row {
   transition:
@@ -411,12 +687,6 @@
     padding: 16px 10px;
     margin-left: 0;
     margin-right: 0;
-  }
-  .picker-filters {
-    grid-template-columns: 1fr 1fr !important;
-  }
-  .picker-filters > label:first-child {
-    grid-column: 1 / -1;
   }
 }
 @media (prefers-reduced-motion: reduce) {

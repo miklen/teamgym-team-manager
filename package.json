@@ -27,7 +27,8 @@
     "test:mutations": "node scripts/check-rule-mutations.mjs",
     "test": "npm run test:domain && npm run test:drive",
     "verify": "npm run check && vitest run",
-    "verify:full": "npm run verify && npm run test:mutations && npm run build && npm run test:e2e"
+    "verify:full": "npm run verify && npm run test:mutations && npm run build && npm run test:e2e",
+    "report:fundament": "node scripts/foundation-report.mjs"
   },
   "dependencies": {
     "react": "19.3.1",

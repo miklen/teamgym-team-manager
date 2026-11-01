@@ -2238,14 +2238,6 @@ footer {
     align-items: center;
     margin-block: 12px;
   }
-  .picker-intro {
-    font-size: 0.8rem;
-    line-height: 1.7;
-  }
-  .picker-filters {
-    grid-template-columns: minmax(0, 1fr) 120px;
-    gap: 12px;
-  }
   .team-list {
     grid-template-columns: 1fr;
     gap: 16px;

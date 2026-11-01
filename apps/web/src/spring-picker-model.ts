@@ -1,4 +1,5 @@
 import { skillIdentity } from '@teamgym/domain';
+import type { Workspace } from '@teamgym/domain';
 import type { PlannedSpring, SpringChoice, SpringDefinition } from './spring-library';
 import { springSearchRank } from './spring-library';
 
@@ -30,12 +31,51 @@ function templateIdentity(definition: SpringDefinition): string {
   return skillIdentity({ ...definition, jump: { ...definition.jump, twistDistribution: [] } });
 }
 
+/**
+ * Antal andre aktive gymnaster på holdet med en aktiv registrering pr. præcis udførelse.
+ * Afledt ved visning; gemmes aldrig og viser ingen navne.
+ */
+export function teamSpringCounts(
+  workspace: Pick<Workspace, 'athletes' | 'athleteSkills' | 'skills'>,
+  teamId: string | null | undefined,
+  excludeAthleteId?: string,
+): Map<string, number> {
+  const counts = new Map<string, number>();
+  if (!teamId) return counts;
+  const athletes = new Set(
+    workspace.athletes
+      .filter((athlete) => athlete.teamId === teamId && !athlete.archived && athlete.id !== excludeAthleteId)
+      .map((athlete) => athlete.id),
+  );
+  const skills = new Map(
+    workspace.skills.filter((skill) => !skill.archived).map((skill) => [skill.id, skillIdentity(skill)]),
+  );
+  const known = new Map<string, Set<string>>();
+  for (const registration of workspace.athleteSkills) {
+    const identity = skills.get(registration.skillId);
+    if (registration.archived || !identity || !athletes.has(registration.athleteId)) continue;
+    known.set(identity, (known.get(identity) ?? new Set()).add(registration.athleteId));
+  }
+  for (const [identity, ids] of known) counts.set(identity, ids.size);
+  return counts;
+}
+
+/** Holdkendte spring først (flest gymnaster øverst); ellers bevares rækkefølgen. */
+export function sortByTeamKnown<T extends { definition: SpringDefinition }>(
+  choices: readonly T[],
+  counts: ReadonlyMap<string, number>,
+): T[] {
+  const known = (choice: T) => counts.get(skillIdentity(choice.definition)) ?? 0;
+  return [...choices].sort((a, b) => known(b) - known(a));
+}
+
 /** Samme udførelse har én række på tværs af bibliotek, direkte valg og fundament. */
 export function springPickerRows(
   library: readonly SpringChoice[],
   candidates: readonly SpringChoice[],
   plan: readonly PlannedSpring[],
   query = '',
+  teamCounts: ReadonlyMap<string, number> = new Map(),
 ): SpringPickerRow[] {
   const exact = new Map(library.map((choice) => [skillIdentity(choice.definition), choice]));
   const rows = new Map<string, SpringPickerRow>();
@@ -80,7 +120,13 @@ export function springPickerRows(
   const result = [...rows.values()].map((row) =>
     keys.get(row.key)! > 1 ? { ...row, key: `${row.key}:${row.identity}` } : row,
   );
-  return query.trim()
-    ? result.sort((a, b) => (springPickerRowRank(a, query) ?? 100) - (springPickerRowRank(b, query) ?? 100))
-    : result;
+  const known = (row: SpringPickerRow) => (row.planned ? 0 : (teamCounts.get(row.identity) ?? 0));
+  if (query.trim()) {
+    const ranks = new Map(result.map((row) => [row.key, springPickerRowRank(row, query) ?? 100]));
+    // Søgerangen går forud; holdkendskab afgør kun ved lige rang. Sorteringen er stabil.
+    return result.sort((a, b) => ranks.get(a.key)! - ranks.get(b.key)! || known(b) - known(a));
+  }
+  // Planlagte → holdkendte → øvrige i biblioteksrækkefølge.
+  const group = (row: SpringPickerRow) => (row.planned ? 0 : known(row) > 0 ? 1 : 2);
+  return result.sort((a, b) => group(a) - group(b) || known(b) - known(a));
 }

@@ -1,3 +1,4 @@
+import { rate, ratingGroup } from './picker';
 import { expect, test } from './test';
 import { openWorkspace } from './drive-fixture';
 
@@ -13,10 +14,10 @@ for (const width of [1440, 390]) {
     await page.getByRole('button', { name: 'Tilføj færdighed' }).click();
     await page.getByRole('button', { name: 'Byg selv', exact: true }).click();
     for (const [query, name] of [
-      ['strakt forlæns', /^Strakt salto 0° \(forlæns\)/],
+      ['strakt forlæns', /^Strakt salto forlæns \\ /],
       ['Rondat', /^Rondat R/],
-      ['flic', /^Flik-flak F/],
-      ['forlæns 360', /^Strakt salto 360° \(forlæns\)/],
+      ['flic', /^Flik F/],
+      ['forlæns 360', /^Strakt 1\/1 \(360°\) forlæns \\/],
     ] as const) {
       await page.getByLabel('Søg spring, kode eller alias').fill(query);
       await page.getByRole('button', { name }).click();
@@ -25,11 +26,11 @@ for (const width of [1440, 390]) {
     await expect(page.getByText(/Element 4 er valgt som forlæns salto efter flik/)).toBeVisible();
     await page.getByRole('button', { name: 'Fjern element 4', exact: true }).click();
     await page.getByLabel('Søg spring, kode eller alias').fill('baglæns 360');
-    await page.getByRole('button', { name: /^Strakt salto 360° \(baglæns\)/ }).click();
+    await page.getByRole('button', { name: /^Strakt 1\/1 \(360°\) baglæns [\\/]/ }).click();
     await expect(
       page
         .getByRole('region', { name: 'Springvælger', exact: true })
-        .getByText('Strakt – rondat – flik – helskrue', { exact: true }),
+        .getByText('Strakt salto – rondat – flik – strakt 1/1 (360°)', { exact: true }),
     ).toBeVisible();
     await expect(page.getByText('Gyldighed: Beregnet · forbindelse: Kendt', { exact: true })).toBeVisible();
     await expect(
@@ -41,21 +42,21 @@ for (const width of [1440, 390]) {
     await expect(
       page.getByText('Element 4 er valgt som forlæns salto efter flik.', { exact: false }),
     ).toHaveCount(0);
-    await page
-      .getByRole('combobox', { name: 'Sikkerhed for Strakt – rondat – flik – helskrue', exact: true })
-      .selectOption('3');
-    await expect(page.getByLabel('Vurdering for Strakt', { exact: true })).toContainText('Arvet · 3/5');
-    await expect(page.getByLabel('Vurdering for Strakt – rondat', { exact: true })).toContainText(
-      'Arvet · 3/5',
-    );
-    await expect(page.getByLabel('Vurdering for Strakt – rondat – flik', { exact: true })).toContainText(
-      'Arvet · 3/5',
-    );
+    await rate(page, 'Sikkerhed for Strakt salto – rondat – flik – strakt 1/1 (360°)', 3);
+    await expect(
+      ratingGroup(page, 'Vurdering for Strakt salto').getByRole('button', { name: /^Arvet/ }),
+    ).toHaveText('Arvet 3/5');
+    await expect(
+      ratingGroup(page, 'Vurdering for Strakt salto – rondat').getByRole('button', { name: /^Arvet/ }),
+    ).toHaveText('Arvet 3/5');
+    await expect(
+      ratingGroup(page, 'Vurdering for Strakt salto – rondat – flik').getByRole('button', { name: /^Arvet/ }),
+    ).toHaveText('Arvet 3/5');
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
     await page.screenshot({ path: `tmp/ui-qa/standardserie-${width}.png` });
     await page.getByRole('button', { name: 'Registrér færdighed', exact: true }).click();
     await expect(
-      page.getByRole('button', { name: /^Strakt – rondat – flik – helskrue.*3\/5/ }),
+      page.getByRole('button', { name: /^Strakt salto – rondat – flik – strakt 1\/1 \(360°\).*3\/5/ }),
     ).toBeVisible();
     await page.getByRole('button', { name: 'Luk dialog', exact: true }).click();
     await page.getByRole('button', { name: /Lokale ændringer/ }).click();
@@ -63,7 +64,7 @@ for (const width of [1440, 390]) {
     expect(source.workspace.athleteSkills).toHaveLength(34);
     expect(source.workspace.athleteSkills.slice(24).every((item) => item.stability === 3)).toBe(true);
     const complete = source.workspace.skills.find(
-      (item) => item.name === 'Strakt – rondat – flik – helskrue',
+      (item) => item.name === 'Strakt salto – rondat – flik – strakt 1/1 (360°)',
     );
     expect(complete?.discipline).toBe('tumbling');
     if (complete?.discipline !== 'tumbling') throw Error('disciplin');

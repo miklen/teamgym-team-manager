@@ -1,10 +1,11 @@
 import { useMemo } from 'react';
-import { skillIdentity } from '@teamgym/domain';
+import type { ReactNode } from 'react';
+import { STABILITY_ANCHORS, skillIdentity } from '@teamgym/domain';
 import type { Stability, Workspace } from '@teamgym/domain';
 import type { RulePackage } from '@teamgym/rules';
 import { points, statusText } from './components';
-import { springDirectionText, springFoundation } from './spring-library';
-import type { SpringSelection } from './spring-library';
+import { springDirectionText, springDisplayName, springFoundation } from './spring-library';
+import type { SpringDefinition, SpringSelection } from './spring-library';
 import type { SpringPickerRow } from './spring-picker-model';
 
 export interface FoundationControls {
@@ -27,6 +28,8 @@ export function SpringChoiceRows({
   workspace,
   athleteId,
   evaluations,
+  teamCounts,
+  empty,
 }: {
   rows: SpringPickerRow[];
   selections: SpringSelection[];
@@ -36,6 +39,10 @@ export function SpringChoiceRows({
   workspace: Workspace;
   athleteId: string;
   evaluations?: ReadonlyMap<string, ReturnType<RulePackage['evaluateSkill']>>;
+  /** Afledt holdkendskab; vises kun, gemmes ikke. */
+  teamCounts?: ReadonlyMap<string, number>;
+  /** Vises, når ingen spring passer. */
+  empty?: ReactNode;
 }) {
   const existing = useMemo(() => {
     const identities = new Map(workspace.skills.map((skill) => [skill.id, skillIdentity(skill)]));
@@ -45,18 +52,47 @@ export function SpringChoiceRows({
         .map((item) => [identities.get(item.skillId)!, item]),
     );
   }, [workspace, athleteId]);
+  const evaluate = ({ definition, identity, choice }: SpringPickerRow) =>
+    (choice && skillIdentity(choice.definition) === identity && evaluations?.get(choice.id)) ||
+    rulePackage.evaluateSkill(definition);
+  const select = (definition: SpringDefinition, identity: string, stability?: Stability | null) => {
+    const previous = existing.get(identity);
+    controls.setExcluded(controls.excluded.filter((item) => item !== identity));
+    change([
+      ...selections,
+      {
+        definition,
+        stability:
+          stability !== undefined ? stability : previous?.archived ? null : (previous?.stability ?? null),
+        confirmed: true,
+      },
+    ]);
+  };
+  const setDirect = (identity: string, stability: Stability | null) =>
+    change(
+      selections.map((item) => (skillIdentity(item.definition) === identity ? { ...item, stability } : item)),
+    );
+  const setFoundation = (identity: string, value: Stability | null | 'inherit') => {
+    const next = new Map(controls.ownAssessments);
+    if (value === 'inherit') {
+      next.delete(identity);
+      controls.setFollowing([...controls.following, identity]);
+    } else {
+      next.set(identity, value);
+      controls.setFollowing(controls.following.filter((item) => item !== identity));
+    }
+    controls.setOwnAssessments(next);
+  };
   return (
     <>
       <div className="spring-picker-columns" aria-hidden="true">
-        <span>Spring og ophav</span>
-        <span>Egen D</span>
-        <span>Sikkerhed</span>
+        <span>Spring</span>
+        <span>Sikkerhed · tryk for at vælge</span>
       </div>
       <ul className="spring-batch unified-spring-list" aria-label="Færdige spring">
-        {rows.map(({ definition, identity, key, planned, choice }) => {
-          const evaluation =
-            (choice && skillIdentity(choice.definition) === identity && evaluations?.get(choice.id)) ||
-            rulePackage.evaluateSkill(definition);
+        {rows.map((row) => {
+          const { definition, identity, key, planned } = row;
+          const evaluation = evaluate(row);
           const previous = existing.get(identity);
           const child = !!planned && !planned.explicit;
           const checked = !!planned && !planned.excluded;
@@ -76,113 +112,116 @@ export function SpringChoiceRows({
                     ? 'Allerede registreret'
                     : '';
           const jump = definition.discipline === 'trampet' ? definition.jump : null;
+          const name = springDisplayName(definition, rulePackage);
+          const known = teamCounts?.get(identity) ?? 0;
+          const inherits = child && !planned.ownAssessment;
+          const toggle = () => {
+            if (child) {
+              controls.setExcluded(
+                planned.excluded
+                  ? controls.excluded.filter((item) => item !== identity)
+                  : [...new Set([...controls.excluded, identity])],
+              );
+            } else if (!planned) {
+              select(definition, identity);
+            } else {
+              if (planned.relations.length)
+                controls.setExcluded([...new Set([...controls.excluded, identity])]);
+              change(selections.filter((item) => skillIdentity(item.definition) !== identity));
+            }
+          };
+          const rate = (value: Stability | null) => {
+            if (child) setFoundation(identity, value);
+            else if (planned) setDirect(identity, value);
+            else select(definition, identity, value);
+          };
           return (
             <li
               key={key}
               data-spring-identity={identity}
               data-selection={planned ? (child ? 'foundation' : 'direct') : 'candidate'}
+              data-included={checked}
+              aria-label={`${name} ${status} ${springDirectionText(definition)} ${row.choice?.group ?? ''} ${known ? `· Kendt af ${known} på holdet` : ''} · D: ${points(evaluation.difficulty.value)}`
+                .replace(/\s+/g, ' ')
+                .trim()}
               className={`spring-batch-row ${checked ? 'selected' : ''} ${child ? 'spring-foundation-row' : ''} ${planned?.excluded ? 'is-excluded' : ''}`}
             >
-              <label className="spring-batch-choice">
-                <input
-                  type="checkbox"
-                  checked={checked}
-                  aria-label={`${definition.name} ${status} ${springDirectionText(definition)} ${choice?.group ?? ''} · D: ${points(evaluation.difficulty.value)}`
-                    .replace(/\s+/g, ' ')
-                    .trim()}
-                  onChange={(event) => {
-                    if (child) {
-                      controls.setExcluded(
-                        event.target.checked
-                          ? controls.excluded.filter((item) => item !== identity)
-                          : [...new Set([...controls.excluded, identity])],
-                      );
-                    } else if (event.target.checked) {
-                      controls.setExcluded(controls.excluded.filter((item) => item !== identity));
-                      change([
-                        ...selections,
-                        {
-                          definition,
-                          stability: previous?.archived ? null : (previous?.stability ?? null),
-                          confirmed: true,
-                        },
-                      ]);
-                    } else {
-                      if (planned?.relations.length)
-                        controls.setExcluded([...new Set([...controls.excluded, identity])]);
-                      change(selections.filter((item) => skillIdentity(item.definition) !== identity));
-                    }
-                  }}
-                />
-                <span>
-                  <strong>{definition.name}</strong>
-                  <small className="spring-directions">{springDirectionText(definition)}</small>
-                  {status && (
-                    <small className="spring-row-origin">
-                      {child && <span aria-hidden="true">↳ </span>}
-                      {status}
-                    </small>
-                  )}
-                </span>
-              </label>
+              <div className="spring-batch-choice">
+                <strong>{name}</strong>
+                <small className="spring-directions">{springDirectionText(definition)}</small>
+                {(status || known > 0) && (
+                  <small className="spring-row-meta">
+                    {status && <span className="spring-row-origin">{status}</span>}
+                    {known > 0 && <span className="spring-team-known">Kendt af {known} på holdet</span>}
+                  </small>
+                )}
+              </div>
               <span className="spring-row-d">
-                <small>Egen D</small>
-                <strong>
-                  {planned?.unresolved
-                    ? 'Uafklaret'
-                    : evaluation.difficulty.value
-                      ? points(evaluation.difficulty.value)
-                      : statusText[evaluation.difficulty.status]}
-                </strong>
+                <small>D</small>
+                <strong>{planned?.unresolved ? 'Uafklaret' : difficultyText(evaluation)}</strong>
               </span>
-              <label className="spring-batch-rating">
-                <span>Sikkerhed</span>
-                <select
-                  aria-label={`${child ? 'Vurdering' : 'Sikkerhed'} for ${definition.name}`}
-                  disabled={!checked || planned?.unresolved}
-                  value={child && !planned.ownAssessment ? 'inherit' : (planned?.stability ?? '')}
-                  onChange={(event) => {
-                    const stability =
-                      event.target.value && event.target.value !== 'inherit'
-                        ? (Number(event.target.value) as Stability)
-                        : null;
-                    if (!child)
-                      change(
-                        selections.map((item) =>
-                          skillIdentity(item.definition) === identity ? { ...item, stability } : item,
-                        ),
-                      );
-                    else {
-                      const next = new Map(controls.ownAssessments);
-                      if (event.target.value === 'inherit') {
-                        next.delete(identity);
-                        controls.setFollowing([...controls.following, identity]);
-                      } else {
-                        next.set(identity, stability);
-                        controls.setFollowing(controls.following.filter((item) => item !== identity));
-                      }
-                      controls.setOwnAssessments(next);
-                    }
-                  }}
+              <div
+                className="spring-rating"
+                role="group"
+                aria-label={`${child ? 'Vurdering' : 'Sikkerhed'} for ${name}`}
+              >
+                {child && (
+                  <button
+                    type="button"
+                    className="spring-rating-inherit"
+                    aria-pressed={checked && inherits}
+                    disabled={!checked || planned.unresolved}
+                    title="Følg sikkerheden fra det valgte spring"
+                    onClick={() => setFoundation(identity, 'inherit')}
+                  >
+                    Arvet{' '}
+                    {inherits && planned.stability !== null ? `${planned.stability}/5` : inherits ? '–' : ''}
+                  </button>
+                )}
+                {STABILITY_VALUES.map((value) => (
+                  <button
+                    key={value}
+                    type="button"
+                    className="spring-rating-value"
+                    aria-pressed={checked && !inherits && planned.stability === value}
+                    disabled={planned?.excluded || planned?.unresolved}
+                    title={STABILITY_ANCHORS[value - 1]}
+                    onClick={() => rate(value)}
+                  >
+                    {value}
+                  </button>
+                ))}
+                <button
+                  type="button"
+                  className="spring-rating-toggle"
+                  aria-label={
+                    !planned
+                      ? 'Vælg uden vurdering'
+                      : planned.excluded
+                        ? 'Medtag igen'
+                        : child
+                          ? 'Fravælg'
+                          : 'Fjern'
+                  }
+                  title={
+                    !planned
+                      ? 'Vælg springet uden at vurdere sikkerheden nu'
+                      : planned.excluded
+                        ? 'Medtag i registreringen igen'
+                        : child
+                          ? 'Registrér ikke dette fundament'
+                          : 'Fjern fra registreringen'
+                  }
+                  onClick={toggle}
                 >
-                  {child && (
-                    <option value="inherit">
-                      Arvet · {planned.stability === null ? 'Ikke vurderet' : `${planned.stability}/5`}
-                    </option>
-                  )}
-                  <option value="">{child ? 'Egen · Ikke vurderet' : 'Ikke vurderet'}</option>
-                  {[1, 2, 3, 4, 5].map((value) => (
-                    <option key={value} value={value}>
-                      {child ? `Egen · ${value}/5` : `${value}/5`}
-                    </option>
-                  ))}
-                </select>
-              </label>
+                  <span aria-hidden="true">{!planned ? 'Vælg' : planned.excluded ? '↺' : '×'}</span>
+                </button>
+              </div>
               {planned?.explicit &&
                 jump?.rotationQuarterTurns === 8 &&
                 [1, 3].includes(jump.twistsHalfTurns) && (
                   <label className="spring-row-detail">
-                    Skruefordeling for {definition.name}
+                    Skruefordeling for {name}
                     <select
                       value={jump.twistDistribution.join(',')}
                       onChange={(event) => {
@@ -245,7 +284,7 @@ export function SpringChoiceRows({
                 )}
               {planned?.needsSource && (
                 <label className="spring-row-detail">
-                  Arvekilde for {definition.name}
+                  Arvekilde for {name}
                   <select
                     value={controls.sourceChoices.get(identity) ?? ''}
                     onChange={(event) => {
@@ -263,7 +302,7 @@ export function SpringChoiceRows({
                       return (
                         source && (
                           <option key={relation.sourceIdentity} value={relation.sourceIdentity}>
-                            {source.name}
+                            {springDisplayName(source, rulePackage)}
                           </option>
                         )
                       );
@@ -274,10 +313,16 @@ export function SpringChoiceRows({
             </li>
           );
         })}
-        {rows.length === 0 && (
-          <li className="empty">Ingen spring matcher. Prøv en anden søgning, eller vælg Byg selv.</li>
-        )}
+        {rows.length === 0 && <li className="empty">{empty ?? 'Ingen spring matcher.'}</li>}
       </ul>
     </>
   );
+}
+
+const STABILITY_VALUES = [1, 2, 3, 4, 5] as const;
+
+function difficultyText(evaluation: ReturnType<RulePackage['evaluateSkill']>) {
+  return evaluation.difficulty.value
+    ? points(evaluation.difficulty.value)
+    : statusText[evaluation.difficulty.status];
 }

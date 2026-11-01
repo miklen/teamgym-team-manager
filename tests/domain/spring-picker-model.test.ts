@@ -1,8 +1,19 @@
 import { expect, it } from 'vitest';
-import { createWorkspace, skillIdentity } from '@teamgym/domain';
+import {
+  createAthlete,
+  createWorkspace,
+  registerAthleteSkill,
+  setArchived,
+  skillIdentity,
+} from '@teamgym/domain';
 import { DK_V1 } from '@teamgym/rules';
-import { springLibrary, springRegistrationPlan } from '../../apps/web/src/spring-library';
-import { springPickerRows } from '../../apps/web/src/spring-picker-model';
+import { matchesSpring, springLibrary, springRegistrationPlan } from '../../apps/web/src/spring-library';
+import {
+  springPickerRows,
+  sortByTeamKnown,
+  teamSpringCounts,
+} from '../../apps/web/src/spring-picker-model';
+import { syntheticWorkspace } from '../fixtures/synthetic-workspace';
 
 const library = springLibrary(DK_V1, createWorkspace());
 const full = library.find((choice) => choice.id === 'common-rf-full')!.definition;
@@ -83,4 +94,64 @@ it('samme kandidat tilbydes ikke to gange, selv om indgangen gentages med et ali
     [],
   );
   expect(rows).toHaveLength(1);
+});
+
+const tumbling = library.filter((choice) => choice.definition.discipline === 'tumbling');
+it('holdkendte spring står efter valgte og før øvrige; andre hold og arkiverede tæller ikke', () => {
+  const fixture = syntheticWorkspace();
+  let workspace = fixture.workspace;
+  const known = library.find((choice) => choice.id === 'common-sh-barani')!.definition;
+  const plainBarani = library.find((choice) => choice.id === 'common-h-barani')!.definition;
+  const [first, second, third] = workspace.athletes.filter((athlete) => athlete.id !== fixture.athleteA.id);
+  for (const athlete of [first!, second!])
+    workspace = registerAthleteSkill(workspace, athlete.id, {
+      ...known,
+      id: `skill-${athlete.id}`,
+    }).workspace;
+  const archived = registerAthleteSkill(workspace, third!.id, { ...half, id: 'skill-archived' });
+  workspace = setArchived(archived.workspace, 'athleteSkills', archived.athleteSkillId, true);
+  workspace = createAthlete(workspace, {
+    name: 'Syntetisk anden',
+    discriminator: 'B',
+    teamId: fixture.teamB.id,
+  });
+  const other = workspace.athletes.at(-1)!;
+  workspace = registerAthleteSkill(workspace, other.id, { ...half, id: 'skill-other-team' }).workspace;
+  const counts = teamSpringCounts(workspace, fixture.teamA.id, fixture.athleteA.id);
+  expect(counts.get(skillIdentity(known))).toBe(2);
+  expect(counts.has(skillIdentity(half))).toBe(false);
+  const self = teamSpringCounts(workspace, fixture.teamA.id, first!.id);
+  expect(self.get(skillIdentity(known))).toBe(1);
+  expect(teamSpringCounts(workspace, null).size).toBe(0);
+
+  const plan = springRegistrationPlan([{ definition: full, stability: 4, confirmed: true }], DK_V1, false);
+  const rows = springPickerRows(library, tumbling, plan, '', counts);
+  expect(rows[0]!.identity).toBe(skillIdentity(full));
+  const firstUnplanned = rows.find((row) => !row.planned)!;
+  expect(firstUnplanned.identity).toBe(skillIdentity(known));
+  // Med søgning går rangen forud; holdet afgør kun ved lige rang.
+  const barani = tumbling.filter((choice) => matchesSpring(choice, 'barani'));
+  const order = (rows: ReturnType<typeof springPickerRows>) =>
+    rows
+      .map((row) => row.identity)
+      .filter((id) => [skillIdentity(known), skillIdentity(plainBarani)].includes(id));
+  expect(order(springPickerRows(library, barani, [], 'barani'))).toEqual([
+    skillIdentity(plainBarani),
+    skillIdentity(known),
+  ]);
+  expect(order(springPickerRows(library, barani, [], 'barani', counts))).toEqual([
+    skillIdentity(known),
+    skillIdentity(plainBarani),
+  ]);
+  // En bedre søgerang slår holdkendskab.
+  const exact = springPickerRows(library, barani, [], 'kraft barani', counts);
+  expect(exact[0]!.identity).toBe(skillIdentity(plainBarani));
+  // Ambitionskataloget: holdkendte først, ellers uændret rækkefølge.
+  const catalog = sortByTeamKnown(tumbling, counts);
+  expect(catalog[0]!.definition).toEqual(known);
+  expect(catalog.slice(1)).toEqual(
+    tumbling.filter((choice) => skillIdentity(choice.definition) !== skillIdentity(known)),
+  );
+  // Afledt: arbejdsrummet ændres ikke.
+  expect(workspace.skills.some((skill) => 'teamCount' in skill)).toBe(false);
 });

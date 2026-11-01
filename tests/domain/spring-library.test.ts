@@ -7,7 +7,8 @@ import {
   setArchived,
   updateAssessment,
 } from '@teamgym/domain';
-import { DK_V1 } from '@teamgym/rules';
+import { DK_V1, DK_V2 } from '@teamgym/rules';
+import { springName } from '../../apps/web/src/spring-names';
 import { knownSeries, standardTransition } from '../../apps/web/src/spring-connections';
 import {
   matchesSpring,
@@ -16,9 +17,8 @@ import {
   springRegistrationPlan,
   shorterSeries,
   springLibrary,
-  springSeriesName,
-  springElementName,
   springDisplayName,
+  springFoundation,
   springDirectionText,
 } from '../../apps/web/src/spring-library';
 import type { SpringDefinition } from '../../apps/web/src/spring-library';
@@ -32,74 +32,64 @@ function choice(query: string) {
 const fullName = 'Rondat – flik – strakt 1/1 (360°)';
 
 describe('springbibliotek', () => {
-  it('navngiver enkeltsaltoer og overslag efter saltoens skruer og bevarer graderne', () => {
-    const library = springLibrary(DK_V1, createWorkspace());
-    for (const [referenceId, nickname, degrees] of [
-      ['a4-f-08', 'Rudy', '540°'],
-      ['a4-f-10', 'Randy', '900°'],
-      ['a4-v-14', 'Overslag rudy', '540°'],
-      ['a4-v-15', 'Overslag randy', '900°'],
-    ] as const) {
-      const found = library.find((item) => item.id === `common-${referenceId}`)!;
-      expect(found.definition.name).toMatch(new RegExp(`^${nickname} · `));
-      expect(found.definition.name).toContain(degrees);
-      expect(matchesSpring(found, nickname)).toBe(true);
-    }
-    const single = DK_V1.springCatalog.find((entry) => entry.referenceId === 'a4-f-08')!.execution;
-    expect(springElementName(single, DK_V1)).toBe('Rudy · strakt 540° (forlæns)');
-    expect(springElementName({ ...single, twistsHalfTurns: 7, twistDistribution: [7] }, DK_V1)).toBe(
-      'Addy · strakt 1260° (forlæns)',
-    );
-    for (const id of ['a4-f-16', 'a4-f-18', 'a4-f-19', 'a4-f-20']) {
-      expect(library.find((entry) => entry.id === `common-${id}`)!.definition.name).not.toMatch(
-        /Rudy|Randy|Addy/i,
-      );
-    }
-    for (const entry of DK_V1.springCatalog.filter((item) => item.execution.apparatus !== 'floor')) {
-      const name = springElementName(entry.execution, DK_V1, entry.name);
-      if (entry.execution.twistsHalfTurns) {
-        expect(name).toContain(`${entry.execution.twistsHalfTurns * 180}°`);
+  it('giver alle biblioteksvalg og grundlagsbørn præcis det fælles navn og bevarer gamle navne som aliaser', () => {
+    for (const rulePackage of [DK_V1, DK_V2]) {
+      const library = springLibrary(rulePackage, createWorkspace());
+      for (const item of library) {
+        expect(item.definition.name).toBe(springName(item.definition));
+        for (const child of springFoundation(item.definition, rulePackage))
+          expect(child.definition.name).toBe(springName(child.definition));
+        for (const prefix of shorterSeries(item.definition)) expect(prefix.name).toBe(springName(prefix));
       }
-      expect(name).not.toMatch(/\b(?:180|360|540|720|900|1080|1260|1440)(?!\d|°)/);
     }
+    const library = springLibrary(DK_V1, createWorkspace());
+    const rudy = library.find((item) => item.id === 'common-a4-f-08')!;
+    expect(rudy.definition.name).toBe('Rudy (strakt 540°)');
+    expect(rudy.aliases).toContain('Strakt salto 540');
+    expect(matchesSpring(rudy, 'rudi')).toBe(true);
+    const handwritten = library.find((item) => item.id === 'common-sh-barani')!;
+    expect(handwritten.definition.name).toBe('Strakt salto – kraftspring – barani (strakt 180°)');
+    expect(handwritten.aliases).toContain('Strakt – kraftspring – barani (strakt 180°)');
   });
 
-  it('viser gamle gemte katalognavne med korrekt navn og grader uden at ændre data eller egne navne', () => {
-    const rudy = springLibrary(DK_V1, createWorkspace()).find(
-      (item) => item.id === 'common-a4-f-08',
-    )!.definition;
+  it('viser kendte gamle automatiske navne i den fælles grammatik uden at ændre data eller egne navne', () => {
+    const library = springLibrary(DK_V1, createWorkspace());
+    const rudy = library.find((item) => item.id === 'common-a4-f-08')!.definition;
     for (const oldName of [
       'Strakt salto 540',
       'Strakt salto 540°',
       'Rudy · strakt salto 540° (forlæns)',
+      'Rudy · strakt 540° (forlæns)',
       'Rudy',
+      'rudy (strakt 540°)',
     ]) {
       const workspace = { ...createWorkspace(), skills: [{ ...rudy, name: oldName }] };
       const before = serializeWorkspace(workspace);
       const displayed = springLibrary(DK_V1, workspace).find((item) => item.definition.id === rudy.id)!;
-      expect(displayed.definition.name).toBe('Rudy · strakt 540° (forlæns)');
+      expect(displayed.definition.name).toBe('Rudy (strakt 540°)');
+      expect(springDisplayName({ ...rudy, name: oldName }, null)).toBe('Rudy (strakt 540°)');
       expect(serializeWorkspace(workspace)).toBe(before);
     }
+    const series = choice(fullName).definition;
+    for (const oldName of [
+      'Rondat – flik – helskrue',
+      'Rondat – Flik-flak – Strakt salto 360 baglæns',
+    ])
+      expect(springDisplayName({ ...series, name: oldName }, DK_V1)).toBe(fullName);
+    const front = choice('Strakt salto – kraftspring – barani (strakt 180°)').definition;
+    for (const oldName of ['Strakt – kraftspring – barani (strakt 180°)', 'Strakt – kraftspring – barani'])
+      expect(springDisplayName({ ...front, name: oldName }, DK_V1)).toBe(
+        'Strakt salto – kraftspring – barani (strakt 180°)',
+      );
+    const lukket = choice('Rondat – flik – lukket salto').definition;
+    expect(springDisplayName({ ...lukket, name: 'Rondat – flik – Lukket salto 0° (baglæns)' }, DK_V1)).toBe(
+      'Rondat – flik – lukket salto',
+    );
+    for (const ownName of ['Syntetisk eget favoritnavn', 'Rudy', 'Strakt salto 540'])
+      expect(springDisplayName({ ...series, name: ownName }, DK_V1)).toBe(ownName);
     expect(springDisplayName({ ...rudy, name: 'Syntetisk eget favoritnavn' }, DK_V1)).toBe(
       'Syntetisk eget favoritnavn',
     );
-  });
-
-  it('kalder dobbelt baglæns med tre skruer Miller og bevarer udførelsesdetaljerne', () => {
-    const miller = DK_V1.springCatalog.find((item) => item.referenceId === 'a3-b-22')!.execution;
-    expect(springElementName(miller, DK_V1)).toBe('Miller · dobbelt strakt → strakt salto 1080° (baglæns)');
-    const roundoff = DK_V1.springCatalog.find((item) => item.referenceId === 'a3-b-01')!.execution;
-    expect(springSeriesName([roundoff, miller], DK_V1)).toContain('Miller');
-    expect(springElementName({ ...miller, twistDistribution: [2, 4] }, DK_V1)).toContain(
-      '1080° (baglæns) · 360° + 720°',
-    );
-    for (const other of [
-      { ...miller, twistsHalfTurns: 3 },
-      { ...miller, rotationQuarterTurns: 4 },
-      { ...miller, direction: 'forward' as const },
-    ]) {
-      expect(springElementName(other, DK_V1)).not.toContain('Miller');
-    }
   });
 
   it('klassificerer selvstændige indgange efter retning og holder afslutningselementer ude af færdige banevalg', () => {
@@ -162,8 +152,8 @@ describe('springbibliotek', () => {
       ['Rondat – flik – strakt 2/1 (720°)', '1', 3],
       ['Kraftspring – barani (strakt 180°)', '3/5', 2],
       ['Kraftspring – rudy (strakt 540°)', '4/5', 2],
-      ['Strakt – kraftspring – barani (strakt 180°)', '9/10', 3],
-      ['Strakt – kraftspring – rudy (strakt 540°)', '11/10', 3],
+      ['Strakt salto – kraftspring – barani (strakt 180°)', '9/10', 3],
+      ['Strakt salto – kraftspring – rudy (strakt 540°)', '11/10', 3],
     ] as const) {
       const skill = choice(name).definition;
       expect(skill.discipline).toBe('tumbling');
@@ -179,7 +169,7 @@ describe('springbibliotek', () => {
   it('registrerer kun præcise begyndelser og kopierer ingen vurdering eller lavere skruer', () => {
     const fixture = syntheticWorkspace();
     const full = choice(fullName).definition;
-    const shorter = shorterSeries(full, DK_V1);
+    const shorter = shorterSeries(full);
     expect(shorter.map((item) => item.name)).toEqual(['Rondat', 'Rondat – flik']);
     const result = registerSpring(fixture.workspace, fixture.athleteA.id, full, DK_V1, true, null);
     const added = result.workspace.athleteSkills.filter(
@@ -202,7 +192,7 @@ describe('springbibliotek', () => {
     const first = registerSpring(
       fixture.workspace,
       fixture.athleteA.id,
-      shorterSeries(full, DK_V1)[1]!,
+      shorterSeries(full)[1]!,
       DK_V1,
       false,
       null,
@@ -315,7 +305,7 @@ describe('springbibliotek', () => {
           .map((item) => item.stability),
       ).toEqual([easyRating, easyRating, hardRating, hardRating, hardRating]);
     }
-    const explicit = shorterSeries(easy, DK_V1)[1]!;
+    const explicit = shorterSeries(easy)[1]!;
     const plan = springRegistrationPlan(
       [
         { definition: easy, stability: 2, confirmed: true },
@@ -364,7 +354,7 @@ describe('springbibliotek', () => {
 
   it('strakt-rondat-flik-hel er entydig med D 1,00 og særskilte kortere begyndelser', () => {
     const fixture = syntheticWorkspace();
-    const full = choice('Strakt – rondat – flik – strakt 1/1 (360°)').definition;
+    const full = choice('Strakt salto – rondat – flik – strakt 1/1 (360°)').definition;
     if (full.discipline !== 'tumbling') throw Error('disciplin');
     expect(full.elements.map((item) => item.direction)).toEqual([
       'forward',
@@ -373,14 +363,12 @@ describe('springbibliotek', () => {
       'backward',
     ]);
     expect(knownSeries(full.elements)).toBe(true);
-    expect(springSeriesName(full.elements, DK_V1)).toBe('Strakt – rondat – flik – helskrue');
-    expect(shorterSeries(full, DK_V1).map((item) => item.name)).toEqual([
-      'Strakt',
-      'Strakt – rondat',
-      'Strakt – rondat – flik',
+    expect(springName(full)).toBe('Strakt salto – rondat – flik – strakt 1/1 (360°)');
+    expect(shorterSeries(full).map((item) => item.name)).toEqual([
+      'Strakt salto',
+      'Strakt salto – rondat',
+      'Strakt salto – rondat – flik',
     ]);
-    expect(springElementName(full.elements[0]!, DK_V1)).toContain('(forlæns)');
-    expect(springElementName(full.elements[3]!, DK_V1)).toContain('(baglæns)');
     // Den udgivne regelpakkes tidligere adfærd bevares. Det konkrete gymnastvalg gemmer bekræftelsen.
     expect(DK_V1.evaluateSkill(full).connection).toBe('unverified');
     const result = registerSpringBatch(
@@ -405,7 +393,7 @@ describe('springbibliotek', () => {
 
   it('personlig bekræftelse af en standardserie ændrer ikke udførelse, vurdering eller revurderingsmarkører', () => {
     const fixture = syntheticWorkspace();
-    const full = choice('Strakt – rondat – flik – strakt 1/1 (360°)').definition;
+    const full = choice('Strakt salto – rondat – flik – strakt 1/1 (360°)').definition;
     const added = registerSpring(fixture.workspace, fixture.athleteA.id, full, DK_V1, false, null);
     const assessed = updateAssessment(added.workspace, added.registrationId, {
       stability: 4,
@@ -464,7 +452,7 @@ describe('springbibliotek', () => {
   it('direkte vurdering har forrang, noter og arkivering bevares, og tom arv sletter ikke en kendt vurdering', () => {
     const fixture = syntheticWorkspace();
     const full = choice(fullName).definition;
-    const prefix = shorterSeries(full, DK_V1)[1]!;
+    const prefix = shorterSeries(full)[1]!;
     const first = registerSpring(fixture.workspace, fixture.athleteA.id, prefix, DK_V1, false, null);
     const assessed = updateAssessment(first.workspace, first.registrationId, {
       stability: 5,
@@ -518,8 +506,8 @@ describe('springbibliotek', () => {
     const library = springLibrary(DK_V1, createWorkspace());
     const backBack = library.find((item) => item.id === 'common-r-a3-b-04-a3-b-04')!;
     const backFront = library.find((item) => item.id === 'common-r-a3-b-04-a3-f-04')!;
-    expect(backBack.definition.name).toBe('Rondat – lukket salto baglæns – lukket salto baglæns');
-    expect(backFront.definition.name).toBe('Rondat – lukket salto baglæns – lukket salto forlæns');
+    expect(backBack.definition.name).toBe('Rondat – lukket salto – lukket salto');
+    expect(backFront.definition.name).toBe('Rondat – lukket salto – lukket salto forlæns');
     expect(springDirectionText(backBack.definition)).toBe('Saltoer: baglæns → baglæns');
     expect(springDirectionText({ ...backFront.definition, name: 'Rondat salto salto' })).toBe(
       'Saltoer: baglæns → forlæns',

@@ -17,7 +17,10 @@ import type {
   Stability,
   Workspace,
 } from '@teamgym/domain';
+import { DK_V2 } from '@teamgym/rules';
 import type { RulePackage } from '@teamgym/rules';
+import { legacySpringNames } from './spring-legacy-names';
+import { springName } from './spring-names';
 import { canStartFloorSeries, knownSeries } from './spring-connections';
 import { restoreRemovedSkill } from './restore-skill';
 
@@ -28,6 +31,8 @@ export interface SpringChoice {
   aliases: string[];
   definition: SpringDefinition;
   own: boolean;
+  /** Svarer til en færdighed i arbejdsrummet og vises derfor altid i listen. */
+  fromWorkspace?: boolean;
 }
 
 /** Rækkefølgen gælder saltoerne i serien, ikke tilløb eller gymnastens løberetning. */
@@ -43,143 +48,77 @@ export function springDirectionText(skill: SkillDefinition): string {
   return `${elements.length === 1 ? 'Salto' : 'Saltoer'}: ${directions.join(' → ')}`;
 }
 
-export function springElementName(
-  element: ElementExecution,
-  rulePackage: RulePackage,
-  catalogName?: string,
-): string {
-  const technical = springElementTechnicalName(element, rulePackage, catalogName);
-  const nickname = ({ 3: 'Rudy', 5: 'Randy', 7: 'Addy' } as Record<number, string>)[element.twistsHalfTurns];
-  if (nickname && element.direction === 'forward' && element.bodyPositions.length === 1) {
-    if (element.family === 'salto' && element.rotationQuarterTurns === 4) {
-      const detail = technical.replace(/ (?:start)?salto /, ' ');
-      return `${nickname} · ${detail.charAt(0).toLocaleLowerCase('da-DK')}${detail.slice(1)}`;
-    }
-    if (element.family === 'overslag-salto' && element.rotationQuarterTurns === 8) {
-      return technical.replace(/^Overslag salto /, `Overslag ${nickname.toLocaleLowerCase('da-DK')} · `);
-    }
-  }
-  return element.family === 'salto' &&
-    element.direction === 'backward' &&
-    element.rotationQuarterTurns === 8 &&
-    element.twistsHalfTurns === 6
-    ? `Miller · ${technical.charAt(0).toLocaleLowerCase('da-DK')}${technical.slice(1)}`
-    : technical;
+function executionKey(skill: SpringDefinition) {
+  return `${skill.discipline}:${canonicalJson(skill.discipline === 'tumbling' ? skill.elements : skill.jump)}`;
 }
 
-function springElementTechnicalName(
-  element: ElementExecution,
-  rulePackage: RulePackage,
-  catalogName?: string,
-): string {
-  const record = rulePackage.springCatalog.find(
-    (item) => JSON.stringify(item.execution) === JSON.stringify(element),
-  );
-  const direction =
-    element.direction === 'backward' ? 'baglæns' : element.direction === 'forward' ? 'forlæns' : 'sidelæns';
-  if (element.family === 'salto') {
-    const body = element.bodyPositions
-      .map((position) => ({ tuck: 'lukket', pike: 'hoftebøjet', straight: 'strakt' })[position])
-      .join(' → ');
-    const rotation =
-      element.rotationQuarterTurns === 8 ? 'dobbelt ' : element.rotationQuarterTurns === 12 ? 'trippel ' : '';
-    const salto = record?.startRole || catalogName?.endsWith(' start') ? 'startsalto' : 'salto';
-    const name = `${rotation}${body} ${salto} ${element.twistsHalfTurns * 180}° (${direction})${element.twistDistribution.length > 1 ? ` · ${element.twistDistribution.map((value) => `${value * 180}°`).join(' + ')}` : ''}`;
-    return name.charAt(0).toLocaleUpperCase('da-DK') + name.slice(1);
-  }
-  return record
-    ? `${(catalogName ?? record.name).replace(/\b(180|360|540|720|900|1080|1260|1440)(?!\d|°)/g, '$1°')}${['overslag-salto', 'tsukahara'].includes(element.family) ? ` (${direction})` : ''}`
-    : `${element.family} · ${direction} · ${element.rotationQuarterTurns / 4} rotation · ${element.twistsHalfTurns * 180}°`;
+/** Sammenligning af navne uden tegnsætning, grader og store bogstaver. */
+export function normalizeSpringName(text: string) {
+  return text
+    .normalize('NFKC')
+    .toLocaleLowerCase('da-DK')
+    .replace(/[\u2010-\u2015\u2212-]/g, ' ')
+    .replace(/[°()·→,]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
 }
 
-/** Ret kun kendte tidligere standardnavne ved visning; bevar egne navne og de gemte data. */
+const automaticNameCache = new WeakMap<RulePackage, Map<string, Set<string>>>();
+
+/** Navne som appen tidligere selv har givet netop denne udførelse. */
+function automaticNames(skill: SpringDefinition, rulePackage: RulePackage): Set<string> {
+  let byKey = automaticNameCache.get(rulePackage);
+  if (!byKey) automaticNameCache.set(rulePackage, (byKey = new Map()));
+  const key = executionKey(skill);
+  let names = byKey.get(key);
+  if (!names) {
+    names = new Set(
+      [
+        ...legacySpringNames(skill, rulePackage),
+        ...(builtinSprings(rulePackage).handwritten.get(key) ?? []),
+      ].map(normalizeSpringName),
+    );
+    byKey.set(key, names);
+  }
+  return names;
+}
+
+/** Vis kendte automatiske navne i den fælles grammatik; bevar egne navne og de gemte data. */
 export function springDisplayName(
   skill: SkillDefinition,
   rulePackage: RulePackage | null | undefined,
 ): string {
-  if (skill.discipline !== 'trampet' || !rulePackage) return skill.name;
-  const technical = springElementTechnicalName(skill.jump, rulePackage);
-  const previousNames = [technical, springSeriesName([skill.jump], rulePackage)];
-  const record = rulePackage.springCatalog.find(
-    (entry) => canonicalJson(entry.execution) === canonicalJson(skill.jump),
-  );
-  if (record) {
-    previousNames.push(record.name, record.name.replace(/\b(\d+)(?!\d|°)/g, '$1°'));
-  }
-  for (const nickname of ['Rudy', 'Randy', 'Addy']) previousNames.push(`${nickname} · ${technical}`);
-  return previousNames.some(
-    (name) => name.toLocaleLowerCase('da-DK') === skill.name.toLocaleLowerCase('da-DK'),
-  )
-    ? springElementName(skill.jump, rulePackage)
-    : skill.name;
+  if (skill.discipline === 'rhythm') return skill.name;
+  const current = springName(skill);
+  const stored = normalizeSpringName(skill.name);
+  if (stored === normalizeSpringName(current)) return current;
+  return automaticNames(skill, rulePackage ?? DK_V2).has(stored) ? current : skill.name;
 }
 
-export function springSeriesName(elements: readonly ElementExecution[], rulePackage: RulePackage): string {
-  const fixed: Record<string, string> = {
-    roundoff: 'rondat',
-    flic: 'flik',
-    handspring: 'kraftspring',
-    flyspring: 'flyvespring',
-    whipback: 'whipback',
-    cartwheel: 'vejrmølle',
-  };
-  const name = elements
-    .map((element) => {
-      if (fixed[element.family]) return fixed[element.family];
-      if (
-        element.family === 'salto' &&
-        element.rotationQuarterTurns === 4 &&
-        element.bodyPositions.length === 1 &&
-        element.bodyPositions[0] === 'straight'
-      ) {
-        if (element.direction === 'forward')
-          return (
-            (
-              {
-                0: 'strakt',
-                1: 'barani',
-                2: 'forlæns helskrue',
-                3: 'rudy',
-                4: 'forlæns dobbeltskrue',
-                5: 'randy',
-                7: 'addy',
-              } as Record<number, string>
-            )[element.twistsHalfTurns] ?? springElementName(element, rulePackage)
-          );
-        if (element.direction === 'backward')
-          return (
-            (
-              {
-                0: 'strakt baglæns',
-                1: 'baglæns halvskrue',
-                2: 'helskrue',
-                3: 'baglæns 1½ skrue',
-                4: 'dobbeltskrue',
-              } as Record<number, string>
-            )[element.twistsHalfTurns] ?? springElementName(element, rulePackage)
-          );
-      }
-      return springElementName(element, rulePackage).replace(/ start/, '');
-    })
-    .join(' – ');
-  return name.charAt(0).toLocaleUpperCase('da-DK') + name.slice(1);
+interface BuiltinSprings {
+  choices: SpringChoice[];
+  identities: string[];
+  handwritten: Map<string, string[]>;
 }
+const builtinCache = new WeakMap<RulePackage, BuiltinSprings>();
 
-/** Opskrifter til registrering, ikke nye reglementskoder eller automatisk gymnastkunnen. */
-export function springLibrary(
-  rulePackage: RulePackage,
-  workspace: Pick<Workspace, 'skills'>,
-): SpringChoice[] {
+/** Indbyggede opskrifter pr. regelpakke; navne følger den fælles grammatik, gamle navne er aliaser. */
+function builtinSprings(rulePackage: RulePackage): BuiltinSprings {
+  const cached = builtinCache.get(rulePackage);
+  if (cached) return cached;
   const choices: SpringChoice[] = [];
+  const identities: string[] = [];
+  const handwritten = new Map<string, string[]>();
   const seen = new Map<string, SpringChoice>();
   function add(choice: SpringChoice) {
     if (choice.definition.discipline === 'tumbling' && !canStartFloorSeries(choice.definition.elements))
       return;
-    choice.aliases.push(
-      choice.definition.discipline === 'tumbling'
-        ? springSeriesName(choice.definition.elements, rulePackage)
-        : springElementName(choice.definition.jump, rulePackage),
-    );
+    const previousName = choice.definition.name;
+    const key = executionKey(choice.definition);
+    handwritten.set(key, [...(handwritten.get(key) ?? []), previousName]);
+    choice.definition.name = springName(choice.definition);
+    if (normalizeSpringName(previousName) !== normalizeSpringName(choice.definition.name))
+      choice.aliases.push(previousName);
     const identity = rulePackage.evaluateSkill(choice.definition).identity;
     const previous = seen.get(identity);
     if (previous) {
@@ -188,6 +127,7 @@ export function springLibrary(
     }
     seen.set(identity, choice);
     choices.push(choice);
+    identities.push(identity);
   }
   function series(id: string, name: string, references: string[], group: string, aliases: string[] = []) {
     const records = references.map((reference) =>
@@ -219,6 +159,12 @@ export function springLibrary(
     ['a3-b-13', 'strakt 2/1 (720°)', 'dobbeltskrue 2/2'],
     ['a3-b-15', 'dobbelt lukket salto', 'dobbeltbaglænder DB'],
     ['a3-b-16', 'dobbelt hoftebøjet salto', 'dobbeltbaglænder DB hofte'],
+    ['a3-b-17', 'dobbelt strakt salto', 'dobbeltbaglænder DB strakt'],
+    ['a3-b-18', 'dobbelt lukket 1/1 (360°)', 'DB hel full-in'],
+    ['a3-b-19', 'dobbelt lukket 2/1 (720°)', 'DB dobbeltskrue'],
+    ['a3-b-20', 'dobbelt strakt 1/1 (360°)', 'DB strakt hel'],
+    ['a3-b-21', 'dobbelt strakt 2/1 (720°)', 'DB strakt dobbeltskrue'],
+    ['a3-b-22', 'dobbelt strakt 3/1 (1080°)', 'DB strakt trippelskrue'],
   ];
   const frontEnds = [
     ['a3-f-04', 'lukket salto', 'lukket'],
@@ -229,6 +175,15 @@ export function springLibrary(
     ['a3-f-16', 'rudy (strakt 540°)', 'rudi halvanden skrue 1½'],
     ['a3-f-17', 'strakt 2/1 (720°)', 'dobbeltskrue'],
     ['a3-f-18', 'randy (strakt 900°)', 'randolph 2½'],
+    ['a3-f-19', 'dobbelt lukket salto', 'dobbeltforlænder DF'],
+    ['a3-f-20', 'dobbelt hoftebøjet salto', 'dobbeltforlænder DF hofte'],
+    ['a3-f-21', 'dobbelt strakt salto', 'dobbeltforlænder DF strakt'],
+    ['a3-f-22', 'dobbelt lukket 1/2 (180°)', 'DF halvskrue'],
+    ['a3-f-23', 'dobbelt lukket 1½ (540°)', 'DF halvanden skrue'],
+    ['a3-f-24', 'dobbelt hoftebøjet 1/2 (180°)', 'DF hofte halvskrue'],
+    ['a3-f-25', 'dobbelt strakt 1/2 (180°)', 'DF strakt halvskrue'],
+    ['a3-f-26', 'dobbelt strakt 1½ (540°)', 'DF strakt halvanden skrue'],
+    ['a3-f-27', 'dobbelt strakt 2½ (900°)', 'DF strakt to og en halv skrue'],
   ];
   // Hyppigste juniorserie først, også når søgningen er tom.
   series('rf-full', 'Rondat – flik – strakt 1/1 (360°)', ['a3-b-01', 'a3-b-02', 'a3-b-11'], 'Baglæns', [
@@ -288,17 +243,25 @@ export function springLibrary(
     ['a3-f-04', 'Lukket salto'],
     ['a3-f-06', 'Hoftebøjet salto'],
     ['a3-f-08', 'Strakt'],
+    ['a3-f-14', 'Strakt 1/1 (360°)'],
   ] as const) {
     series(`${startId}-r`, `${startName} – rondat`, [startId, 'a3-b-01'], 'Blandede');
-    series(`${startId}-rf`, `${startName} – rondat – flik`, [startId, 'a3-b-01', 'a3-b-02'], 'Blandede');
-    for (const [endId, endName, alias] of backEnds)
-      series(
-        `${startId}-rf-${endId}`,
-        `${startName} – rondat – flik – ${endName}`,
-        [startId, 'a3-b-01', 'a3-b-02', endId!],
-        'Blandede',
-        [alias!],
-      );
+    // Efter rondat følger både flik og whipback med samme afslutninger.
+    for (const [leadId, leadName] of [
+      ['rf', 'flik'],
+      ['rw', 'whipback'],
+    ] as const) {
+      const lead = [startId, 'a3-b-01', leadId === 'rf' ? 'a3-b-02' : 'a3-b-03'];
+      series(`${startId}-${leadId}`, `${startName} – rondat – ${leadName}`, lead, 'Blandede');
+      for (const [endId, endName, alias] of backEnds)
+        series(
+          `${startId}-${leadId}-${endId}`,
+          `${startName} – rondat – ${leadName} – ${endName}`,
+          [...lead, endId!],
+          'Blandede',
+          [alias!],
+        );
+    }
   }
   for (const [startId, startName] of [
     ['a3-f-10', 'Lukket barani'],
@@ -327,6 +290,12 @@ export function springLibrary(
     ['oh', 'Lukket salto – kraftspring', ['a3-f-04', 'a3-f-02']],
     ['ph', 'Hoftebøjet salto – kraftspring', ['a3-f-06', 'a3-f-02']],
     ['sh', 'Strakt – kraftspring', ['a3-f-08', 'a3-f-02']],
+    // Kraftspring og flyvespring har samme efterfølgere, også efter en startsalto.
+    ['ofs', 'Lukket salto – flyvespring', ['a3-f-04', 'a3-f-03']],
+    ['pfs', 'Hoftebøjet salto – flyvespring', ['a3-f-06', 'a3-f-03']],
+    ['sfs', 'Strakt – flyvespring', ['a3-f-08', 'a3-f-03']],
+    ['fh', 'Strakt 1/1 (360°) – kraftspring', ['a3-f-14', 'a3-f-02']],
+    ['ffs', 'Strakt 1/1 (360°) – flyvespring', ['a3-f-14', 'a3-f-03']],
   ] as const) {
     series(leadId, leadName, [...lead], 'Forlæns');
     for (const [endId, endName, alias] of frontEnds) {
@@ -343,8 +312,7 @@ export function springLibrary(
     const definition: SpringDefinition = floor
       ? {
           id: `common-${entry.referenceId}`,
-          name:
-            entry.execution.family === 'salto' ? springElementName(entry.execution, rulePackage) : entry.name,
+          name: entry.name,
           archived: false,
           discipline: 'tumbling',
           elements: [structuredClone(entry.execution)],
@@ -352,7 +320,7 @@ export function springLibrary(
         }
       : {
           id: `common-${entry.referenceId}`,
-          name: springElementName(entry.execution, rulePackage),
+          name: entry.name,
           archived: false,
           discipline: 'trampet',
           jump: structuredClone(entry.execution),
@@ -383,6 +351,31 @@ export function springLibrary(
       own: false,
     });
   }
+  const result = { choices, identities, handwritten };
+  builtinCache.set(rulePackage, result);
+  return result;
+}
+
+/** Opskrifter til registrering, ikke nye reglementskoder eller automatisk gymnastkunnen. */
+export function springLibrary(
+  rulePackage: RulePackage,
+  workspace: Pick<Workspace, 'skills'>,
+): SpringChoice[] {
+  const builtin = builtinSprings(rulePackage);
+  const choices = builtin.choices.map((choice) => ({
+    ...choice,
+    aliases: [...choice.aliases],
+    definition: structuredClone(choice.definition),
+  }));
+  const seen = new Map(builtin.identities.map((identity, index) => [identity, choices[index]!]));
+  function add(choice: SpringChoice) {
+    if (choice.definition.discipline === 'tumbling' && !canStartFloorSeries(choice.definition.elements))
+      return;
+    const identity = rulePackage.evaluateSkill(choice.definition).identity;
+    if (seen.has(identity)) return;
+    seen.set(identity, choice);
+    choices.push(choice);
+  }
   // Samme arbejdsrums færdighedsdefinitioner er biblioteket, også efter gem/genåbn.
   // Registreringer, vurderinger og forbindelsesbekræftelser deles aldrig mellem gymnaster.
   for (const definition of workspace.skills) {
@@ -395,6 +388,7 @@ export function springLibrary(
         ...structuredClone(definition),
         name: springDisplayName(definition, rulePackage),
       };
+      previous.fromWorkspace = true;
       continue;
     }
     add({
@@ -403,51 +397,23 @@ export function springLibrary(
       group: 'Egne spring',
       aliases: [],
       own: true,
+      fromWorkspace: true,
     });
   }
   return choices;
 }
 
-function normalizeSpringSearch(text: string) {
-  return text
-    .normalize('NFKC')
-    .toLocaleLowerCase('da-DK')
-    .replace(/[\u2010-\u2015\u2212-]/g, ' ')
-    .replace(/\s+/g, ' ')
-    .trim();
-}
-
-/** Navnets begyndelse og sammenhængende ord prioriteres før løse ord på tværs af serien. */
-export function springSearchRank(choice: SpringChoice, query: string): number | null {
-  const needle = normalizeSpringSearch(query);
-  if (!needle) return 0;
-  const name = normalizeSpringSearch(choice.definition.name);
-  const aliases = choice.aliases.map(normalizeSpringSearch);
-  const text = [name, normalizeSpringSearch(choice.group), ...aliases].join(' ');
-  if (!needle.split(' ').every((part) => text.includes(part))) return null;
-  if (name === needle) return 0;
-  if (name.startsWith(`${needle} `)) return 1;
-  if (aliases.includes(needle)) return 2;
-  if (aliases.some((alias) => alias.startsWith(`${needle} `))) return 3;
-  if (name.includes(needle)) return 4;
-  if (aliases.some((alias) => alias.includes(needle))) return 5;
-  return 6;
-}
-
-export function matchesSpring(choice: SpringChoice, query: string) {
-  return springSearchRank(choice, query) !== null;
-}
+export { matchesSpring, springSearchRank } from './spring-search';
 
 /** Kun præcise begyndelser af den valgte serie; aldrig færre skruer eller nye forbindelser. */
-export function shorterSeries(skill: SpringDefinition, rulePackage: RulePackage): SpringDefinition[] {
+export function shorterSeries(skill: SpringDefinition): SpringDefinition[] {
   if (skill.discipline !== 'tumbling') return [];
   return skill.elements.slice(0, -1).map((_, index) => {
     const elements = structuredClone(skill.elements.slice(0, index + 1));
-    const name = springSeriesName(elements, rulePackage);
     return {
       ...skill,
       id: newEntityId(),
-      name,
+      name: springName({ ...skill, elements }),
       elements,
       connection: { ...skill.connection, transitions: skill.connection.transitions.slice(0, index) },
     };
@@ -464,7 +430,7 @@ export function registerSpring(
 ) {
   let result = workspace;
   let registrationId = '';
-  const definitions = [skill, ...(includeShorter ? shorterSeries(skill, rulePackage) : [])];
+  const definitions = [skill, ...(includeShorter ? shorterSeries(skill) : [])];
   for (const definition of definitions) {
     const identity = rulePackage.evaluateSkill(definition).identity;
     const existing = result.athleteSkills.find(
@@ -518,16 +484,13 @@ function foundationSteps(
   rulePackage: RulePackage,
   withoutEntry: boolean,
 ): FoundationEntry[] {
-  const result = shorterSeries(skill, rulePackage).map((definition) => ({
+  const result = shorterSeries(skill).map((definition) => ({
     definition,
     relationId: 'exact-prefix',
     unresolved: false,
   }));
   const add = (definition: SpringDefinition, relationId: string, unresolved = false) => {
-    definition.name =
-      definition.discipline === 'tumbling'
-        ? springSeriesName(definition.elements, rulePackage)
-        : springElementName(definition.jump, rulePackage);
+    definition.name = springName(definition);
     if (!result.some((item) => skillIdentity(item.definition) === skillIdentity(definition)))
       result.push({ definition, relationId, unresolved });
   };
@@ -676,10 +639,7 @@ function forwardFoundationSteps(skill: SpringDefinition, rulePackage: RulePackag
             id: newEntityId(),
             elements: [...structuredClone(skill.elements.slice(0, -1)), structuredClone(execution)],
           };
-    definition.name =
-      definition.discipline === 'trampet'
-        ? springElementName(definition.jump, rulePackage)
-        : springSeriesName(definition.elements, rulePackage);
+    definition.name = springName(definition);
     result.push({ definition, relationId, unresolved });
   };
   const single =
