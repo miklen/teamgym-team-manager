@@ -74,7 +74,7 @@ describe('format 3, scenarier og reserver', () => {
   });
   it('har selvstændige strikte gamle skemaer og accepterer ikke nye felter under gamle versionsmærker', () => {
     const { workspace } = setup();
-    expect(validateWorkspace(workspace).schemaVersion).toBe(5);
+    expect(validateWorkspace(workspace).schemaVersion).toBe(6);
     for (const version of [1, 2, 3, 4]) {
       const mixed = { ...workspace, schemaVersion: version };
       expect(() => (version === 1 ? validateWorkspaceV1(mixed) : version === 2 ? validateWorkspaceV2(mixed) : version === 3 ? validateWorkspaceV3(mixed) : validateWorkspaceV4(mixed))).toThrow();

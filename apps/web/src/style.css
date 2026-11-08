@@ -1078,6 +1078,20 @@ h3 {
 .element-list li > span {
   margin-right: 12px;
 }
+.builder-live-status { display: flex; flex-wrap: wrap; align-items: center; gap: .45rem 1rem; padding: .8rem 1rem; background: #eef4fb; color: #29486b; }
+.builder-live-status strong { flex: 1 1 13rem; overflow-wrap: anywhere; }
+.builder-live-status span { font-size: .86rem; font-weight: 700; }
+.spring-builder-chain { list-style: none; counter-reset: chain; padding: 0; margin: 0 0 1rem; }
+.spring-builder-chain li { position: relative; counter-increment: chain; display: flex; flex-wrap: wrap; align-items: center; gap: .35rem; min-width: 0; padding: .8rem .6rem .8rem 3rem; border-left: 2px solid #bfd0e2; background: #f8fafc; transition: background-color .18s ease, border-color .18s ease; }
+.spring-builder-chain li + li { border-top: 1px solid #e1e8f0; }
+.spring-builder-chain li::before { content: counter(chain); position: absolute; left: .7rem; top: .8rem; display: grid; place-items: center; width: 1.5rem; height: 1.5rem; border-radius: 50%; background: #dce9f6; color: #29486b; font-size: .8rem; font-weight: 800; }
+.spring-builder-chain li.is-active { border-left-color: #316ba9; background: #eef4fb; }
+.spring-builder-chain li.is-active::before { color: white; background: #316ba9; }
+.spring-builder-chain li > span { flex: 1 1 11rem; min-width: 0; margin-right: 0; font-weight: 700; overflow-wrap: anywhere; }
+.spring-builder-chain li > small { flex: 0 1 9rem; }
+.spring-builder-chain li > button { min-width: 2.5rem; min-height: 2.5rem; }
+@media (max-width: 560px) { .spring-builder-chain li > span { flex-basis: 100%; } .spring-builder-chain li > small { flex-basis: 100%; } }
+@media (prefers-reduced-motion: reduce) { .spring-builder-chain li { transition: none; } }
 .variant-fields,
 .inline-analysis {
   padding: 16px;

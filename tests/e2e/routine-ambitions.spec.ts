@@ -1,8 +1,8 @@
 import AxeBuilder from '@axe-core/playwright';
-import { registerAthleteSkill, setRoundEntries, updateAssessment } from '@teamgym/domain';
+import { addAmbition, registerAthleteSkill, setRoundEntries, updateAssessment } from '@teamgym/domain';
 import type { ElementExecution, SkillDefinition } from '@teamgym/domain';
 import type { Page } from '@playwright/test';
-import { limits, syntheticWorkspace } from '../fixtures/synthetic-workspace';
+import { limits, syntheticWorkspace, tumblingSkill } from '../fixtures/synthetic-workspace';
 import { openWorkspace } from './drive-fixture';
 import { chooseSpring } from './picker';
 import { expect, test } from './test';
@@ -89,9 +89,8 @@ async function createAmbition(page: Page) {
   const dialog = page.getByRole('dialog');
   await dialog.getByRole('radio', { name: 'Ingen gymnast endnu' }).check();
   await expect(dialog.getByRole('radio', { name: 'Ingen gymnast endnu' })).toBeFocused();
-  await dialog.getByRole('button', { name: 'Spring', exact: true }).click();
-  await dialog.getByRole('combobox', { name: 'Søg i springkataloget' }).fill('strakt salto 900');
-  await expect(dialog.getByRole('option', { name: /D 0,800, ingen gymnast/ }).first()).toBeVisible();
+  await dialog.getByRole('searchbox', { name: 'Søg sammensat spring eller alias' }).fill('strakt salto 900');
+  await expect(dialog.getByRole('button', { name: /^Vælg Syntetisk strakt 900/ }).first()).toBeVisible();
   return dialog;
 }
 
@@ -105,12 +104,14 @@ for (const width of [1440, 390]) {
     await expect(second.locator('.round-totals')).toContainText('Ufuldstændig');
 
     const dialog = await createAmbition(page);
+    const result = dialog.locator('.ambition-picker-row').first();
+    await expect(result).toHaveCSS('color', 'rgb(24, 36, 61)');
+    expect((await result.boundingBox())!.height).toBeLessThan(72);
+    await result.hover();
+    await expect(result).toHaveCSS('background-color', 'rgb(240, 244, 252)');
     await shot(page, `katalog-${width}`);
     expect(await noOverflow(page)).toBe(true);
-    await dialog
-      .getByRole('option', { name: /D 0,800, ingen gymnast/ })
-      .first()
-      .click();
+    await dialog.getByRole('button', { name: /^Vælg Syntetisk strakt 900/ }).first().click();
     await dialog.getByRole('button', { name: 'Opdater', exact: true }).click();
     await expect(page.getByRole('dialog')).toHaveCount(0);
 
@@ -183,10 +184,7 @@ test('ambition overlever duplikering og kan fjernes', async ({ page }) => {
   await openWorkspace(page, ambitionWorkspace());
   await trampet(page);
   const dialog = await createAmbition(page);
-  await dialog
-    .getByRole('option', { name: /D 0,800, ingen gymnast/ })
-    .first()
-    .click();
+  await dialog.getByRole('button', { name: /^Vælg Syntetisk strakt 900/ }).first().click();
   await dialog.getByRole('button', { name: 'Opdater', exact: true }).click();
   const second = round(page, 2);
   await expect(second.locator('li.ambition-entry')).toHaveCount(1);
@@ -206,4 +204,191 @@ test('ambition overlever duplikering og kan fjernes', async ({ page }) => {
     .click();
   await expect(round(page, 2).locator('li.ambition-entry')).toHaveCount(0);
   await expect(round(page, 2).locator('.round-totals')).toContainText('Ufuldstændig');
+});
+
+test('kendt salto–rondat–flik beder ikke om godkendelse på omgang uden gymnast', async ({ page }) => {
+  const fixture = syntheticWorkspace();
+  const plan = fixture.workspace.plans[0]!;
+  const scenario = plan.tumbling[0]!;
+  const turn = scenario.rounds[1]!;
+  const empty = setRoundEntries(fixture.workspace, plan.id, 'tumbling', scenario.id, turn.id, [], limits, fixture.environment);
+  const start = { ...tumblingSkill.elements[0]!, direction: 'forward' as const, twistsHalfTurns: 0, twistDistribution: [] };
+  const rondat = { ...start, family: 'roundoff', direction: 'backward' as const };
+  const flik = { ...rondat, family: 'flic' };
+  const definition: SkillDefinition = {
+    id: 'syntetisk-kendt-salto-rondat-flik', name: 'Strakt salto – rondat – flik', archived: false,
+    discipline: 'tumbling', elements: [start, rondat, flik],
+    connection: { kind: 'standard', transitions: ['direct', 'direct'] }, sharedConnectionApproval: null,
+  };
+  const prepared = addAmbition(empty, plan.id, 'tumbling', scenario.id, turn.id, definition, 'counting', 0, limits, fixture.environment).workspace;
+  await openWorkspace(page, prepared);
+  await page.getByRole('link', { name: 'Springplan', exact: true }).click();
+  const second = round(page, 2);
+  const entry = second.locator('li.ambition-entry');
+  await expect(entry).toContainText('Strakt salto – rondat – flik');
+  await expect(entry).toContainText('0,600');
+  await expect(entry).not.toContainText('Træneren kan godkende den præcise kæde');
+  await entry.getByRole('button', { name: /^Ambition:/ }).click();
+  const dialog = page.getByRole('dialog');
+  await expect(dialog.getByRole('checkbox', { name: 'Godkend den præcise forbindelse for hele arbejdsrummet' })).toHaveCount(0);
+  await expect(dialog).not.toContainText('Forbindelsen er uafklaret');
+});
+
+test('kendt salto–flyvespring beder ikke om godkendelse på omgang uden gymnast', async ({ page }) => {
+  const fixture = syntheticWorkspace();
+  const plan = fixture.workspace.plans[0]!;
+  const scenario = plan.tumbling[0]!;
+  const turn = scenario.rounds[1]!;
+  const empty = setRoundEntries(fixture.workspace, plan.id, 'tumbling', scenario.id, turn.id, [], limits, fixture.environment);
+  const start = { ...tumblingSkill.elements[0]!, direction: 'forward' as const, twistsHalfTurns: 0, twistDistribution: [] };
+  const flyvespring = { ...start, family: 'flyspring' };
+  const definition: SkillDefinition = {
+    id: 'syntetisk-kendt-salto-flyvespring', name: 'Strakt salto – flyvespring', archived: false,
+    discipline: 'tumbling', elements: [start, flyvespring],
+    connection: { kind: 'standard', transitions: ['direct'] }, sharedConnectionApproval: null,
+  };
+  const prepared = addAmbition(empty, plan.id, 'tumbling', scenario.id, turn.id, definition, 'counting', 0, limits, fixture.environment).workspace;
+  await openWorkspace(page, prepared);
+  await page.getByRole('link', { name: 'Springplan', exact: true }).click();
+  const second = round(page, 2);
+  const entry = second.locator('li.ambition-entry');
+  await expect(entry).toContainText('Strakt salto – flyvespring');
+  await expect(entry).toContainText('0,500');
+  await expect(entry).not.toContainText('Træneren kan godkende den præcise kæde');
+  await entry.getByRole('button', { name: /^Ambition:/ }).click();
+  await expect(page.getByRole('checkbox', { name: 'Godkend den præcise forbindelse for hele arbejdsrummet' })).toHaveCount(0);
+});
+
+for (const width of [390, 1440]) {
+  test(`tre plus tre ambitioner med preview og uden gymnast ved ${width}`, async ({ page }) => {
+    await page.setViewportSize({ width, height: 1000 });
+    const fixture = syntheticWorkspace();
+    const plan = fixture.workspace.plans[0]!;
+    const scenario = plan.trampet[0]!;
+    const workspace = setRoundEntries(fixture.workspace, plan.id, 'trampet', scenario.id, scenario.rounds[1]!.id, [], limits, fixture.environment);
+    await openWorkspace(page, { ...workspace, skills: [...workspace.skills, jump080] });
+    await trampet(page);
+    if (width === 390) await page.getByRole('button', { name: '2. Omgang', exact: true }).click();
+    const second = round(page, 2);
+    for (const name of ['Syntetisk trampetspring', 'Syntetisk strakt 900']) {
+      await second.getByRole('button', { name: '+ Tilføj plads', exact: true }).click();
+      const dialog = page.getByRole('dialog');
+      await dialog.getByRole('radio', { name: 'Ingen gymnast endnu' }).check();
+      await dialog.getByRole('searchbox', { name: 'Søg sammensat spring eller alias' }).fill(name);
+      await dialog.getByRole('button', { name: `Vælg ${name}`, exact: true }).click();
+      await dialog.getByRole('combobox', { name: 'Antal nye pladser' }).selectOption('3');
+      await expect(dialog.locator('.ambition-count-preview')).toContainText('3 tællende pladser');
+      expect(await dialog.evaluate((element) => element.scrollWidth <= element.clientWidth)).toBe(true);
+      await dialog.getByRole('button', { name: 'Opdater', exact: true }).click();
+    }
+    const rows = second.locator('li.ambition-entry');
+    await expect(rows).toHaveCount(6);
+    expect(await rows.allTextContents()).toEqual([
+      ...Array(3).fill(expect.stringContaining('Syntetisk trampetspring')),
+      ...Array(3).fill(expect.stringContaining('Syntetisk strakt 900')),
+    ]);
+    await expect(rows.locator('img[aria-label^="Sikkerhed:"]')).toHaveCount(0);
+    expect(await noOverflow(page)).toBe(true);
+  });
+}
+
+test('bygget ambition godkendes fælles og genbruges uden gymnast', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 1000 });
+  const fixture = syntheticWorkspace();
+  const plan = fixture.workspace.plans[0]!;
+  const scenario = plan.tumbling[0]!;
+  const workspace = setRoundEntries(fixture.workspace, plan.id, 'tumbling', scenario.id, scenario.rounds[1]!.id, [], limits, fixture.environment);
+  const source = await openWorkspace(page, workspace);
+  await page.getByRole('link', { name: 'Springplan', exact: true }).click();
+  await page.getByRole('button', { name: '2. Omgang', exact: true }).click();
+  const second = round(page, 2);
+  await second.getByRole('button', { name: '+ Tilføj plads', exact: true }).click();
+  const dialog = page.getByRole('dialog');
+  await dialog.getByRole('radio', { name: 'Ingen gymnast endnu' }).check();
+  await dialog.getByRole('button', { name: 'Byg det selv →' }).click();
+  const catalog = dialog.locator('.catalog-results');
+  await dialog.getByRole('searchbox', { name: 'Søg spring, kode eller alias' }).fill('rondat');
+  await catalog.getByRole('button', { name: /^Rondat / }).first().click();
+  await dialog.getByRole('searchbox', { name: 'Søg spring, kode eller alias' }).fill('strakt salto 360');
+  await catalog.getByRole('button', { name: /^Strakt 1\/1 \(360°\) baglæns/ }).first().click();
+  await dialog.getByRole('searchbox', { name: 'Søg spring, kode eller alias' }).fill('vejrmølle');
+  await catalog.getByRole('button', { name: /^Vejrmølle / }).first().click();
+  await expect(dialog.getByRole('status').filter({ hasText: 'Kendt problematisk forbindelse' }).first()).toBeVisible();
+  await dialog.getByRole('button', { name: 'Fjern element 2' }).click();
+  await expect(dialog.getByRole('status').filter({ hasText: 'Ikke verificeret forbindelse' }).first()).toBeVisible();
+  await dialog.getByRole('checkbox', { name: 'Godkend den præcise forbindelse for hele arbejdsrummet' }).check();
+  await dialog.getByRole('textbox', { name: 'Fælles begrundelse for forbindelsen' }).fill('Syntetisk trænerkontrol af den præcise kæde.');
+  expect(await dialog.evaluate((element) => element.scrollWidth <= element.clientWidth)).toBe(true);
+  const accessibility = await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa', 'wcag21aa', 'wcag22aa']).analyze();
+  expect(accessibility.violations).toEqual([]);
+  await dialog.getByRole('button', { name: 'Brug springet' }).click();
+  await expect(dialog.getByText('Valgt spring · bevares ved filtrering')).toBeVisible();
+  await dialog.getByRole('button', { name: 'Opdater', exact: true }).click();
+  await expect(second.locator('li.ambition-entry')).toHaveCount(1);
+  await expect(second.locator('li.ambition-entry')).toContainText('Trænerbekræftet forbindelse');
+  await second.getByRole('button', { name: '+ Tilføj plads', exact: true }).click();
+  const repeat = page.getByRole('dialog');
+  await repeat.getByRole('radio', { name: 'Ingen gymnast endnu' }).check();
+  await repeat.getByRole('searchbox', { name: 'Søg sammensat spring eller alias' }).fill('rondat vejrmølle');
+  await expect(repeat.getByRole('button', { name: /^Vælg .*rondat.*vejrmølle/i }).first()).toBeVisible();
+  await repeat.getByRole('button', { name: /^Vælg .*rondat.*vejrmølle/i }).first().click();
+  await repeat.getByRole('button', { name: 'Opdater', exact: true }).click();
+  await expect(second.locator('li.ambition-entry')).toHaveCount(2);
+  await expect(second.locator('li.ambition-entry .connection-approved')).toHaveCount(2);
+  expect(source.workspace.athleteSkills).toHaveLength(workspace.athleteSkills.length);
+  expect(source.failures).toEqual([]);
+});
+
+test('ambition bevarer valgt spring ved filter og annullerer Byg videre', async ({ page }) => {
+  const fixture = syntheticWorkspace();
+  const plan = fixture.workspace.plans[0]!;
+  const scenario = plan.tumbling[0]!;
+  const workspace = setRoundEntries(fixture.workspace, plan.id, 'tumbling', scenario.id, scenario.rounds[1]!.id, [], limits, fixture.environment);
+  const source = await openWorkspace(page, workspace);
+  await page.getByRole('link', { name: 'Springplan', exact: true }).click();
+  const second = round(page, 2);
+  await second.getByRole('button', { name: '+ Tilføj plads', exact: true }).click();
+  const dialog = page.getByRole('dialog');
+  await dialog.getByRole('radio', { name: 'Ingen gymnast endnu' }).check();
+  const picker = dialog.getByRole('region', { name: 'Find spring til ambition' });
+  await picker.getByRole('searchbox', { name: 'Søg sammensat spring eller alias' }).fill('strakt rondat');
+  await expect(picker.locator('.ambition-picker-row').first()).toContainText('Strakt salto – rondat');
+  await picker.getByRole('button', { name: /^Vælg Strakt salto – rondat$/ }).click();
+  await picker.getByRole('searchbox', { name: 'Søg sammensat spring eller alias' }).fill('syntetisk intet match');
+  await expect(picker.locator('.ambition-picker-selected')).toContainText('Strakt salto – rondat');
+  await picker.getByRole('button', { name: 'Nulstil filtre' }).click();
+  await picker.getByText('Kædefilter', { exact: true }).click();
+  await picker.getByRole('group', { name: 'Valg til Første spring' }).getByRole('button', { name: /^Rondat, / }).click();
+  await picker.getByRole('searchbox', { name: 'Søg sammensat spring eller alias' }).fill('syntetisk intet match');
+  await expect(picker.getByRole('button', { name: 'Byg videre fra den valgte kæde' })).toHaveCount(1);
+  await picker.getByRole('button', { name: 'Byg videre fra den valgte kæde' }).click();
+  await expect(dialog.getByRole('button', { name: 'Fjern element 1' })).toBeVisible();
+  await dialog.getByRole('button', { name: 'Luk dialog', exact: true }).click();
+  await expect(second.locator('li.ambition-entry')).toHaveCount(0);
+  expect(source.workspace.skills).toHaveLength(workspace.skills.length);
+  expect(source.workspace.athleteSkills).toHaveLength(workspace.athleteSkills.length);
+  expect(source.failures).toEqual([]);
+});
+
+test('en eksisterende uafklaret ambition kan godkendes uden nyt spring', async ({ page }) => {
+  const fixture = syntheticWorkspace();
+  const plan = fixture.workspace.plans[0]!, scenario = plan.tumbling[0]!, round = scenario.rounds[0]!;
+  const definition: SkillDefinition = { ...tumblingSkill, id: 'syntetisk-uafklaret', name: 'Syntetisk uafklaret kæde', elements: [tumblingSkill.elements[0]!, tumblingSkill.elements[0]!], connection: { kind: 'custom', transitions: ['direct'] }, sharedConnectionApproval: null };
+  const prepared = addAmbition(fixture.workspace, plan.id, 'tumbling', scenario.id, round.id, definition, 'extra', 0, limits, fixture.environment).workspace;
+  const source = await openWorkspace(page, prepared);
+  await page.getByRole('link', { name: 'Springplan', exact: true }).click();
+  const first = (roundNumber: number) => page.getByRole('region', { name: `${roundNumber}. omgang`, exact: true });
+  await first(1).getByRole('button', { name: /^Ambition: Syntetisk uafklaret kæde/ }).click();
+  const dialog = page.getByRole('dialog');
+  await expect(dialog).toContainText('Forbindelsen er uafklaret');
+  await dialog.getByRole('checkbox', { name: 'Godkend den præcise forbindelse for hele arbejdsrummet' }).check();
+  await dialog.getByRole('textbox', { name: 'Fælles begrundelse for forbindelsen' }).fill('Syntetisk kontrol');
+  await dialog.getByRole('button', { name: 'Opdater', exact: true }).click();
+  await expect(first(1).locator('li.ambition-entry')).toContainText('Trænerbekræftet forbindelse');
+  await page.getByRole('button', { name: /Lokale ændringer/ }).click();
+  await expect(page.getByRole('button', { name: 'Gemt', exact: true })).toBeVisible();
+  expect(source.workspace.skills.filter((skill) => skill.id === definition.id)).toHaveLength(1);
+  const approved = source.workspace.skills.find((skill) => skill.id === definition.id)!;
+  expect(approved.discipline === 'tumbling' && approved.sharedConnectionApproval).toBeTruthy();
+  expect(source.failures).toEqual([]);
 });

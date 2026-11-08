@@ -1,24 +1,23 @@
 import { useId, useMemo, useState } from 'react';
 import type { RefObject } from 'react';
 import { changeAmbitionSkill, skillIdentity } from '@teamgym/domain';
-import type { Round, RoundEntry, SpringDiscipline, Workspace } from '@teamgym/domain';
+import type { ElementExecution, Round, RoundEntry, SpringDiscipline, Workspace } from '@teamgym/domain';
 import { ambitionCandidates, ambitionEnvironment } from '@teamgym/rules';
 import type { AmbitionCandidate, RulePackage, TeamProfile } from '@teamgym/rules';
 import { ActionForm, points } from './components';
-import { PlanDifficulty, PlanSafety, PlanSkillSelect } from './plan-skill-select';
-import type { PlanSkillOption } from './plan-skill-select';
-import { springDirectionText, springDisplayName, springLibrary } from './spring-library';
-import type { SpringChoice, SpringDefinition } from './spring-library';
-import { listedSpring } from './spring-chain-model';
-import { sortByTeamKnown, teamSpringCounts } from './spring-picker-model';
+import { PlanDifficulty, PlanSafety } from './plan-skill-select';
+import { springDirectionText, springDisplayName } from './spring-library';
+import type { SpringDefinition } from './spring-library';
+import { AmbitionSpringPicker } from './ambition-spring-picker';
+import { SkillEditor } from './skill-editor';
 import './ambition.css';
 
 export type SlotMode = 'athlete' | 'ambition';
 
 /** Hvad dialogen beder springplanen om; domænekommandoerne udføres samlet i én ændring. */
 export type AmbitionRequest =
-  | { kind: 'add'; definition: SpringDefinition; role: RoundEntry['role'] }
-  | { kind: 'update'; entryId: string; definition: SpringDefinition | null; role: RoundEntry['role']; athleteSkillId: string | null };
+  | { kind: 'add'; definition: SpringDefinition; role: RoundEntry['role']; count: number; approvalNote: string | null }
+  | { kind: 'update'; entryId: string; definition: SpringDefinition | null; role: RoundEntry['role']; athleteSkillId: string | null; approvalNote: string | null };
 
 /** Segmenteret valg mellem gymnast og ambition. Native radioknapper giver piletaster og skærmlæser gratis. */
 export function SlotModeSwitch({ value, onChange, disabled }: { value: SlotMode; onChange: (mode: SlotMode) => void; disabled?: boolean }) {
@@ -39,51 +38,11 @@ export function SlotModeSwitch({ value, onChange, disabled }: { value: SlotMode;
   );
 }
 
-function catalogChoices(workspace: Workspace, rulePackage: RulePackage, discipline: SpringDiscipline) {
-  return springLibrary(rulePackage, workspace).filter(
-    (choice) => choice.definition.discipline === discipline && listedSpring(choice),
-  );
-}
-
-function catalogOption(definition: SpringDefinition, id: string, rulePackage: RulePackage): PlanSkillOption {
-  const difficulty = rulePackage.evaluateSkill(definition).difficulty.value;
-  return {
-    id,
-    name: springDisplayName(definition, rulePackage),
-    direction: springDirectionText(definition),
-    difficulty: difficulty ? points(difficulty) : null,
-    stability: null,
-  };
-}
-
-/** Kataloget som valg; en gængs opskrift får et nyt id, så den aldrig kolliderer med arbejdsrummets definitioner. */
-function useCatalog(workspace: Workspace, rulePackage: RulePackage, discipline: SpringDiscipline, teamId: string) {
-  return useMemo(() => {
-    const counts = teamSpringCounts(workspace, teamId);
-    const known = (choice: SpringChoice) => counts.get(skillIdentity(choice.definition)) ?? 0;
-    const choices = sortByTeamKnown(catalogChoices(workspace, rulePackage, discipline), counts);
-    return {
-      options: choices.map((choice) => ({
-        ...catalogOption(choice.definition, choice.id, rulePackage),
-        ...(known(choice) ? { known: known(choice) } : {}),
-      })),
-      definition: (id: string): SpringDefinition | null => {
-        const choice = choices.find((item) => item.id === id);
-        return choice ? { ...structuredClone(choice.definition), id: choice.own ? choice.definition.id : crypto.randomUUID() } : null;
-      },
-      idFor: (skill: SpringDefinition) => {
-        const identity = rulePackage.evaluateSkill(skill).identity;
-        return choices.find((item) => rulePackage.evaluateSkill(item.definition).identity === identity)?.id ?? '';
-      },
-    };
-  }, [workspace, rulePackage, discipline, teamId]);
-}
-
-function RoleField({ value, onChange }: { value: RoundEntry['role']; onChange?: () => void }) {
+function RoleField({ value, onChange }: { value: RoundEntry['role']; onChange?: ((role: RoundEntry['role']) => void) | undefined }) {
   return (
     <label>
       Rolle
-      <select name="role" defaultValue={value} onChange={onChange}>
+      <select name="role" defaultValue={value} onChange={(event) => onChange?.(event.target.value as RoundEntry['role'])}>
         <option value="counting">Tællende</option>
         <option value="extra">Ekstra · først · indgår ikke i D/C/stabilitet</option>
       </select>
@@ -95,20 +54,36 @@ const roleOf = (data: FormData): RoundEntry['role'] => (data.get('role') === 'ex
 const missingSpring = 'En ambition kræver et spring. Vælg springet i kataloget.';
 
 /** Ny ambition: springet vælges i disciplinens katalog. */
-export function AmbitionCreateForm({ workspace, teamId, discipline, rulePackage, writable, request, formRef, onDirty }: {
-  workspace: Workspace; teamId: string; discipline: SpringDiscipline; rulePackage: RulePackage; writable: boolean;
+export function AmbitionCreateForm({ workspace, teamId, discipline, rulePackage, round, profile, writable, request, formRef, onDirty }: {
+  workspace: Workspace; teamId: string; discipline: SpringDiscipline; rulePackage: RulePackage; round: Round; profile: TeamProfile; writable: boolean;
   request: (value: AmbitionRequest) => void; formRef?: RefObject<HTMLFormElement | null> | undefined; onDirty?: (() => void) | undefined;
 }) {
-  const catalog = useCatalog(workspace, rulePackage, discipline, teamId);
+  const [selected, setSelected] = useState<SpringDefinition | null>(null);
+  const [building, setBuilding] = useState<ElementExecution[] | null>(null);
+  const [approvalNote, setApprovalNote] = useState<string | null>(null);
+  const [role, setRole] = useState<RoundEntry['role']>('counting');
+  const [count, setCount] = useState(1);
+  const capacity = Math.max(0, (role === 'counting' ? profile.counting : profile.extra) - round.entries.filter((entry) => entry.role === role).length);
+  const chosenCount = Math.min(count, capacity);
+  if (building !== null) return <div className="ambition-form">
+    <button type="button" className="quiet" onClick={() => setBuilding(null)}>← Tilbage til springvalg</button>
+    <SkillEditor key={JSON.stringify(building)} workspace={workspace} athleteId="" rulePackage={rulePackage} save={() => {}} openExisting={() => {}} initialDiscipline={discipline} initialElements={building} onDefinition={(definition, approve, note) => {
+      if (definition.discipline === 'rhythm') throw new Error('Vælg et bane- eller trampetspring.');
+      setSelected(definition);
+      setApprovalNote(approve ? note : null);
+      setBuilding(null);
+      onDirty?.();
+    }} />
+  </div>;
   return (
     <ActionForm
       formRef={formRef}
       className="ambition-form"
       disabled={!writable}
       submit={(data) => {
-        const definition = catalog.definition(String(data.get('skill')));
-        if (!definition) throw new Error(missingSpring);
-        request({ kind: 'add', definition, role: roleOf(data) });
+        if (!selected) throw new Error(missingSpring);
+        if (chosenCount < 1) throw new Error('Der er ingen ledige pladser i den valgte rolle.');
+        request({ kind: 'add', definition: selected, role: roleOf(data), count: chosenCount, approvalNote });
       }}
     >
       <fieldset disabled={!writable} onChange={onDirty}>
@@ -116,8 +91,14 @@ export function AmbitionCreateForm({ workspace, teamId, discipline, rulePackage,
           <span className="ambition-mark" aria-hidden="true">+</span>
           <p>Planlæg springet nu. Pladsen tæller med i D og C og besættes, når en gymnast kan springet.</p>
         </div>
-        <PlanSkillSelect catalog options={catalog.options} initialValue="" onChange={onDirty} />
-        <RoleField value="counting" />
+        <AmbitionSpringPicker workspace={workspace} rulePackage={rulePackage} discipline={discipline} teamId={teamId} selected={selected} approvalNote={approvalNote} onSelect={(definition) => { setSelected(definition); setApprovalNote(null); onDirty?.(); }} onBuild={setBuilding} />
+        <RoleField value="counting" onChange={(next) => { setRole(next); setCount(1); onDirty?.(); }} />
+        <label>Antal nye pladser
+          <select name="count" value={chosenCount} onChange={(event) => { setCount(Number(event.target.value)); onDirty?.(); }}>
+            {Array.from({ length: capacity }, (_, index) => index + 1).map((value) => <option key={value} value={value}>{value}</option>)}
+          </select>
+        </label>
+        <p className="ambition-count-preview" role="status">{chosenCount} {role === 'counting' ? 'tællende' : 'ekstra'} {chosenCount === 1 ? 'plads' : 'pladser'} føjes til i rækkefølge efter de eksisterende {role === 'counting' ? 'tællende' : 'ekstra'} pladser. Ingen gymnast vælges.</p>
       </fieldset>
       {!writable && <p className="notice">Arbejdsrummet har læseadgang. Du kan gennemse valgene, men ikke ændre dem.</p>}
     </ActionForm>
@@ -135,14 +116,14 @@ export function AmbitionFillForm({ workspace, teamId, discipline, rulePackage, p
   request: (value: AmbitionRequest) => void; inspect: (athleteId: string) => void;
   formRef?: RefObject<HTMLFormElement | null> | undefined; onDirty?: (() => void) | undefined;
 }) {
-  const catalog = useCatalog(workspace, rulePackage, discipline, teamId);
   const planned = workspace.skills.find((skill) => skill.id === entry.plannedSkillId);
   const current = planned && planned.discipline !== 'rhythm' ? planned : null;
   const [changing, setChanging] = useState(false);
-  const [choiceId, setChoiceId] = useState('');
+  const [replacement, setReplacement] = useState<SpringDefinition | null>(null);
+  const [building, setBuilding] = useState<ElementExecution[] | null>(null);
+  const [approvalNote, setApprovalNote] = useState<string | null>(null);
   const [selected, setSelected] = useState('');
   const groupId = useId();
-  const replacement = choiceId ? catalog.definition(choiceId) : null;
   const shown = replacement ?? current;
   // Kandidater beregnes på et forhåndsvist arbejdsrum, så et nyt spring straks viser, hvem der kan det.
   const candidates = useMemo((): AmbitionCandidate[] => {
@@ -154,11 +135,24 @@ export function AmbitionFillForm({ workspace, teamId, discipline, rulePackage, p
     } catch {
       return [];
     }
-  }, [workspace, rulePackage, teamId, round, entry.id, choiceId]);
+  }, [workspace, rulePackage, teamId, round, entry.id, replacement]);
   const matches = candidates.filter((item) => item.status === 'match');
   const others = candidates.filter((item) => item.status !== 'match');
-  const difficulty = shown ? rulePackage.evaluateSkill(shown).difficulty.value : null;
+  const evaluated = shown ? rulePackage.evaluateSkill(shown) : null;
+  const pending = shown?.discipline === 'tumbling' && approvalNote ? { ...shown, sharedConnectionApproval: { executionIdentity: skillIdentity(shown), approvedAt: new Date().toISOString(), note: approvalNote } } : shown;
+  const difficulty = pending ? rulePackage.evaluateSkill(pending).difficulty.value : null;
   const name = (candidate: AmbitionCandidate) => `${candidate.athlete.name}${candidate.athlete.discriminator ? ` · ${candidate.athlete.discriminator}` : ''}`;
+  if (building !== null) return <div className="ambition-form">
+    <button type="button" className="quiet" onClick={() => setBuilding(null)}>← Tilbage til ambitionen</button>
+    <SkillEditor key={JSON.stringify(building)} workspace={workspace} athleteId="" rulePackage={rulePackage} save={() => {}} openExisting={() => {}} initialDiscipline={discipline} initialElements={building} onDefinition={(definition, approve, note) => {
+      if (definition.discipline === 'rhythm') throw new Error('Vælg et bane- eller trampetspring.');
+      setReplacement(definition);
+      setApprovalNote(approve ? note : null);
+      setBuilding(null);
+      setSelected('');
+      onDirty?.();
+    }} />
+  </div>;
   return (
     <ActionForm
       formRef={formRef}
@@ -166,8 +160,7 @@ export function AmbitionFillForm({ workspace, teamId, discipline, rulePackage, p
       disabled={!writable}
       submit={(data) => {
         const athleteSkillId = String(data.get('ambition-athlete') ?? '') || null;
-        if (choiceId && !replacement) throw new Error(missingSpring);
-        request({ kind: 'update', entryId: entry.id, definition: replacement, role: roleOf(data), athleteSkillId });
+        request({ kind: 'update', entryId: entry.id, definition: replacement, role: roleOf(data), athleteSkillId, approvalNote });
       }}
     >
       <fieldset disabled={!writable} onChange={onDirty}>
@@ -182,22 +175,19 @@ export function AmbitionFillForm({ workspace, teamId, discipline, rulePackage, p
         </div>
         {changing ? (
           <div className="ambition-change">
-            <PlanSkillSelect
-              catalog
-              options={catalog.options}
-              initialValue={current ? catalog.idFor(current) : ''}
-              onChange={(id) => {
-                setChoiceId(id);
-                setSelected('');
-                onDirty?.();
-              }}
-            />
+            <AmbitionSpringPicker workspace={workspace} rulePackage={rulePackage} discipline={discipline} teamId={teamId} selected={shown} approvalNote={approvalNote} onSelect={(definition) => { setReplacement(definition); setApprovalNote(null); setSelected(''); onDirty?.(); }} onBuild={setBuilding} />
           </div>
         ) : (
           <button type="button" className="quiet ambition-change-toggle" onClick={() => setChanging(true)}>
             Skift spring
           </button>
         )}
+        {shown?.discipline === 'tumbling' && shown.elements.length > 1 && evaluated?.connection === 'unverified' && !shown.sharedConnectionApproval && <section className="connection-review">
+          <p className="notice" role="status">Forbindelsen er uafklaret. Træneren kan godkende netop denne kæde for arbejdsrummet.</p>
+          <label className="check"><input type="checkbox" checked={approvalNote !== null} onChange={(event) => { setApprovalNote(event.target.checked ? '' : null); onDirty?.(); }} />Godkend den præcise forbindelse for hele arbejdsrummet</label>
+          {approvalNote !== null && <label>Fælles begrundelse for forbindelsen<textarea value={approvalNote} onChange={(event) => { setApprovalNote(event.target.value); onDirty?.(); }} required maxLength={2000} /></label>}
+        </section>}
+        {shown?.discipline === 'tumbling' && (shown.sharedConnectionApproval || approvalNote) && <p className="muted" role="status">Trænerbekræftet forbindelse{approvalNote ? ' ved gemning' : ''}.</p>}
         <div className="ambition-candidates" role="radiogroup" aria-labelledby={`${groupId}-title`}>
           <p id={`${groupId}-title`} className="ambition-candidates-title">Hvem tager pladsen?</p>
           <label className={`candidate-row keep-open${selected === '' ? ' is-selected' : ''}`}>

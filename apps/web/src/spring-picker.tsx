@@ -1,12 +1,12 @@
 import { useId, useLayoutEffect, useMemo, useRef, useState } from 'react';
-import { Fraction, STABILITY_ANCHORS } from '@teamgym/domain';
+import { STABILITY_ANCHORS } from '@teamgym/domain';
 import type { ElementExecution } from '@teamgym/domain';
 import type { Workspace } from '@teamgym/domain';
 import type { RulePackage } from '@teamgym/rules';
-import { matchesSpring, springRegistrationPlan } from './spring-library';
+import { springRegistrationPlan } from './spring-library';
 import { SpringChoiceRows } from './spring-choice-rows';
 import type { FoundationControls } from './spring-choice-rows';
-import { springPickerRowRank, springPickerRows, teamSpringCounts } from './spring-picker-model';
+import { filterSpringChoices, springPickerRowRank, springPickerRows, teamSpringCounts } from './spring-picker-model';
 import { EMPTY_CHAIN, chainIsEmpty, chainPrefill, listedSpring, matchesChain } from './spring-chain-model';
 import type { ChainSlot, ChainState } from './spring-chain-model';
 import { SpringChain } from './spring-chain';
@@ -67,19 +67,12 @@ export function SpringPicker({
     const list = picker.current?.querySelector('.unified-spring-list');
     if (list) list.scrollTop = 0;
   }, [query, minimum, unknown, chain, onlySelected]);
-  const threshold = /^\d+(?:[.,]\d+)?$/.test(minimum) ? Fraction.from(minimum.replace(',', '.')) : null;
   const disciplineLibrary = useMemo(
     // Atypiske indbyggede serier står uden for listen og bygges med Byg selv.
     () => library.filter((item) => item.definition.discipline === discipline && listedSpring(item)),
     [library, discipline],
   );
-  const filtered = disciplineLibrary.filter(
-    (item) =>
-      (unknown
-        ? evaluations.get(item.id)!.difficulty.value === null
-        : !threshold || (evaluations.get(item.id)!.difficulty.value?.compare(threshold) ?? -1) >= 0) &&
-      matchesSpring(item, query),
-  );
+  const filtered = filterSpringChoices(library, discipline, query, EMPTY_CHAIN, minimum, unknown, rulePackage);
   const choices = filtered.filter((item) => matchesChain(item.definition, chain));
   const teamId = workspace.athletes.find((athlete) => athlete.id === athleteId)?.teamId;
   const teamCounts = useMemo(
@@ -110,7 +103,20 @@ export function SpringPicker({
     setUnknown(false);
     setOnlySelected(false);
   };
-  const buildLink = (
+  const noResults = !onlySelected && choices.length === 0;
+  const buildLink = noResults ? (
+    <div className="picker-build picker-build-empty" role="status">
+      {prefill.length > 0 ? (
+        <>
+          <p>Ingen færdige spring passer. Fortsæt fra den præcise begyndelse, du har valgt.</p>
+          <button type="button" onClick={() => build(prefill)}>Byg videre <span aria-hidden="true">→</span></button>
+        </>
+      ) : (
+        <p>{!chainIsEmpty(chain) ? 'Vælg en præcis variant i kæden for at bygge videre, eller start fra bunden.' : 'Ingen færdige spring passer til filtrene.'}</p>
+      )}
+      <button type="button" className="quiet" onClick={() => build([])}>Byg fra bunden</button>
+    </div>
+  ) : (
     <p className="picker-build">
       <span>{searching ? 'Finder du ikke springet?' : 'Mangler et spring?'}</span>
       <button type="button" className="quiet" onClick={() => build(prefill)}>

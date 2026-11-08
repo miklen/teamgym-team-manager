@@ -69,6 +69,7 @@ for (const width of [1440, 390]) {
         discipline: 'tumbling',
         elements: elements.slice(0, length),
         connection: { kind: 'standard', transitions: elements.slice(1, length).map(() => 'direct') },
+        sharedConnectionApproval: null,
       });
       workspace = updateAssessment(added.workspace, added.athleteSkillId, {
         stability: 5,

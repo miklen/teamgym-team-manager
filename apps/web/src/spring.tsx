@@ -1,6 +1,6 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import type { RefObject } from 'react';
-import { addAmbition, changeAmbitionSkill, clearPlannedSpot, fillAmbition, formatStability, moveRoundFirst, newEntityId, setPlannedSpot, setRoundEntries } from '@teamgym/domain';
+import { addAmbitions, approveSharedConnection, changeAmbitionSkill, clearPlannedSpot, fillAmbition, formatStability, moveRoundFirst, newEntityId, setPlannedSpot, setRoundEntries } from '@teamgym/domain';
 import type { Round, RoundEntry, RoundEntryInput, SpringDiscipline, Workspace } from '@teamgym/domain';
 import { ambitionCanNow, ambitionEnvironment, applyPotentialPreview } from '@teamgym/rules';
 import type { BonusPotential, ParticipantEvaluation, RoundEvaluation, RulePackage, TeamProfile } from '@teamgym/rules';
@@ -24,6 +24,7 @@ import { useScenarioSelection } from './scenario-context';
 import { ReserveList } from './reserves';
 import { PlanDifficulty, PlanSafety, PlanSkillSelect } from './plan-skill-select';
 import { RuleUncertainty } from './rule-uncertainty';
+import { repeatedStartSaltoIssue } from './start-salto-uncertainty';
 import { Icon } from './ui';
 import type { IconName } from './ui';
 import { CompositionGuide } from './composition-guide';
@@ -247,7 +248,7 @@ function SpringDisciplineView({
     const roundNumber = scenario.rounds.findIndex((item) => item.id === round.id) + 1;
     if (value.kind === 'add') {
       const position = value.role === 'extra' ? round.entries.filter((entry) => entry.role === 'extra').length : round.entries.length;
-      change(addAmbition(workspace, plan.id, discipline, scenarioId, round.id, value.definition, value.role, position, profile, environment).workspace);
+      change(addAmbitions(workspace, plan.id, discipline, scenarioId, round.id, value.definition, value.role, value.count, position, profile, value.approvalNote, environment).workspace);
       setEntryError('');
       setEntryStatus(`${roundNumber}. omgang: ambition tilføjet · ${springDisplayName(value.definition, rulePackage)} · mangler gymnast.`);
       return;
@@ -260,6 +261,10 @@ function SpringDisciplineView({
         [...changed.filter((entry) => entry.role === 'extra'), ...changed.filter((entry) => entry.role === 'counting')], profile);
     }
     if (value.definition) next = changeAmbitionSkill(next, plan.id, discipline, scenarioId, round.id, value.entryId, value.definition, undefined, profile, environment);
+    if (value.approvalNote !== null) {
+      const approvedId = next.plans.find((item) => item.id === plan.id)![discipline].find((item) => item.id === scenarioId)!.rounds.find((item) => item.id === round.id)!.entries.find((item) => item.id === value.entryId)!.plannedSkillId!;
+      next = approveSharedConnection(next, approvedId, value.approvalNote, environment);
+    }
     if (value.athleteSkillId) next = fillAmbition(next, plan.id, discipline, scenarioId, round.id, value.entryId, value.athleteSkillId, environment);
     change(next);
     setEntryError('');
@@ -483,6 +488,9 @@ function SpringDisciplineView({
                           {participant.skill && springDirectionText(participant.skill) && (
                             <small className="spring-directions">{springDirectionText(participant.skill)}</small>
                           )}
+                          {participant.skill?.discipline === 'tumbling' && participant.skill.sharedConnectionApproval && (
+                            <small className="connection-approved">Trænerbekræftet forbindelse</small>
+                          )}
                         </span>
                       </button>
                       <div className="entry-tools">
@@ -553,7 +561,7 @@ function SpringDisciplineView({
                       participant={participant}
                       uncertainties={[
                         ...(participant.evaluation?.hasDouble ? ['A71-U01'] : []),
-                        ...(participant.skill?.discipline === 'tumbling' && participant.skill.elements[0]?.family === 'salto' && participant.skill.elements[0].direction === 'forward' ? ['A3-U01'] : []),
+                        ...(repeatedStartSaltoIssue(participant.skill, participant.evaluation) ? ['A3-U01'] : []),
                         ...(participant.spotD.issues.includes('Q-SPOT-DUP') ? ['Q-SPOT-DUP'] : []),
                       ]}
                       ambition={isAmbition}
@@ -1207,7 +1215,7 @@ export function EntryForm(props: EntryFormProps) {
     <>
       {ambition && !entry && <SlotModeSwitch value={mode} onChange={setMode} disabled={!props.writable} />}
       {ambition && !entry && mode === 'ambition' ? (
-        <AmbitionCreateForm {...props} request={ambition.request} formRef={props.formRef} onDirty={props.onDirty} />
+        <AmbitionCreateForm {...props} profile={ambition.profile} request={ambition.request} formRef={props.formRef} onDirty={props.onDirty} />
       ) : (
         <AthleteEntryForm {...props} />
       )}

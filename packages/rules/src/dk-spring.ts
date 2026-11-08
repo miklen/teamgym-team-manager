@@ -5,6 +5,7 @@ import type { NumericDecision } from './dk-numeric';
 import { known, topThreeDifficulty, twistIncrement, uncertain, combineStatus } from './dk-numeric';
 import { DK_SPRING_RULES, ruleSetForApparatus } from './spring-rules';
 import type { SpringRules } from './spring-rules';
+import { knownSeries } from './practical-connections';
 
 type Position = ElementExecution['bodyPositions'][number];
 const ranks: Record<Position, number> = { tuck: 0, pike: 1, straight: 2 };
@@ -108,8 +109,13 @@ export function connectionStatus(skill: Extract<SkillDefinition, { discipline: '
     const frontFollow = after.family === 'salto' && after.direction === 'forward';
     if (!(backLead && backFollow || frontLead && frontFollow)) standard = false;
   }
-  if (standard) return 'verified';
-  return confirmation?.executionIdentity === skillIdentity(skill) && confirmation.note.trim() ? 'verified' : 'unverified';
+  // Korrigerede pakker bruger samme kendte overgange som springvælgeren.
+  // DK 1.0.0 bevarer sin udgivne klassifikation.
+  if (standard || corrected && skill.connection.transitions.every((transition) => transition === 'direct') && knownSeries(skill.elements)) return 'verified';
+  const identity = skillIdentity(skill);
+  return confirmation?.executionIdentity === identity && confirmation.note.trim() ||
+    skill.sharedConnectionApproval?.executionIdentity === identity && skill.sharedConnectionApproval.note.trim()
+    ? 'verified' : 'unverified';
 }
 
 export interface SpringSkillEvaluation {

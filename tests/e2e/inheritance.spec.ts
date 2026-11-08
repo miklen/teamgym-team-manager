@@ -212,7 +212,8 @@ test('migration er et bevidst valg med eksport af original, annullering og separ
   const workspace = repertoire(1);
   const legacy = JSON.parse(JSON.stringify(workspace)) as Record<string, unknown>;
   legacy.schemaVersion = 1;
-  legacy.plans = workspace.plans.map((plan) => ({ ...plan, ...Object.fromEntries((['tumbling', 'trampet'] as const).map((discipline) => [discipline, plan[discipline][0]!.rounds.map(({ reserves: _reserves, ...round }) => { void _reserves; return { ...round, entries: round.entries.map(({ plannedSpot: _spot, ...entry }) => { void _spot; return entry; }) }; })])) }));
+  legacy.plans = workspace.plans.map((plan) => ({ ...plan, ...Object.fromEntries((['tumbling', 'trampet'] as const).map((discipline) => [discipline, plan[discipline][0]!.rounds.map(({ reserves: _reserves, ...round }) => { void _reserves; return { ...round, entries: round.entries.map(({ plannedSpot: _spot, plannedSkillId: _planned, ...entry }) => { void _spot; void _planned; return entry; }) }; })])) }));
+  for (const skill of legacy.skills as Record<string, unknown>[]) delete skill.sharedConnectionApproval;
   delete legacy.inheritanceRelations;
   delete legacy.inheritanceExclusions;
   for (const registration of legacy.athleteSkills as Record<string, unknown>[])
@@ -232,7 +233,7 @@ test('migration er et bevidst valg med eksport af original, annullering og separ
   expect(source.workspace.schemaVersion).toBe(1);
   await page.getByRole('button', { name: /Lokale ændringer/ }).click();
   await expect(page.getByRole('button', { name: 'Gemt', exact: true })).toBeVisible();
-  expect(source.workspace.schemaVersion).toBe(5);
+  expect(source.workspace.schemaVersion).toBe(6);
   expect(source.workspace.athleteSkills[0]!.assessmentOrigin.kind).toBe('own');
   expect(source.failures).toEqual([]);
 });

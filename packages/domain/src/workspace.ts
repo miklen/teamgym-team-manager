@@ -1,6 +1,6 @@
 import { canonicalJson, skillIdentity, bindingFingerprint, newEntityId } from './identity';
-import { CURRENT_SCHEMA_VERSION, WORKSPACE_FORMAT, workspaceSchema, workspaceV1Schema, workspaceV2Schema, workspaceV3Schema, workspaceV4Schema } from './schema';
-import type { WorkspaceV1, WorkspaceV2, WorkspaceV3, WorkspaceV4, SpringDiscipline, ReserveEntry, RoundEntry } from './schema';
+import { CURRENT_SCHEMA_VERSION, WORKSPACE_FORMAT, workspaceSchema, workspaceV1Schema, workspaceV2Schema, workspaceV3Schema, workspaceV4Schema, workspaceV5Schema } from './schema';
+import type { WorkspaceV1, WorkspaceV2, WorkspaceV3, WorkspaceV4, WorkspaceV5, SpringDiscipline, ReserveEntry, RoundEntry } from './schema';
 import type { Workspace } from './schema';
 import type { Diagnostic } from './index';
 
@@ -33,6 +33,8 @@ export function validateWorkspace(input: unknown): Workspace {
     const key = skillIdentity(skill);
     if (exactSkills.has(key)) fail('Den samme præcise færdighed har flere identiteter.');
     exactSkills.add(key);
+    if (skill.discipline === 'tumbling' && skill.sharedConnectionApproval?.executionIdentity !== undefined && skill.sharedConnectionApproval.executionIdentity !== key)
+      fail('Den fælles forbindelsesgodkendelse svarer ikke til springets præcise udførelse.');
   }
   for (const athlete of workspace.athletes) if (athlete.teamId !== null && !teams.has(athlete.teamId)) fail('Gymnastens holdreference findes ikke.');
   const pairs = new Set<string>();
@@ -213,7 +215,7 @@ export function migrateWorkspaceV3(input: unknown): Workspace {
 /** Deterministisk og tabsfri: alle pladser får intet planlagt spring, uden nye id'er, ur eller tilfældighed. */
 function upgradeV4(original: WorkspaceV4): Workspace {
   const copy = structuredClone(original);
-  return validateWorkspace({ ...copy, schemaVersion: 5, plans: copy.plans.map((plan) => ({ ...plan,
+  return migrateWorkspaceV5({ ...copy, schemaVersion: 5, plans: copy.plans.map((plan) => ({ ...plan,
     ...Object.fromEntries((['tumbling', 'trampet'] as const).map((discipline) => [discipline, plan[discipline].map((scenario) => ({ ...scenario,
       rounds: scenario.rounds.map((round) => ({ ...round, entries: round.entries.map((entry) => ({ ...entry, plannedSkillId: null })) })),
     }))])),
@@ -233,6 +235,24 @@ export function migrateWorkspaceV4(input: unknown): Workspace {
   return upgradeV4(parsed.data);
 }
 
+/** Format 5 → 6 bevarer alle eksisterende data og giver kun banedefinitioner en tom fælles godkendelse. */
+function upgradeV5(original: WorkspaceV5): Workspace {
+  return validateWorkspace({ ...structuredClone(original), schemaVersion: 6,
+    skills: original.skills.map((skill) => skill.discipline === 'tumbling' ? { ...skill, sharedConnectionApproval: null } : structuredClone(skill)),
+  });
+}
+
+export function validateWorkspaceV5(input: unknown): WorkspaceV5 {
+  const parsed = workspaceV5Schema.safeParse(input);
+  if (!parsed.success) fail('Ugyldige format 5-data. Originalen bevares.');
+  upgradeV5(parsed.data);
+  return parsed.data;
+}
+
+export function migrateWorkspaceV5(input: unknown): Workspace {
+  return upgradeV5(validateWorkspaceV5(input));
+}
+
 /** Migrerer en ældre, gyldig arbejdsrumsværdi til det aktuelle format; aktuelle filer valideres uændret. */
 export function migrateWorkspace(input: unknown): Workspace {
   const version = input && typeof input === 'object' && 'schemaVersion' in input ? input.schemaVersion : undefined;
@@ -240,6 +260,7 @@ export function migrateWorkspace(input: unknown): Workspace {
   if (version === 2) return migrateWorkspaceV2(input);
   if (version === 3) return migrateWorkspaceV3(input);
   if (version === 4) return migrateWorkspaceV4(input);
+  if (version === 5) return migrateWorkspaceV5(input);
   return validateWorkspace(input);
 }
 

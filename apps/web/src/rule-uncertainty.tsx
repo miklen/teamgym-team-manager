@@ -17,7 +17,7 @@ const explanations: Record<string, string> = {
     'For denne vandrette balance er det uafklaret, om 15° for overkroppen eller 30° for kropslinjen gælder ved genkendelse. Appen måler ikke vinklen.',
   K01: 'To forskellige rytmemomenter har begge den trykte kode DB804. Det er uafklaret, hvordan de må anmeldes sammen.',
   'A3-U01':
-    'Startmarkeringen giver samme D som den almindelige salto. Vi tæller den som samme element; identiteten er endnu ikke bekræftet officielt.',
+    'Den samme forlæns salto står både først og senere i denne serie. Appen tæller den som ét element ved D og C. Startmarkeringens betydning for identiteten er ikke officielt afklaret. Serien kan gemmes; få regelfortolkningen afklaret, hvis gentagelsen skal tælle som et ekstra forskelligt element.',
   'Q-SPOT-DUP':
     'Kraftig hjælp halverer det modtagne element. Samme element står også uhalveret andetsteds i serien, og det er uafklaret, hvilken værdi der tæller. Appen viser D med og uden halvering.',
   'C-RETNING-VALG':

@@ -21,12 +21,14 @@ import {
   createAthlete,
   skillIdentity,
   confirmConnection,
+  approveSharedConnection,
   bindingFingerprint,
   setPlannedSpot,
   plannedSpotState,
   setRoundEntries,
   setRoundReserves,
   addAmbition,
+  addAmbitions,
   changeAmbitionSkill,
   fillAmbition,
 } from '@teamgym/domain';
@@ -77,6 +79,52 @@ describe('eksplicit schema- og politikdækning', () => {
       expect(checkMergePolicy()).toEqual([]);
     },
   );
+});
+
+describe('fælles forbindelsesgodkendelse ved trevejsfletning', () => {
+  function basis() {
+    const { workspace } = syntheticWorkspace();
+    const base = structuredClone(workspace);
+    const skill = base.skills.find((item) => item.id === 'skill-tumbling')!;
+    if (skill.discipline !== 'tumbling') throw Error('Syntetisk bane mangler');
+    skill.elements.push(structuredClone(skill.elements[0]!));
+    skill.connection = { kind: 'custom', transitions: ['direct'] };
+    return validateWorkspace(base);
+  }
+  const directions = [false, true] as const;
+
+  it.each(directions)('samler samtidige godkendelser af samme udførelse trods forskellig tid og note (%s)', (swap) => {
+    const b = basis();
+    const a = approveSharedConnection(b, 'skill-tumbling', 'Afprøvet på A', { id: crypto.randomUUID, now: () => '2026-11-08T10:00:00Z' });
+    const c = approveSharedConnection(b, 'skill-tumbling', 'Afprøvet på B', { id: crypto.randomUUID, now: () => '2026-11-08T11:00:00Z' });
+    const [local, remote] = swap ? [c, a] : [a, c];
+    const review = mergeWorkspace(b, local, remote, context);
+    expect(review.conflicts).toHaveLength(0);
+    const result = valid(review);
+    const skill = result.skills.find((item) => item.id === 'skill-tumbling')!;
+    expect(skill.discipline === 'tumbling' && skill.sharedConnectionApproval?.executionIdentity).toBe(skillIdentity(skill));
+    expect(result.skills).toHaveLength(b.skills.length);
+  });
+
+  it.each(directions)('kræver valg ved ændret udførelse eller arkivering samtidig med godkendelse (%s)', (swap) => {
+    const b = basis();
+    const approved = approveSharedConnection(b, 'skill-tumbling', 'Afprøvet', { id: crypto.randomUUID, now: () => '2026-11-08T10:00:00Z' });
+    const edited = structuredClone(b);
+    const skill = edited.skills.find((item) => item.id === 'skill-tumbling')!;
+    if (skill.discipline !== 'tumbling') throw Error('Syntetisk bane mangler');
+    skill.elements[1] = { ...skill.elements[1]!, bodyPositions: ['pike'] };
+    for (const other of [validateWorkspace(edited), setArchived(b, 'skills', 'skill-tumbling', true)]) {
+      const [local, remote] = swap ? [other, approved] : [approved, other];
+      const review = mergeWorkspace(b, local, remote, context);
+      expect(review.conflicts).toHaveLength(1);
+      expect(review.conflicts[0]!.reason).toMatch(/godkendelse|Identitet/);
+      for (const side of ['local', 'remote'] as const) {
+        const merged = valid(mergeWorkspace(b, local, remote, context, choose(review, side)));
+        const chosen = side === 'local' ? local : remote;
+        expect(merged.skills.find((item) => item.id === 'skill-tumbling')).toEqual(chosen.skills.find((item) => item.id === 'skill-tumbling'));
+      }
+    }
+  });
 });
 
 describe('trevejsmotor', () => {
@@ -677,6 +725,53 @@ describe('ambitioner i trevejsfletning', () => {
     return { ...f, b, plan, scenario, roundAt, entryId, fill, entry, registration, jump, change, trampetId };
   }
 
+  it.each(directions)('antalblokke i samme omgang kræver samlet valg (%s)', (_side, swap) => {
+    const { b, plan, scenario, roundAt, jump } = ambitionSetup();
+    const first = addAmbitions(b, plan.id, 'trampet', scenario.id, roundAt(b).id, jump('blok-a'), 'extra', 2, 0, limits).workspace;
+    const secondJump = jump('blok-b');
+    if (secondJump.discipline !== 'trampet') throw Error('fixture');
+    secondJump.jump = { ...secondJump.jump, twistsHalfTurns: 6, twistDistribution: [6] };
+    const second = addAmbitions(b, plan.id, 'trampet', scenario.id, roundAt(b).id, secondJump, 'extra', 2, 0, limits).workspace;
+    const [local, remote] = swap ? [second, first] : [first, second];
+    const review = mergeWorkspace(b, local, remote, context);
+    expect(review.conflicts).toHaveLength(1);
+    for (const side of ['local', 'remote'] as const) {
+      const merged = valid(mergeWorkspace(b, local, remote, context, choose(review, side)));
+      expect(roundAt(merged).entries).toEqual(roundAt(side === 'local' ? local : remote).entries);
+    }
+  });
+
+  it.each(directions)('antalblokke i forskellige omgange flettes uden valg (%s)', (_side, swap) => {
+    const { b, plan, scenario, roundAt, jump } = ambitionSetup();
+    const first = addAmbitions(b, plan.id, 'trampet', scenario.id, roundAt(b, 0).id, jump('samme-a'), 'extra', 2, 0, limits).workspace;
+    const next = jump('andet-b');
+    if (next.discipline !== 'trampet') throw Error('fixture');
+    next.jump = { ...next.jump, twistsHalfTurns: 6, twistDistribution: [6] };
+    const second = addAmbitions(b, plan.id, 'trampet', scenario.id, roundAt(b, 2).id, next, 'extra', 2, 0, limits).workspace;
+    const merged = valid(mergeWorkspace(b, swap ? second : first, swap ? first : second, context));
+    const before = b.skills.length;
+    expect(merged.skills).toHaveLength(before + 2);
+    expect(roundAt(merged, 0).entries.slice(0, 2).map((entry) => entry.plannedSkillId)).toEqual(['samme-a', 'samme-a']);
+    expect(roundAt(merged, 2).entries.slice(0, 2).map((entry) => entry.plannedSkillId)).toEqual(['andet-b', 'andet-b']);
+  });
+
+  it.each(directions)('identiske nye definitioner i forskellige omgange kræver identitetsvalg (%s)', (_side, swap) => {
+    const { b, plan, scenario, roundAt, jump } = ambitionSetup();
+    const first = addAmbitions(b, plan.id, 'trampet', scenario.id, roundAt(b, 0).id, jump('samme-a'), 'extra', 2, 0, limits).workspace;
+    const second = addAmbitions(b, plan.id, 'trampet', scenario.id, roundAt(b, 2).id, jump('samme-b'), 'extra', 2, 0, limits).workspace;
+    const [local, remote] = swap ? [second, first] : [first, second];
+    const review = mergeWorkspace(b, local, remote, context);
+    expect(review.conflicts).toHaveLength(1);
+    expect(review.conflicts[0]!.reason).toContain('Identitet og dens referencer');
+    for (const side of ['local', 'remote'] as const) {
+      const merged = valid(mergeWorkspace(b, local, remote, context, choose(review, side)));
+      expect(merged.skills).toHaveLength(b.skills.length + 1);
+      const chosen = side === 'local' ? local : remote;
+      const chosenId = chosen.skills.at(-1)!.id;
+      expect(merged.skills.at(-1)!.id).toBe(chosenId);
+    }
+  });
+
   it.each(directions)('samme ambition besat med forskellige gymnaster giver ét valg (%s)', (_side, swap) => {
     const { b, fill, entry } = ambitionSetup();
     const six = fill(b, 6), seven = fill(b, 7);
@@ -753,5 +848,35 @@ describe('ambitioner i trevejsfletning', () => {
     const keepFill = valid(mergeWorkspace(b, l, r, context, choose(review, swap ? 'local' : 'remote')));
     expect(keepFill.skills.find((skill) => skill.id === trampetId)!.archived).toBe(false);
     expect(entry(keepFill).athleteId).toBe(b.athletes[6]!.id);
+  });
+});
+
+describe('samlet ambitionsoprettelse og fælles godkendelse', () => {
+  const limits = { counting: 6, extra: 2 };
+  function basis() {
+    const fixture = syntheticWorkspace();
+    const b = structuredClone(fixture.workspace);
+    const source = b.skills.find((skill) => skill.discipline === 'tumbling')!;
+    if (source.discipline !== 'tumbling') throw Error('fixture');
+    const definition: SkillDefinition = { ...structuredClone(source), id: 'faelles-ny-kaede', name: 'Syntetisk ny kæde', elements: [source.elements[0]!, source.elements[0]!], connection: { kind: 'custom', transitions: ['direct'] }, sharedConnectionApproval: null };
+    b.skills.push(definition);
+    const plan = b.plans[0]!, scenario = plan.tumbling[0]!;
+    const add = (workspace: Workspace, index: number, note: string) => addAmbitions(workspace, plan.id, 'tumbling', scenario.id, scenario.rounds[index]!.id, definition, 'extra', 2, 0, limits, note, fixture.environment).workspace;
+    return { b: validateWorkspace(b), add };
+  }
+  it.each([false, true])('forskellige omgange samler begge blokke og samme kædegodkendelse (%s)', (swap) => {
+    const { b, add } = basis();
+    const first = add(b, 0, 'Træner A'), second = add(b, 1, 'Træner B');
+    const merged = valid(mergeWorkspace(b, swap ? second : first, swap ? first : second, context));
+    expect(merged.plans[0]!.tumbling[0]!.rounds.slice(0, 2).map((round) => round.entries.filter((entry) => entry.plannedSkillId === 'faelles-ny-kaede').length)).toEqual([2, 2]);
+    const skill = merged.skills.find((item) => item.id === 'faelles-ny-kaede')!;
+    expect(skill.discipline === 'tumbling' && skill.sharedConnectionApproval?.executionIdentity).toBe(skillIdentity(skill));
+  });
+  it.each([false, true])('samme omgang kræver samlet blokvalg trods ens godkendelse (%s)', (swap) => {
+    const { b, add } = basis();
+    const first = add(b, 0, 'Træner A'), second = add(b, 0, 'Træner B');
+    const review = mergeWorkspace(b, swap ? second : first, swap ? first : second, context);
+    expect(review.conflicts).toHaveLength(1);
+    expect(review.conflicts[0]!.reason).toContain('samme data forskelligt');
   });
 });

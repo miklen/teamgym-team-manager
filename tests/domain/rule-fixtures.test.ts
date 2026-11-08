@@ -21,7 +21,7 @@ function source(id: string) {
   if (!row) throw new Error(`Ukendt kildepost i facitinput: ${id}`);
   return row;
 }
-function series(rows: string[]) { return { id: 'fixture-series', name: 'Syntetisk facitserie', archived: false, discipline: 'tumbling' as const, elements: rows.map((id) => structuredClone(source(id).execution)), connection: { kind: 'standard' as const, transitions: rows.slice(1).map(() => 'direct') } }; }
+function series(rows: string[]) { return { id: 'fixture-series', name: 'Syntetisk facitserie', archived: false, discipline: 'tumbling' as const, elements: rows.map((id) => structuredClone(source(id).execution)), connection: { kind: 'standard' as const, transitions: rows.slice(1).map(() => 'direct') }, sharedConnectionApproval: null }; }
 
 /** Kun semantisk inputadapter. Ingen produktionsfunktion må læse dette facit. */
 function actual(test: FacitCase): Record<string, unknown> {

@@ -29,6 +29,7 @@ import { Avatar, Icon } from './ui';
 import { springDisplayName, springInheritanceContext } from './spring-library';
 import { SkillRepertoire } from './skill-repertoire';
 import { RuleUncertainty } from './rule-uncertainty';
+import { repeatedStartSaltoIssue } from './start-salto-uncertainty';
 
 export interface DataProps {
   workspace: Workspace;
@@ -451,7 +452,7 @@ export function AthleteInspector({
                       <Decision value={evaluation.difficulty} />
                       <RuleUncertainty ids={evaluation.difficulty.issues} />
                       {evaluation.hasDouble && <RuleUncertainty ids={['A71-U01']} />}
-                      {skill.discipline === 'tumbling' && skill.elements[0]?.family === 'salto' && skill.elements[0].direction === 'forward' && <RuleUncertainty ids={['A3-U01']} />}
+                      {repeatedStartSaltoIssue(skill, evaluation) && <RuleUncertainty ids={['A3-U01']} />}
                       <SkillBreakdown evaluation={evaluation} />
                       <SourceLinks sources={evaluation.explanation.sources} rulePackage={chosenPackage!} />
                       {evaluation.explanation.notes.map((note) => (

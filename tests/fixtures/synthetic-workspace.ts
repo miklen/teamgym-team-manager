@@ -8,9 +8,10 @@ export const salto: ElementExecution = {
   family: 'salto', direction: 'backward', rotationQuarterTurns: 4, bodyPositions: ['straight'], twistsHalfTurns: 2,
   twistDistribution: [2], apparatus: 'floor', takeoff: 'two-feet', landing: 'feet', variant: {},
 };
-export const tumblingSkill: SkillDefinition = {
+export const tumblingSkill: Extract<SkillDefinition, { discipline: 'tumbling' }> = {
   id: 'skill-tumbling', name: 'Syntetisk baneserie', archived: false, discipline: 'tumbling',
   elements: [salto], connection: { kind: 'standard', transitions: [] },
+  sharedConnectionApproval: null,
 };
 export const trampetSkill: SkillDefinition = { id: 'skill-trampet', name: 'Syntetisk trampetspring', archived: false, discipline: 'trampet', jump: { ...salto, apparatus: 'trampet' } };
 export const rhythmSkill: SkillDefinition = { id: 'skill-rhythm', name: 'Syntetisk hovedstand', archived: false, discipline: 'rhythm', momentId: 'rh-hb-headstand', variant: { legs: 'together' } };

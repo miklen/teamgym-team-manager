@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
-  addAmbition, changeAmbitionSkill, duplicateScenario, fillAmbition, insertReserve, migrateWorkspace, moveRoundFirst, registerAthleteSkill,
+  addAmbition, addAmbitions, changeAmbitionSkill, duplicateScenario, fillAmbition, insertReserve, migrateWorkspace, moveRoundFirst, registerAthleteSkill,
   roundStability, serializeWorkspace, setArchived, setPlannedSpot, setRoundEntries, setRoundReserves, validateWorkspace, workspacePayload,
 } from '@teamgym/domain';
 import type { SkillDefinition, Workspace } from '@teamgym/domain';
@@ -10,7 +10,7 @@ import v3 from '../../examples/arbejdsrum-v3.json';
 import v4 from '../../examples/arbejdsrum-v4.json';
 import { limits, salto, syntheticWorkspace, trampetSkill } from '../fixtures/synthetic-workspace';
 
-const newJump: SkillDefinition = { id: 'skill-ny-ambition', name: 'Syntetisk ambitionsspring', archived: false, discipline: 'trampet', jump: { ...salto, apparatus: 'trampet', twistsHalfTurns: 4, twistDistribution: [4] } };
+const newJump: Extract<SkillDefinition, { discipline: 'trampet' }> = { id: 'skill-ny-ambition', name: 'Syntetisk ambitionsspring', archived: false, discipline: 'trampet', jump: { ...salto, apparatus: 'trampet', twistsHalfTurns: 4, twistDistribution: [4] } };
 
 function setup() {
   const base = syntheticWorkspace();
@@ -29,6 +29,38 @@ function setup() {
 }
 
 describe('ambitioner i arbejdsrummet', () => {
+  it('opretter 2 + 2 + 2 og 3 + 3 som atomiske blokke med selvstændige plads-id’er', () => {
+    const s = setup();
+    const empty = setRoundEntries(s.workspace, s.plan.id, 'trampet', s.scenario.id, s.round.id, [], limits, s.environment);
+    const second: SkillDefinition = { ...newJump, id: 'syntetisk-anden', jump: { ...newJump.jump, twistsHalfTurns: 6, twistDistribution: [6] } };
+    const third: SkillDefinition = { ...newJump, id: 'syntetisk-tredje', jump: { ...newJump.jump, twistsHalfTurns: 8, twistDistribution: [8] } };
+    for (const counts of [[2, 2, 2], [3, 3]]) {
+      let current = empty;
+      const definitions = [newJump, second, third];
+      const blocks: string[][] = [];
+      for (const [index, count] of counts.entries()) {
+        const result = addAmbitions(current, s.plan.id, 'trampet', s.scenario.id, s.round.id, definitions[index]!, 'counting', count!, s.at(current).entries.length, limits, null, s.environment);
+        current = result.workspace;
+        blocks.push(result.entryIds);
+      }
+      const entries = s.at(current).entries;
+      expect(entries.map((item) => item.id)).toEqual(blocks.flat());
+      expect(new Set(entries.map((item) => item.id)).size).toBe(6);
+      expect(entries.map((item) => item.plannedSkillId)).toEqual(counts.flatMap((count, index) => Array(count).fill(definitions[index]!.id)));
+      expect(entries.every((item) => item.athleteId === null && item.athleteSkillId === null && item.plannedSpot === null)).toBe(true);
+      expect(current.plans[0]!.tumbling).toEqual(empty.plans[0]!.tumbling);
+    }
+    const before = serializeWorkspace(empty);
+    expect(() => addAmbitions(empty, s.plan.id, 'trampet', s.scenario.id, s.round.id, newJump, 'counting', 7, 0, limits, null, s.environment)).toThrow();
+    expect(serializeWorkspace(empty)).toBe(before);
+    expect(empty.skills.find((item) => item.id === newJump.id)).toBeUndefined();
+    const beforeExisting = s.at(s.workspace).entries.map((item) => item.id);
+    const withOne = addAmbitions(s.workspace, s.plan.id, 'trampet', s.scenario.id, s.round.id, newJump, 'counting', 1, beforeExisting.length, limits, null, s.environment).workspace;
+    expect(s.at(withOne).entries.slice(0, beforeExisting.length).map((item) => item.id)).toEqual(beforeExisting);
+    expect(() => addAmbitions(s.workspace, s.plan.id, 'trampet', s.scenario.id, s.round.id, newJump, 'counting', 2, beforeExisting.length, limits, null, s.environment)).toThrow();
+    const extras = addAmbitions(s.workspace, s.plan.id, 'trampet', s.scenario.id, s.round.id, newJump, 'extra', 2, 0, limits, null, s.environment).workspace;
+    expect(s.at(extras).entries.map((item) => item.role)).toEqual(['extra', 'extra', ...Array(5).fill('counting')]);
+  });
   it('validering afviser ambitioner med registrering, modtagning, ukendt eller forkert spring og reserver uden gymnast', () => {
     const s = setup();
     const { workspace, entryId } = s.add(s.workspace);
@@ -52,7 +84,7 @@ describe('ambitioner i arbejdsrummet', () => {
   it('migrering af format 1-4 bevarer id\'er og tilføjer plannedSkillId: null; format 6 afvises', () => {
     for (const example of [v1, v2, v3, v4]) {
       const migrated = migrateWorkspace(structuredClone(example));
-      expect(migrated.schemaVersion).toBe(5);
+      expect(migrated.schemaVersion).toBe(6);
       const entries = migrated.plans.flatMap((plan) => [...plan.tumbling, ...plan.trampet].flatMap((scenario) => scenario.rounds.flatMap((round) => round.entries)));
       expect(entries.every((entry) => entry.plannedSkillId === null && entry.athleteId !== null)).toBe(true);
       expect(migrated.athletes.map((item) => item.id)).toEqual((example as { athletes: { id: string }[] }).athletes.map((item) => item.id));

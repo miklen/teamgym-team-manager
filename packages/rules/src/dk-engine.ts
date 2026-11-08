@@ -119,7 +119,7 @@ export function evaluateDiscipline(workspace: Workspace, teamId: string, discipl
     if (settings.difficultyMultiplier) originalD = scaleDecision(originalD, settings.difficultyMultiplier);
     // Mangler gymnast er en planlægningsmangel, ikke et utilgængeligt bidrag.
     const available = !local.some((item) => item.code !== 'athlete-missing' && (item.status === 'invalid' || item.status === 'incomplete'));
-    if (evaluation && evaluation.validity !== 'known') local.push(diagnostic('skill-validity', evaluation.connection === 'unverified' ? 'Forbindelsen bekræftes, når en gymnast tager pladsen.' : 'Færdighedens variant eller regelkobling kræver gennemgang.', [entry.id], evaluation.validity === 'invalid' ? 'invalid' : 'unresolved'));
+    if (evaluation && evaluation.validity !== 'known') local.push(diagnostic('skill-validity', evaluation.connection === 'unverified' ? 'Træneren kan godkende den præcise kæde for arbejdsrummet.' : 'Færdighedens variant eller regelkobling kræver gennemgang.', [entry.id], evaluation.validity === 'invalid' ? 'invalid' : 'unresolved'));
     const status = combineStatus([evaluation?.status ?? 'incomplete', ...local.map((item) => item.status)]);
     if (!available || evaluation?.validity !== 'known')
       originalD = uncertain(status === 'known' ? 'incomplete' : status, originalD.issues, originalD.knownSubtotal, originalD.alternatives);

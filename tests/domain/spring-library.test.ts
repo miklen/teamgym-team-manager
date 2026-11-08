@@ -8,8 +8,9 @@ import {
   updateAssessment,
 } from '@teamgym/domain';
 import { DK_V1, DK_V2 } from '@teamgym/rules';
+import { REG_V1 } from '../../packages/rules/src/reg-v1';
 import { springName } from '../../apps/web/src/spring-names';
-import { knownSeries, standardTransition } from '../../apps/web/src/spring-connections';
+import { knownSeries, practicalConnectionStatus, standardTransition } from '../../apps/web/src/spring-connections';
 import {
   matchesSpring,
   registerSpring,
@@ -340,6 +341,7 @@ describe('springbibliotek', () => {
         const before = { ...row(id), twistsHalfTurns: twists, twistDistribution: twists ? [twists] : [] };
         expect(standardTransition(before, row('a3-b-01'))).toBe(true);
         expect(standardTransition(before, row('a3-f-02'))).toBe(true);
+        expect(standardTransition(before, row('a3-f-03'))).toBe(true);
         expect(standardTransition(before, row('a3-b-02'))).toBe(false);
         for (const halfTwists of [1, 3]) {
           const turned = { ...before, twistsHalfTurns: halfTwists, twistDistribution: [halfTwists] };
@@ -350,6 +352,55 @@ describe('springbibliotek', () => {
       }
     expect(standardTransition(row('a3-b-02'), row('a3-f-14'))).toBe(false);
     expect(standardTransition({ ...row('a3-f-08'), landing: 'seated' }, row('a3-b-01'))).toBe(false);
+  });
+
+  it('alle indbyggede baneserier har samme kendte forbindelse i vælger og korrigeret regelpakke', () => {
+    for (const rulePackage of [DK_V2, REG_V1]) {
+      const series = springLibrary(rulePackage, createWorkspace()).filter((item) =>
+        item.definition.discipline === 'tumbling' && item.definition.elements.length > 1,
+      );
+      expect(series.length).toBeGreaterThan(200);
+      for (const item of series) {
+        if (item.definition.discipline !== 'tumbling') throw Error('Forventede baneserier');
+        expect(knownSeries(item.definition.elements), item.definition.name).toBe(true);
+        expect(item.definition.connection.kind, item.definition.name).toBe('standard');
+        expect(rulePackage.evaluateSkill(item.definition).connection, item.definition.name).toBe('verified');
+      }
+    }
+  });
+
+  it('skelner kendt forlæns salto–vejrmølle, problematisk baglæns og ukendt forbindelse', () => {
+    const row = (id: string) => structuredClone(DK_V1.springCatalog.find((item) => item.referenceId === id)!.execution);
+    const wheel = row('a3-f-01');
+    for (const id of ['a3-f-04', 'a3-f-06', 'a3-f-08']) {
+      expect(standardTransition(row(id), wheel)).toBe(true);
+      expect(practicalConnectionStatus([row(id), wheel])).toBe('known');
+    }
+    expect(practicalConnectionStatus([row('a3-b-04'), wheel])).toBe('problematic');
+    expect(practicalConnectionStatus([row('a3-f-04'), row('a3-b-02')])).toBe('unverified');
+  });
+
+  it('tilbyder tre særskilte salto–mølle-serier med faste D-værdier og genbrug ved gem/genåbn', () => {
+    const expected = [
+      ['Lukket salto – vejrmølle', 0.3],
+      ['Hoftebøjet salto – vejrmølle', 0.3],
+      ['Strakt salto – vejrmølle', 0.4],
+    ] as const;
+    for (const rulePackage of [DK_V1, DK_V2, REG_V1]) {
+      const library = springLibrary(rulePackage, createWorkspace());
+      for (const [name, difficulty] of expected) {
+        const found = library.filter((item) => item.definition.name === name);
+        expect(found).toHaveLength(1);
+        expect(matchesSpring(found[0]!, 'salto mølle')).toBe(true);
+        expect(rulePackage.evaluateSkill(found[0]!.definition).difficulty.value?.toNumber()).toBe(difficulty);
+      }
+    }
+    const fixture = syntheticWorkspace();
+    const selected = choice('Strakt salto – vejrmølle').definition;
+    const first = registerSpring(fixture.workspace, fixture.athleteA.id, selected, DK_V1, false, null);
+    const reopened = parseWorkspace(serializeWorkspace(first.workspace));
+    const second = registerSpring(reopened, fixture.athleteB.id, { ...selected, id: 'samme-udførelse' }, DK_V1, false, null);
+    expect(second.workspace.skills.filter((item) => item.discipline === 'tumbling' && item.name === selected.name)).toHaveLength(1);
   });
 
   it('strakt-rondat-flik-hel er entydig med D 1,00 og særskilte kortere begyndelser', () => {
@@ -371,6 +422,12 @@ describe('springbibliotek', () => {
     ]);
     // Den udgivne regelpakkes tidligere adfærd bevares. Det konkrete gymnastvalg gemmer bekræftelsen.
     expect(DK_V1.evaluateSkill(full).connection).toBe('unverified');
+    for (const rulePackage of [DK_V2, REG_V1]) {
+      const evaluation = rulePackage.evaluateSkill(full);
+      expect(evaluation.connection).toBe('verified');
+      expect(evaluation.validity).toBe('known');
+      expect(evaluation.difficulty.value?.toString()).toBe('1');
+    }
     const result = registerSpringBatch(
       fixture.workspace,
       fixture.athleteA.id,

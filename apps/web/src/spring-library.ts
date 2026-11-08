@@ -141,6 +141,7 @@ function builtinSprings(rulePackage: RulePackage): BuiltinSprings {
       discipline: 'tumbling',
       elements: records.map((record) => structuredClone(record!.execution)),
       connection: { kind: 'standard', transitions: references.slice(1).map(() => 'direct') },
+      sharedConnectionApproval: null,
     };
     if (!knownSeries(definition.elements)) {
       definition.connection.kind = 'custom';
@@ -245,6 +246,8 @@ function builtinSprings(rulePackage: RulePackage): BuiltinSprings {
     ['a3-f-08', 'Strakt'],
     ['a3-f-14', 'Strakt 1/1 (360°)'],
   ] as const) {
+    if (startId !== 'a3-f-14')
+      series(`${startId}-wheel`, `${startName} – vejrmølle`, [startId, 'a3-f-01'], 'Forlæns', ['salto mølle']);
     series(`${startId}-r`, `${startName} – rondat`, [startId, 'a3-b-01'], 'Blandede');
     // Efter rondat følger både flik og whipback med samme afslutninger.
     for (const [leadId, leadName] of [
@@ -317,6 +320,7 @@ function builtinSprings(rulePackage: RulePackage): BuiltinSprings {
           discipline: 'tumbling',
           elements: [structuredClone(entry.execution)],
           connection: { kind: 'standard', transitions: [] },
+          sharedConnectionApproval: null,
         }
       : {
           id: `common-${entry.referenceId}`,

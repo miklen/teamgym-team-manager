@@ -19,6 +19,7 @@ const FLIK = element('flic', 'backward');
 const series = (id: string, ...elements: ElementExecution[]): SkillDefinition => ({
   id, name: `Syntetisk ${id}`, archived: false, discipline: 'tumbling', elements,
   connection: { kind: 'standard', transitions: elements.slice(1).map(() => 'direct') },
+  sharedConnectionApproval: null,
 });
 const jump = (id: string, execution: ElementExecution): SkillDefinition => ({ id, name: `Syntetisk ${id}`, archived: false, discipline: 'trampet', jump: execution });
 

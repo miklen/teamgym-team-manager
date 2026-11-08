@@ -229,6 +229,6 @@ export function chainPrefill(definitions: readonly SpringDefinition[], state: Ch
     elements.push(variant);
   }
   const ending = concrete('ending', state.ending);
-  if (ending && elements.at(-1) !== ending && elements.length === state.slots.length) elements.push(ending);
+  if (ending && elements.length > 0 && elements.at(-1) !== ending && elements.length === state.slots.length) elements.push(ending);
   return elements.map((variant) => JSON.parse(variant) as ElementExecution);
 }

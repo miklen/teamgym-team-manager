@@ -51,7 +51,7 @@ function exampleFor(id: string, discipline: SpringDiscipline, profile: TeamProfi
     const safe = entries as SpringCatalogEntry[];
     const definition: Extract<SkillDefinition, { discipline: 'tumbling' }> = {
       id: 'guide-example', name: 'Rondat – flik-flak – lukket salto', archived: false, discipline: 'tumbling',
-      elements: safe.map((entry) => entry.execution), connection: { kind: 'standard', transitions: ['direct', 'direct'] },
+      elements: safe.map((entry) => entry.execution), connection: { kind: 'standard', transitions: ['direct', 'direct'] }, sharedConnectionApproval: null,
     };
     const evaluation = evaluateSpringSkill(definition, null, false, false, rules);
     if (evaluation.validity !== 'known' || evaluation.difficulty.value === null || evaluation.distinctElementCount !== 3) return null;
@@ -61,7 +61,7 @@ function exampleFor(id: string, discipline: SpringDiscipline, profile: TeamProfi
     if (item.status !== 'allowed' || item.issueId || item.startRole) return false;
     if (discipline === 'tumbling' && item.execution.apparatus !== 'floor' || discipline === 'trampet' && item.execution.apparatus === 'floor') return false;
     const definition: Exclude<SkillDefinition, { discipline: 'rhythm' }> = discipline === 'tumbling'
-      ? { id: 'guide-example', name: item.name, archived: false, discipline, elements: [item.execution], connection: { kind: 'standard', transitions: [] } }
+      ? { id: 'guide-example', name: item.name, archived: false, discipline, elements: [item.execution], connection: { kind: 'standard', transitions: [] }, sharedConnectionApproval: null }
       : { id: 'guide-example', name: item.name, archived: false, discipline, jump: item.execution };
     const evaluation = evaluateSpringSkill(definition, null, false, false, rules);
     if (evaluation.validity !== 'known' || evaluation.difficulty.value === null) return false;

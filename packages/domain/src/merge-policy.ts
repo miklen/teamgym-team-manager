@@ -102,6 +102,11 @@ const skillVariants = {
         }),
         group: 'execution',
       },
+      sharedConnectionApproval: object(
+        'Fælles forbindelsesgodkendelse',
+        { executionIdentity: identity(), approvedAt: value('Godkendt den'), note: value('Begrundelse') },
+        'atomic',
+      ),
     }),
     groups: { execution: ['elements', 'connection'] },
   },

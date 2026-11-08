@@ -33,6 +33,7 @@ for (const width of [1440, 390]) {
         .getByText('Strakt salto – rondat – flik – strakt 1/1 (360°)', { exact: true }),
     ).toBeVisible();
     await expect(page.getByText('Gyldighed: Beregnet · forbindelse: Kendt', { exact: true })).toBeVisible();
+    await expect(page.getByText(/Den samme forlæns salto står både først og senere i denne serie/)).toHaveCount(0);
     await expect(
       page.getByRole('checkbox', { name: 'Gymnasten kan udføre hele serien uden mellemtrin' }),
     ).toHaveCount(0);

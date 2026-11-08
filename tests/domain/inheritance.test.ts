@@ -75,6 +75,12 @@ function v1(workspace: Workspace) {
   void _exclusions;
   return {
     ...rest,
+    skills: rest.skills.map((skill) => {
+      if (skill.discipline !== 'tumbling') return skill;
+      const { sharedConnectionApproval: _approval, ...old } = skill;
+      void _approval;
+      return old;
+    }),
     plans: rest.plans.map((plan) => ({ ...plan, tumbling: plan.tumbling[0]!.rounds.map(legacyRound), trampet: plan.trampet[0]!.rounds.map(legacyRound) })),
     schemaVersion: 1,
     athleteSkills: workspace.athleteSkills.map(({ assessmentOrigin: _origin, ...item }) => {

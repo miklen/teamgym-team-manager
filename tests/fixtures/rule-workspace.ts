@@ -7,7 +7,7 @@ const LEGACY_TEST_BINDING: RulesetBinding = { rulesetId: 'dk', packageVersion: '
 
 export function fromRows(ids: string[], id: string): Exclude<SkillDefinition, { discipline: 'rhythm' }> {
   return { id, name: `Syntetisk ${id}`, archived: false, discipline: 'tumbling', elements: ids.map((sourceId) => structuredClone(DK_SPRING_CATALOG.find((item) => item.referenceId === sourceId)!.execution)),
-    connection: { kind: 'standard', transitions: ids.slice(1).map(() => 'direct') } };
+    connection: { kind: 'standard', transitions: ids.slice(1).map(() => 'direct') }, sharedConnectionApproval: null };
 }
 
 export function workspaceBuilder() {

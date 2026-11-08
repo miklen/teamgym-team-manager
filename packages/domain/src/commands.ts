@@ -95,7 +95,7 @@ export function registerAthleteSkill(workspace: Workspace, athleteId: string, de
     const identity = skillIdentity(skill);
     const existingDefinition = copy.skills.find((item) => skillIdentity(item) === identity);
     const skillId = existingDefinition?.id ?? skill.id;
-    if (!existingDefinition) copy.skills.push(skill);
+    if (!existingDefinition) copy.skills.push(skill.discipline === 'tumbling' ? { ...skill, sharedConnectionApproval: null } : skill);
     const registration = copy.athleteSkills.find((item) => item.athleteId === athleteId && item.skillId === skillId);
     if (registration) { athleteSkillId = registration.id; existed = true; return; }
     athleteSkillId = environment.id();
@@ -125,7 +125,7 @@ export function replaceAthleteSkill(workspace: Workspace, registrationId: string
     const existing = copy.skills.find((skill) => skillIdentity(skill) === identity);
     const targetId = existing?.id ?? parsed.id;
     if (copy.athleteSkills.some((item) => item.id !== registrationId && item.athleteId === registration.athleteId && item.skillId === targetId)) throw new Error('Gymnasten har allerede den præcise færdighed. Vælg den eksisterende registrering.');
-    if (!existing) copy.skills.push(parsed);
+    if (!existing) copy.skills.push(parsed.discipline === 'tumbling' ? { ...parsed, sharedConnectionApproval: null } : parsed);
     if (skillIdentity(previous) !== identity) {
       registration.assessmentOrigin = { kind: 'own' };
       registration.stability = null; registration.assessedAt = null; registration.connectionConfirmation = null; registration.reviewRequiredFor = [];
@@ -174,6 +174,26 @@ export function confirmConnection(workspace: Workspace, athleteSkillId: string, 
     registration.connectionConfirmation = { executionIdentity: skillIdentity(skill), confirmedAt: environment.now(), note };
     registration.updatedAt = environment.now();
     // Bekræftelsen er ikke en regelgodkendelse. Regelpakken skal fortsat kontrollere gyldighed.
+  }, environment);
+}
+
+/** En fælles beslutning om netop den aktuelle baneudførelse; den er ikke gymnastens sikkerhed. */
+export function approveSharedConnection(workspace: Workspace, skillId: string, note: string, environment = defaultEnvironment): Workspace {
+  const reason = note.trim();
+  if (!reason || reason.length > 2000) throw new Error('Skriv en kort begrundelse for forbindelsen.');
+  return edit(workspace, (copy) => {
+    const skill = requireItem(copy.skills, skillId);
+    if (skill.archived || skill.discipline !== 'tumbling' || skill.elements.length < 2)
+      throw new Error('Vælg en aktiv, komplet banekæde.');
+    skill.sharedConnectionApproval = { executionIdentity: skillIdentity(skill), approvedAt: environment.now(), note: reason };
+  }, environment);
+}
+
+export function clearSharedConnectionApproval(workspace: Workspace, skillId: string, environment = defaultEnvironment): Workspace {
+  return edit(workspace, (copy) => {
+    const skill = requireItem(copy.skills, skillId);
+    if (skill.discipline !== 'tumbling') throw new Error('Kun en banekæde har fælles forbindelsesgodkendelse.');
+    skill.sharedConnectionApproval = null;
   }, environment);
 }
 
@@ -309,21 +329,36 @@ function ambitionDefinition(copy: Workspace, discipline: SpringDiscipline, defin
   const exact = copy.skills.find((skill) => skillIdentity(skill) === skillIdentity(parsed));
   if (exact) throw new Error('Springet er fjernet fra kartoteket. Genaktivér det, før det bruges som ambition.');
   const id = copy.skills.some((skill) => skill.id === parsed.id) ? environment.id() : parsed.id;
-  copy.skills.push({ ...parsed, id });
+  copy.skills.push(parsed.discipline === 'tumbling' ? { ...parsed, id, sharedConnectionApproval: null } : { ...parsed, id });
   return id;
 }
 
 /** Opretter en plads uden gymnast; definitionen genbruges eller oprettes i samme ændring. */
 export function addAmbition(workspace: Workspace, planId: string, discipline: SpringDiscipline, scenarioId: string, roundId: string, definition: SkillDefinition, role: RoundEntry['role'], position: number, limits: ParticipantLimits, environment = defaultEnvironment) {
-  const entryId = environment.id();
+  const result = addAmbitions(workspace, planId, discipline, scenarioId, roundId, definition, role, 1, position, limits, null, environment);
+  return { workspace: result.workspace, entryId: result.entryIds[0]! };
+}
+
+/** Opretter en ordnet blok af selvstændige ambitionspladser i én valideret ændring. */
+export function addAmbitions(workspace: Workspace, planId: string, discipline: SpringDiscipline, scenarioId: string, roundId: string, definition: SkillDefinition, role: RoundEntry['role'], count: number, position: number, limits: ParticipantLimits, approvalNote: string | null = null, environment = defaultEnvironment) {
+  if (!Number.isInteger(count) || count < 1) throw new Error('Vælg mindst én ny plads.');
+  if (count > (role === 'counting' ? limits.counting : limits.extra)) throw new Error('Antallet overstiger holdprofilens pladsgrænse.');
+  const entryIds = Array.from({ length: count }, () => environment.id());
   const result = edit(workspace, (copy) => {
     const round = requireItem(requireScenario(copy, planId, discipline, scenarioId).rounds, roundId);
     const plannedSkillId = ambitionDefinition(copy, discipline, definition, environment);
+    if (approvalNote !== null) {
+      const note = approvalNote.trim();
+      if (!note || note.length > 2000) throw new Error('Skriv en kort begrundelse for forbindelsen.');
+      const skill = requireItem(copy.skills, plannedSkillId);
+      if (skill.discipline !== 'tumbling' || skill.elements.length < 2) throw new Error('Vælg en komplet banekæde til godkendelse.');
+      skill.sharedConnectionApproval = { executionIdentity: skillIdentity(skill), approvedAt: environment.now(), note };
+    }
     const next: RoundEntryInput[] = [...round.entries];
-    next.splice(Math.max(0, Math.min(position, next.length)), 0, { id: entryId, athleteId: null, athleteSkillId: null, role, plannedSkillId });
+    next.splice(Math.max(0, Math.min(position, next.length)), 0, ...entryIds.map((id) => ({ id, athleteId: null, athleteSkillId: null, role, plannedSkillId })));
     applyRoundEntries(copy, planId, discipline, scenarioId, roundId, next, limits);
   }, environment);
-  return { workspace: result, entryId };
+  return { workspace: result, entryIds };
 }
 
 function requireAmbition(copy: Workspace, planId: string, discipline: SpringDiscipline, scenarioId: string, roundId: string, entryId: string) {

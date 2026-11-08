@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react';
 import {
+  approveSharedConnection,
   confirmConnection,
   canonicalJson,
   newEntityId,
@@ -30,6 +31,7 @@ import {
 import { matchesSpring } from './spring-search';
 import type { SpringSelection } from './spring-library';
 import { SpringPicker } from './spring-picker';
+import { repeatedStartSaltoIssue } from './start-salto-uncertainty';
 import { springCatalogElementName, springElementInSeries, springExecutionName } from './spring-names';
 import { SpringChoiceRows } from './spring-choice-rows';
 import { springPickerRows } from './spring-picker-model';
@@ -38,6 +40,7 @@ import {
   canStartFloorSeries,
   knownSeries,
   connectionHint,
+  practicalConnectionStatus,
   CONNECTION_CATALOG_VERSION,
 } from './spring-connections';
 
@@ -89,6 +92,8 @@ export function SkillEditor({
   registration,
   initialDiscipline = 'tumbling',
   initialMoment,
+  initialElements,
+  onDefinition,
 }: {
   workspace: Workspace;
   athleteId: string;
@@ -98,17 +103,20 @@ export function SkillEditor({
   registration?: AthleteSkill | undefined;
   initialDiscipline?: Discipline;
   initialMoment?: RhythmCatalogEntry | undefined;
+  initialElements?: ElementExecution[] | undefined;
+  /** Brug byggeren som kladde på en ambition; ingen gymnastregistrering skrives her. */
+  onDefinition?: ((definition: SkillDefinition, approve: boolean, note: string) => void) | undefined;
 }) {
   const original = registration
     ? workspace.skills.find((skill) => skill.id === registration.skillId)
     : undefined;
   const [discipline, setDiscipline] = useState<Discipline>(original?.discipline ?? initialDiscipline);
   const [query, setQuery] = useState('');
-  const [building, setBuilding] = useState(!!registration);
+  const [building, setBuilding] = useState(!!registration || !!onDefinition);
   const [selections, setSelections] = useState<SpringSelection[]>([]);
   const [newStability, setNewStability] = useState<Stability | null>(null);
   const [assessedAt, setAssessedAt] = useState(new Date().toISOString().slice(0, 10));
-  const batchMode = discipline !== 'rhythm' && !building && !registration;
+  const batchMode = discipline !== 'rhythm' && !building && !registration && !onDefinition;
   const [includeShorter, setIncludeShorter] = useState(true);
   const [excluded, setExcluded] = useState([
     ...new Set([
@@ -136,7 +144,7 @@ export function SkillEditor({
   const foundationOptions = { excluded, ownAssessments, sourceChoices, following };
   const library = useMemo(() => springLibrary(rulePackage, workspace), [rulePackage, workspace]);
   const [elements, setElements] = useState<ElementExecution[]>(
-    original?.discipline === 'tumbling'
+    initialElements ? structuredClone(initialElements) : original?.discipline === 'tumbling'
       ? structuredClone(original.elements)
       : original?.discipline === 'trampet'
         ? [structuredClone(original.jump)]
@@ -163,8 +171,12 @@ export function SkillEditor({
   const custom = discipline === 'tumbling' && elements.length > 1 && !commonSeries;
   const [confirm, setConfirm] = useState(false);
   const [confirmation, setConfirmation] = useState('');
+  const [sharedApprove, setSharedApprove] = useState(false);
+  const [sharedNote, setSharedNote] = useState('');
+  const updateElements = (next: ElementExecution[]) => { setElements(next); setConfirm(false); setConfirmation(''); setSharedApprove(false); setSharedNote(''); };
   const [name, setName] = useState(original ? springDisplayName(original, rulePackage) : '');
-  const [advanced, setAdvanced] = useState<number | null>(null);
+  const [advanced, setAdvanced] = useState<number | null>(initialElements?.length ? initialElements.length - 1 : null);
+  const practicalStatus = discipline === 'tumbling' && elements.length > 1 ? practicalConnectionStatus(elements) : null;
   const catalog = rulePackage.springCatalog.filter((item) => {
     if (
       discipline === 'tumbling' ? item.execution.apparatus !== 'floor' : item.execution.apparatus === 'floor'
@@ -196,6 +208,7 @@ export function SkillEditor({
                   discipline: 'tumbling',
                   elements: [item.execution],
                   connection: { kind: 'standard', transitions: [] },
+                  sharedConnectionApproval: null,
                 }
               : {
                   id: item.referenceId,
@@ -231,6 +244,7 @@ export function SkillEditor({
               ...base,
               discipline,
               elements,
+              sharedConnectionApproval: null,
               connection:
                 original?.discipline === 'tumbling' &&
                 canonicalJson(original.elements) === canonicalJson(elements)
@@ -272,7 +286,17 @@ export function SkillEditor({
         }
       : undefined;
   const evaluation =
-    preview && preview.discipline !== 'rhythm' ? rulePackage.evaluateSkill(preview, confirmedPreview) : null;
+    preview && preview.discipline !== 'rhythm' ? rulePackage.evaluateSkill(
+      preview.discipline === 'tumbling' && sharedApprove ? {
+        ...preview,
+        sharedConnectionApproval: {
+          executionIdentity: skillIdentity(preview),
+          approvedAt: new Date().toISOString(),
+          note: sharedNote.trim(),
+        },
+      } : preview,
+      confirmedPreview,
+    ) : null;
   const builderSelections: SpringSelection[] =
     preview && preview.discipline !== 'rhythm'
       ? [
@@ -285,7 +309,7 @@ export function SkillEditor({
           },
         ]
       : selections;
-  const planned = springRegistrationPlan(
+  const planned = onDefinition ? [] : springRegistrationPlan(
     batchMode ? selections : builderSelections,
     rulePackage,
     includeShorter,
@@ -296,7 +320,7 @@ export function SkillEditor({
     <ActionForm
       className="skill-editor"
       label={
-        registration
+        onDefinition ? 'Brug springet' : registration
           ? 'Opdater'
           : batchMode
             ? `Registrér ${selections.length} spring`
@@ -306,6 +330,10 @@ export function SkillEditor({
       }
       disabled={needsClarification || (batchMode ? selections.length === 0 : !preview || missingEntry)}
       submit={() => {
+        if (onDefinition) {
+          onDefinition(definition(), custom && sharedApprove, sharedNote.trim());
+          return;
+        }
         if (batchMode) {
           save(
             registerSpringBatch(workspace, athleteId, selections, rulePackage, {
@@ -325,8 +353,7 @@ export function SkillEditor({
           registrationId = registration.id;
         } else {
           if (skill.discipline !== 'rhythm') {
-            save(
-              registerSpringBatch(
+            let next = registerSpringBatch(
                 workspace,
                 athleteId,
                 [
@@ -340,8 +367,12 @@ export function SkillEditor({
                 ],
                 rulePackage,
                 { ...foundationOptions, includeShorter, assessedAt },
-              ),
-            );
+              );
+            if (skill.discipline === 'tumbling' && sharedApprove) {
+              const shared = next.skills.find((item) => !item.archived && skillIdentity(item) === skillIdentity(skill));
+              if (shared) next = approveSharedConnection(next, shared.id, sharedNote.trim());
+            }
+            save(next);
             return;
           }
           const normalizedKey = rulePackage.bindRhythm(skill).key;
@@ -384,6 +415,10 @@ export function SkillEditor({
             confirmation ||
               `Standardserien ${skill.name} er registreret på gymnasten (${CONNECTION_CATALOG_VERSION}).`,
           );
+        if (skill.discipline === 'tumbling' && sharedApprove) {
+          const shared = result.skills.find((item) => !item.archived && skillIdentity(item) === skillIdentity(skill));
+          if (shared) result = approveSharedConnection(result, shared.id, sharedNote.trim());
+        }
         if (skill.discipline === 'rhythm' && !registration)
           result = setOwnAssessment(result, registrationId, {
             stability: newStability,
@@ -393,14 +428,14 @@ export function SkillEditor({
         save(validateWorkspace(result));
       }}
     >
-      <label className="discipline-field">
+      {!onDefinition && <label className="discipline-field">
         Disciplin
         <select
           value={discipline}
           disabled={!!registration}
           onChange={(event) => {
             setDiscipline(event.target.value as Discipline);
-            setElements([]);
+            updateElements([]);
             setName('');
             setQuery('');
             setConfirm(false);
@@ -410,7 +445,7 @@ export function SkillEditor({
           <option value="trampet">Trampet</option>
           <option value="rhythm">Rytme</option>
         </select>
-      </label>
+      </label>}
       {discipline !== 'rhythm' && building && (
         <label>
           Navn på færdighed
@@ -485,7 +520,7 @@ export function SkillEditor({
         </>
       ) : (
         <>
-          {!registration && (
+          {!registration && !onDefinition && (
             <div className="segmented" role="group" aria-label="Vælg eller byg spring">
               <button
                 type="button"
@@ -534,13 +569,13 @@ export function SkillEditor({
                 setBuilding(true);
                 setQuery('');
                 setAdvanced(null);
-                if (prefill.length) setElements(prefill);
+                if (prefill.length) updateElements(prefill);
               }}
             />
           )}
           {building && (
             <>
-              {!registration && (
+              {!registration && !onDefinition && (
                 <p className="muted">
                   Når du registrerer springet, bliver det også tilgængeligt i listen på andre gymnaster i
                   arbejdsrummet.
@@ -549,14 +584,19 @@ export function SkillEditor({
               <h3>
                 {discipline === 'tumbling' ? 'Komplet serie i udførelsesrækkefølge' : 'Komplet trampetspring'}
               </h3>
+              <div className="builder-live-status" role="status">
+                <strong>{elements.length ? springExecutionName(discipline, elements) : 'Tom springkæde'}</strong>
+                <span>D {evaluation?.difficulty.value?.toNumber().toFixed(2).replace('.', ',') ?? 'uafklaret'}</span>
+                {practicalStatus && <span>{practicalStatus === 'known' ? 'Kendt forbindelse' : practicalStatus === 'problematic' ? 'Kendt problematisk forbindelse' : 'Ikke verificeret forbindelse'}</span>}
+              </div>
               {elements.length === 0 && (
                 <p className="empty">
                   Vælg {discipline === 'tumbling' ? 'seriens første element' : 'et spring'} i kataloget.
                 </p>
               )}
-              <ol className="element-list">
+              <ol className="element-list spring-builder-chain" aria-label="Springkæde i udførelsesrækkefølge">
                 {elements.map((_, index) => (
-                  <li key={index}>
+                  <li key={index} className={advanced === index ? 'is-active' : ''} aria-current={advanced === index ? 'step' : undefined}>
                     <span>{springElementInSeries(elements, index)}</span>
                     {evaluation?.elementValues[index] && (
                       <small>
@@ -566,6 +606,8 @@ export function SkillEditor({
                     <button
                       type="button"
                       className="quiet"
+                      aria-expanded={advanced === index}
+                      aria-label={`Redigér variant for element ${index + 1}: ${springElementInSeries(elements, index)}`}
                       onClick={() => setAdvanced(advanced === index ? null : index)}
                     >
                       Variant {index + 1}
@@ -578,16 +620,22 @@ export function SkillEditor({
                       onClick={() => {
                         const copy = [...elements];
                         [copy[index - 1], copy[index]] = [copy[index]!, copy[index - 1]!];
-                        setElements(copy);
+                        updateElements(copy);
                       }}
                     >
                       ↑
                     </button>
+                    <button type="button" className="quiet" disabled={index === elements.length - 1} aria-label={`Flyt element ${index + 1} ned`} onClick={() => {
+                      const copy = [...elements];
+                      [copy[index], copy[index + 1]] = [copy[index + 1]!, copy[index]!];
+                      updateElements(copy);
+                      setAdvanced(index + 1);
+                    }}>↓</button>
                     <button
                       type="button"
                       className="quiet"
                       aria-label={`Fjern element ${index + 1}`}
-                      onClick={() => setElements(elements.filter((_, position) => position !== index))}
+                      onClick={() => updateElements(elements.filter((_, position) => position !== index))}
                     >
                       ×
                     </button>
@@ -604,7 +652,7 @@ export function SkillEditor({
                 <ElementVariant
                   value={elements[advanced]}
                   change={(value) =>
-                    setElements(elements.map((item, index) => (index === advanced ? value : item)))
+                    updateElements(elements.map((item, index) => (index === advanced ? value : item)))
                   }
                 />
               )}
@@ -619,7 +667,7 @@ export function SkillEditor({
                     className="catalog-option"
                     key={item.referenceId}
                     onClick={() => {
-                      setElements(
+                      updateElements(
                         discipline === 'trampet'
                           ? [structuredClone(item.execution)]
                           : [...elements, structuredClone(item.execution)],
@@ -658,23 +706,23 @@ export function SkillEditor({
                 />
               </label>
             )}
-          {building && custom && evaluation?.connection === 'unverified' && (
+          {building && custom && (
             <section className="connection-review">
-              <p className="notice">
-                {connectionHint(elements) ??
-                  'Appen genkender ikke denne sammensætning endnu. Kontrollér elementernes retning og den samlede serie.'}
+              <p className="notice" role="status">
+                <strong>{practicalStatus === 'problematic' ? 'Kendt problematisk forbindelse' : 'Ikke verificeret forbindelse'}.</strong>{' '}
+                {connectionHint(elements) ?? 'Appen kan endnu ikke verificere denne sammensætning. Kontrollér elementerne og den samlede serie.'}
               </p>
-              <label className="check">
+              {!onDefinition && <label className="check">
                 <input
                   type="checkbox"
                   checked={confirm}
                   onChange={(event) => setConfirm(event.target.checked)}
                 />
                 Gymnasten kan udføre hele serien uden mellemtrin
-              </label>
-              {confirm && (
+              </label>}
+              {!onDefinition && confirm && (
                 <label>
-                  Beskrivelse af forbindelsen
+                  Begrundelse for forbindelsen
                   <textarea
                     value={confirmation}
                     onChange={(event) => setConfirmation(event.target.value)}
@@ -683,6 +731,14 @@ export function SkillEditor({
                   />
                 </label>
               )}
+              {sharedApprove && <p className="muted" role="status">Den præcise kæde er valgt til fælles godkendelse. Ændres et element, skal forbindelsen vurderes igen.</p>}
+              <label className="check">
+                <input type="checkbox" checked={sharedApprove} onChange={(event) => setSharedApprove(event.target.checked)} />
+                Godkend den præcise forbindelse for hele arbejdsrummet
+              </label>
+              {sharedApprove && <label>Fælles begrundelse for forbindelsen
+                <textarea value={sharedNote} onChange={(event) => setSharedNote(event.target.value)} required maxLength={2000} />
+              </label>}
             </section>
           )}
           {building && !registration && planned.length > 0 && (
@@ -705,10 +761,10 @@ export function SkillEditor({
                 change={(items) => {
                   const builder = preview && items.find((item) => item.definition.id === preview.id);
                   setSelections(items.filter((item) => item.definition.id !== preview?.id));
-                  if (preview && !builder) setElements([]);
+                  if (preview && !builder) updateElements([]);
                   else if (builder) {
                     setNewStability(builder.stability);
-                    if (builder.definition.discipline === 'trampet') setElements([builder.definition.jump]);
+                    if (builder.definition.discipline === 'trampet') updateElements([builder.definition.jump]);
                   }
                 }}
                 {...{ workspace, athleteId, rulePackage, controls }}
@@ -721,7 +777,7 @@ export function SkillEditor({
               <Decision value={evaluation.difficulty} />
               <RuleUncertainty ids={evaluation.difficulty.issues} />
               {evaluation.hasDouble && <RuleUncertainty ids={['A71-U01']} />}
-              {preview?.discipline === 'tumbling' && preview.elements[0]?.family === 'salto' && preview.elements[0].direction === 'forward' && <RuleUncertainty ids={['A3-U01']} />}
+              {repeatedStartSaltoIssue(preview, evaluation) && <RuleUncertainty ids={['A3-U01']} />}
               <SkillBreakdown evaluation={evaluation} />
               <p>
                 Gyldighed: {missingEntry ? 'Mangler indgang' : statusText[evaluation.validity]} · forbindelse:{' '}

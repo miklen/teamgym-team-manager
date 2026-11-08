@@ -29,6 +29,7 @@ export const overviewFull: SkillDefinition = {
   archived: false,
   elements: [rondat, flik, { ...element, twistsHalfTurns: 2, twistDistribution: [2] }],
   connection: { kind: 'standard', transitions: ['direct', 'direct'] },
+  sharedConnectionApproval: null,
 };
 export const overviewHard: SkillDefinition = {
   ...overviewFull,
@@ -59,6 +60,7 @@ export function overviewWorkspace(count: number) {
       archived: false,
       elements,
       connection: { kind: 'standard', transitions: elements.slice(1).map(() => 'direct') },
+      sharedConnectionApproval: null,
     });
   }
   for (let index = 0; index < trampetCount; index++) {

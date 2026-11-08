@@ -11,7 +11,7 @@ import springCsv from '../../openspec/changes/archive/2026-10-25-build-teamgym-t
 
 const row = (id: string): ElementExecution => structuredClone(DK_SPRING_CATALOG.find((item) => item.referenceId === id)!.execution);
 function series(ids: string[], id = 'series'): SkillDefinition {
-  return { id, name: `Syntetisk ${id}`, archived: false, discipline: 'tumbling', elements: ids.map(row), connection: { kind: 'standard', transitions: ids.slice(1).map(() => 'direct') } };
+  return { id, name: `Syntetisk ${id}`, archived: false, discipline: 'tumbling', elements: ids.map(row), connection: { kind: 'standard', transitions: ids.slice(1).map(() => 'direct') }, sharedConnectionApproval: null };
 }
 function spring(id: string, skillId = id): SkillDefinition { return { id: skillId, name: `Syntetisk ${id}`, archived: false, discipline: 'trampet', jump: row(id) }; }
 

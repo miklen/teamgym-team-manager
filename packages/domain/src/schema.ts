@@ -1,6 +1,6 @@
 import { z } from 'zod';
 
-export const CURRENT_SCHEMA_VERSION = 5;
+export const CURRENT_SCHEMA_VERSION = 6;
 export const WORKSPACE_FORMAT = 'teamgym-team-manager';
 export const idSchema = z.string().min(1).max(200).regex(/^[\w:.-]+$/);
 const nameSchema = z.string().min(1).max(200).refine((value) => value.trim().length > 0);
@@ -39,12 +39,30 @@ export const elementExecutionSchema = z.strictObject({
 export type ElementExecution = z.infer<typeof elementExecutionSchema>;
 
 const skillFields = { id: idSchema, name: nameSchema, archived: z.boolean() };
+export const sharedConnectionApprovalSchema = z.strictObject({
+  executionIdentity: z.string().min(1),
+  approvedAt: timestampSchema,
+  note: z.string().min(1).max(2000),
+});
+const tumblingSkillV5Schema = z.strictObject({
+  ...skillFields,
+  discipline: z.literal('tumbling'),
+  elements: z.array(elementExecutionSchema).min(1).max(30),
+  connection: z.strictObject({ kind: z.enum(['standard', 'custom']), transitions: z.array(z.string().min(1).max(200)).max(29) }),
+});
+export const skillDefinitionV5Schema = z.discriminatedUnion('discipline', [
+  tumblingSkillV5Schema,
+  z.strictObject({ ...skillFields, discipline: z.literal('trampet'), jump: elementExecutionSchema }),
+  z.strictObject({ ...skillFields, discipline: z.literal('rhythm'), momentId: idSchema,
+    variant: z.record(z.string(), z.union([z.string(), z.number().finite(), z.boolean()])) }),
+]);
 export const skillDefinitionSchema = z.discriminatedUnion('discipline', [
   z.strictObject({
     ...skillFields,
     discipline: z.literal('tumbling'),
     elements: z.array(elementExecutionSchema).min(1).max(30),
     connection: z.strictObject({ kind: z.enum(['standard', 'custom']), transitions: z.array(z.string().min(1).max(200)).max(29) }),
+    sharedConnectionApproval: sharedConnectionApprovalSchema.nullable(),
   }),
   z.strictObject({ ...skillFields, discipline: z.literal('trampet'), jump: elementExecutionSchema }),
   z.strictObject({
@@ -137,7 +155,7 @@ const workspaceFields = {
   format: z.literal(WORKSPACE_FORMAT),
   workspaceId: idSchema, revision: z.number().int().nonnegative().max(Number.MAX_SAFE_INTEGER), updatedAt: timestampSchema,
   recentOperations: z.array(z.strictObject({ id: idSchema, payloadHash: z.string().regex(/^[a-f0-9]{64}$/), revision: z.number().int().nonnegative(), savedAt: timestampSchema })).max(30),
-  teams: z.array(teamSchema), athletes: z.array(athleteSchema), skills: z.array(skillDefinitionSchema),
+  teams: z.array(teamSchema), athletes: z.array(athleteSchema), skills: z.array(skillDefinitionV5Schema),
 };
 export const workspaceV1Schema = z.strictObject({ ...workspaceFields, plans: z.array(routinePlanV2Schema), schemaVersion: z.literal(1), athleteSkills: z.array(athleteSkillV1Schema) });
 export const workspaceV2Schema = z.strictObject({ ...workspaceFields, plans: z.array(routinePlanV2Schema), schemaVersion: z.literal(2),
@@ -146,12 +164,15 @@ export const workspaceV3Schema = z.strictObject({ ...workspaceFields, plans: z.a
   athleteSkills: z.array(athleteSkillSchema), inheritanceRelations: z.array(inheritanceRelationSchema), inheritanceExclusions: z.array(inheritanceExclusionSchema) });
 export const workspaceV4Schema = z.strictObject({ ...workspaceFields, plans: z.array(routinePlanV4Schema), schemaVersion: z.literal(4),
   athleteSkills: z.array(athleteSkillSchema), inheritanceRelations: z.array(inheritanceRelationSchema), inheritanceExclusions: z.array(inheritanceExclusionSchema) });
-export const workspaceSchema = z.strictObject({ ...workspaceFields, plans: z.array(routinePlanSchema), schemaVersion: z.literal(CURRENT_SCHEMA_VERSION),
+export const workspaceV5Schema = z.strictObject({ ...workspaceFields, plans: z.array(routinePlanSchema), schemaVersion: z.literal(5),
+  athleteSkills: z.array(athleteSkillSchema), inheritanceRelations: z.array(inheritanceRelationSchema), inheritanceExclusions: z.array(inheritanceExclusionSchema) });
+export const workspaceSchema = z.strictObject({ ...workspaceFields, skills: z.array(skillDefinitionSchema), plans: z.array(routinePlanSchema), schemaVersion: z.literal(CURRENT_SCHEMA_VERSION),
   athleteSkills: z.array(athleteSkillSchema), inheritanceRelations: z.array(inheritanceRelationSchema), inheritanceExclusions: z.array(inheritanceExclusionSchema) });
 export type WorkspaceV1 = z.infer<typeof workspaceV1Schema>;
 export type WorkspaceV2 = z.infer<typeof workspaceV2Schema>;
 export type WorkspaceV3 = z.infer<typeof workspaceV3Schema>;
 export type WorkspaceV4 = z.infer<typeof workspaceV4Schema>;
+export type WorkspaceV5 = z.infer<typeof workspaceV5Schema>;
 export type ReserveEntry = z.infer<typeof reserveEntrySchema>;
 export type Scenario = z.infer<typeof scenarioSchema>;
 export type InheritanceRelation = z.infer<typeof inheritanceRelationSchema>;

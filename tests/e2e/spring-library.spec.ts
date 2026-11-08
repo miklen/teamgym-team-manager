@@ -252,6 +252,6 @@ test('valg bevares mellem grupper og discipliner, og en særskilt kortere vurder
   )!;
   expect(long.stability).toBe(3);
   expect(short.stability).toBe(4);
-  expect(long.connectionConfirmation).not.toBeNull();
+  expect(long.connectionConfirmation).toBeNull();
   expect(source.failures).toEqual([]);
 });

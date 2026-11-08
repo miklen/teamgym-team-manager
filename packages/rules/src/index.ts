@@ -20,6 +20,7 @@ export * from './dk-engine';
 export type { NumericDecision } from './dk-numeric';
 export type { SpringSkillEvaluation } from './dk-spring';
 export * from './potential';
+export * from './practical-connections';
 export * from './dk-guide';
 export * from './rhythm';
 export * from './version-change';

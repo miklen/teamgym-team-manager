@@ -7,9 +7,19 @@ import {
   springSearchRank,
   springRegistrationPlan,
 } from '../../apps/web/src/spring-library';
-import { springPickerRows } from '../../apps/web/src/spring-picker-model';
+import { filterSpringChoices, springPickerRows } from '../../apps/web/src/spring-picker-model';
+import { EMPTY_CHAIN, chainSlotValue, setChainPick } from '../../apps/web/src/spring-chain-model';
 
 const library = springLibrary(DK_V1, createWorkspace());
+it('ambition og gymnast bruger samme filtre og rangerer en præcis begyndelse først', () => {
+  const choice = library.find((item) => item.id === 'common-a3-f-08-rf')!;
+  const kind = chainSlotValue(choice.definition, 0)!.kind;
+  const chain = setChainPick(EMPTY_CHAIN, 0, { kind });
+  const candidates = filterSpringChoices(library, 'tumbling', 'strakt rondat', chain, '', false, DK_V1);
+  const rows = springPickerRows(library, candidates, [], 'strakt rondat');
+  expect(rows.slice(0, 2).map((row) => row.definition.name)).toEqual(['Strakt salto – rondat', 'Strakt salto – rondat – flik']);
+  expect(filterSpringChoices(library, 'tumbling', 'strakt rondat', chain, '99', false, DK_V1)).toEqual([]);
+});
 it.each(['strakt rondat', 'STRAKT RONDAT', 'strakt-rondat', 'strakt‑rondat', '  strakt   rondat  '])(
   'finder og prioriterer indgangen for %s',
   (query) => {

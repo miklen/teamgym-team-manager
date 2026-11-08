@@ -1,12 +1,14 @@
 import { describe, expect, it } from 'vitest';
-import { Fraction, fillAmbition, setRoundEntries } from '@teamgym/domain';
+import { addAmbition, approveSharedConnection, Fraction, fillAmbition, setRoundEntries, skillIdentity } from '@teamgym/domain';
 import type { RoundEntryInput, SkillDefinition, Workspace } from '@teamgym/domain';
 import { DK_SPRING_CATALOG } from '../../packages/rules/src/catalog';
 import { DK_DEFAULT_BINDING } from '../../packages/rules/src/dk-data';
 import { DK_V1, DK_V2 } from '../../packages/rules/src/dk-v1';
+import { REG_V1 } from '../../packages/rules/src/reg-v1';
 import { mixQuotaWithAmbitions } from '../../packages/rules/src/dk-numeric';
 import { AMBITION_ROUNDS_ISSUE } from '../../packages/rules/src/potential';
 import { ambitionCandidates, ambitionCanNow, ambitionEnvironment } from '../../packages/rules/src/ambitions';
+import { springLibrary } from '../../apps/web/src/spring-library';
 import { fromRows, workspaceBuilder } from '../fixtures/rule-workspace';
 
 const f = (value: string) => Fraction.from(value);
@@ -49,6 +51,65 @@ function setup(binding = V2, athleteCount = 8) {
 }
 
 describe('ambitioner i regelmotoren: faste facit', () => {
+  it('kendt salto–rondat–flik giver ambitionen D uden fælles godkendelse', () => {
+    const builder = workspaceBuilder();
+    const team = builder.team('Syntetisk baneambition', V2);
+    const plan = builder.workspace.plans.find((item) => item.teamId === team.id)!;
+    const scenario = plan.tumbling[0]!;
+    const round = scenario.rounds[1]!;
+    const choice = springLibrary(DK_V2, builder.workspace).find((item) =>
+      item.definition.name === 'Strakt salto – rondat – flik',
+    );
+    expect(choice).toBeDefined();
+    builder.workspace = addAmbition(
+      builder.workspace, plan.id, 'tumbling', scenario.id, round.id,
+      choice!.definition, 'counting', 0, { counting: 6, extra: 2 }, builder.environment,
+    ).workspace;
+    const ambition = DK_V2.analyze(builder.workspace, team.id, 'tumbling', scenario.id).rounds[1]!.counting[0]!;
+    expect(ambition.evaluation?.connection).toBe('verified');
+    expect(ambition.originalD.value?.toNumber()).toBe(0.6);
+    expect(ambition.diagnostics.map((item) => item.code)).toEqual(['athlete-missing']);
+  });
+
+  it('fælles godkendelse giver fuld planlagt D uden gymnast, men opfinder ingen ukendt elementværdi', () => {
+    const builder = workspaceBuilder();
+    const team = builder.team('Syntetisk baneambition', V2);
+    const plan = builder.workspace.plans.find((item) => item.teamId === team.id)!;
+    const scenario = plan.tumbling[0]!;
+    const round = scenario.rounds[1]!;
+    const definition = fromRows(['a3-b-04', 'a3-f-01'], 'syntetisk-baglaens-salto-moelle');
+    for (let index = 0; index < 6; index++)
+      builder.workspace = addAmbition(builder.workspace, plan.id, 'tumbling', scenario.id, round.id, definition, 'counting', index, { counting: 6, extra: 2 }, builder.environment).workspace;
+    const before = DK_V2.analyze(builder.workspace, team.id, 'tumbling', scenario.id).rounds[1]!;
+    expect(before.counting[0]!.originalD.value).toBeNull();
+    expect(before.counting[0]!.diagnostics.some((item) => item.message.includes('godkende den præcise kæde'))).toBe(true);
+    builder.workspace = approveSharedConnection(builder.workspace, definition.id, 'Kæden er afprøvet', builder.environment);
+    const after = DK_V2.analyze(builder.workspace, team.id, 'tumbling', scenario.id).rounds[1]!;
+    expect(after.counting[0]!.originalD.value?.toNumber()).toBe(0.3);
+    expect(after.difficulty.value?.toNumber()).toBe(1.8);
+    expect(after.counting[0]!.athleteName).toBe('Mangler gymnast');
+    const athlete = builder.workspace.athletes.find((item) => item.teamId === team.id)!;
+    const registrationId = builder.register(athlete.id, definition);
+    const registeredSkill = builder.workspace.skills.find((item) => item.id === definition.id)!;
+    const registration = builder.workspace.athleteSkills.find((item) => item.id === registrationId)!;
+    if (registeredSkill.discipline === 'rhythm') throw Error('Syntetisk bane mangler');
+    expect(registration.connectionConfirmation).toBeNull();
+    expect(DK_V2.evaluateSkill(registeredSkill, registration).validity).toBe('known');
+    const unknown = structuredClone(builder.workspace);
+    const skill = unknown.skills.find((item) => item.id === definition.id)!;
+    if (skill.discipline !== 'tumbling') throw Error('Syntetisk bane mangler');
+    skill.elements[1] = { ...skill.elements[1]!, family: 'ukendt' };
+    skill.sharedConnectionApproval = null;
+    // Den ændrede udførelse kræver sin egen godkendelse; heller ikke den kan give en manglende regelværdi.
+    const approvedUnknown = approveSharedConnection(unknown, definition.id, 'Forbindelsen er afprøvet', builder.environment);
+    const unresolved = DK_V2.analyze(approvedUnknown, team.id, 'tumbling', scenario.id).rounds[1]!;
+    expect(unresolved.counting[0]!.originalD.value).toBeNull();
+    const forbidden = fromRows(['a3-f-19', 'a3-f-01'], 'syntetisk-forbudt');
+    if (forbidden.discipline !== 'tumbling') throw Error('Syntetisk bane mangler');
+    forbidden.sharedConnectionApproval = { executionIdentity: skillIdentity(forbidden), approvedAt: '2026-11-08T10:00:00Z', note: 'Kun forbindelsen er vurderet' };
+    expect(REG_V1.evaluateSkill(forbidden).validity).not.toBe('known');
+    expect(REG_V1.evaluateSkill(forbidden).difficulty.value).toBeNull();
+  });
   it('fem besatte 0,60 og en ambition 0,80 giver omgangs-D 3,80 uden opdeling', () => {
     const s = setup();
     s.round(1, ['a4-f-08', 'a4-f-08', 'a4-f-08', 'a4-f-08', 'a4-f-08', '?a4-f-10']);

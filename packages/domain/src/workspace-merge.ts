@@ -224,6 +224,10 @@ export function mergeWorkspace(
     }
     function walk(b: unknown, l: unknown, r: unknown, node: MergePolicy, path: string[]): Build {
       if (node.role === 'metadata') return () => clone(r);
+      // To samtidige godkendelser fra tom basis er samme beslutning, når udførelsen er den samme.
+      // Tid og begrundelse er evidens, ikke en ny springidentitet.
+      if (path.at(-1) === 'sharedConnectionApproval' && b === null)
+        return unit(b, l, r, path, node, (v) => v === null ? null : at(v, 'executionIdentity'));
       if (b === undefined || l === undefined || r === undefined || b === null || l === null || r === null)
         return unit(b, l, r, path, node);
       if (node.role === 'atomic' || node.role === 'ordered') return unit(b, l, r, path, node);
@@ -415,6 +419,10 @@ export function mergeWorkspace(
           )
             reason = 'Sletning af hold og gymnaster på holdet skal vælges samlet.';
         if (crosses(a, b)) {
+          if (a.path[0] === 'skills' && b.path[0] === 'skills' && subject(a) === subject(b) &&
+            ((hasField(a, ['sharedConnectionApproval']) && hasField(b, ['$execution', 'archived'])) ||
+              (hasField(b, ['sharedConnectionApproval']) && hasField(a, ['$execution', 'archived']))))
+            reason = 'Fælles forbindelsesgodkendelse hører til den præcise aktive springudførelse.';
           if (
             ((hasField(a, ['archived', 'teamId']) && b.path[0] === 'plans') ||
               (hasField(b, ['archived', 'teamId']) && a.path[0] === 'plans')) &&

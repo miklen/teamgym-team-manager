@@ -84,6 +84,52 @@ for (const width of [1440, 390]) {
   });
 }
 
+test('nul resultater giver én Byg videre med kun kædens præcise start', async ({ page }) => {
+  const source = await openWorkspace(page, overviewWorkspace(0));
+  await page.getByRole('link', { name: 'Gymnaster', exact: true }).click();
+  await page.getByRole('button', { name: /Alma Eksempel/ }).click();
+  await page.getByRole('button', { name: 'Tilføj færdighed' }).click();
+  const picker = page.getByRole('region', { name: 'Springvælger', exact: true });
+  await picker.getByRole('group', { name: 'Valg til Første spring' }).getByRole('button', { name: /^Rondat, / }).click();
+  await picker.getByRole('searchbox', { name: 'Søg sammensat spring eller alias' }).fill('syntetisk intet match');
+  await expect(picker.getByRole('button', { name: /^Byg videre/ })).toHaveCount(1);
+  await expect(picker.getByRole('button', { name: 'Byg det selv' })).toHaveCount(0);
+  await picker.getByRole('button', { name: /^Byg videre/ }).click();
+  await expect(page.getByRole('button', { name: 'Fjern element 1' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Fjern element 2' })).toHaveCount(0);
+  await page.getByRole('button', { name: 'Luk dialog', exact: true }).click();
+  expect(source.workspace.athleteSkills).toHaveLength(0);
+  expect(source.failures).toEqual([]);
+});
+
+for (const width of [390, 1440]) {
+  test(`Byg selv har tastaturvariant og live status ved ${width}`, async ({ page }) => {
+    await page.setViewportSize({ width, height: 1000 });
+    await page.emulateMedia({ reducedMotion: 'reduce' });
+    await openWorkspace(page, overviewWorkspace(0));
+    await page.getByRole('link', { name: 'Gymnaster', exact: true }).click();
+    await page.getByRole('button', { name: /Alma Eksempel/ }).click();
+    await page.getByRole('button', { name: 'Tilføj færdighed' }).click();
+    const dialog = page.getByRole('dialog');
+    await dialog.getByRole('button', { name: 'Byg selv', exact: true }).click();
+    await dialog.getByRole('searchbox', { name: 'Søg spring, kode eller alias' }).fill('strakt salto');
+    await dialog.locator('.catalog-option', { hasText: 'Strakt salto' }).first().click();
+    const variant = dialog.getByRole('button', { name: /^Redigér variant for element 1:/ });
+    await variant.focus();
+    await page.keyboard.press('Enter');
+    await expect(variant).toHaveAttribute('aria-expanded', 'true');
+    await dialog.getByRole('combobox', { name: 'Kropsposition 1' }).selectOption('pike');
+    await expect(dialog.locator('.builder-live-status')).toContainText('Hoftebøjet');
+    await dialog.getByRole('spinbutton', { name: 'Samlet skrue (grader)' }).fill('180');
+    await expect(dialog.locator('.builder-live-status')).toContainText('180');
+    expect(await dialog.evaluate((element) => element.scrollWidth <= element.clientWidth)).toBe(true);
+    const animation = await dialog.locator('.spring-builder-chain li').first().evaluate((element) => getComputedStyle(element).animationDuration);
+    expect(animation).toBe('0s');
+    const accessibility = await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa', 'wcag21aa', 'wcag22aa']).analyze();
+    expect(accessibility.violations).toEqual([]);
+  });
+}
+
 /** Alma plus to syntetiske holdkammerater, der begge kan Rondat – flik – strakt 2/1. */
 function teamWorkspace() {
   let workspace = overviewWorkspace(0);

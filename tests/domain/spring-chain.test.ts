@@ -70,6 +70,8 @@ it('Byg selv forudfyldes kun med sammenhængende, entydige valg fra kædens star
   // Et hul i kæden: kun begyndelsen før hullet tages med.
   const gap = setChainPick(EMPTY_CHAIN, 1, { kind: 'flic' });
   expect(chainPrefill(tumbling, gap)).toEqual([]);
+  const endingOnly = setChainPick(EMPTY_CHAIN, 'ending', { kind: saltoKind.kind, variant: full.key });
+  expect(chainPrefill(tumbling, endingOnly)).toEqual([]);
 });
 
 it('spring frem: en senere plads og "slutter med" kan vælges uden mellemled og ryddes igen', () => {
@@ -146,6 +148,7 @@ it('typiske kæder: startsalto → rondat/kraftspring/flyvespring, rondat → fl
   ).toEqual(
     chainOptions(tumbling, setChainPick(EMPTY_CHAIN, 0, { kind: straight.kind, variant: plain.key }), 1)
       .map((o) => o.label)
+      .filter((label) => label !== 'Vejrmølle')
       .sort(),
   );
   const fullEnds = (lead: string) =>
