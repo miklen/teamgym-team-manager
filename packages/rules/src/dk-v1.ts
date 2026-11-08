@@ -51,7 +51,7 @@ export function createDKFamilyPackage(options: DKPackageOptions = {}): RulePacka
       decision.issues, decision.knownSubtotal.multiply(factor), Object.fromEntries(Object.entries(decision.alternatives).map(([key, value]) => [key, value.multiply(factor)])));
   }
   const evaluateSkill = (skill: Exclude<SkillDefinition, { discipline: 'rhythm' }>, registration?: AthleteSkill): SpringSkillEvaluation => {
-    const evaluation = evaluateSpringSkill(skill, registration?.connectionConfirmation, settings.ruleCorrections, settings.vaultPikeHalfTwistResolved, rules);
+    const evaluation = evaluateSpringSkill(skill, registration?.connectionConfirmation, settings.ruleCorrections, settings.vaultPikeHalfTwistResolved, rules, settings.distinctStartSalto);
     return { ...evaluation, difficulty: scaled(evaluation.difficulty) };
   };
   const analyze = (workspace: Workspace, teamId: string, discipline: SpringDiscipline, scenarioId: string) => evaluateDiscipline(workspace, teamId, discipline, scenarioId, profileFor(workspace, teamId), settings);
@@ -104,8 +104,8 @@ export const DK_V1 = createDKFamilyPackage();
 export const DK_V2 = createDKFamilyPackage({
   manifest: {
     ...structuredClone(manifest), packageVersion: '1.1.0',
-    algorithms: { identity: 'dk-identity-2', difficulty: 'dk-d-2', composition: 'dk-c-6', rhythm: 'dk-rhythm-2', potential: 'witness-2' },
-    changeDescription: 'Korrigerer forbindelsesgyldighed, identitet, rytmens skridtkrav og sissones startfront. Afklarer banens elementtillæg, gentagelsesfradrag og rækkefølgefradrag. Overslag-salto hoftebøjet 180° følger reglementets formel (1,10) frem for A4-tabellen. En trampetomgang er hel med eller hel uden Pegasus; øvrige åbne regelfortolkninger vises ved berørte resultater.',
+    algorithms: { identity: 'dk-identity-3', difficulty: 'dk-d-3', composition: 'dk-c-7', rhythm: 'dk-rhythm-2', potential: 'witness-3' },
+    changeDescription: 'Korrigerer forbindelsesgyldighed, identitet, rytmens skridtkrav og sissones startfront. Afklarer banens elementtillæg, gentagelsesfradrag og rækkefølgefradrag. A3-startposter tæller som særskilte baneelementer efter trænerens foreløbige fortolkning. Overslag-salto hoftebøjet 180° følger reglementets formel (1,10) frem for A4-tabellen. En trampetomgang er hel med eller hel uden Pegasus; øvrige åbne regelfortolkninger vises ved berørte resultater.',
   },
   springCatalog: DK_SPRING_CATALOG_V2,
   rhythmCatalog: DK_RHYTHM_CATALOG_V2,
@@ -118,8 +118,7 @@ export const DK_V2 = createDKFamilyPackage({
     { id: 'A1DK-U02', title: 'To trykte G802', detail: 'Kast uden rotation (0,60) og kast med rotation (0,80) har begge trykt kode G802. Appen tilbyder ikke gruppeelementer og giver ingen automatisk værdi ud fra koden.', scope: 'catalog', sources: [{ sourceId: 'A1.1', section: 'G802', page: 12 }] },
     { id: 'A1DK-U05', title: 'Balancer fra forskellige rækker', detail: 'Balancer skal vælges fra forskellige rækker, men rækkenumre går igen på tværs af HB, SB og DB. Det er uafklaret, om eksempelvis HB201 og SB201 må vælges sammen. Appen sammensætter ikke rytmeprogrammer og afgør ikke rækkeidentiteten.', scope: 'catalog', sources: [{ sourceId: 'H', section: '8.3.7.1', page: 23 }, { sourceId: 'A1.1', section: 'HB201', page: 2 }, { sourceId: 'A1.1', section: 'SB201', page: 5 }] },
     { id: 'A1DK-U04', title: 'Vandret balance og vinkeltolerance', detail: 'Den generelle tekst nævner 15° for overkroppen og 30° for kroppen. Nogle balancekrav blander ordene; appen måler ikke vinklen eller afgør grænsetilfælde.', scope: 'catalog', sources: [{ sourceId: 'A1.1', section: 'Generelle krav og balancefelter', page: 1 }] },
-    { id: 'A3-U01', title: 'Startsaltoens identitet', detail: 'Appen regner en startsalto og en tilsvarende almindelig salto som samme element. En officiel afklaring mangler.', scope: 'catalog', sources: [{ sourceId: 'A3', section: 'Startsalto', page: 1 }] },
     { id: 'C-RETNING-VALG', title: 'Blandet omgang i begge retningskrav', detail: 'Når samme blandede omgang er nærmest begge retningskrav, bruger appen den i begge optællinger. Det er uafklaret, om to forskellige omgange kræves.', scope: 'rule', sources: [{ sourceId: 'H', section: '9.2.2.4', page: 30 }] },
   ],
-  settings: { ruleCorrections: true, elementBonusResolved: true, repetitionResolved: true, orderResolved: true, apparatusRoundsResolved: true, vaultPikeHalfTwistResolved: true },
+  settings: { ruleCorrections: true, elementBonusResolved: true, repetitionResolved: true, orderResolved: true, apparatusRoundsResolved: true, vaultPikeHalfTwistResolved: true, distinctStartSalto: true },
 });

@@ -29,7 +29,7 @@ En diskret trekant står ved de resultater eller valg, hvor et åbent spørgsmå
 | H-U06 | En D- eller C-værdi har flere end to rå decimaler før panelets nedrunding. | Eksakt værdi rundes direkte ned til 0,005; muligt forudgående todecimalstrin er åbent. |
 | C-RETNING-VALG | Samme blandede omgang er eneste bedste kandidat til begge retningskrav. | Fradraget markeres åbent. Den hidtidige optælling vises som ét muligt spor. |
 | A71-U01 | Et valgt dobbeltspring. | Beregnet D er ikke bevis for licens eller særskilt godkendelse. |
-| A3-U01 | Den præcise forlæns startsalto gentages senere i samme baneserie. Almindelige serier som salto–rondat–flik viser ikke advarslen. | Startsalto tælles som samme element som almindelig salto. |
+| A3-U01 · DK 1.0.0 | Den præcise forlæns startsalto gentages senere i samme baneserie under den historiske DK-pakke. | DK 1.0.0 beholder sin gamle beregning og advarsel. DK 1.1.0 og REG 1.0.0 tæller startposten særskilt og viser ikke A3-U01-advarslen. |
 | A1DK-U06 | Knælende Gumbi vælges eller vises. | Valget tillades, men den nyere tabel og et ældre svar er ikke forenet. |
 | A1DK-U03 | J822 vælges eller vises. | Den trykte kode bevares; tilhørsforhold til spagatrækken ved programvalg er åbent. |
 | A1DK-U04 | En balance med vandret overkrop vælges eller vises. | Kravteksten vises, men 15°/30°-grænsen afgøres ikke af appen. |

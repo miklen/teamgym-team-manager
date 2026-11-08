@@ -33,6 +33,14 @@ export function elementIdentity(input: ElementExecution, corrected = false): str
   if (corrected && element.variant.twistAfterHandsHalfTurns === element.twistsHalfTurns) delete element.variant.twistAfterHandsHalfTurns;
   return canonicalJson(element);
 }
+const startSaltoIdentities = new Set(DK_SPRING_CATALOG.filter((entry) => entry.startRole).map((entry) => elementIdentity(entry.execution, true)));
+
+/** A3's startposter er særskilte tælleidentiteter, kun på seriens første plads. */
+function countingElementIdentity(element: ElementExecution, index: number, corrected: boolean, distinctStartSalto: boolean): string {
+  const identity = elementIdentity(element, corrected);
+  return distinctStartSalto && index === 0 && startSaltoIdentities.has(elementIdentity(element, true))
+    ? canonicalJson(['A3-start', identity]) : identity;
+}
 export function springIdentity(skill: SkillDefinition, corrected = false): string {
   if (skill.discipline === 'rhythm') return skillIdentity(skill);
   return skill.discipline === 'trampet' ? elementIdentity(skill.jump, corrected) : canonicalJson(skill.elements.map((element) => elementIdentity(element, corrected)));
@@ -137,9 +145,9 @@ export interface SpringSkillEvaluation {
   explanation: { countedElementIds: readonly string[]; excludedElementIds: readonly string[]; duplicateCount: number; sources: readonly SourceReference[]; notes: readonly string[] };
 }
 
-export function evaluateSpringSkill(skill: Exclude<SkillDefinition, { discipline: 'rhythm' }>, confirmation: AthleteSkill['connectionConfirmation'] = null, corrected = false, formulaForVaultPikeHalfTwist = false, rules: SpringRules = DK_SPRING_RULES): SpringSkillEvaluation {
+export function evaluateSpringSkill(skill: Exclude<SkillDefinition, { discipline: 'rhythm' }>, confirmation: AthleteSkill['connectionConfirmation'] = null, corrected = false, formulaForVaultPikeHalfTwist = false, rules: SpringRules = DK_SPRING_RULES, distinctStartSalto = false): SpringSkillEvaluation {
   const elements = skill.discipline === 'tumbling' ? skill.elements : [skill.jump];
-  const evaluated = elements.map((element) => ({ identity: elementIdentity(element, corrected), value: elementDifficulty(element, formulaForVaultPikeHalfTwist, rules) }));
+  const evaluated = elements.map((element, index) => ({ identity: countingElementIdentity(element, index, corrected, skill.discipline === 'tumbling' && distinctStartSalto), value: elementDifficulty(element, formulaForVaultPikeHalfTwist, rules) }));
   const baseStatus = combineStatus(evaluated.map((element) => element.value.status));
   const knownElements = evaluated.filter((element): element is { identity: string; value: NumericDecision & { value: Fraction } } => element.value.value !== null);
   const top = topThreeDifficulty(knownElements.map((element) => ({ identity: element.identity, value: element.value.value })));

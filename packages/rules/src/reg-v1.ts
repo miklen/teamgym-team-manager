@@ -11,9 +11,9 @@ import { REG_SPRING_RULES } from './spring-rules';
 
 const REG_MANIFEST: PackageManifest = {
   rulesetId: 'reg', packageVersion: '1.0.0', name: 'Regionsrækken', officialEdition: 'DK/REG v1.4; vedtaget august 2026', season: '2026/27', production: true,
-  algorithms: { identity: 'dk-identity-2', difficulty: 'reg-d-1', composition: 'reg-c-1', rhythm: 'reg-rhythm-1', potential: 'witness-2' },
+  algorithms: { identity: 'dk-identity-3', difficulty: 'reg-d-2', composition: 'reg-c-2', rhythm: 'reg-rhythm-1', potential: 'witness-3' },
   sources: regSources.sources.map(({ id, sha256, edition, file, officialUrl }) => ({ id, sha256, edition, file, officialUrl: officialUrl ?? null })),
-  changeDescription: 'Første REG-pakke. Deler DK-motoren med REG-satser: ingen rækkefølge-, flow- eller dobbeltregler, kun enkeltrotationer, Pegasus med mølleoverslag og overslag, og op til seks ekstra gymnaster.',
+  changeDescription: 'Første REG-pakke. Deler DK-motoren med REG-satser: ingen rækkefølge-, flow- eller dobbeltregler, kun enkeltrotationer, Pegasus med mølleoverslag og overslag, og op til seks ekstra gymnaster. A3-startposter tæller som særskilte baneelementer efter trænerens foreløbige fortolkning.',
 };
 
 /** REG-status og -værdi pr. A3/A4-række fra H 9.3.5/10.3.5 (`data/reg/spring-values.csv`). */
@@ -115,7 +115,6 @@ export const REG_KNOWN_ISSUES: readonly KnownIssue[] = freezeData([
   { id: 'A1REG-U04', title: 'Vandret balance og forskellige rækker', detail: 'Tolerancen for vandret overkrop og krop og rækkeidentiteten på tværs af balancegrupper er uafklaret. Appen måler ikke vinkler og afgør ikke rækkeidentitet.', scope: 'catalog', sources: [{ sourceId: 'A1.2', section: 'Generelle krav', page: 1 }, { sourceId: 'H', section: '8.3.7.1', page: 23 }] },
   { id: 'A1REG-U05', title: 'X-hop i hoftebøjningsrækken', detail: 'X-hop J203 står i en række, hvis tekst kræver 90° hoftebøjning. Det er uafklaret, om kravet også gælder X-hop.', scope: 'catalog', sources: [{ sourceId: 'A1.2', section: 'J203', page: 5 }] },
   { id: 'H-U06', title: 'Afrunding af dommernes tal', detail: 'Planlagt D og C beregnes eksakt og rundes direkte ned til nærmeste 0,005. Det er uafklaret, om dommernes værdier først skal behandles til to decimaler.', scope: 'rule', sources: [{ sourceId: 'H', section: '4.4.a', page: 11 }, { sourceId: 'H', section: '4.6', page: 13 }] },
-  { id: 'A3-U01', title: 'Startsaltoens identitet', detail: 'Appen regner en startsalto og en tilsvarende almindelig salto som samme element. En officiel afklaring mangler.', scope: 'catalog', sources: [{ sourceId: 'A3', section: 'Startsalto', page: 1 }] },
   { id: 'Q-SPOT-DUP', title: 'Kraftig hjælp på et gentaget element', detail: 'Kraftig hjælp halverer det modtagne elements D. Når samme element også står uhalveret andetsteds i serien, er det uafklaret, hvilken værdi der tæller. Appen viser intervallet mellem halveret og uhalveret D.', scope: 'rule', sources: [{ sourceId: 'H', section: '9.3.3', page: 33 }, { sourceId: 'H', section: '9.3.5', page: 34 }] },
   { id: 'C-RETNING-VALG', title: 'Blandet omgang i begge retningskrav', detail: 'Når samme blandede omgang er nærmest begge retningskrav, bruger appen den i begge optællinger. Det er uafklaret, om to forskellige omgange kræves.', scope: 'rule', sources: [{ sourceId: 'H', section: '9.2.2.4', page: 30 }] },
 ]);
@@ -124,5 +123,5 @@ export const REG_V1 = createDKFamilyPackage({
   manifest: REG_MANIFEST, profiles: REG_PROFILES, springCatalog: REG_SPRING_CATALOG,
   rhythmCatalog: REG_RHYTHM_CATALOG,
   knownIssues: REG_KNOWN_ISSUES, spotRates: DK_SPOT_RATES,
-  settings: { ruleCorrections: true, elementBonusResolved: true, repetitionResolved: true, orderResolved: true, apparatusRoundsResolved: true, vaultPikeHalfTwistResolved: true, springRules: REG_SPRING_RULES },
+  settings: { ruleCorrections: true, elementBonusResolved: true, repetitionResolved: true, orderResolved: true, apparatusRoundsResolved: true, vaultPikeHalfTwistResolved: true, distinctStartSalto: true, springRules: REG_SPRING_RULES },
 });

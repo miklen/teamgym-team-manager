@@ -32,13 +32,13 @@ S. 1 har to uafhængige grupper: forlæns og baglæns. Hver post har D-værdi, n
 
 **A3-02:** Skruetillæg: enkelt/dobbelt +0,10 pr. 180°, trippel +0,20 pr. 180°, desuden +0,10 ved 1080° og hver yderligere 360°. Tabellens trykte eksempler omfatter baglæns dobbelt strakt 1080°=1,80 og baglæns trippel lukket 360°=2,00.
 
-**A3-03:** Stjernemarkerede startposter: forlæns lukket, hoftebøjet, strakt samt strakt 360° har samme D som den tilsvarende ikke-startpost. Registrér markeringen særskilt; se identitetsspørgsmålet nedenfor.
+**A3-03:** Stjernemarkerede startposter: forlæns lukket, hoftebøjet, strakt samt strakt 360° har samme D som den tilsvarende ikke-startpost. Startposten bevares som særskilt kildepost.
 
 **A3-04:** H 9.3.1 bruger kun de tre forskellige højeste elementer i D, men C-elementvurdering er ikke begrænset til disse tre. H 9.3.2 forbyder tripler i DK og dobbelter i REG; tabellens tal er ikke rækkeautorisation.
 
-## Præcise afklaringspunkter
+## Startposternes identitet
 
-**A3-U01 (s. 1, startposter):** Tabellen forklarer ikke selv, om startstjernen ændrer elementidentitet til C eller blot angiver anvendelse. Bekræft, at samme forlæns salto som start og senere i serien er samme element ved D-gentagelse og C. Indtil da bevares både kildepost og udførelsesrolle uden at skabe et ekstra tillæg alene på baggrund af stjernen.
+**A3-U01 (s. 1, startposter):** Trænerens foreløbige beslutning er, at en stjernemarkeret startsalto og samme almindelige salto senere i serien er forskellige elementer ved D og C. DK 1.1.0 og REG 1.0.0 bruger denne fortolkning under uændrede versionsnumre. Kun de fire trykte startvarianter får særskilt identitet, og kun på første plads. Dommerens bekræftelse afventes.
 
 Ingen modstrid mellem de aflæste basisværdier og H 9.3.5 er identificeret i denne gennemgang. Dette udsagn afgør ikke H-U01 om C-elementtillæg.
 

@@ -19,7 +19,7 @@ describe('versionsbundet katalog og diagnoser', () => {
     }
   });
 
-  it('startroller bliver ikke falske elementidentiteter, men retning og redskab bevares', () => {
+  it('startposter bevarer særskilt kildepost, mens rå udførelse, retning og redskab bevares', () => {
     const find = (id: string) => DK_SPRING_CATALOG.find((item) => item.referenceId === id)!;
     expect(rawElementIdentity(find('a3-f-04').execution)).toBe(rawElementIdentity(find('a3-f-05').execution));
     expect(find('a3-f-05').startRole).toBe(true);

@@ -78,6 +78,8 @@ export interface EngineSettings {
   apparatusRoundsResolved?: boolean;
   /** Q02 afklaret: reglementets formel gælder for H>1 (1,10). */
   vaultPikeHalfTwistResolved?: boolean;
+  /** A3: første forlæns salto med særskilt startpost tæller som eget D/C-element. */
+  distinctStartSalto?: boolean;
   spotRates?: SpotRates | null;
   /** Pakkens springregler; uden dem gælder DK-standarden (design beslutning 1). */
   springRules?: SpringRules;
@@ -114,7 +116,7 @@ export function evaluateDiscipline(workspace: Workspace, teamId: string, discipl
     const local: Diagnostic[] = [diagnostic('athlete-missing', 'Mangler gymnast', [entry.id], 'incomplete')];
     if (!skill) local.push(diagnostic('skill-missing', 'Vælg et spring i denne disciplin.', [entry.id], 'incomplete'));
     if (skill?.archived) local.push(diagnostic('skill-archived', 'Færdigheden er arkiveret.', [entry.id, skill.id]));
-    const evaluation = skill ? evaluateSpringSkill(skill, null, settings.ruleCorrections, settings.vaultPikeHalfTwistResolved, rules) : null;
+    const evaluation = skill ? evaluateSpringSkill(skill, null, settings.ruleCorrections, settings.vaultPikeHalfTwistResolved, rules, settings.distinctStartSalto) : null;
     let originalD = evaluation?.difficulty ?? uncertain('incomplete');
     if (settings.difficultyMultiplier) originalD = scaleDecision(originalD, settings.difficultyMultiplier);
     // Mangler gymnast er en planlægningsmangel, ikke et utilgængeligt bidrag.
@@ -138,7 +140,7 @@ export function evaluateDiscipline(workspace: Workspace, teamId: string, discipl
     if (!athlete || athlete.archived || athlete.teamId !== teamId) local.push(diagnostic('athlete-unavailable', 'Gymnasten er arkiveret eller ikke længere på holdet.', [entry.id, entry.athleteId]));
     if (!registration || !skill) local.push(diagnostic('skill-missing', 'Vælg gymnastens registrerede færdighed i denne disciplin.', [entry.id], 'incomplete'));
     if (registration?.archived || skill?.archived) local.push(diagnostic('skill-archived', 'Færdigheden er arkiveret.', [entry.id, ...(registration ? [registration.id] : [])]));
-    const evaluation = skill ? evaluateSpringSkill(skill, registration?.connectionConfirmation, settings.ruleCorrections, settings.vaultPikeHalfTwistResolved, rules) : null;
+    const evaluation = skill ? evaluateSpringSkill(skill, registration?.connectionConfirmation, settings.ruleCorrections, settings.vaultPikeHalfTwistResolved, rules, settings.distinctStartSalto) : null;
     let originalD = evaluation?.difficulty ?? uncertain('incomplete');
     if (settings.difficultyMultiplier) originalD = scaleDecision(originalD, settings.difficultyMultiplier);
     const status = combineStatus([evaluation?.status ?? 'incomplete', ...local.map((item) => item.status)]);

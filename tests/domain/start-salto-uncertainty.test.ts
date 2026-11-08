@@ -1,6 +1,6 @@
 import { expect, it } from 'vitest';
 import { createWorkspace } from '@teamgym/domain';
-import { DK_V1 } from '@teamgym/rules';
+import { DK_V1, DK_V2 } from '@teamgym/rules';
 import { springLibrary } from '../../apps/web/src/spring-library';
 import { repeatedStartSaltoIssue } from '../../apps/web/src/start-salto-uncertainty';
 
@@ -16,6 +16,7 @@ it('viser kun startmarkeringens identitetstvivl, når samme forlæns salto genta
     connection: { kind: 'custom' as const, transitions: [...ordinary.connection.transitions, 'direct'] },
   };
   expect(repeatedStartSaltoIssue(repeated, DK_V1.evaluateSkill(repeated))).toBe(true);
+  expect(repeatedStartSaltoIssue(repeated, DK_V2.evaluateSkill(repeated))).toBe(false);
 
   const different = {
     ...repeated,

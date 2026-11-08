@@ -1,8 +1,10 @@
-﻿# Hvad skal vi have afklaret i reglementerne?
+# Hvad skal vi have afklaret i reglementerne?
 
 [Til det samlede kildeoverblik](README.md)
 
 Denne liste forklarer de spørgsmål, vi endnu ikke har et sikkert svar på. **Du skal ikke vælge den fortolkning, du bedst kan lide.** Vi skal først undersøge, om der findes en officiel præcisering; ellers skal det konkrete spørgsmål forelægges Dommer- og Reglementssektionen (DoRS) eller TeamGym-komitéen (KTG).
+
+**A3-U01 er lukket som app-afklaring i DK 1.1.0 og REG 1.0.0:** Træneren har valgt at tælle de særskilte startposter som egne elementer i D og C. En dommer er spurgt om fortolkningen; svaret afventes. De eksisterende versionsnumre er beholdt efter trænerens udtrykkelige beslutning. Allerede gemte serier genberegnes ved åbning; ingen D- eller C-tal gemmes i filen.
 
 Vi begynder med spørgsmålene om Danmarksseriens springomgange. De kan påvirke, hvilke omgange der giver flest point. Rytme, udførelse og andre rækker står længere nede.
 
@@ -158,18 +160,6 @@ A gentager springet. Omgang 2 har flest lukkede saltoer, men B har ikke gentaget
 
 **I appen:** Bilag A7.1 er ikke blandt pakkens fastlåste kilder, så appen har intet sidelink til det.
 
-### A3-U01 · Er en salto som start et andet element end den samme salto senere?
-
-**Problemet:** Banetabellen har både almindelige poster og særskilt markerede startposter for visse forlæns saltoer. Værdien er den samme. Tabellen forklarer ikke selv, om startmarkeringen ændrer identiteten ved optælling af forskellige elementer.
-
-**Spørgsmålet, vi skal have svar på:**
-
-> Skal samme forlæns salto regnes som samme element, uanset om den bruges som start eller senere i en serie? Har startmarkeringen nogen betydning for gentagelsesregler eller elementtillæg?
-
-**Betydning:** En markering i kataloget må ikke alene give et ekstra tællende element.
-
-**Kilde:** Appendix A3, side 1. Reference **A3-U01** i [kildeopslaget](07-bane-vaerdier.md).
-
 ### C-RETNING-VALG · Må én blandet baneomgang bruges til både forlæns- og baglænskravet?
 
 **Problemet:** Holdet skal have mindst én ren forlæns og én ren baglæns baneomgang. Mangler en af dem, bruges omgangen nærmest kravet, og der trækkes for hver manglende gymnast. Reglen siger ikke, om den samme blandede omgang må være nærmest begge krav.
@@ -258,7 +248,7 @@ Regelpakken `reg@1.0.0` arver ingen DK-værdier stiltiende. En DK-afklaring gæl
 | Q02 · Overslag-salto hoftebøjet 180° | Ikke relevant | REG tillader kun enkeltrotationer og på Pegasus kun mølleoverslag og overslag (H 9.3.2/10.3.2). Kontrolposter REG-B-DOBBELT-BANE og REG-T-DOBBELT. |
 | Q06 · Rækkefølgefejl | Ikke relevant | REG har hverken rækkefølgefradrag eller rækkefølgekrav for tællende spring (H 9.2/10.2). Kontrolposter REG-C-ORDEN-BANE og REG-T-ORDEN. |
 | Q05 · Holdomgang uden flertal | Arvet som åben tvivl | Samme åbne spørgsmål som i Danmarksserien. Kontrolposter REG-C-HOLD-BANE og REG-T-HOLD. |
-| H-U06, A3-U01, Q-SPOT-DUP, C-RETNING-VALG | Arvet som åben tvivl | Samme tekst og samme åbne spørgsmål; vises under **Reglement → Kendt tvivl** for REG-hold. |
+| H-U06, Q-SPOT-DUP, C-RETNING-VALG | Arvet som åben tvivl | Samme tekst og samme åbne spørgsmål; vises under **Reglement → Kendt tvivl** for REG-hold. |
 | Flow og dobbelttillæg | Ikke relevant | Findes ikke i REG's bane- og trampetkomposition. Kontrolposter REG-C-FLOW-BANE, REG-T-FLOW, REG-B-DOBBELT-BANE og REG-T-DOBBELT. |
 | REG-EXTRA-LIMIT-DERIVED · Højst seks ekstra | Afledt planlægningsgrænse | REG-afsnittene nævner ekstra gymnaster uden antal. Grænsen er afledt af TR 1.3.1 (højst 12 gymnaster) og vises i appen som afledt. |
 

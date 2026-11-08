@@ -42,7 +42,8 @@ describe('REG kendt tvivl', () => {
   it('rummer REG-punkterne og de arvede DK-punkter, men ikke afklarede eller irrelevante DK-punkter', () => {
     const ids = REG_V1.knownIssues.map((issue) => issue.id);
     expect(ids).toEqual(expect.arrayContaining(['H-U08', 'H-U11', 'A6-U02', 'REG-EXTRA-LIMIT-DERIVED', 'A1REG-U01', 'A1REG-U02', 'A1REG-U03', 'A1REG-U04', 'A1REG-U05',
-      'Q05', 'H-U06', 'A3-U01', 'Q-SPOT-DUP', 'C-RETNING-VALG']));
+      'Q05', 'H-U06', 'Q-SPOT-DUP', 'C-RETNING-VALG']));
+    expect(ids).not.toContain('A3-U01');
     for (const absent of ['Q01', 'Q02', 'Q03', 'Q04', 'Q06', 'A71-U01']) expect(ids).not.toContain(absent);
   });
 

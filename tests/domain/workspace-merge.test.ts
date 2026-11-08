@@ -582,6 +582,23 @@ describe('trevejsmotor', () => {
       expect(DK_V2.analyze(keepNew, keepNew.teams[0]!.id, 'tumbling', scenarioId).contributions.find((item) => item.id === 'B-ELEMENT')?.decision.value?.toString()).toBe('0');
     }
   });
+  it('samtidig plan og vurdering med uændret DK 1.1.0-binding bevarer fælles data', () => {
+    const { b, l, r } = fixture();
+    for (const workspace of [b, l, r]) {
+      workspace.teams[0]!.rulesetBinding.packageVersion = '1.1.0';
+      workspace.plans[0]!.bindingFingerprint = bindingFingerprint(workspace.teams[0]!.rulesetBinding);
+    }
+    l.plans[0]!.tumbling[0]!.rounds[1]!.entries[0]!.athleteSkillId = null;
+    r.athleteSkills[0]!.stability = 4;
+    for (const [left, right] of [[l, r], [r, l]] as const) {
+      const merged = valid(mergeWorkspace(b, left, right, context));
+      expect(merged.teams[0]!.rulesetBinding.packageVersion).toBe('1.1.0');
+      expect(merged.plans[0]!.bindingFingerprint).toBe(bindingFingerprint(merged.teams[0]!.rulesetBinding));
+      expect(merged.plans[0]!.tumbling[0]!.rounds[1]!.entries[0]!.athleteSkillId).toBeNull();
+      expect(merged.athleteSkills[0]!.stability).toBe(4);
+      expect(DK_V2.analyze(merged, merged.teams[0]!.id, 'tumbling', merged.plans[0]!.tumbling[0]!.id).discipline).toBe('tumbling');
+    }
+  });
   it('samtidigt skift fra DK til Regionsrækken og ændret omgang kræver ét valg uden blandet grundlag', () => {
     const { b, l, r } = fixture();
     l.teams[0]!.rulesetBinding = { rulesetId: 'reg', packageVersion: '1.0.0', ageGroup: 'junior', teamType: 'girls' };
