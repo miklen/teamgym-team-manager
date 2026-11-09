@@ -310,10 +310,20 @@ export function RoundPlannedExecution({ result }: { result: RoundEvaluation }) {
   );
 }
 
+/** Et foreløbigt tal vises kun, når en hel ambitionsomgang har kendt D. */
+export function hasAmbitionScorePotential(evaluation: DisciplineEvaluation) {
+  return evaluation.maximumScore.status === 'incomplete' && evaluation.rounds.some((round) =>
+    round.counting.length > 0 &&
+    round.counting.every((item) => item.entry.athleteId === null) &&
+    round.difficulty.value !== null,
+  );
+}
+
 /** Kort tekst for Maks. mulig karakter; ugyldig vises som ord, aldrig som tal. */
 export function maximumScoreText(evaluation: DisciplineEvaluation) {
   const { maximumScore } = evaluation;
   if (maximumScore.value) return points(maximumScore.value.panelFloor());
+  if (hasAmbitionScorePotential(evaluation)) return points(maximumScore.knownSubtotal.max(0).panelFloor());
   return maximumScore.status === 'invalid' ? 'Ugyldig' : statusText[maximumScore.status];
 }
 
@@ -342,6 +352,7 @@ export function MaximumScoreMetric({
   const { maximumScore, spotCost, invalidRoundIds } = evaluation;
   const spots = evaluation.rounds.reduce((sum, round) => sum + round.plannedExecution.count, 0);
   const invalid = maximumScore.status === 'invalid';
+  const provisional = hasAmbitionScorePotential(evaluation);
   return (
     <div className="maximum-metric">
       <div className="analysis-metric-label">
@@ -361,13 +372,13 @@ export function MaximumScoreMetric({
         </details>
       </div>
       <strong
-        className={`number-change${maximumScore.value ? '' : ' maximum-pending'}`}
+        className={`number-change${maximumScore.value || provisional ? '' : ' maximum-pending'}`}
         key={maximumScoreText(evaluation)}
       >
         {maximumScoreText(evaluation)}
       </strong>
-      <small className={!maximumScore.value && !invalid && spots === 0 ? 'maximum-status-only' : undefined}>
-        {invalid && invalidRoundIds.length ? 'Ugyldig omgang i planen' : statusText[maximumScore.status]}
+      <small className={!maximumScore.value && !provisional && !invalid && spots === 0 ? 'maximum-status-only' : undefined}>
+        {provisional ? 'Foreløbigt potentiale · C og åbne omgange kan ændre tallet' : invalid && invalidRoundIds.length ? 'Ugyldig omgang i planen' : statusText[maximumScore.status]}
         {!invalid && <span className="maximum-formula"> · C + D + E-loft</span>}
         {spots > 0 && spotCost.value ? ` · modtagning koster ${points(spotCost.value)}` : ''}
         {spots > 0 && !spotCost.value ? ' · modtagningens pris kan ikke beregnes endnu' : ''}

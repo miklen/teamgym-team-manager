@@ -2,7 +2,7 @@ import { AMBITION_ROUNDS_ISSUE } from '@teamgym/rules';
 import type { BonusPotential, CompositionGuideOverview, CompositionGuideRow, DisciplineEvaluation, RulePackage, TeamProfile } from '@teamgym/rules';
 import { extraLimitText, points, SourceLinks } from './components';
 import { RuleUncertainty } from './rule-uncertainty';
-import { maximumScoreText } from './planned-spot';
+import { hasAmbitionScorePotential, maximumScoreText } from './planned-spot';
 import './composition-guide.css';
 
 function overviewAmount(overview: CompositionGuideOverview, kind: 'bonus' | 'deduction'): string {
@@ -33,7 +33,7 @@ export function CompositionGuide({ rows, overview, maximum, profile, rulePackage
         <span className="guide-overview-title"><strong>Kompositionsguide</strong><small>{progress}</small></span>
         <span className="guide-overview-metric"><small>Tillæg</small><strong>{overviewAmount(overview, 'bonus')}</strong></span>
         <span className="guide-overview-metric"><small>Fradrag</small><strong>{overviewAmount(overview, 'deduction')}</strong></span>
-        {maximum && <span className="guide-overview-metric guide-overview-maximum"><small>Maks. mulig karakter · loft</small><strong>{maximumScoreText(maximum)}{maximum.rounds.some((round) => round.plannedExecution.count > 0) && maximum.spotCost.value && <span className="guide-overview-note"> · modtagning {points(maximum.spotCost.value)}</span>}</strong></span>}
+        {maximum && <span className="guide-overview-metric guide-overview-maximum"><small>Maks. mulig karakter · loft</small><strong>{hasAmbitionScorePotential(maximum) && 'Foreløbigt '}{maximumScoreText(maximum)}{maximum.rounds.some((round) => round.plannedExecution.count > 0) && maximum.spotCost.value && <span className="guide-overview-note"> · modtagning {points(maximum.spotCost.value)}</span>}</strong></span>}
         <span className="guide-overview-toggle">Vis detaljer <span aria-hidden="true">⌄</span></span>
       </summary>
       <div className="composition-guide-expanded">
@@ -86,11 +86,10 @@ export function CompositionGuide({ rows, overview, maximum, profile, rulePackage
       })}
       </div>)}
     </div>
-    <div className="composition-guide-note">
-      <p>Træningsmål kommer fra reglerne. Dokumenterede muligheder bygger på registreret kunnen og kan ikke lægges sammen.</p>
+    {(potentialError || !potentials) && <div className="composition-guide-note">
       {potentialError && <p role="alert">{potentialError}</p>}
       {!potentials && !potentialError && <p role="status">Beregner registrerede muligheder… Du kan redigere videre. <button className="quiet" type="button" onClick={onCancelSearch}>Afbryd søgning</button></p>}
-    </div>
+    </div>}
       </div>
     </details>
   </section>;

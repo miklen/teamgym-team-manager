@@ -199,11 +199,56 @@ test('ambition overlever duplikering og kan fjernes', async ({ page }) => {
   await round(page, 2)
     .getByRole('button', { name: /^Handlinger for ambitionen/ })
     .click();
+  const remove = round(page, 2).getByRole('menuitem', { name: /^Fjern ambitionen/ });
+  await expect(remove).toHaveCSS('background-color', 'rgba(0, 0, 0, 0)');
+  await expect(remove).toHaveCSS('color', 'rgb(161, 52, 70)');
+  await remove.hover();
+  await expect(remove).toHaveCSS('background-color', 'rgb(255, 240, 242)');
   await round(page, 2)
     .getByRole('menuitem', { name: /^Fjern ambitionen/ })
     .click();
   await expect(round(page, 2).locator('li.ambition-entry')).toHaveCount(0);
   await expect(round(page, 2).locator('.round-totals')).toContainText('Ufuldstændig');
+});
+
+test('hel ambitionsomgang viser foreløbigt karakterpotentiale', async ({ page }) => {
+  const fixture = syntheticWorkspace();
+  const plan = fixture.workspace.plans[0]!;
+  const scenario = plan.trampet[0]!;
+  const definition = jump060;
+  let workspace = fixture.workspace;
+  const registrations: string[] = [];
+  for (const athlete of workspace.athletes.slice(0, limits.counting)) {
+    const registered = registerAthleteSkill(workspace, athlete.id, definition, fixture.environment);
+    workspace = registered.workspace;
+    registrations.push(registered.athleteSkillId);
+  }
+  for (const index of [0, 2]) {
+    workspace = setRoundEntries(workspace, plan.id, 'trampet', scenario.id, scenario.rounds[index]!.id,
+      workspace.athletes.slice(0, limits.counting).map((athlete, position) => ({
+        id: fixture.environment.id(), athleteId: athlete.id, athleteSkillId: registrations[position]!, role: 'counting',
+      })), limits, fixture.environment);
+  }
+  workspace = setRoundEntries(workspace, plan.id, 'trampet', scenario.id, scenario.rounds[1]!.id, [], limits, fixture.environment);
+  for (let index = 0; index < limits.counting; index++) {
+    workspace = addAmbition(workspace, plan.id, 'trampet', scenario.id, scenario.rounds[1]!.id,
+      definition, 'counting', index, limits, fixture.environment).workspace;
+  }
+  await openWorkspace(page, workspace);
+  await trampet(page);
+  await expect(round(page, 2).locator('li.ambition-entry')).toHaveCount(limits.counting);
+  const maximum = page.locator('.maximum-metric');
+  await expect(maximum.locator('strong')).toHaveText(/^\d+,\d{3}$/);
+  await expect(maximum).toContainText('Foreløbigt potentiale');
+  await expect(page.locator('.composition-guide-overview')).toContainText(/Foreløbigt \d+,\d{3}/);
+
+  const athleteRemove = round(page, 1).getByRole('button', { name: /^Handlinger for Syntetisk gymnast/ }).first();
+  await athleteRemove.click();
+  const remove = round(page, 1).getByRole('menuitem', { name: /^Fjern Syntetisk gymnast/ }).first();
+  await expect(remove).toHaveCSS('background-color', 'rgba(0, 0, 0, 0)');
+  await expect(remove).toHaveCSS('color', 'rgb(161, 52, 70)');
+  await remove.hover();
+  await expect(remove).toHaveCSS('background-color', 'rgb(255, 240, 242)');
 });
 
 test('kendt salto–rondat–flik beder ikke om godkendelse på omgang uden gymnast', async ({ page }) => {

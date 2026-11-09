@@ -1334,13 +1334,14 @@ h3 {
   background: #edf1fe;
 }
 .entry-menu-items button.danger {
+  background: transparent;
   color: #a13446;
 }
 .entry-menu-items button.danger .icon {
   color: currentColor;
 }
-.entry-menu-items button.danger:hover:not(:disabled),
-.entry-menu-items button.danger:focus-visible {
+.entry-menu-items button.danger:not(.quiet):hover:not(:disabled),
+.entry-menu-items button.danger:not(.quiet):focus-visible {
   background: #fff0f2;
 }
 .entry-menu-items button:disabled {
