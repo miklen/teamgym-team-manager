@@ -3,7 +3,7 @@ import { setRoundReserves } from '@teamgym/domain';
 import type { Workspace } from '@teamgym/domain';
 import { openWorkspace } from './drive-fixture';
 import { scenarioWorkspace } from '../fixtures/scenario-workspace';
-import { expect, test } from './test';
+import { chooseAthlete, expect, test } from './test';
 
 function legacy(workspace: Workspace, version: number) {
   const value = structuredClone(workspace);
@@ -110,7 +110,10 @@ test('reserve til fyldt omgang er adskilt fra deltagere og kan fjernes igen', as
   await expect(region.getByRole('button', { name: '+ Tilføj plads', exact: true })).toBeDisabled();
   await region.getByRole('button', { name: '+ Tilføj reserve', exact: true }).click();
   const dialog = page.getByRole('dialog', { name: 'Tilføj reserve', exact: true });
-  await expect(dialog.getByRole('combobox', { name: 'Gymnast', exact: true })).toContainText(
+  await expect(dialog.getByRole('button', { name: 'Gymnast', exact: true })).toContainText('Hele holdet');
+  await expect(dialog.getByRole('button', { name: 'Opdater', exact: true })).toBeDisabled();
+  await chooseAthlete(dialog, 'Syntetisk reserve');
+  await expect(dialog.getByRole('button', { name: 'Gymnast', exact: true })).toContainText(
     'Syntetisk reserve',
   );
   await dialog.getByRole('button', { name: 'Opdater', exact: true }).click();
@@ -411,9 +414,7 @@ test('ændret reserveformular opdaterer kun den gamle plan før scenarieskift', 
   await page.getByRole('link', { name: 'Springplan', exact: true }).click();
   await page.locator('.reserve-edit').first().click();
   const editor = page.getByRole('dialog', { name: 'Redigér reserve', exact: true });
-  await editor
-    .getByRole('combobox', { name: 'Gymnast', exact: true })
-    .selectOption({ label: 'Syntetisk reserve · Test 9' });
+  await chooseAthlete(editor, 'Syntetisk reserve');
   await editor.getByLabel('Vis scenarie').selectOption({ label: 'Plan B' });
   await page
     .getByRole('dialog', { name: 'Gem formularændringer?', exact: true })

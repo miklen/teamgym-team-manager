@@ -1,4 +1,4 @@
-import { useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import type { RefObject } from 'react';
 import { addAmbitions, approveSharedConnection, changeAmbitionSkill, clearPlannedSpot, fillAmbition, formatStability, moveRoundFirst, newEntityId, setPlannedSpot, setRoundEntries } from '@teamgym/domain';
 import type { Round, RoundEntry, RoundEntryInput, SpringDiscipline, Workspace } from '@teamgym/domain';
@@ -22,7 +22,15 @@ import { springDirectionText, springDisplayName } from './spring-library';
 import { ScenarioBar } from './scenario-bar';
 import { useScenarioSelection } from './scenario-context';
 import { ReserveList } from './reserves';
-import { PlanDifficulty, PlanSafety, PlanSkillSelect } from './plan-skill-select';
+import {
+  PlanAthleteSelect,
+  PlanDifficulty,
+  PlanSafety,
+  PlanSkillSelect,
+  WHOLE_TEAM,
+} from './plan-skill-select';
+import type { PlanAthleteOption, PlanSkillUsage } from './plan-skill-select';
+import { roundIdentityUsage, teamSkillRows } from './spring-picker-model';
 import { RuleUncertainty } from './rule-uncertainty';
 import { repeatedStartSaltoIssue } from './start-salto-uncertainty';
 import { Icon } from './ui';
@@ -769,6 +777,7 @@ function SpringDisciplineView({
             discipline={discipline}
             rulePackage={rulePackage}
             round={entryDialog.round}
+            rounds={scenario.rounds}
             entry={entryDialog.entry}
             writable={writable}
             inspect={(id) => {
@@ -1188,6 +1197,8 @@ interface EntryFormProps {
   discipline: SpringDiscipline;
   rulePackage: RulePackage;
   round: Round;
+  /** Scenariets omgange; bruges til afledt markering af gentagelse. */
+  rounds: readonly Round[];
   entry: RoundEntryInput | undefined;
   writable: boolean;
   submit: (entry: AthleteEntry) => void;
@@ -1222,12 +1233,39 @@ export function EntryForm(props: EntryFormProps) {
     </>
   );
 }
+/** Afledt gentagelsesoplysning for en identitet; advarsel kun for tællende pladser i andre omgange. */
+function usageMarks(
+  counts: readonly number[] | undefined,
+  roundIndex: number,
+  counting: boolean,
+): PlanSkillUsage[] {
+  if (!counts) return [];
+  const times = (count: number) => `${count} ${count === 1 ? 'gang' : 'gange'}`;
+  const result: PlanSkillUsage[] = [];
+  const others = counts.flatMap((count, index) =>
+    index !== roundIndex && count > 0 ? [{ count, index }] : [],
+  );
+  if (others.length) {
+    const text = others.map((item) => `Omg. ${item.index + 1} ×${item.count}`).join(' · ');
+    const spoken = `brugt ${others.map((item) => `i omgang ${item.index + 1} ${times(item.count)}`).join(' og ')}`;
+    result.push(
+      counting
+        ? { tone: 'warning', text, spoken }
+        : { tone: 'neutral', text: `${text} · tæller ikke`, spoken: `${spoken}, tæller ikke med her` },
+    );
+  }
+  const here = counts[roundIndex] ?? 0;
+  if (here)
+    result.push({ tone: 'neutral', text: `Brugt ${here}× i omgangen`, spoken: `${times(here)} i denne omgang` });
+  return result;
+}
 function AthleteEntryForm({
   workspace,
   teamId,
   discipline,
   rulePackage,
   round,
+  rounds,
   entry,
   writable,
   submit,
@@ -1236,31 +1274,88 @@ function AthleteEntryForm({
   formRef,
   onDirty,
 }: EntryFormProps) {
+  const busy = new Set(
+    [...round.entries, ...round.reserves].flatMap((item) =>
+      item.athleteId === null ? [] : [item.athleteId],
+    ),
+  );
   const athletes = workspace.athletes.filter(
     (athlete) =>
       athlete.teamId === teamId &&
       !athlete.archived &&
-      (![...round.entries, ...round.reserves].some((item) => item.athleteId === athlete.id) ||
-        entry?.athleteId === athlete.id),
+      (!busy.has(athlete.id) || entry?.athleteId === athlete.id),
   );
-  const [athleteId, setAthleteId] = useState(
-    athletes.find((athlete) => athlete.id === entry?.athleteId)?.id ?? athletes[0]?.id ?? '',
+  const freeKey = athletes.map((athlete) => athlete.id).join(',');
+  const initialAthlete = athletes.find((athlete) => athlete.id === entry?.athleteId)?.id ?? WHOLE_TEAM;
+  const [athleteId, setAthleteId] = useState(initialAthlete);
+  const [skillId, setSkillId] = useState(
+    entry?.athleteId === initialAthlete ? (entry?.athleteSkillId ?? '') : '',
   );
-  const skills = workspace.athleteSkills.filter((registration) => {
-    const skill = workspace.skills.find((skill) => skill.id === registration.skillId);
-    return (
-      registration.athleteId === athleteId &&
-      !registration.archived &&
-      skill &&
-      !skill.archived &&
-      skill.discipline === discipline &&
-      rulePackage.evaluateSkill(skill, registration).validity === 'known'
-    );
-  });
+  const [identity, setIdentity] = useState<string | null>(null);
+  const [role, setRole] = useState<RoundEntry['role']>(entry?.role ?? 'counting');
+  const [switches, setSwitches] = useState(0);
+  const teamRows = useMemo(
+    () => teamSkillRows(workspace, teamId, discipline, rulePackage, freeKey ? freeKey.split(',') : []),
+    [workspace, teamId, discipline, rulePackage, freeKey],
+  );
+  const repetition = 'C-GENTAG' in rulePackage.springRules[discipline].sources;
+  const usage = useMemo(
+    () =>
+      repetition
+        ? roundIdentityUsage(workspace, teamId, discipline, rulePackage, rounds, entry?.id)
+        : new Map<string, number[]>(),
+    [repetition, workspace, teamId, discipline, rulePackage, rounds, entry?.id],
+  );
+  const roundIndex = rounds.findIndex((item) => item.id === round.id);
+  const counting = !reserve && role === 'counting';
+  const marks = (value: string) => usageMarks(usage.get(value), roundIndex, counting);
+  const teamMode = athleteId === WHOLE_TEAM;
+  const teamRow = identity ? teamRows.find((row) => row.identity === identity) : undefined;
+  const skills = teamMode
+    ? []
+    : workspace.athleteSkills.flatMap((registration) => {
+        const skill = workspace.skills.find((item) => item.id === registration.skillId);
+        if (registration.athleteId !== athleteId || registration.archived || !skill || skill.archived)
+          return [];
+        if (skill.discipline !== discipline) return [];
+        const evaluated = rulePackage.evaluateSkill(skill, registration);
+        return evaluated.validity === 'known' ? [{ registration, skill, evaluated }] : [];
+      });
+  const chooseAthlete = (next: string) => {
+    if (next === athleteId) return;
+    if (next === WHOLE_TEAM) {
+      setIdentity(identity && teamRows.some((row) => row.identity === identity) ? identity : null);
+      setSkillId('');
+    } else {
+      // Kun et spring valgt under Hele holdet følger med til gymnasten; ellers nulstilles springet.
+      const transfer = teamMode ? teamRow?.available.find((item) => item.athleteId === next) : undefined;
+      setSkillId(transfer?.registrationId ?? '');
+      setIdentity(transfer ? identity : null);
+    }
+    setAthleteId(next);
+    setSwitches((count) => count + 1);
+    onDirty?.();
+  };
+  const athleteName = (id: string) => workspace.athletes.find((athlete) => athlete.id === id);
+  const athleteOptions: PlanAthleteOption[] =
+    teamMode && teamRow
+      ? teamRow.available.map((item) => ({
+          id: item.athleteId,
+          name: athleteName(item.athleteId)?.name ?? '',
+          detail: athleteName(item.athleteId)?.discriminator ?? '',
+          stability: item.stability,
+        }))
+      : athletes.map((athlete) => ({
+          id: athlete.id,
+          name: athlete.name,
+          detail: athlete.discriminator ?? '',
+        }));
+  const athletesHref =
+    typeof location === 'undefined' ? '#' : location.hash.replace(/\/[^/]*$/, '/gymnaster');
   return (
     <ActionForm
       formRef={formRef}
-      disabled={!writable || !athleteId}
+      disabled={!writable || teamMode}
       submit={(data) =>
         submit({
           id: entry?.id ?? newEntityId(),
@@ -1272,48 +1367,84 @@ function AthleteEntryForm({
       }
     >
       <fieldset disabled={!writable} onChange={onDirty}>
-        <label>
-          Gymnast
-          <select value={athleteId} onChange={(event) => setAthleteId(event.target.value)}>
-            {!athletes.length && <option value="">Ingen ledige aktive gymnaster</option>}
-            {athletes.map((athlete) => (
-              <option value={athlete.id} key={athlete.id}>
-                {athlete.name}
-                {athlete.discriminator ? ` · ${athlete.discriminator}` : ''}
-              </option>
-            ))}
-          </select>
-        </label>
-        <PlanSkillSelect
-          onChange={onDirty}
-          key={athleteId}
-          initialValue={entry?.athleteId === athleteId ? (entry.athleteSkillId ?? '') : ''}
-          options={skills.map((registration) => {
-            const skill = workspace.skills.find((item) => item.id === registration.skillId)!;
-            const difficulty =
-              skill.discipline === 'rhythm'
-                ? null
-                : rulePackage.evaluateSkill(skill, registration).difficulty.value;
-            return {
+        <PlanAthleteSelect
+          value={athleteId}
+          onChange={chooseAthlete}
+          options={athleteOptions}
+          free={athletes.map((athlete) => athlete.name)}
+          placed={teamMode && teamRow ? teamRow.placed.map((id) => athleteName(id)?.name ?? '') : []}
+          skillName={teamMode && teamRow ? teamRow.name : null}
+        />
+        {teamMode ? (
+          <PlanSkillSelect
+            team
+            key={WHOLE_TEAM}
+            fade={switches > 0}
+            initialValue={identity ?? ''}
+            onChange={(value) => {
+              setIdentity(value || null);
+              onDirty?.();
+            }}
+            empty={
+              <>
+                <p>Ingen ledige gymnaster har anvendelige spring i disciplinen endnu.</p>
+                <a href={athletesHref}>Registrér færdigheder under Gymnaster</a>
+              </>
+            }
+            options={teamRows.map((row) => ({
+              id: row.identity,
+              name: row.name,
+              direction: row.direction,
+              difficulty: row.difficulty ? points(row.difficulty) : null,
+              stability: null,
+              team: {
+                free: row.available.map((item) => athleteName(item.athleteId)?.name ?? ''),
+                placed: row.placed.map((id) => athleteName(id)?.name ?? ''),
+              },
+              search: row.names.join(' '),
+              usage: marks(row.identity),
+            }))}
+          />
+        ) : (
+          <PlanSkillSelect
+            key={athleteId}
+            fade={switches > 0}
+            initialValue={skillId}
+            onChange={(value) => {
+              setSkillId(value);
+              setIdentity(skills.find((item) => item.registration.id === value)?.evaluated.identity ?? null);
+              onDirty?.();
+            }}
+            options={skills.map(({ registration, skill, evaluated }) => ({
               id: registration.id,
               name: springDisplayName(skill, rulePackage),
               direction: springDirectionText(skill),
-              difficulty: difficulty ? points(difficulty) : null,
+              difficulty: evaluated.difficulty.value ? points(evaluated.difficulty.value) : null,
               stability: registration.stability,
-            };
-          })}
-        />
+              usage: marks(evaluated.identity),
+            }))}
+          />
+        )}
         {!reserve && (
           <label>
             Rolle
-            <select name="role" defaultValue={entry?.role ?? 'counting'}>
+            <select
+              name="role"
+              value={role}
+              onChange={(event) => setRole(event.target.value === 'extra' ? 'extra' : 'counting')}
+            >
               <option value="counting">Tællende</option>
               <option value="extra">Ekstra · først · indgår ikke i D/C/stabilitet</option>
             </select>
           </label>
         )}
       </fieldset>
-      <button type="button" className="quiet" disabled={!athleteId} onClick={() => inspect(athleteId)}>
+      {teamMode && writable && (
+        <p className="plan-team-hint" role="status">
+          Vælg en gymnast for at gemme pladsen.
+        </p>
+      )}
+      <button type="button" className="quiet" disabled={teamMode} onClick={() => inspect(athleteId)}>
         Åbn gymnastens færdigheder
       </button>
       <p className="muted">

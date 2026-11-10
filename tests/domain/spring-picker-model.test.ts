@@ -4,13 +4,17 @@ import {
   createWorkspace,
   registerAthleteSkill,
   setArchived,
+  setOwnAssessment,
   skillIdentity,
 } from '@teamgym/domain';
+import type { Round, Workspace } from '@teamgym/domain';
 import { DK_V1 } from '@teamgym/rules';
 import { matchesSpring, springLibrary, springRegistrationPlan } from '../../apps/web/src/spring-library';
 import {
+  roundIdentityUsage,
   springPickerRows,
   sortByTeamKnown,
+  teamSkillRows,
   teamSpringCounts,
 } from '../../apps/web/src/spring-picker-model';
 import { syntheticWorkspace } from '../fixtures/synthetic-workspace';
@@ -154,4 +158,94 @@ it('holdkendte spring står efter valgte og før øvrige; andre hold og arkivere
   );
   // Afledt: arbejdsrummet ændres ikke.
   expect(workspace.skills.some((skill) => 'teamCount' in skill)).toBe(false);
+});
+
+function teamFixture() {
+  const fixture = syntheticWorkspace();
+  let workspace = fixture.workspace;
+  const [, , a, b, c, d, e] = workspace.athletes;
+  for (const [athlete, stability] of [[a!, 4], [b!, 2], [c!, null], [d!, 3]] as const) {
+    const added = registerAthleteSkill(workspace, athlete.id, full);
+    workspace = stability
+      ? setOwnAssessment(added.workspace, added.athleteSkillId, { stability, assessedAt: '2026-10-25', note: '' })
+      : added.workspace;
+  }
+  // c og d har afledte registreringer; de tæller som egne.
+  const derived = new Set([c!.id, d!.id]);
+  workspace = {
+    ...workspace,
+    athleteSkills: workspace.athleteSkills.map((item) =>
+      derived.has(item.athleteId) && workspace.skills.find((skill) => skill.id === item.skillId)?.name === full.name
+        ? { ...item, assessmentOrigin: { kind: 'inherited' as const, sourceId: null, sourceChoice: null } }
+        : item,
+    ),
+  };
+  workspace = registerAthleteSkill(workspace, e!.id, half).workspace;
+  return { ...fixture, workspace, a: a!, b: b!, c: c!, d: d!, e: e! };
+}
+
+it('holdets spring: én række pr. identitet, ledige med bedste registrering og antal placerede', () => {
+  const { workspace, teamA, a, b, c, d, e } = teamFixture();
+  const free = [a.id, b.id, c.id, e.id];
+  const rows = teamSkillRows(workspace, teamA.id, 'tumbling', DK_V1, free);
+  expect(new Set(rows.map((row) => row.identity)).size).toBe(rows.length);
+  const fullIdentity = DK_V1.evaluateSkill(full).identity;
+  const row = rows.find((item) => item.identity === fullIdentity)!;
+  expect(row.available.map((item) => item.athleteId)).toEqual([a.id, b.id, c.id]);
+  expect(row.available.map((item) => item.stability)).toEqual([4, 2, null]);
+  expect(row.placed).toEqual([d.id]);
+  expect(row.difficulty?.toString()).toBe(DK_V1.evaluateSkill(full).difficulty.value?.toString());
+  // Flest ledige først: den syntetiske baneserie (4) før rondat-serien (3).
+  expect(rows.slice(0, 2).map((item) => item.available.length)).toEqual([4, 3]);
+  expect(rows[1]!.identity).toBe(fullIdentity);
+  // Den syntetiske baneserie kan alle otte; kun ledige tæller.
+  const synthetic = rows.find((item) => item.identity === DK_V1.evaluateSkill(workspace.skills.find((skill) => skill.id === 'skill-tumbling') as typeof full).identity)!;
+  expect(synthetic.available).toHaveLength(4);
+  expect(synthetic.placed).toHaveLength(4);
+  // Spring uden ledige gymnaster udelades.
+  const none = teamSkillRows(workspace, teamA.id, 'tumbling', DK_V1, [e.id, d.id].filter((id) => id !== d.id));
+  expect(none.some((item) => item.identity === fullIdentity)).toBe(false);
+  expect(none.find((item) => item.identity === DK_V1.evaluateSkill(half).identity)?.available).toHaveLength(1);
+  expect(teamSkillRows(workspace, teamA.id, 'trampet', DK_V1, free).every((item) => item.identity !== fullIdentity)).toBe(true);
+  // Bedste registrering pr. gymnast ved flere registreringer af samme identitet.
+  const second = registerAthleteSkill(workspace, b.id, { ...full, id: 'skill-full-copy', name: 'Syntetisk kopi' });
+  const twice = teamSkillRows(second.workspace, teamA.id, 'tumbling', DK_V1, free).find((item) => item.identity === fullIdentity)!;
+  expect(twice.available.filter((item) => item.athleteId === b.id)).toHaveLength(1);
+});
+
+function round(entries: Round['entries']): Pick<Round, 'entries'> {
+  return { entries };
+}
+
+it('brug pr. omgang følger C-GENTAG og udelader ekstra, reserver og den redigerede plads', () => {
+  const { workspace, teamA, a, b, c } = teamFixture();
+  const registration = (athleteId: string) =>
+    workspace.athleteSkills.find(
+      (item) => item.athleteId === athleteId && workspace.skills.find((skill) => skill.id === item.skillId)?.discipline === 'tumbling' && DK_V1.evaluateSkill(workspace.skills.find((skill) => skill.id === item.skillId) as typeof full).identity === DK_V1.evaluateSkill(full).identity,
+    )!.id;
+  const fullSkillId = workspace.athleteSkills.find((item) => item.id === registration(a.id))!.skillId;
+  const entry = (id: string, athleteId: string | null, role: 'counting' | 'extra' = 'counting') => ({
+    id,
+    athleteId,
+    athleteSkillId: athleteId ? registration(athleteId) : null,
+    role,
+    plannedSpot: null,
+    plannedSkillId: athleteId ? null : fullSkillId,
+  });
+  const rounds = [
+    round([]),
+    round([entry('e1', a.id), entry('e2', b.id), entry('ambition', null), entry('extra', c.id, 'extra')]),
+    round([entry('e3', c.id)]),
+  ];
+  const identity = DK_V1.evaluateSkill(full).identity;
+  const usage = roundIdentityUsage(workspace, teamA.id, 'tumbling', DK_V1, rounds);
+  expect(usage.get(identity)).toEqual([0, 3, 1]);
+  expect(roundIdentityUsage(workspace, teamA.id, 'tumbling', DK_V1, rounds, 'e3').get(identity)).toEqual([0, 3, 0]);
+  const withoutAmbition = rounds.map((item) => round(item.entries.filter((entry) => entry.athleteId !== null)));
+  expect(roundIdentityUsage(workspace, teamA.id, 'tumbling', DK_V1, withoutAmbition).get(identity)).toEqual([0, 2, 1]);
+  // Reserver indgår ikke i omgangens pladser.
+  const reserves = [round([]), round([]), round([])].map((item) => ({ ...item, reserves: [{ id: 'r', athleteId: a.id, athleteSkillId: registration(a.id) }] }));
+  expect(roundIdentityUsage(workspace, teamA.id, 'tumbling', DK_V1, reserves).size).toBe(0);
+  // Afledt: arbejdsrummet ændres ikke.
+  expect((workspace as Workspace).plans).toEqual(teamFixture().workspace.plans);
 });

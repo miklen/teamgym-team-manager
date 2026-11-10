@@ -353,6 +353,12 @@ test.describe('200 % visning med 720 CSS-pixels på 1440 fysiske pixels', () => 
     await reserves.getByRole('button', { name: '+ Tilføj reserve', exact: true }).focus();
     await page.keyboard.press('Enter');
     const editor = page.getByRole('dialog', { name: 'Tilføj reserve', exact: true });
+    // Gymnastfeltet åbner på Hele holdet; første gymnast vælges med tastaturet.
+    await editor.getByRole('button', { name: 'Gymnast', exact: true }).focus();
+    await page.keyboard.press('ArrowDown');
+    await page.keyboard.press('ArrowDown');
+    await page.keyboard.press('Enter');
+    await expect(editor.getByRole('button', { name: 'Gymnast', exact: true })).toContainText('Syntetisk reserve');
     await editor.getByRole('button', { name: 'Opdater', exact: true }).focus();
     await page.keyboard.press('Enter');
     await reserves.getByRole('button', { name: /^Flyt Syntetisk reserve.* op som reserve$/ }).focus();

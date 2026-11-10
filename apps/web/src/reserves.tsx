@@ -303,6 +303,7 @@ export function ReserveList({
             discipline={discipline}
             rulePackage={rulePackage}
             round={round}
+            rounds={scenario.rounds}
             entry={editing.entry ? { ...editing.entry, role: 'counting' } : undefined}
             writable={writable}
             inspect={(id) => leave(() => setAthleteId(id))}

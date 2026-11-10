@@ -1,4 +1,5 @@
 import { test as base, expect } from '@playwright/test';
+import type { Locator, Page } from '@playwright/test';
 
 interface GoogleMock {
   failLoads: number;
@@ -61,3 +62,10 @@ export const test = base.extend<{ googleMock: GoogleMock }>({
   },
 });
 export { expect };
+
+/** Vælg en gymnast i pladsens gymnastfelt; nye pladser starter på Hele holdet. */
+export async function chooseAthlete(scope: Page | Locator, name: string) {
+  await scope.getByRole('button', { name: 'Gymnast', exact: true }).click();
+  const escaped = name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  await scope.getByRole('option', { name: new RegExp(`^${escaped}(,|$)`) }).click();
+}

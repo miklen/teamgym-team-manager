@@ -1,4 +1,4 @@
-import { expect, test } from './test';
+import { chooseAthlete, expect, test } from './test';
 import { createWorkspace } from '@teamgym/domain';
 import { openWorkspace, twentyAthletes } from './drive-fixture';
 
@@ -39,7 +39,10 @@ test('seks omgange, hurtig vurdering, bevidst sortering og gem/genåbn', async (
   await page.getByRole('link', { name: 'Springplan' }).click();
   await expect(page.getByRole('heading', { name: 'Springplan', exact: true })).toBeVisible();
   await expect(page.getByText('4,3/5', { exact: true })).toHaveCount(3);
-  await page.getByRole('button', { name: /^Handlinger for / }).first().click();
+  await page
+    .getByRole('button', { name: /^Handlinger for / })
+    .first()
+    .click();
   await page.getByRole('menuitem', { name: 'Vurdering', exact: true }).click();
   await page.getByRole('radio', { name: '5', exact: true }).check();
   await page.getByRole('button', { name: 'Opdatér vurdering' }).click();
@@ -52,8 +55,12 @@ test('seks omgange, hurtig vurdering, bevidst sortering og gem/genåbn', async (
   await expect(page.getByRole('button', { name: 'Gemt', exact: true })).toBeVisible();
   await page.reload();
   await expect(page.getByRole('heading', { name: 'Springplan', exact: true })).toBeVisible();
-  expect(source.workspace.plans[0]!.tumbling[0]!.rounds.every((round) => round.entries.length === 6)).toBe(true);
-  expect(source.workspace.plans[0]!.trampet[0]!.rounds.every((round) => round.entries.length === 6)).toBe(true);
+  expect(source.workspace.plans[0]!.tumbling[0]!.rounds.every((round) => round.entries.length === 6)).toBe(
+    true,
+  );
+  expect(source.workspace.plans[0]!.trampet[0]!.rounds.every((round) => round.entries.length === 6)).toBe(
+    true,
+  );
   expect(source.failures).toEqual([]);
 });
 
@@ -117,13 +124,11 @@ test('to ekstra først bevarer tællende stabilitet, og niende plads er utilgæn
   await page.getByRole('link', { name: 'Springplan' }).click();
   for (let index = 0; index < 2; index++) {
     await page.getByRole('button', { name: '+ Tilføj plads' }).first().click();
+    await chooseAthlete(page, `Syntetisk gymnast ${7 + index}`);
     await page.getByRole('combobox', { name: 'Rolle', exact: true }).selectOption('extra');
     await page.getByRole('button', { name: 'Spring', exact: true }).click();
     await page
-      .getByRole('option', {
-        name: 'Syntetisk baneserie, Salto: baglæns, D 0,500, sikkerhed 5/5',
-        exact: true,
-      })
+      .getByRole('option', { name: /^Syntetisk baneserie, Salto: baglæns, D 0,500, sikkerhed 5\/5(,|$)/ })
       .click();
     await page.getByRole('button', { name: 'Opdater' }).click();
   }

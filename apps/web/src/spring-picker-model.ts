@@ -1,8 +1,171 @@
 import { Fraction, skillIdentity } from '@teamgym/domain';
-import type { Workspace } from '@teamgym/domain';
+import type { Round, SkillDefinition, SpringDiscipline, Stability, Workspace } from '@teamgym/domain';
 import type { RulePackage } from '@teamgym/rules';
 import type { PlannedSpring, SpringChoice, SpringDefinition } from './spring-library';
-import { matchesSpring, springSearchRank } from './spring-library';
+import { matchesSpring, springDirectionText, springDisplayName, springSearchRank } from './spring-library';
+
+type SpringSkill = Exclude<SkillDefinition, { discipline: 'rhythm' }>;
+
+export interface TeamSkillAthlete {
+  athleteId: string;
+  /** Gymnastens bedste anvendelige registrering af identiteten. */
+  registrationId: string;
+  stability: Stability | null;
+}
+
+export interface TeamSkillRow {
+  identity: string;
+  name: string;
+  /** Alle visningsnavne i identitetsgruppen, så søgning rammer enhver registrering. */
+  names: string[];
+  direction: string;
+  difficulty: Fraction | null;
+  /** Ledige gymnaster med springet; højeste sikkerhed først. */
+  available: TeamSkillAthlete[];
+  /** Gymnaster (id), der kan springet, men allerede står i omgangen; alfabetisk. */
+  placed: string[];
+}
+
+const stabilityRank = (value: Stability | null) => value ?? 0;
+
+/**
+ * Holdets anvendelige spring i disciplinen, én række pr. regelidentitet.
+ * Samme filter som gymnastens liste; kun spring med mindst én ledig gymnast. Afledt og gemmes aldrig.
+ */
+export function teamSkillRows(
+  workspace: Pick<Workspace, 'athletes' | 'athleteSkills' | 'skills'>,
+  teamId: string,
+  discipline: SpringDiscipline,
+  rulePackage: RulePackage,
+  availableAthleteIds: Iterable<string>,
+): TeamSkillRow[] {
+  const available = new Set(availableAthleteIds);
+  const athletes = new Map(
+    workspace.athletes
+      .filter((athlete) => athlete.teamId === teamId && !athlete.archived)
+      .map((athlete) => [athlete.id, athlete]),
+  );
+  const skills = new Map(workspace.skills.map((skill) => [skill.id, skill]));
+  const groups = new Map<
+    string,
+    {
+      skill: SpringSkill;
+      difficulty: Fraction | null;
+      names: Set<string>;
+      best: Map<string, TeamSkillAthlete>;
+    }
+  >();
+  for (const registration of workspace.athleteSkills) {
+    const skill = skills.get(registration.skillId);
+    if (registration.archived || !athletes.has(registration.athleteId) || !skill || skill.archived) continue;
+    if (skill.discipline !== discipline) continue;
+    const evaluated = rulePackage.evaluateSkill(skill, registration);
+    if (evaluated.validity !== 'known') continue;
+    const group = groups.get(evaluated.identity) ?? {
+      skill,
+      difficulty: evaluated.difficulty.value,
+      names: new Set<string>(),
+      best: new Map<string, TeamSkillAthlete>(),
+    };
+    groups.set(evaluated.identity, group);
+    group.names.add(springDisplayName(skill, rulePackage));
+    const previous = group.best.get(registration.athleteId);
+    // Ved lige sikkerhed vinder den første registrering.
+    if (!previous || stabilityRank(registration.stability) > stabilityRank(previous.stability))
+      group.best.set(registration.athleteId, {
+        athleteId: registration.athleteId,
+        registrationId: registration.id,
+        stability: registration.stability,
+      });
+  }
+  const name = (id: string) => athletes.get(id)?.name ?? '';
+  const rows: TeamSkillRow[] = [];
+  for (const [identity, group] of groups) {
+    const all = [...group.best.values()];
+    const free = all
+      .filter((item) => available.has(item.athleteId))
+      .sort(
+        (a, b) =>
+          stabilityRank(b.stability) - stabilityRank(a.stability) ||
+          name(a.athleteId).localeCompare(name(b.athleteId), 'da'),
+      );
+    if (!free.length) continue;
+    const names = [...group.names];
+    rows.push({
+      identity,
+      name: names[0]!,
+      names,
+      direction: springDirectionText(group.skill),
+      difficulty: group.difficulty,
+      available: free,
+      placed: all
+        .filter((item) => !available.has(item.athleteId))
+        .map((item) => item.athleteId)
+        .sort((a, b) => name(a).localeCompare(name(b), 'da')),
+    });
+  }
+  return rows.sort(
+    (a, b) =>
+      b.available.length - a.available.length ||
+      (b.difficulty && a.difficulty
+        ? b.difficulty.compare(a.difficulty)
+        : (b.difficulty ? 1 : 0) - (a.difficulty ? 1 : 0)) ||
+      a.name.localeCompare(b.name, 'da'),
+  );
+}
+
+/**
+ * Tællende pladser pr. regelidentitet og omgang (indeks i `rounds`) på samme grundlag som C-GENTAG:
+ * tællende, tilgængelig og kendt gyldighed. Ambitioner tæller via deres planlagte spring.
+ * Den redigerede plads, ekstra pladser og reserver udelades. Afledt og gemmes aldrig.
+ */
+export function roundIdentityUsage(
+  workspace: Pick<Workspace, 'athletes' | 'athleteSkills' | 'skills'>,
+  teamId: string,
+  discipline: SpringDiscipline,
+  rulePackage: Pick<RulePackage, 'evaluateSkill'>,
+  rounds: readonly Pick<Round, 'entries'>[],
+  editingEntryId?: string,
+): Map<string, number[]> {
+  const athletes = new Map(workspace.athletes.map((athlete) => [athlete.id, athlete]));
+  const registrations = new Map(
+    workspace.athleteSkills.map((registration) => [registration.id, registration]),
+  );
+  const skills = new Map(workspace.skills.map((skill) => [skill.id, skill]));
+  const usage = new Map<string, number[]>();
+  rounds.forEach((round, index) => {
+    for (const entry of round.entries) {
+      if (entry.role !== 'counting' || entry.id === editingEntryId) continue;
+      let identity: string | null = null;
+      if (entry.athleteId === null) {
+        const skill = entry.plannedSkillId ? skills.get(entry.plannedSkillId) : undefined;
+        if (!skill || skill.archived || skill.discipline !== discipline) continue;
+        const evaluated = rulePackage.evaluateSkill(skill);
+        if (evaluated.validity === 'known') identity = evaluated.identity;
+      } else {
+        const athlete = athletes.get(entry.athleteId);
+        const registration = entry.athleteSkillId ? registrations.get(entry.athleteSkillId) : undefined;
+        const skill = registration ? skills.get(registration.skillId) : undefined;
+        if (
+          !athlete ||
+          athlete.archived ||
+          athlete.teamId !== teamId ||
+          !registration ||
+          registration.archived
+        )
+          continue;
+        if (!skill || skill.archived || skill.discipline !== discipline) continue;
+        const evaluated = rulePackage.evaluateSkill(skill, registration);
+        if (evaluated.validity === 'known') identity = evaluated.identity;
+      }
+      if (!identity) continue;
+      const counts = usage.get(identity) ?? rounds.map(() => 0);
+      counts[index]! += 1;
+      usage.set(identity, counts);
+    }
+  });
+  return usage;
+}
 import { listedSpring, matchesChain } from './spring-chain-model';
 import type { ChainState } from './spring-chain-model';
 

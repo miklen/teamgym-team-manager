@@ -2,7 +2,7 @@ import AxeBuilder from '@axe-core/playwright';
 import { createAthlete, registerAthleteSkill, setOwnAssessment } from '@teamgym/domain';
 import { overviewWorkspace, overviewFull, overviewHard } from '../fixtures/overview-workspace';
 import { openWorkspace } from './drive-fixture';
-import { expect, test } from './test';
+import { chooseAthlete, expect, test } from './test';
 
 function optionsWorkspace() {
   let workspace = overviewWorkspace(0);
@@ -39,6 +39,7 @@ for (const width of [1440, 390]) {
     await expect(page.getByRole('heading', { name: 'Hold', exact: true })).toBeVisible();
     await page.getByRole('link', { name: 'Springplan', exact: true }).click();
     await page.getByRole('button', { name: '+ Tilføj plads', exact: true }).first().click();
+    await chooseAthlete(page, 'Alma Eksempel');
     const trigger = page.getByRole('button', { name: 'Spring', exact: true });
     await trigger.focus();
     await page.keyboard.press('ArrowDown');
@@ -111,10 +112,11 @@ test('springvalget nulstilles ved skift af gymnast og bevarer kladden ved luknin
   await expect(page.getByRole('heading', { name: 'Hold', exact: true })).toBeVisible();
   await page.getByRole('link', { name: 'Springplan', exact: true }).click();
   await page.getByRole('button', { name: '+ Tilføj plads', exact: true }).first().click();
+  await chooseAthlete(page, 'Alma Eksempel');
   const trigger = page.getByRole('button', { name: 'Spring', exact: true });
   await trigger.click();
   await page.getByRole('option', { name: /1\/1.*D 0,800/ }).click();
-  await page.getByRole('combobox', { name: 'Gymnast', exact: true }).selectOption({ label: 'Bea Eksempel' });
+  await chooseAthlete(page, 'Bea Eksempel');
   await expect(trigger).toContainText('Vælg spring');
   await trigger.click();
   await expect(page.getByRole('listbox').getByRole('option')).toHaveCount(2);
@@ -135,6 +137,7 @@ test('et stort repertoire kan søges uden at forveksle flere ens afslutninger', 
   await expect(page.getByRole('heading', { name: 'Hold', exact: true })).toBeVisible();
   await page.getByRole('link', { name: 'Springplan', exact: true }).click();
   await page.getByRole('button', { name: '+ Tilføj plads', exact: true }).first().click();
+  await chooseAthlete(page, 'Alma Eksempel');
   const trigger = page.getByRole('button', { name: 'Spring', exact: true });
   await trigger.click();
   const search = page.getByRole('combobox', { name: 'Søg registrerede spring' });
@@ -147,5 +150,83 @@ test('et stort repertoire kan søges uden at forveksle flere ens afslutninger', 
   await expect(trigger).toContainText('16 ×');
   await page.getByRole('button', { name: 'Opdater', exact: true }).click();
   await expect(page.locator('.round-entries > li').first()).toContainText('16 ×');
+  expect(source.failures).toEqual([]);
+});
+
+test('Hele holdet viser holdets spring, indsnævrer gymnaster og markerer gentagelse', async ({ page }) => {
+  const source = await openWorkspace(page, optionsWorkspace());
+  await expect(page.getByRole('heading', { name: 'Hold', exact: true })).toBeVisible();
+  await page.getByRole('link', { name: 'Springplan', exact: true }).click();
+  const roundOne = page.getByRole('region', { name: '1. omgang', exact: true });
+  await roundOne.getByRole('button', { name: '+ Tilføj plads', exact: true }).click();
+  const athlete = page.getByRole('button', { name: 'Gymnast', exact: true });
+  const trigger = page.getByRole('button', { name: 'Spring', exact: true });
+  const update = page.getByRole('button', { name: 'Opdater', exact: true });
+  await expect(athlete).toContainText('Hele holdet');
+  await expect(athlete).toContainText('2 ledige gymnaster');
+  await expect(update).toBeDisabled();
+  await expect(page.getByText('Vælg en gymnast for at gemme pladsen.')).toBeVisible();
+
+  await trigger.click();
+  await expect(page.getByRole('combobox', { name: 'Søg i holdets spring' })).toBeFocused();
+  const hard = page.getByRole('option', { name: /2\/1.*D 1,000.*2 gymnaster kan/ });
+  await expect(hard).toBeVisible();
+  await expect(page.getByRole('option', { name: /1\/1.*D 0,800.*1 gymnast kan/ })).toBeVisible();
+  await hard.click();
+  await expect(update).toBeDisabled();
+
+  await athlete.click();
+  const listbox = page.getByRole('listbox', { name: 'Gymnast' });
+  await expect(listbox.getByRole('option')).toHaveCount(3);
+  await expect(page.getByRole('option', { name: /^Hele holdet, 2 gymnaster kan$/ })).toBeVisible();
+  await expect(page.getByRole('option', { name: /^Alma Eksempel,.*sikkerhed 2\/5/ })).toBeVisible();
+  await page.getByRole('option', { name: /^Alma Eksempel(,|$)/ }).click();
+  await expect(trigger).toContainText('2/1');
+  await expect(trigger).toContainText('2/5');
+  await chooseAthlete(page, 'Hele holdet');
+  await expect(trigger).toContainText('2/1');
+  await chooseAthlete(page, 'Alma Eksempel');
+  await expect(update).toBeEnabled();
+  await update.click();
+
+  await roundOne.getByRole('button', { name: '+ Tilføj plads', exact: true }).click();
+  await trigger.click();
+  await page
+    .getByRole('option', { name: /2\/1.*2 gymnaster kan, 1 ledig, 1 står allerede i omgangen/ })
+    .click();
+  await athlete.click();
+  await expect(page.getByText('kan også springet, men står allerede i omgangen.')).toContainText(
+    'Alma Eksempel',
+  );
+  await expect(listbox.getByRole('option')).toHaveCount(2);
+  await page.keyboard.press('Escape');
+  await page.getByRole('button', { name: 'Luk dialog', exact: true }).click();
+  await page.getByRole('button', { name: 'Kassér', exact: true }).click();
+
+  const roundTwo = page.getByRole('region', { name: '2. omgang', exact: true });
+  await roundTwo.getByRole('button', { name: '+ Tilføj plads', exact: true }).click();
+  await trigger.click();
+  const repeated = page.getByRole('option', { name: /2\/1.*brugt i omgang 1 1 gang/ });
+  await expect(repeated).toBeVisible();
+  await expect(repeated.locator('.plan-usage.is-warning')).toContainText('Omg. 1 ×1');
+  await page.keyboard.press('Escape');
+  await page.getByRole('combobox', { name: 'Rolle', exact: true }).selectOption('extra');
+  await trigger.click();
+  await expect(page.getByRole('option', { name: /2\/1.*tæller ikke med her/ })).toContainText(
+    'Omg. 1 ×1 · tæller ikke',
+  );
+  await page.keyboard.press('Escape');
+  await page.getByRole('button', { name: 'Luk dialog', exact: true }).click();
+  await page.getByRole('button', { name: 'Kassér', exact: true }).click();
+  await expect(page.getByRole('dialog')).toHaveCount(0);
+
+  await page.getByRole('button', { name: /Lokale ændringer/ }).click();
+  await expect(page.getByRole('button', { name: 'Gemt', exact: true })).toBeVisible();
+  const [entry] = source.workspace.plans[0]!.tumbling[0]!.rounds[0].entries;
+  const alma = source.workspace.athletes[0]!.id;
+  expect(entry!.athleteId).toBe(alma);
+  const registration = source.workspace.athleteSkills.find((item) => item.id === entry!.athleteSkillId);
+  expect(registration?.athleteId).toBe(alma);
+  expect(source.workspace.plans[0]!.tumbling[0]!.rounds[1].entries).toHaveLength(0);
   expect(source.failures).toEqual([]);
 });
