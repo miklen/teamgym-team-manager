@@ -105,6 +105,11 @@ for (const width of [1440, 390]) {
 
     const dialog = await createAmbition(page);
     const result = dialog.locator('.ambition-picker-row').first();
+    await expect(result.locator('.ambition-picker-count')).toHaveText('0 kan springet');
+    await expect(result).not.toContainText('Ingen gymnast');
+    await dialog.getByRole('searchbox', { name: 'Søg sammensat spring eller alias' }).fill('strakt salto 540');
+    await expect(dialog.locator('.ambition-picker-row').first().locator('.ambition-picker-count')).toHaveText('5 kan springet');
+    await dialog.getByRole('searchbox', { name: 'Søg sammensat spring eller alias' }).fill('strakt salto 900');
     await expect(result).toHaveCSS('color', 'rgb(24, 36, 61)');
     expect((await result.boundingBox())!.height).toBeLessThan(72);
     await result.hover();
@@ -112,6 +117,8 @@ for (const width of [1440, 390]) {
     await shot(page, `katalog-${width}`);
     expect(await noOverflow(page)).toBe(true);
     await dialog.getByRole('button', { name: /^Vælg Syntetisk strakt 900/ }).first().click();
+    await expect(dialog.locator('.ambition-picker-selected .ambition-picker-count')).toHaveText('0 kan springet');
+    await expect(dialog.locator('.ambition-picker-selected')).not.toContainText('Ingen gymnast');
     await dialog.getByRole('button', { name: 'Opdater', exact: true }).click();
     await expect(page.getByRole('dialog')).toHaveCount(0);
 
@@ -320,7 +327,7 @@ for (const width of [390, 1440]) {
       const dialog = page.getByRole('dialog');
       await dialog.getByRole('radio', { name: 'Ingen gymnast endnu' }).check();
       await dialog.getByRole('searchbox', { name: 'Søg sammensat spring eller alias' }).fill(name);
-      await dialog.getByRole('button', { name: `Vælg ${name}`, exact: true }).click();
+      await dialog.getByRole('button', { name: new RegExp(`^Vælg ${name}, \\d+ gymnaster? kan springet$`) }).click();
       await dialog.getByRole('combobox', { name: 'Antal nye pladser' }).selectOption('3');
       await expect(dialog.locator('.ambition-count-preview')).toContainText('3 tællende pladser');
       expect(await dialog.evaluate((element) => element.scrollWidth <= element.clientWidth)).toBe(true);
@@ -398,7 +405,7 @@ test('ambition bevarer valgt spring ved filter og annullerer Byg videre', async 
   const picker = dialog.getByRole('region', { name: 'Find spring til ambition' });
   await picker.getByRole('searchbox', { name: 'Søg sammensat spring eller alias' }).fill('strakt rondat');
   await expect(picker.locator('.ambition-picker-row').first()).toContainText('Strakt salto – rondat');
-  await picker.getByRole('button', { name: /^Vælg Strakt salto – rondat$/ }).click();
+  await picker.getByRole('button', { name: /^Vælg Strakt salto – rondat, \d+ gymnaster? kan springet$/ }).click();
   await picker.getByRole('searchbox', { name: 'Søg sammensat spring eller alias' }).fill('syntetisk intet match');
   await expect(picker.locator('.ambition-picker-selected')).toContainText('Strakt salto – rondat');
   await picker.getByRole('button', { name: 'Nulstil filtre' }).click();

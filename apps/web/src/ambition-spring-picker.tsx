@@ -5,10 +5,10 @@ import type { RulePackage } from '@teamgym/rules';
 import { SpringChain } from './spring-chain';
 import { EMPTY_CHAIN, chainIsEmpty, chainPrefill, listedSpring } from './spring-chain-model';
 import type { ChainSlot, ChainState } from './spring-chain-model';
-import { filterSpringChoices, springPickerRows, teamSpringCounts } from './spring-picker-model';
+import { filterSpringChoices, springPickerRows, teamUsableSpringCounts } from './spring-picker-model';
 import { springDirectionText, springDisplayName, springLibrary } from './spring-library';
 import type { SpringDefinition } from './spring-library';
-import { PlanDifficulty, PlanNoAthlete } from './plan-skill-select';
+import { PlanDifficulty } from './plan-skill-select';
 import { points } from './components';
 
 /** Samme katalog, kædefilter, D-filter og rangering som gymnastens vælger, uden personlig vurdering. */
@@ -30,11 +30,13 @@ export function AmbitionSpringPicker({ workspace, rulePackage, discipline, teamI
   const library = useMemo(() => springLibrary(rulePackage, workspace).filter((item) => item.definition.discipline === discipline && listedSpring(item)), [rulePackage, workspace, discipline]);
   const prechain = filterSpringChoices(library, discipline, query, EMPTY_CHAIN, minimum, unknown, rulePackage);
   const choices = filterSpringChoices(library, discipline, query, chain, minimum, unknown, rulePackage);
-  const counts = useMemo(() => teamSpringCounts(workspace, teamId), [workspace, teamId]);
-  const rows = springPickerRows(library, choices, [], query, counts);
+  const counts = useMemo(() => teamUsableSpringCounts(workspace, teamId, rulePackage), [workspace, teamId, rulePackage]);
+  const rowCounts = new Map(library.map((choice) => [skillIdentity(choice.definition), counts.get(rulePackage.evaluateSkill(choice.definition).identity) ?? 0]));
+  const rows = springPickerRows(library, choices, [], query, rowCounts);
   const prefill = chainPrefill(library.map((item) => item.definition), chain);
   const preview = selected?.discipline === 'tumbling' && approvalNote ? { ...selected, sharedConnectionApproval: { executionIdentity: skillIdentity(selected), approvedAt: new Date().toISOString(), note: approvalNote } } : selected;
   const selectionEvaluation = preview ? rulePackage.evaluateSkill(preview) : null;
+  const selectedCapable = selectionEvaluation ? counts.get(selectionEvaluation.identity) ?? 0 : 0;
   const reset = () => { setQuery(''); setMinimum(''); setUnknown(false); setChain(EMPTY_CHAIN); setActive(0); };
   return (
     <section className="ambition-picker" aria-label="Find spring til ambition">
@@ -61,7 +63,7 @@ export function AmbitionSpringPicker({ workspace, rulePackage, discipline, teamI
         <strong>{springDisplayName(selected, rulePackage)}</strong>
         <span>{springDirectionText(selected)}</span>
         <PlanDifficulty value={selectionEvaluation?.difficulty.value ? points(selectionEvaluation.difficulty.value) : null} />
-        <PlanNoAthlete />
+        <span className={`ambition-picker-count${selectedCapable ? ' has-capable' : ''}`}>{selectedCapable} kan springet</span>
         {selected.discipline === 'tumbling' && (selected.sharedConnectionApproval || approvalNote) && <small>Trænerbekræftet forbindelse{approvalNote ? ' ved gemning' : ''}</small>}
       </div>}
       <div className="ambition-picker-results-head"><strong>Resultater</strong><span role="status">{choices.length} spring passer</span>{(query || minimum || unknown || !chainIsEmpty(chain)) && <button type="button" className="quiet" onClick={reset}>Nulstil filtre</button>}</div>
@@ -70,10 +72,11 @@ export function AmbitionSpringPicker({ workspace, rulePackage, discipline, teamI
           const choice = row.choice;
           if (!choice) return null;
           const evaluation = rulePackage.evaluateSkill(choice.definition);
-          return <div key={row.key} role="listitem"><button type="button" className="ambition-picker-row" aria-label={`Vælg ${springDisplayName(choice.definition, rulePackage)}`} onClick={() => onSelect({ ...structuredClone(choice.definition), id: choice.own ? choice.definition.id : crypto.randomUUID() })}>
+          const capable = counts.get(evaluation.identity) ?? 0;
+          return <div key={row.key} role="listitem"><button type="button" className="ambition-picker-row" aria-label={`Vælg ${springDisplayName(choice.definition, rulePackage)}, ${capable} ${capable === 1 ? 'gymnast kan' : 'gymnaster kan'} springet`} onClick={() => onSelect({ ...structuredClone(choice.definition), id: choice.own ? choice.definition.id : crypto.randomUUID() })}>
             <span><strong>{springDisplayName(choice.definition, rulePackage)}</strong><small>{springDirectionText(choice.definition)} · {choice.definition.discipline === 'tumbling' && choice.definition.sharedConnectionApproval ? 'Trænerbekræftet forbindelse' : evaluation.connection === 'unverified' ? 'Forbindelse uafklaret' : 'Forbindelse kendt'}</small></span>
             <PlanDifficulty value={evaluation.difficulty.value ? points(evaluation.difficulty.value) : null} />
-            <PlanNoAthlete />
+            <span className={`ambition-picker-count${capable ? ' has-capable' : ''}`}>{capable} kan springet</span>
           </button></div>;
         })}
       </div> : <div className="ambition-picker-empty" role="status">

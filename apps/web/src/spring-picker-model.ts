@@ -76,6 +76,25 @@ export function teamSpringCounts(
   return counts;
 }
 
+/** Aktive gymnaster med en anvendelig registrering, opgjort efter regelpakkens springidentitet. */
+export function teamUsableSpringCounts(
+  workspace: Pick<Workspace, 'athletes' | 'athleteSkills' | 'skills'>,
+  teamId: string,
+  rulePackage: Pick<RulePackage, 'evaluateSkill'>,
+): Map<string, number> {
+  const athletes = new Set(workspace.athletes.filter((athlete) => athlete.teamId === teamId && !athlete.archived).map((athlete) => athlete.id));
+  const skills = new Map(workspace.skills.filter((skill) => !skill.archived).map((skill) => [skill.id, skill]));
+  const known = new Map<string, Set<string>>();
+  for (const registration of workspace.athleteSkills) {
+    const skill = skills.get(registration.skillId);
+    if (registration.archived || !athletes.has(registration.athleteId) || !skill || skill.discipline === 'rhythm') continue;
+    const evaluated = rulePackage.evaluateSkill(skill, registration);
+    if (evaluated.validity !== 'known') continue;
+    known.set(evaluated.identity, (known.get(evaluated.identity) ?? new Set()).add(registration.athleteId));
+  }
+  return new Map([...known].map(([identity, ids]) => [identity, ids.size]));
+}
+
 /** Holdkendte spring først (flest gymnaster øverst); ellers bevares rækkefølgen. */
 export function sortByTeamKnown<T extends { definition: SpringDefinition }>(
   choices: readonly T[],
