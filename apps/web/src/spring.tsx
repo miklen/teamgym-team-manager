@@ -30,7 +30,8 @@ import {
   WHOLE_TEAM,
 } from './plan-skill-select';
 import type { PlanAthleteOption, PlanSkillUsage } from './plan-skill-select';
-import { roundIdentityUsage, teamSkillRows } from './spring-picker-model';
+import { roundIdentityUsage, springPurity, teamSkillRows } from './spring-picker-model';
+import type { SpringDirectionFilter } from './spring-picker-model';
 import { RuleUncertainty } from './rule-uncertainty';
 import { repeatedStartSaltoIssue } from './start-salto-uncertainty';
 import { Icon } from './ui';
@@ -1294,6 +1295,9 @@ function AthleteEntryForm({
   const [identity, setIdentity] = useState<string | null>(null);
   const [role, setRole] = useState<RoundEntry['role']>(entry?.role ?? 'counting');
   const [switches, setSwitches] = useState(0);
+  const [directionFilter, setDirectionFilter] = useState<SpringDirectionFilter>('all');
+  const direction =
+    discipline === 'tumbling' ? { value: directionFilter, change: setDirectionFilter } : undefined;
   const teamRows = useMemo(
     () => teamSkillRows(workspace, teamId, discipline, rulePackage, freeKey ? freeKey.split(',') : []),
     [workspace, teamId, discipline, rulePackage, freeKey],
@@ -1380,6 +1384,7 @@ function AthleteEntryForm({
             team
             key={WHOLE_TEAM}
             fade={switches > 0}
+            direction={direction}
             initialValue={identity ?? ''}
             onChange={(value) => {
               setIdentity(value || null);
@@ -1395,6 +1400,7 @@ function AthleteEntryForm({
               id: row.identity,
               name: row.name,
               direction: row.direction,
+              purity: row.purity,
               difficulty: row.difficulty ? points(row.difficulty) : null,
               stability: null,
               team: {
@@ -1409,6 +1415,7 @@ function AthleteEntryForm({
           <PlanSkillSelect
             key={athleteId}
             fade={switches > 0}
+            direction={direction}
             initialValue={skillId}
             onChange={(value) => {
               setSkillId(value);
@@ -1419,6 +1426,7 @@ function AthleteEntryForm({
               id: registration.id,
               name: springDisplayName(skill, rulePackage),
               direction: springDirectionText(skill),
+              purity: springPurity(evaluated),
               difficulty: evaluated.difficulty.value ? points(evaluated.difficulty.value) : null,
               stability: registration.stability,
               usage: marks(evaluated.identity),

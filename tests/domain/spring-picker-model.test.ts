@@ -11,8 +11,10 @@ import type { Round, Workspace } from '@teamgym/domain';
 import { DK_V1 } from '@teamgym/rules';
 import { matchesSpring, springLibrary, springRegistrationPlan } from '../../apps/web/src/spring-library';
 import {
+  matchesDirection,
   roundIdentityUsage,
   springPickerRows,
+  springPurity,
   sortByTeamKnown,
   teamSkillRows,
   teamSpringCounts,
@@ -211,6 +213,34 @@ it('holdets spring: én række pr. identitet, ledige med bedste registrering og 
   const second = registerAthleteSkill(workspace, b.id, { ...full, id: 'skill-full-copy', name: 'Syntetisk kopi' });
   const twice = teamSkillRows(second.workspace, teamA.id, 'tumbling', DK_V1, free).find((item) => item.identity === fullIdentity)!;
   expect(twice.available.filter((item) => item.athleteId === b.id)).toHaveLength(1);
+});
+
+it('retningsfilteret følger C-RETNING: kun serier, hvor alle elementer går samme vej', () => {
+  if (full.discipline !== 'tumbling') throw Error('fixture');
+  const forward = library.find(
+    (choice) =>
+      choice.definition.discipline === 'tumbling' &&
+      choice.definition.elements.length > 1 &&
+      choice.definition.elements.every((element) => element.direction === 'forward'),
+  )!.definition;
+  const mixed = {
+    ...full,
+    elements: full.elements.map((element, index) =>
+      index === full.elements.length - 1 ? { ...element, direction: 'forward' as const } : element,
+    ),
+  };
+  expect(springPurity(DK_V1.evaluateSkill(full))).toBe('backward');
+  expect(springPurity(DK_V1.evaluateSkill(forward))).toBe('forward');
+  expect(springPurity(DK_V1.evaluateSkill(mixed))).toBeNull();
+  expect(matchesDirection(null, 'all')).toBe(true);
+  expect(matchesDirection(null, 'forward')).toBe(false);
+  expect(matchesDirection('backward', 'forward')).toBe(false);
+  expect(matchesDirection('backward', 'backward')).toBe(true);
+  const { workspace, teamA, a } = teamFixture();
+  const row = teamSkillRows(workspace, teamA.id, 'tumbling', DK_V1, [a.id]).find(
+    (item) => item.identity === DK_V1.evaluateSkill(full).identity,
+  );
+  expect(row?.purity).toBe('backward');
 });
 
 function round(entries: Round['entries']): Pick<Round, 'entries'> {

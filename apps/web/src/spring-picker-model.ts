@@ -6,6 +6,19 @@ import { matchesSpring, springDirectionText, springDisplayName, springSearchRank
 
 type SpringSkill = Exclude<SkillDefinition, { discipline: 'rhythm' }>;
 
+/** Visningsfilter for banespring; gemmes aldrig. */
+export type SpringDirectionFilter = 'all' | 'forward' | 'backward';
+export type SpringPurity = 'forward' | 'backward' | null;
+
+/** Samme grundlag som C-RETNING: alle elementer i serien går samme vej. */
+export function springPurity(evaluation: { pureForward: boolean; pureBackward: boolean }): SpringPurity {
+  return evaluation.pureForward ? 'forward' : evaluation.pureBackward ? 'backward' : null;
+}
+
+export function matchesDirection(purity: SpringPurity | undefined, filter: SpringDirectionFilter): boolean {
+  return filter === 'all' || purity === filter;
+}
+
 export interface TeamSkillAthlete {
   athleteId: string;
   /** Gymnastens bedste anvendelige registrering af identiteten. */
@@ -19,6 +32,7 @@ export interface TeamSkillRow {
   /** Alle visningsnavne i identitetsgruppen, så søgning rammer enhver registrering. */
   names: string[];
   direction: string;
+  purity: SpringPurity;
   difficulty: Fraction | null;
   /** Ledige gymnaster med springet; højeste sikkerhed først. */
   available: TeamSkillAthlete[];
@@ -51,6 +65,7 @@ export function teamSkillRows(
     {
       skill: SpringSkill;
       difficulty: Fraction | null;
+      purity: SpringPurity;
       names: Set<string>;
       best: Map<string, TeamSkillAthlete>;
     }
@@ -64,6 +79,7 @@ export function teamSkillRows(
     const group = groups.get(evaluated.identity) ?? {
       skill,
       difficulty: evaluated.difficulty.value,
+      purity: springPurity(evaluated),
       names: new Set<string>(),
       best: new Map<string, TeamSkillAthlete>(),
     };
@@ -96,6 +112,7 @@ export function teamSkillRows(
       name: names[0]!,
       names,
       direction: springDirectionText(group.skill),
+      purity: group.purity,
       difficulty: group.difficulty,
       available: free,
       placed: all

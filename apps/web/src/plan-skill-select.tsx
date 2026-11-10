@@ -1,6 +1,9 @@
 import { useId, useLayoutEffect, useRef, useState } from 'react';
 import type { CSSProperties, FocusEvent, KeyboardEvent, ReactNode } from 'react';
 import type { Stability } from '@teamgym/domain';
+import { SpringDirectionFilter, directionCounts } from './spring-direction-filter';
+import { matchesDirection } from './spring-picker-model';
+import type { SpringDirectionFilter as DirectionFilter, SpringPurity } from './spring-picker-model';
 import './spring-plan.css';
 
 export function PlanDifficulty({ value, spotted }: { value: string | null; spotted?: string | undefined }) {
@@ -66,6 +69,8 @@ export interface PlanSkillOption {
   /** Yderligere søgetekst, fx andre navne i identitetsgruppen. */
   search?: string;
   usage?: PlanSkillUsage[];
+  /** Ren retning efter C-RETNING; bruges kun af retningsfilteret. */
+  purity?: SpringPurity;
 }
 
 /** Sikkerhedskolonnen for et spring uden gymnast. Teksten bærer betydningen. */
@@ -257,6 +262,7 @@ export function PlanSkillSelect({
   team = false,
   empty,
   fade = false,
+  direction,
 }: {
   options: PlanSkillOption[];
   initialValue: string;
@@ -267,6 +273,8 @@ export function PlanSkillSelect({
   empty?: ReactNode;
   /** Krydsfade ved skift mellem holdets og gymnastens liste. */
   fade?: boolean;
+  /** Retningsfilter for banespring; tilstanden ejes af formularen, så den overlever skift af liste. */
+  direction?: { value: DirectionFilter; change: (value: DirectionFilter) => void } | undefined;
 }) {
   const id = useId();
   const list = useSearchList();
@@ -275,9 +283,11 @@ export function PlanSkillSelect({
     options.some((option) => option.id === initialValue) ? initialValue : '',
   );
   const selected = options.find((option) => option.id === value);
-  const filtered = options.filter((option) =>
+  const searched = options.filter((option) =>
     matchesWords(query, `${option.name} ${option.direction} ${option.search ?? ''}`),
   );
+  const directionFilter = direction?.value ?? 'all';
+  const filtered = searched.filter((option) => matchesDirection(option.purity, directionFilter));
   const rows: (PlanSkillOption | null)[] = query.trim() || catalog || team ? filtered : [null, ...filtered];
   const activeIndex = Math.min(list.active, rows.length - 1);
   const offset = catalog || team ? 0 : 1;
@@ -359,6 +369,17 @@ export function PlanSkillSelect({
               onChange={(event) => list.setQuery(event.target.value)}
               onKeyDown={list.searchKeyDown(rows.length, (index) => choose(rows[index]!))}
             />
+            {direction && (
+              <SpringDirectionFilter
+                keepFocus
+                value={direction.value}
+                counts={directionCounts(searched.map((option) => option.purity ?? null))}
+                onChange={(next) => {
+                  direction.change(next);
+                  list.setActive(0);
+                }}
+              />
+            )}
           </div>
           <div className="plan-option-columns" aria-hidden="true">
             <span>Spring</span>
@@ -419,14 +440,16 @@ export function PlanSkillSelect({
               </li>
             ))}
           </ul>
-          {rows.length === 0 &&
+          {(rows.length === 0 || (directionFilter !== 'all' && filtered.length === 0)) &&
             (options.length === 0 && empty ? (
               <div className="plan-options-empty" role="status">
                 {empty}
               </div>
             ) : (
               <p className="plan-options-empty" role="status">
-                {`Ingen ${subject === 'registrerede' ? 'registrerede spring' : `spring ${subject}`} matcher.`}
+                {directionFilter !== 'all' && searched.length > 0
+                  ? `Ingen rene ${directionFilter === 'forward' ? 'forlæns' : 'baglæns'} spring ${subject === 'registrerede' ? 'registreret' : subject}${query.trim() ? ' matcher søgningen' : ''}.`
+                  : `Ingen ${subject === 'registrerede' ? 'registrerede spring' : `spring ${subject}`} matcher.`}
               </p>
             ))}
         </div>

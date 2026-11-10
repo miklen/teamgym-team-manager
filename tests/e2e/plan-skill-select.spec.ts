@@ -230,3 +230,73 @@ test('Hele holdet viser holdets spring, indsnævrer gymnaster og markerer gentag
   expect(source.workspace.plans[0]!.tumbling[0]!.rounds[1].entries).toHaveLength(0);
   expect(source.failures).toEqual([]);
 });
+
+test('banespring kan filtreres på ren forlæns og baglæns med og uden gymnast; trampet har intet retningsfilter', async ({ page }) => {
+  let workspace = optionsWorkspace();
+  if (overviewFull.discipline !== 'tumbling') throw Error('fixture');
+  const salto = overviewFull.elements[2]!;
+  const forward = {
+    ...overviewFull,
+    name: 'Kraftspring – forlæns lukket',
+    elements: [
+      { ...salto, family: 'handspring' as const, direction: 'forward' as const, takeoff: 'one-foot' as const, twistsHalfTurns: 0, twistDistribution: [] },
+      { ...salto, direction: 'forward' as const, bodyPositions: ['tuck' as const], twistsHalfTurns: 0, twistDistribution: [] },
+    ],
+    connection: { kind: 'standard' as const, transitions: ['direct' as const] },
+  };
+  workspace = registerAthleteSkill(workspace, workspace.athletes[0]!.id, { ...forward, id: 'synthetic-forward' }).workspace;
+  const source = await openWorkspace(page, workspace);
+  await expect(page.getByRole('heading', { name: 'Hold', exact: true })).toBeVisible();
+  await page.getByRole('link', { name: 'Springplan', exact: true }).click();
+  await page.getByRole('button', { name: '+ Tilføj plads', exact: true }).first().click();
+  const dialog = page.getByRole('dialog');
+  const trigger = dialog.getByRole('button', { name: 'Spring', exact: true });
+  await trigger.click();
+  const teamSearch = dialog.getByRole('combobox', { name: 'Søg i holdets spring' });
+  await expect(teamSearch).toBeFocused();
+  const directions = dialog.getByRole('group', { name: 'Retning' });
+  const options = dialog.getByRole('listbox').getByRole('option');
+  await expect(directions.getByRole('button', { name: 'Alle, 4 spring' })).toHaveAttribute('aria-pressed', 'true');
+  await directions.getByRole('button', { name: 'Forlæns, 1 spring' }).click();
+  await expect(teamSearch).toBeFocused();
+  await expect(options).toHaveCount(1);
+  await directions.getByRole('button', { name: 'Baglæns, 3 spring' }).click();
+  await expect(options).toHaveCount(3);
+  await teamSearch.fill('720');
+  await expect(directions.getByRole('button', { name: 'Forlæns, 0 spring' })).toBeVisible();
+  await teamSearch.press('Escape');
+  // Filteret følger med til gymnastens liste.
+  await chooseAthlete(dialog, 'Alma Eksempel');
+  await trigger.click();
+  await expect(directions.getByRole('button', { name: 'Baglæns, 3 spring' })).toHaveAttribute('aria-pressed', 'true');
+  await expect(options).toHaveCount(4);
+  await directions.getByRole('button', { name: 'Forlæns, 1 spring' }).click();
+  await expect(options.filter({ hasNotText: 'Vælg senere' })).toHaveCount(1);
+  await dialog.getByRole('combobox', { name: 'Søg registrerede spring' }).fill('720');
+  await expect(dialog.getByRole('status').filter({ hasText: 'Ingen rene forlæns spring registreret matcher søgningen.' })).toBeVisible();
+  await dialog.getByRole('combobox', { name: 'Søg registrerede spring' }).press('Escape');
+  await dialog.getByRole('radio', { name: 'Ingen gymnast endnu' }).check();
+  const picker = dialog.getByRole('region', { name: 'Find spring til ambition' });
+  const ambitionDirections = picker.getByRole('group', { name: 'Retning' });
+  await ambitionDirections.getByRole('button', { name: /^Baglæns, / }).click();
+  const rows = picker.locator('.ambition-picker-row');
+  await expect(rows.first()).toBeVisible();
+  const backwardCount = await rows.count();
+  await ambitionDirections.getByRole('button', { name: /^Forlæns, / }).click();
+  await expect(rows.filter({ hasText: /Salto: .*baglæns/ })).toHaveCount(0);
+  await expect(rows.filter({ hasText: 'Salto: forlæns' }).first()).toBeVisible();
+  await picker.getByRole('button', { name: 'Nulstil filtre' }).click();
+  await expect(ambitionDirections.getByRole('button', { name: /^Alle, / })).toHaveAttribute('aria-pressed', 'true');
+  expect(await rows.count()).toBeGreaterThan(backwardCount);
+  await dialog.getByRole('button', { name: 'Luk dialog', exact: true }).click();
+  await page.getByRole('button', { name: 'Kassér', exact: true }).click();
+  await expect(dialog).toHaveCount(0);
+  await page.getByRole('button', { name: 'Trampet', exact: true }).click();
+  await page.getByRole('button', { name: '+ Tilføj plads', exact: true }).first().click();
+  await dialog.getByRole('button', { name: 'Spring', exact: true }).click();
+  await expect(dialog.getByRole('combobox', { name: 'Søg i holdets spring' })).toBeFocused();
+  await expect(dialog.getByRole('group', { name: 'Retning' })).toHaveCount(0);
+  await dialog.getByRole('radio', { name: 'Ingen gymnast endnu' }).check();
+  await expect(dialog.getByRole('group', { name: 'Retning' })).toHaveCount(0);
+  expect(source.failures).toEqual([]);
+});
