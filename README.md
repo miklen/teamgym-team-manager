@@ -2,7 +2,7 @@
 
 Dansk trænerarbejdsplads til hold, færdigheder og springplanlægning. Målrepo: [miklen/teamgym-team-manager](https://github.com/miklen/teamgym-team-manager).
 
-**Status:** Appen er [publiceret på GitHub Pages](https://miklen.github.io/teamgym-team-manager/). Domæne, regler, browserbaseret Drive-adapter, UI-overhaling og brugerrettelser er implementeret. Den samlede [OpenSpec-change er arkiveret](openspec/changes/archive/2026-10-25-build-teamgym-team-manager/proposal.md) efter brugerens godkendelse; alle ti [hovedspecs](openspec/specs/) er synkroniseret. De 13 udestående opgaver om reel Google-/Drive-verifikation er bevaret i [arkivets opgaveliste](openspec/changes/archive/2026-10-25-build-teamgym-team-manager/tasks.md). Flerbrugerverifikation er efter [brugerbeslutningen](docs/testbeslutning-2026-10-25.md) udskudt til live test i produktion. Se [kontrolrapporten](docs/implementeringsstatus.md) og [brugsvejledningen](docs/brugsvejledning.md).
+**Status:** Appen er [publiceret på GitHub Pages](https://teamgym.bnyg.dk/). Domæne, regler, browserbaseret Drive-adapter, UI-overhaling og brugerrettelser er implementeret. Den samlede [OpenSpec-change er arkiveret](openspec/changes/archive/2026-10-25-build-teamgym-team-manager/proposal.md) efter brugerens godkendelse; alle ti [hovedspecs](openspec/specs/) er synkroniseret. De 13 udestående opgaver om reel Google-/Drive-verifikation er bevaret i [arkivets opgaveliste](openspec/changes/archive/2026-10-25-build-teamgym-team-manager/tasks.md). Flerbrugerverifikation er efter [brugerbeslutningen](docs/testbeslutning-2026-10-25.md) udskudt til live test i produktion. Se [kontrolrapporten](docs/implementeringsstatus.md) og [brugsvejledningen](docs/brugsvejledning.md).
 
 ## Start fra et rent checkout
 
@@ -43,7 +43,7 @@ Enkeltkontrollerne (`check`, `test:domain`, `test:drive`, `test:mutations`, `bui
 
 Kopiér `.env.example` til `.env.local` og angiv kun de tre offentlige Google-værdier. [Google-opsætning](docs/google-opsaetning.md), [gemmeprotokol](docs/drive-gemning.md) og [T01](docs/google-t01.md) beskriver opsætning og udestående test. Ingen OAuth client secret er nødvendig eller tilladt i browseren.
 
-Pages baseres på `/teamgym-team-manager/` med hash-links. `.github/workflows/pages.yml` bygger, kontrollerer og uploader `dist`; kun deployment-jobbet får Pages-/OIDC-skriverettighed. Vælg **GitHub Actions** under repository Settings → Pages. Repository Variables med navnene fra `.env.example` leverer offentlig buildkonfiguration. En PR publicerer ikke.
+Det nye Pages-domæne bruger `/` som base med hash-links; lokalvisningen bruger fortsat `/teamgym-team-manager/`. Pages-bygningen og browserprøverne bruger `PAGES_BASE_PATH=/`. `.github/workflows/pages.yml` bygger, kontrollerer og uploader `dist`; kun deployment-jobbet får Pages-/OIDC-skriverettighed. Vælg **GitHub Actions** under repository Settings → Pages. Repository Variables med navnene fra `.env.example` leverer offentlig buildkonfiguration. En PR publicerer ikke.
 
 Den lokale previewtest bruger rigtige statiske produktionsfiler og genindlæser dybe hash-links. Faktisk Actions-/Pages-publicering og T01 må først markeres bestået efter en reel kørsel.
 
