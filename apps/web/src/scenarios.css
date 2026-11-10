@@ -52,12 +52,51 @@
   box-shadow: inset 0 -2px transparent;
   transition:
     background 150ms ease,
-    box-shadow 150ms ease;
+    box-shadow 150ms ease,
+    color 150ms ease;
 }
-.scenario-scroll [aria-selected='true'] {
+.scenario-scroll [role='tab']:hover:not(:disabled) {
+  background: #f2f4f9;
+  color: var(--ink, #183c3c);
+  box-shadow: inset 0 -2px #cfd6e6;
+}
+.scenario-scroll [role='tab'][aria-selected='true'],
+.scenario-scroll [role='tab'][aria-selected='true']:hover:not(:disabled) {
   background: #edf1ff;
   box-shadow: inset 0 -3px var(--accent, #245e50);
   font-weight: 700;
+}
+.scenario-scroll.reordering {
+  cursor: grabbing;
+  user-select: none;
+}
+.scenario-scroll.reordering [role='tab'] {
+  position: relative;
+  transition:
+    transform 180ms cubic-bezier(0.2, 0, 0, 1),
+    background 150ms ease;
+}
+.scenario-scroll.reordering [role='tab']:not(.dragging):not([aria-selected='true']):hover:not(:disabled) {
+  background: transparent;
+  box-shadow: inset 0 -2px transparent;
+}
+.scenario-scroll.reordering [role='tab'].dragging,
+.scenario-scroll.reordering [role='tab'].dragging:hover:not(:disabled) {
+  z-index: 2;
+  cursor: grabbing;
+  transition: none;
+  background: var(--paper, #fff);
+  border-radius: 0.45rem;
+  box-shadow:
+    0 0 0 1px #d5dcec,
+    0 10px 24px -8px #1b2a5a40;
+}
+.scenario-scroll.reordering [role='tab'][aria-selected='true'].dragging,
+.scenario-scroll.reordering [role='tab'][aria-selected='true'].dragging:hover:not(:disabled) {
+  box-shadow:
+    inset 0 -3px var(--accent, #245e50),
+    0 0 0 1px #d5dcec,
+    0 10px 24px -8px #1b2a5a40;
 }
 .scenario-fixed {
   display: flex;
@@ -103,16 +142,43 @@
   padding: 0.5rem;
   overflow-wrap: anywhere;
 }
-.scenario-menu-items button {
-  display: block;
+.scenario-menu-items button,
+.scenario-menu-items button.danger:not(.quiet) {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
   width: 100%;
   text-align: left;
   border: 0;
+  border-radius: 0.4rem;
   background: transparent;
-  color: inherit;
+  color: #24324d;
+  font-weight: 600;
+  box-shadow: none;
+  transition: background 120ms ease, color 120ms ease;
 }
-.scenario-menu-items button:hover {
-  background: #edf1ff;
+.scenario-menu-items button > span[aria-hidden] {
+  color: #65738c;
+  font-weight: 500;
+}
+.scenario-menu-items button:hover:not(:disabled),
+.scenario-menu-items button:focus-visible {
+  background: #edf1fe;
+  color: #24324d;
+  box-shadow: none;
+}
+.scenario-menu-items button.danger:not(.quiet) {
+  margin-top: 0.25rem;
+  color: #a13446;
+}
+.scenario-menu-items button.danger:not(.quiet):hover:not(:disabled),
+.scenario-menu-items button.danger:not(.quiet):focus-visible {
+  background: #fff0f2;
+  color: #8a2436;
+}
+.scenario-menu-items button:disabled {
+  color: #9aa4b6;
 }
 .scenario-name-form {
   margin-top: 1rem;

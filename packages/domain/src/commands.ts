@@ -257,6 +257,18 @@ export function renameScenario(workspace: Workspace, planId: string, discipline:
   }, environment);
 }
 
+/** Flytter scenariet til `toIndex` i disciplinens rækkefølge. Id'er og indhold bevares. */
+export function moveScenario(workspace: Workspace, planId: string, discipline: SpringDiscipline, scenarioId: string, toIndex: number, environment = defaultEnvironment) {
+  return edit(workspace, (copy) => {
+    const plan = requireItem(copy.plans, planId);
+    if (requireItem(copy.teams, plan.teamId).archived) throw new Error('Genaktivér holdet før redigering.');
+    const scenarios = plan[discipline];
+    const from = scenarios.indexOf(requireItem(scenarios, scenarioId));
+    if (!Number.isInteger(toIndex) || toIndex < 0 || toIndex >= scenarios.length) throw new Error('Ugyldig placering af scenariet.');
+    scenarios.splice(toIndex, 0, ...scenarios.splice(from, 1));
+  }, environment);
+}
+
 export function deleteScenario(workspace: Workspace, planId: string, discipline: SpringDiscipline, scenarioId: string, environment = defaultEnvironment) {
   return edit(workspace, (copy) => {
     const plan = requireItem(copy.plans, planId);

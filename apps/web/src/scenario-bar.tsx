@@ -4,6 +4,7 @@ import {
   duplicateScenario,
   renameScenario,
   deleteScenario,
+  moveScenario,
   suggestScenarioCopyName,
 } from '@teamgym/domain';
 import type { SpringDiscipline } from '@teamgym/domain';
@@ -49,6 +50,45 @@ export function ScenarioBar({
   const input = useRef<HTMLInputElement>(null);
   const lastTrigger = useRef<HTMLElement | null>(null);
   const fieldId = `scenario-name-${planId}-${discipline}`;
+  const [drag, setDrag] = useState<{ id: string; dx: number; target: number } | null>(null);
+  const press = useRef<{ id: string; x: number; pointer: number; active: boolean; centers: number[]; width: number } | null>(null);
+  const suppressClick = useRef(false);
+  const canReorder = writable && scenarios.length > 1;
+  function move(id: string, to: number) {
+    const from = scenarios.findIndex((item) => item.id === id);
+    if (!writable || from < 0 || to === from || to < 0 || to >= scenarios.length) return;
+    change(moveScenario(workspace, planId, discipline, id, to));
+    select(scenarioId);
+    setStatus(`${scenarios[from]!.name} flyttet til plads ${to + 1} af ${scenarios.length}.`);
+  }
+  function endDrag(commit: boolean) {
+    const current = press.current;
+    press.current = null;
+    if (current?.active) {
+      suppressClick.current = true;
+      if (commit && drag) move(current.id, drag.target);
+    }
+    setDrag(null);
+  }
+  function shift(index: number) {
+    if (!drag || !press.current) return 0;
+    const from = scenarios.findIndex((item) => item.id === drag.id);
+    if (index === from) return drag.dx;
+    if (from < index && index <= drag.target) return -press.current.width;
+    if (drag.target <= index && index < from) return press.current.width;
+    return 0;
+  }
+  useLayoutEffect(() => {
+    if (!drag) return;
+    const cancel = (event: KeyboardEvent) => {
+      if (event.key !== 'Escape') return;
+      event.preventDefault();
+      event.stopPropagation();
+      endDrag(false);
+    };
+    document.addEventListener('keydown', cancel, true);
+    return () => document.removeEventListener('keydown', cancel, true);
+  });
   useLayoutEffect(() => {
     list.current
       ?.querySelector('[aria-selected="true"]')
@@ -110,7 +150,7 @@ export function ScenarioBar({
       </div>
       <div className="scenario-navigation">
         <div
-          className="scenario-scroll"
+          className={`scenario-scroll${drag ? ' reordering' : ''}`}
           role="tablist"
           aria-label={`${discipline === 'tumbling' ? 'Bane' : 'Trampet'}scenarier`}
           ref={list}
@@ -134,17 +174,55 @@ export function ScenarioBar({
             }
           }}
         >
-          {scenarios.map((scenario) => (
+          {scenarios.map((scenario, index) => (
             <button
               type="button"
               role="tab"
               key={scenario.id}
+              className={drag?.id === scenario.id ? 'dragging' : undefined}
+              style={drag ? { transform: `translateX(${shift(index)}px)` } : undefined}
+              onPointerDown={(event) => {
+                if (!canReorder || event.pointerType === 'touch' || event.button !== 0) return;
+                const tabs = Array.from(list.current!.querySelectorAll<HTMLElement>('[role="tab"]'));
+                const rects = tabs.map((tab) => tab.getBoundingClientRect());
+                const gap = rects.length > 1 ? rects[1]!.left - rects[0]!.right : 0;
+                press.current = {
+                  id: scenario.id,
+                  x: event.clientX,
+                  pointer: event.pointerId,
+                  active: false,
+                  centers: rects.map((rect) => rect.left + rect.width / 2),
+                  width: rects[index]!.width + gap,
+                };
+              }}
+              onPointerMove={(event) => {
+                const current = press.current;
+                if (!current || current.pointer !== event.pointerId) return;
+                const dx = event.clientX - current.x;
+                if (!current.active) {
+                  if (Math.abs(dx) < 6) return;
+                  current.active = true;
+                  event.currentTarget.setPointerCapture(event.pointerId);
+                }
+                const center = current.centers[index]! + dx;
+                const target = current.centers.filter((value, i) => i !== index && value < center).length;
+                setDrag({ id: current.id, dx, target });
+              }}
+              onPointerUp={() => endDrag(true)}
+              onPointerCancel={() => endDrag(false)}
+              onLostPointerCapture={() => press.current?.active && endDrag(false)}
               id={`scenario-tab-${scenario.id}`}
               aria-controls={`scenario-panel-${planId}-${discipline}`}
               aria-selected={scenario.id === scenarioId}
               tabIndex={scenario.id === scenarioId ? 0 : -1}
               title={scenario.name}
-              onClick={() => requestSelect(scenario.id)}
+              onClick={() => {
+                if (suppressClick.current) {
+                  suppressClick.current = false;
+                  return;
+                }
+                requestSelect(scenario.id);
+              }}
             >
               {scenario.name}
             </button>
@@ -203,6 +281,36 @@ export function ScenarioBar({
                 <button role="menuitem" disabled={!writable} onClick={() => open('rename')}>
                   Omdøb
                 </button>
+                {scenarios.length > 1 && (
+                  <>
+                    <button
+                      role="menuitem"
+                      disabled={!writable || scenarios.indexOf(current) === 0}
+                      onClick={(event) => {
+                        const at = scenarios.indexOf(current);
+                        move(scenarioId, at - 1);
+                        const other = event.currentTarget.nextElementSibling as HTMLElement | null;
+                        if (at - 1 === 0) requestAnimationFrame(() => other?.focus());
+                      }}
+                    >
+                      <span>Flyt til venstre</span>
+                      <span aria-hidden="true">←</span>
+                    </button>
+                    <button
+                      role="menuitem"
+                      disabled={!writable || scenarios.indexOf(current) === scenarios.length - 1}
+                      onClick={(event) => {
+                        const at = scenarios.indexOf(current);
+                        move(scenarioId, at + 1);
+                        const other = event.currentTarget.previousElementSibling as HTMLElement | null;
+                        if (at + 1 === scenarios.length - 1) requestAnimationFrame(() => other?.focus());
+                      }}
+                    >
+                      <span>Flyt til højre</span>
+                      <span aria-hidden="true">→</span>
+                    </button>
+                  </>
+                )}
                 <button
                   role="menuitem"
                   className="danger"

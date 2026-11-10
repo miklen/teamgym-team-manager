@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
+  moveScenario,
   checkMergePolicy,
   workspaceMergePolicy,
   mergeWorkspace,
@@ -533,6 +534,71 @@ describe('trevejsmotor', () => {
     ).toEqual(l.plans[0]!.tumbling.map((s) => s.id));
     const added = duplicateScenario(b, plan.id, 'tumbling', plan.tumbling[0]!.id, 'Kun lokalt', environment);
     expect(valid(mergeWorkspace(b, added, b, context)).plans[0]!.tumbling).toEqual(added.plans[0]!.tumbling);
+  });
+  describe('flytning af scenarier med moveScenario', () => {
+    const sides = [['lokal', false], ['fil', true]] as const;
+    function three() {
+      const { b: initial, environment } = fixture();
+      const plan = initial.plans[0]!;
+      let b = duplicateScenario(initial, plan.id, 'tumbling', plan.tumbling[0]!.id, 'Plan B', environment);
+      b = duplicateScenario(b, plan.id, 'tumbling', b.plans[0]!.tumbling[1]!.id, 'Plan C', environment);
+      const [a, bb, c] = b.plans[0]!.tumbling.map((item) => item.id) as [string, string, string];
+      return { b, environment, planId: plan.id, a, bb, c };
+    }
+    const ids = (w: Workspace) => w.plans[0]!.tumbling.map((item) => item.id);
+    it.each(sides)('flytning og omdøbning af samme scenarie flettes uden valg (flytning %s)', (_side, swap) => {
+      const { b, environment, planId, a } = three();
+      const moved = moveScenario(b, planId, 'tumbling', a, 2, environment);
+      const renamed = renameScenario(b, planId, 'tumbling', a, 'Omdøbt', environment);
+      const [l, r] = swap ? [renamed, moved] : [moved, renamed];
+      const w = valid(mergeWorkspace(b, l, r, context));
+      expect(ids(w)).toEqual(ids(moved));
+      expect(w.plans[0]!.tumbling[2]!.name).toBe('Omdøbt');
+    });
+    it.each(sides)('flytning og ændret omgang i samme scenarie flettes uden valg (flytning %s)', (_side, swap) => {
+      const { b, environment, planId, a } = three();
+      const moved = moveScenario(b, planId, 'tumbling', a, 1, environment);
+      const edited = structuredClone(b);
+      edited.plans[0]!.tumbling[0]!.rounds[0].entries.reverse();
+      const [l, r] = swap ? [edited, moved] : [moved, edited];
+      const w = valid(mergeWorkspace(b, l, r, context));
+      expect(ids(w)).toEqual(ids(moved));
+      expect(w.plans[0]!.tumbling[1]!.rounds[0].entries).toEqual(edited.plans[0]!.tumbling[0]!.rounds[0].entries);
+    });
+    it('ens flytninger giver ingen konflikt', () => {
+      const { b, environment, planId, c } = three();
+      const l = moveScenario(b, planId, 'tumbling', c, 0, environment);
+      const r = moveScenario(b, planId, 'tumbling', c, 0, environment);
+      expect(ids(valid(mergeWorkspace(b, l, r, context)))).toEqual(ids(l));
+    });
+    it.each(sides)('forskellige flytninger kræver ét valg af hele rækkefølgen (%s først)', (_side, swap) => {
+      const { b, environment, planId, a, c } = three();
+      const first = moveScenario(b, planId, 'tumbling', a, 2, environment);
+      const second = moveScenario(b, planId, 'tumbling', c, 0, environment);
+      const [l, r] = swap ? [second, first] : [first, second];
+      const review = mergeWorkspace(b, l, r, context);
+      expect(review.status).toBe('blocked');
+      expect(review.conflicts).toHaveLength(1);
+      expect(ids(valid(mergeWorkspace(b, l, r, context, choose(review, 'local'))))).toEqual(ids(l));
+      expect(ids(valid(mergeWorkspace(b, l, r, context, choose(review, 'remote'))))).toEqual(ids(r));
+    });
+    it.each(sides)('flytning og nyt scenarie bevarer begge uden valg (flytning %s)', (_side, swap) => {
+      const { b, environment, planId, a, bb } = three();
+      const moved = moveScenario(b, planId, 'tumbling', a, 2, environment);
+      const added = duplicateScenario(b, planId, 'tumbling', bb, 'Plan D', environment);
+      const created = ids(added).find((id) => !ids(b).includes(id))!;
+      const [l, r] = swap ? [added, moved] : [moved, added];
+      const w = valid(mergeWorkspace(b, l, r, context));
+      expect(new Set(ids(w))).toEqual(new Set([...ids(b), created]));
+      expect(ids(w).filter((id) => id !== created)).toEqual(ids(moved));
+    });
+    it.each(sides)('flytning og sletning af et andet scenarie flettes uden valg (flytning %s)', (_side, swap) => {
+      const { b, environment, planId, a, bb } = three();
+      const moved = moveScenario(b, planId, 'tumbling', a, 2, environment);
+      const deleted = deleteScenario(b, planId, 'tumbling', bb, environment);
+      const [l, r] = swap ? [deleted, moved] : [moved, deleted];
+      expect(ids(valid(mergeWorkspace(b, l, r, context)))).toEqual(ids(moved).filter((id) => id !== bb));
+    });
   });
   it('regelbinding/planfingerprint/revurdering mod ny vurdering vælges samlet', () => {
     const { b, l, r } = fixture();

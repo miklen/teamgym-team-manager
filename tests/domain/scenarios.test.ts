@@ -4,6 +4,7 @@ import {
   duplicateScenario,
   deleteScenario,
   renameScenario,
+  moveScenario,
   suggestScenarioCopyName,
   requireScenario,
   setRoundEntries,
@@ -195,6 +196,22 @@ describe('format 3, scenarier og reserver', () => {
     expect(DK_V1.analyze(edited, plan.teamId, 'tumbling', copy.id).difficulty.status).toBe('incomplete');
     expect(() => requireScenario(copied, plan.id, 'trampet', copy.id)).toThrow();
     expect(() => setRoundEntries(copied, plan.id, 'tumbling', 'unknown', round.id, [], limits)).toThrow();
+  });
+
+  it('flytter et scenarie til en ny plads uden at ændre id-er eller indhold', () => {
+    const { workspace, plan, scenario } = setup();
+    let w = duplicateScenario(workspace, plan.id, 'tumbling', scenario.id, 'Plan B');
+    w = duplicateScenario(w, plan.id, 'tumbling', w.plans[0]!.tumbling[1]!.id, 'Plan C');
+    const before = w.plans[0]!.tumbling;
+    const moved = moveScenario(w, plan.id, 'tumbling', scenario.id, 2);
+    expect(moved.plans[0]!.tumbling.map((item) => item.id)).toEqual([before[1]!.id, before[2]!.id, scenario.id]);
+    expect(moved.plans[0]!.tumbling[2]).toEqual(before[0]);
+    expect(moved.plans[0]!.trampet).toEqual(w.plans[0]!.trampet);
+    const back = moveScenario(moved, plan.id, 'tumbling', scenario.id, 0);
+    expect(back.plans[0]!.tumbling).toEqual(before);
+    expect(moveScenario(w, plan.id, 'tumbling', scenario.id, 0).plans[0]!.tumbling).toEqual(before);
+    for (const index of [-1, 3, 1.5]) expect(() => moveScenario(w, plan.id, 'tumbling', scenario.id, index)).toThrow('Ugyldig placering');
+    expect(() => moveScenario(w, plan.id, 'tumbling', 'ukendt', 0)).toThrow();
   });
 
   it('afviser fejl i lukkede scenarier og bevarer springløse og historiske reserver', () => {

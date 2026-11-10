@@ -108,6 +108,60 @@ test('opret, kopi, navnefejl, omdøbning, sletning og sidste scenarie har fokus 
   expect(source.failures).toEqual([]);
 });
 
+test('scenarier omarrangeres via menu og træk med lys hover og bevidst gemning', async ({ page }) => {
+  const source = await openWorkspace(page, scenarioWorkspace());
+  await spring(page);
+  const tabs = page.getByRole('tablist', { name: 'Banescenarier' }).getByRole('tab');
+  await expect(tabs).toHaveText(['Plan A', 'Plan B']);
+  const tabA = page.getByRole('tab', { name: 'Plan A', exact: true });
+  const tabB = page.getByRole('tab', { name: 'Plan B', exact: true });
+  await tabB.hover();
+  await expect(tabB).toHaveCSS('background-color', 'rgb(242, 244, 249)');
+  await page.getByRole('button', { name: /^Menu for / }).click();
+  const left = page.getByRole('menuitem', { name: 'Flyt til venstre' });
+  const right = page.getByRole('menuitem', { name: 'Flyt til højre' });
+  await expect(left).toBeDisabled();
+  await page.getByRole('menuitem', { name: 'Slet', exact: true }).hover();
+  await expect(page.getByRole('menuitem', { name: 'Slet', exact: true })).toHaveCSS('background-color', 'rgb(255, 240, 242)');
+  await right.click();
+  await expect(tabs).toHaveText(['Plan B', 'Plan A']);
+  await expect(page.getByRole('status').filter({ hasText: 'Plan A flyttet til plads 2 af 2.' })).toBeAttached();
+  await expect(right).toBeDisabled();
+  await expect(left).toBeFocused();
+  await page.keyboard.press('Escape');
+  await expect(tabA).toHaveAttribute('aria-selected', 'true');
+
+  const from = (await tabA.boundingBox())!;
+  const to = (await tabB.boundingBox())!;
+  await page.mouse.move(from.x + from.width / 2, from.y + from.height / 2);
+  await page.mouse.down();
+  await page.mouse.move(from.x + from.width / 2 - 10, from.y + from.height / 2, { steps: 2 });
+  await page.mouse.move(to.x + 4, to.y + to.height / 2, { steps: 6 });
+  await page.keyboard.press('Escape');
+  await page.mouse.up();
+  await expect(tabs).toHaveText(['Plan B', 'Plan A']);
+
+  await page.mouse.move(to.x + to.width / 2, to.y + to.height / 2);
+  await page.mouse.down();
+  await page.mouse.move(to.x + to.width / 2 + 10, to.y + to.height / 2, { steps: 2 });
+  await page.mouse.move(from.x + from.width - 4, from.y + from.height / 2, { steps: 6 });
+  await page.mouse.up();
+  await expect(tabs).toHaveText(['Plan A', 'Plan B']);
+  await expect(tabB).toHaveAttribute('aria-selected', 'false');
+  await expect(tabA).toHaveAttribute('aria-selected', 'true');
+
+  await page.getByRole('button', { name: /^Menu for / }).click();
+  await right.click();
+  await page.keyboard.press('Escape');
+  expect(source.puts).toBe(0);
+  await page.getByRole('button', { name: /Lokale ændringer/ }).click();
+  await expect(page.getByRole('button', { name: 'Gemt', exact: true })).toBeVisible();
+  expect(source.workspace.plans[0]!.tumbling.map((item) => item.name)).toEqual(['Plan B', 'Plan A']);
+  await page.reload();
+  await expect(page.getByRole('tablist', { name: 'Banescenarier' }).getByRole('tab')).toHaveText(['Plan B', 'Plan A']);
+  expect(source.failures).toEqual([]);
+});
+
 for (const choice of ['Bliv', 'Kassér', 'Opdater']) {
   test(`ændret pladsformular: ${choice} beskytter scenariet og uploader ikke`, async ({ page }) => {
     const source = await openWorkspace(page, scenarioWorkspace());
