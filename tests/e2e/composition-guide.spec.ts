@@ -83,7 +83,7 @@ test('ændret holdomgang opdaterer kravet uden egne guidefelter', async ({ page 
   await page.locator('.composition-guide-overview').click();
   const hold = page.locator('.composition-guide-row').filter({ has: page.getByText('Holdomgang', { exact: true }) });
   await expect(hold).toContainText('Planlagt fradrag');
-  await page.getByRole('region', { name: '2. omgang', exact: true }).getByRole('button', { name: 'Gør til holdomgang' }).click();
+  await page.getByRole('region', { name: '2. omgang', exact: true }).getByRole('button', { name: 'Flyt 2. omgang til plads 1 som holdomgang' }).click();
   await expect(hold).toContainText('Krav opfyldt i plan');
 });
 

@@ -48,7 +48,7 @@ test('seks omgange, hurtig vurdering, bevidst sortering og gem/genåbn', async (
   await page.getByRole('button', { name: 'Opdatér vurdering' }).click();
   await page.getByRole('button', { name: 'Luk dialog' }).click();
   await expect(page.getByText('5,0/5', { exact: true })).toHaveCount(3);
-  await page.getByRole('button', { name: 'Gør til holdomgang' }).last().click();
+  await page.getByRole('button', { name: 'Flyt 2. omgang til plads 1 som holdomgang' }).first().click();
   await page.getByRole('button', { name: 'Trampet', exact: true }).click();
   await expect(page.getByText('4,3/5', { exact: true })).toHaveCount(3);
   await page.getByRole('button', { name: /Lokale ændringer/ }).click();
@@ -119,14 +119,13 @@ test('bane bygger komplet kæde, viser element-D og åbner eksisterende registre
   expect(source.failures).toEqual([]);
 });
 
-test('to ekstra først bevarer tællende stabilitet, og niende plads er utilgængelig', async ({ page }) => {
+test('syvende og ottende plads gør de første til ekstra, og niende plads er utilgængelig', async ({ page }) => {
   const source = await openWorkspace(page);
   await expect(page.getByRole('heading', { name: 'Hold', exact: true })).toBeVisible();
   await page.getByRole('link', { name: 'Springplan' }).click();
   for (let index = 0; index < 2; index++) {
     await page.getByRole('button', { name: '+ Tilføj plads' }).first().click();
     await chooseAthlete(page, `Syntetisk gymnast ${7 + index}`);
-    await page.getByRole('combobox', { name: 'Rolle', exact: true }).selectOption('extra');
     await page.getByRole('button', { name: 'Spring', exact: true }).click();
     await page
       .getByRole('option', { name: /^Syntetisk baneserie, Salto: baglæns, D 0,500, sikkerhed 5\/5(,|$)/ })
@@ -134,7 +133,8 @@ test('to ekstra først bevarer tællende stabilitet, og niende plads er utilgæn
     await page.getByRole('button', { name: 'Opdater' }).click();
   }
   await expect(page.getByRole('button', { name: '+ Tilføj plads' }).first()).toBeDisabled();
-  await expect(page.getByText('4,3/5', { exact: true })).toHaveCount(3);
+  // Kun omgangen med nye tællende ændrer stabilitet; de to andre omgange er uændrede.
+  await expect(page.getByText('4,3/5', { exact: true })).toHaveCount(2);
   await page.getByRole('button', { name: /Lokale ændringer/ }).click();
   await expect(page.getByRole('button', { name: 'Gemt', exact: true })).toBeVisible();
   expect(source.workspace.plans[0]!.tumbling[0]!.rounds[0].entries.map((entry) => entry.role)).toEqual([

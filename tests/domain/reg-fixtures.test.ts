@@ -282,7 +282,7 @@ describe('REG-facit: trampet-C (H 10.2)', () => {
 });
 
 describe('REG-facit: deltagere og profiler (H 9.1f, 10.1e, TR 1.3, 1.3.1)', () => {
-  it('REG-F15: seks ekstra + seks tællende er gyldigt, kun de sidste seks tæller; en 13. og ekstra efter tællende afvises', () => {
+  it('REG-F15: seks ekstra + seks tællende er gyldigt, kun de sidste seks tæller; en 13. afvises, og rollen følger positionen', () => {
     const setup = team(reg(), REG_V1);
     setup.place('tumbling', 0, times(6, RF_LUKKET), times(6, RF_STRAKT_360));
     const round = setup.analyze('tumbling').rounds[0]!;
@@ -291,8 +291,9 @@ describe('REG-facit: deltagere og profiler (H 9.1f, 10.1e, TR 1.3, 1.3.1)', () =
     // Kun de tællende: 6 × 0,50 = 3,00 (de ekstra har 0,80 hver).
     expect(value(round.difficulty)).toBe(f('3.00'));
     expect(() => setup.place('tumbling', 1, times(6, RF_LUKKET), times(7, RF_STRAKT_360))).toThrow(/højst 6 ekstra/);
-    expect(() => setup.place('tumbling', 1, times(6, RF_LUKKET), [RF_STRAKT_360],
-      ['counting', 'extra', 'counting', 'counting', 'counting', 'counting', 'counting'])).toThrow(/Ekstra gymnaster skal stå først/);
+    setup.place('tumbling', 1, times(6, RF_LUKKET), [RF_STRAKT_360],
+      ['counting', 'extra', 'counting', 'counting', 'counting', 'counting', 'counting']);
+    expect(setup.analyze('tumbling').rounds[1]!.entries.map((item) => item.entry.role)).toEqual(['extra', ...times(6, 'counting')]);
   });
 
   it('REG-F15: guidens ramme markerer seks ekstra som afledt grænse; DK er uændret', () => {

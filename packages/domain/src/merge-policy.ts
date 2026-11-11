@@ -134,6 +134,7 @@ const entry = object<RoundEntry>('Udførende', {
   id: identity(),
   athleteId: identity(),
   athleteSkillId: value('Valgt spring'),
+  // Rollen er afledt af positionen (de første ud over de tællende er ekstra) og følger den atomiske deltagerliste.
   role: value('Rolle'),
   // Grad, element og springreference er én beslutning; deltagerlisten forbliver atomisk.
   plannedSpot: object<NonNullable<RoundEntry['plannedSpot']>>(
@@ -157,7 +158,8 @@ const round = object<Round>('Omgang', {
 const scenario = object<Scenario>('Scenarie', {
   id: identity(),
   name: value('Scenarienavn'),
-  rounds: { role: 'collection', label: 'Omgange', key: ['id'], items: [round, round, round] },
+  // Rækkefølgen bestemmer holdomgangen (første) og er derfor et eksplicit, samlet rækkefølgevalg.
+  rounds: { role: 'collection', label: 'Omgange', key: ['id'], items: [round, round, round], ordered: true },
 });
 const originVariants = {
   own: object<Extract<AthleteSkill['assessmentOrigin'], { kind: 'own' }>>('Egen vurdering', {

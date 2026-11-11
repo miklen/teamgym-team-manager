@@ -288,19 +288,14 @@ function applyRoundEntries(copy: Workspace, planId: string, discipline: SpringDi
   const team = requireItem(copy.teams, plan.teamId);
   const scenario = requireScenario(copy, planId, discipline, scenarioId);
   if (team.archived) throw new Error('Genaktivér holdet før redigering.');
-  const counting = entries.filter((entry) => entry.role === 'counting').length;
-  const extras = entries.length - counting;
-  if (counting > limits.counting || extras > limits.extra) throw new Error(`Omgangen tillader ${limits.counting} tællende og højst ${limits.extra} ekstra.`);
+  if (entries.length > limits.counting + limits.extra) throw new Error(limits.extra ? `Omgangen tillader ${limits.counting} tællende og højst ${limits.extra} ekstra.` : `Omgangen tillader højst ${limits.counting} gymnaster.`);
   const round = requireItem(scenario.rounds, roundId);
-  let countingStarted = false;
   for (const entry of entries) {
     const previous = round.entries.find((item) => item.id === entry.id);
     // Besættelse sker kun med matchkontrol, og en besat plads bliver aldrig til en ambition.
     if (previous && (previous.athleteId === null) !== (entry.athleteId === null)) {
       throw new Error(previous.athleteId === null ? 'Besæt ambitionen med en gymnast, der kan springet.' : 'En besat plads kan ikke blive en ambition. Fjern pladsen, og opret en ny ambition.');
     }
-    if (entry.role === 'counting') countingStarted = true;
-    else if (countingStarted) throw new Error('Ekstra gymnaster skal stå først.');
     if (entry.athleteId === null) {
       if (!entry.plannedSkillId || entry.athleteSkillId !== null) throw new Error('En ambition kræver et spring.');
       const retained = previous?.athleteId === null && previous.plannedSkillId === entry.plannedSkillId;
@@ -318,12 +313,18 @@ function applyRoundEntries(copy: Workspace, planId: string, discipline: SpringDi
     }
   }
   // Modtagningen gælder netop gymnast og spring på pladsen; rækkefølge og rolle bevarer den.
-  round.entries = entries.map(({ id, athleteId, athleteSkillId, role, plannedSkillId }) => {
+  round.entries = entries.map(({ id, athleteId, athleteSkillId, plannedSkillId }, index) => {
+    const role = positionalRole(index, entries.length, limits);
     if (athleteId === null) return { id, athleteId, athleteSkillId: null, role, plannedSpot: null, plannedSkillId: plannedSkillId! };
     const previous = round.entries.find((item) => item.id === id);
     const retained = previous && previous.athleteId === athleteId && previous.athleteSkillId === athleteSkillId;
     return { id, athleteId, athleteSkillId, role, plannedSpot: retained ? structuredClone(previous.plannedSpot) : null, plannedSkillId: null };
   });
+}
+
+/** De første pladser ud over holdprofilens tællende er ekstra; rollen følger altid positionen. */
+export function positionalRole(index: number, length: number, limits: ParticipantLimits): RoundEntry['role'] {
+  return index < length - limits.counting ? 'extra' : 'counting';
 }
 
 function springIdentityOf(environment: CommandEnvironment) {
@@ -345,16 +346,16 @@ function ambitionDefinition(copy: Workspace, discipline: SpringDiscipline, defin
   return id;
 }
 
-/** Opretter en plads uden gymnast; definitionen genbruges eller oprettes i samme ændring. */
-export function addAmbition(workspace: Workspace, planId: string, discipline: SpringDiscipline, scenarioId: string, roundId: string, definition: SkillDefinition, role: RoundEntry['role'], position: number, limits: ParticipantLimits, environment = defaultEnvironment) {
-  const result = addAmbitions(workspace, planId, discipline, scenarioId, roundId, definition, role, 1, position, limits, null, environment);
+/** Opretter en plads uden gymnast på `position`; definitionen genbruges eller oprettes i samme ændring. Rollen følger positionen. */
+export function addAmbition(workspace: Workspace, planId: string, discipline: SpringDiscipline, scenarioId: string, roundId: string, definition: SkillDefinition, position: number, limits: ParticipantLimits, environment = defaultEnvironment) {
+  const result = addAmbitions(workspace, planId, discipline, scenarioId, roundId, definition, 1, position, limits, null, environment);
   return { workspace: result.workspace, entryId: result.entryIds[0]! };
 }
 
 /** Opretter en ordnet blok af selvstændige ambitionspladser i én valideret ændring. */
-export function addAmbitions(workspace: Workspace, planId: string, discipline: SpringDiscipline, scenarioId: string, roundId: string, definition: SkillDefinition, role: RoundEntry['role'], count: number, position: number, limits: ParticipantLimits, approvalNote: string | null = null, environment = defaultEnvironment) {
+export function addAmbitions(workspace: Workspace, planId: string, discipline: SpringDiscipline, scenarioId: string, roundId: string, definition: SkillDefinition, count: number, position: number, limits: ParticipantLimits, approvalNote: string | null = null, environment = defaultEnvironment) {
   if (!Number.isInteger(count) || count < 1) throw new Error('Vælg mindst én ny plads.');
-  if (count > (role === 'counting' ? limits.counting : limits.extra)) throw new Error('Antallet overstiger holdprofilens pladsgrænse.');
+  if (count > limits.counting + limits.extra) throw new Error('Antallet overstiger holdprofilens pladsgrænse.');
   const entryIds = Array.from({ length: count }, () => environment.id());
   const result = edit(workspace, (copy) => {
     const round = requireItem(requireScenario(copy, planId, discipline, scenarioId).rounds, roundId);
@@ -367,7 +368,7 @@ export function addAmbitions(workspace: Workspace, planId: string, discipline: S
       skill.sharedConnectionApproval = { executionIdentity: skillIdentity(skill), approvedAt: environment.now(), note };
     }
     const next: RoundEntryInput[] = [...round.entries];
-    next.splice(Math.max(0, Math.min(position, next.length)), 0, ...entryIds.map((id) => ({ id, athleteId: null, athleteSkillId: null, role, plannedSkillId })));
+    next.splice(Math.max(0, Math.min(position, next.length)), 0, ...entryIds.map((id) => ({ id, athleteId: null, athleteSkillId: null, plannedSkillId })));
     applyRoundEntries(copy, planId, discipline, scenarioId, roundId, next, limits);
   }, environment);
   return { workspace: result, entryIds };
@@ -379,13 +380,13 @@ function requireAmbition(copy: Workspace, planId: string, discipline: SpringDisc
   return entry;
 }
 
-/** Skifter springet på en ubesat ambition, eventuelt sammen med rollen. */
-export function changeAmbitionSkill(workspace: Workspace, planId: string, discipline: SpringDiscipline, scenarioId: string, roundId: string, entryId: string, definition: SkillDefinition, role: RoundEntry['role'] | undefined, limits: ParticipantLimits, environment = defaultEnvironment) {
+/** Skifter springet på en ubesat ambition. */
+export function changeAmbitionSkill(workspace: Workspace, planId: string, discipline: SpringDiscipline, scenarioId: string, roundId: string, entryId: string, definition: SkillDefinition, limits: ParticipantLimits, environment = defaultEnvironment) {
   return edit(workspace, (copy) => {
     requireAmbition(copy, planId, discipline, scenarioId, roundId, entryId);
     const plannedSkillId = ambitionDefinition(copy, discipline, definition, environment);
     const round = requireItem(requireScenario(copy, planId, discipline, scenarioId).rounds, roundId);
-    applyRoundEntries(copy, planId, discipline, scenarioId, roundId, round.entries.map((entry) => entry.id === entryId ? { ...entry, plannedSkillId, role: role ?? entry.role } : entry), limits);
+    applyRoundEntries(copy, planId, discipline, scenarioId, roundId, round.entries.map((entry) => entry.id === entryId ? { ...entry, plannedSkillId } : entry), limits);
   }, environment);
 }
 
@@ -436,16 +437,21 @@ export function clearPlannedSpot(workspace: Workspace, planId: string, disciplin
   return edit(workspace, (copy) => { requireEntry(copy, planId, discipline, scenarioId, roundId, entryId).plannedSpot = null; }, environment);
 }
 
-export function moveRoundFirst(workspace: Workspace, planId: string, discipline: SpringDiscipline, scenarioId: string, roundId: string, environment = defaultEnvironment) {
+/** Flytter omgangen til `toIndex`. Første omgang er holdomgangen; id'er og indhold bevares. */
+export function moveRound(workspace: Workspace, planId: string, discipline: SpringDiscipline, scenarioId: string, roundId: string, toIndex: number, environment = defaultEnvironment) {
   return edit(workspace, (copy) => {
     const plan = requireItem(copy.plans, planId);
     if (requireItem(copy.teams, plan.teamId).archived) throw new Error('Genaktivér holdet før redigering.');
     const rounds = requireScenario(copy, planId, discipline, scenarioId).rounds;
     const index = rounds.findIndex((round) => round.id === roundId);
     if (index < 0) throw new Error('Omgangen findes ikke.');
-    const [round] = rounds.splice(index, 1);
-    rounds.unshift(round!);
+    if (!Number.isInteger(toIndex) || toIndex < 0 || toIndex >= rounds.length) throw new Error('Ugyldig placering af omgangen.');
+    rounds.splice(toIndex, 0, ...rounds.splice(index, 1));
   }, environment);
+}
+
+export function moveRoundFirst(workspace: Workspace, planId: string, discipline: SpringDiscipline, scenarioId: string, roundId: string, environment = defaultEnvironment) {
+  return moveRound(workspace, planId, discipline, scenarioId, roundId, 0, environment);
 }
 
 function checkReserve(workspace: Workspace, teamId: string, discipline: SpringDiscipline, entry: ReserveEntry) {
@@ -482,11 +488,11 @@ export function insertReserve(workspace: Workspace, planId: string, discipline: 
   return setRoundEntries(removed, planId, discipline, scenarioId, roundId, round.entries.map((entry) => entry.id === entryId ? { ...entry, athleteId: reserve.athleteId, athleteSkillId: reserve.athleteSkillId } : entry), limits, environment);
 }
 
-export function roundStability(workspace: Workspace, entries: readonly RoundEntryInput[], limits: ParticipantLimits, teamId: string) {
+export function roundStability(workspace: Workspace, entries: readonly Pick<RoundEntry, 'athleteId' | 'athleteSkillId' | 'role'>[], limits: ParticipantLimits, teamId: string) {
   const registrations = new Map(workspace.athleteSkills.map((item) => [item.id, item]));
   const athletes = new Map(workspace.athletes.map((item) => [item.id, item]));
   const skills = new Map(workspace.skills.map((item) => [item.id, item]));
-  function slots(selected: readonly RoundEntryInput[]) {
+  function slots(selected: typeof entries) {
     return selected.map((entry) => {
       const registration = entry.athleteSkillId ? registrations.get(entry.athleteSkillId) : undefined;
       const athlete = entry.athleteId === null ? undefined : athletes.get(entry.athleteId);

@@ -46,7 +46,7 @@ Den fulde [regelmatrix](../openspec/changes/archive/2026-10-25-build-teamgym-tea
 
 | Regel | Kilde og enhed | Formel/eksempel og kontrol |
 | --- | --- | --- |
-| P01–P03 | H 9.1/10.1 og holdomgangskrav | Tre omgange, seks tællende, højst to ekstra først; mix 3+3 blandt tællende. P01–P04. Tom plads er manglende input. |
+| P01–P03 | H 9.1/10.1 og holdomgangskrav | Tre omgange, seks tællende, højst to ekstra først (de første ud over seks er ekstra); mix 3+3 blandt tællende. P01–P04. Tom plads er manglende input. |
 | ID01–ID02 | A3/A5 identitet | Samme D er ikke samme identitet; startrolle er ikke nyt element. D03, I01–I04. |
 | D-BASIS | H 9.3.5/10.3.5 og A3/A4 | Basisværdier for familie, retning, position og redskab. D06–D09; P05 afviser trippel; DK 1.1.0: reglementet går forud for appendiks, så H>1 er 1,00 + 0,10 = 1,10 (A4 trykt 1,20). DK 1.0.0: Q02/U01 bevarer to værdier. |
 | D-SKRUE | H 9.3.6/10.3.6 | 0,10 pr. 180° på enkelt/dobbelt; ekstra 0,10 ved 1080° og hver yderligere 360°. T00–T08. |

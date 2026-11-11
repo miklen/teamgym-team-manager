@@ -1,6 +1,6 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import type { RefObject } from 'react';
-import { addAmbitions, approveSharedConnection, changeAmbitionSkill, clearPlannedSpot, fillAmbition, formatStability, moveRoundFirst, newEntityId, setPlannedSpot, setRoundEntries } from '@teamgym/domain';
+import { addAmbitions, approveSharedConnection, changeAmbitionSkill, clearPlannedSpot, fillAmbition, formatStability, moveRound, newEntityId, setPlannedSpot, setRoundEntries } from '@teamgym/domain';
 import type { Round, RoundEntry, RoundEntryInput, SpringDiscipline, Workspace } from '@teamgym/domain';
 import { ambitionCanNow, ambitionEnvironment, applyPotentialPreview } from '@teamgym/rules';
 import type { BonusPotential, ParticipantEvaluation, RoundEvaluation, RulePackage, TeamProfile } from '@teamgym/rules';
@@ -41,6 +41,7 @@ import { AmbitionReadiness, AmbitionCreateForm, AmbitionFillForm, ambitionLabel,
 import type { AmbitionRequest, SlotMode } from './ambition';
 import { MaximumScoreMetric, RoundPlannedExecution, RoundSpotShare, SlotSpot, spotGradeLabel } from './planned-spot';
 import type { SpotChange } from './planned-spot';
+import './round-order.css';
 
 export function SpringPage(props: DataProps & { teamId: string }) {
   const team = props.workspace.teams.find((item) => item.id === props.teamId)!;
@@ -165,6 +166,9 @@ function SpringDisciplineView({
   const [activeRound, setActiveRound] = useState(0);
   const rowNodes = useRef(new Map<string, HTMLLIElement>());
   const rowPositions = useRef(new Map<string, { x: number; y: number }>());
+  const roundNodes = useRef(new Map<string, HTMLElement>());
+  const roundPositions = useRef(new Map<string, { x: number; y: number }>());
+  const [roundDrag, setRoundDrag] = useState<{ roundId: string; over: number | null } | null>(null);
   useLayoutEffect(() => {
     const next = new Map<string, { x: number; y: number }>();
     const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -185,6 +189,24 @@ function SpringDisciplineView({
       }
     }
     rowPositions.current = next;
+    const rounds = new Map<string, { x: number; y: number }>();
+    for (const [id, node] of roundNodes.current) {
+      if (!node.offsetParent) continue;
+      const position = { x: node.offsetLeft, y: node.offsetTop };
+      const previous = roundPositions.current.get(id);
+      rounds.set(id, position);
+      if (!reduced && previous && (previous.x !== position.x || previous.y !== position.y)) {
+        for (const animation of node.getAnimations()) animation.cancel();
+        node.animate(
+          [
+            { transform: `translate(${previous.x - position.x}px, ${previous.y - position.y}px)` },
+            { transform: 'translate(0, 0)' },
+          ],
+          { duration: 420, easing: 'cubic-bezier(.2, .8, .2, 1)' },
+        );
+      }
+    }
+    roundPositions.current = rounds;
   }, [workspace, discipline, activeRound]);
   const [entryDialog, setEntryDialog] = useState<{ round: Round; entry?: RoundEntry } | null>(null);
   const dirty = useRef(false);
@@ -256,20 +278,14 @@ function SpringDisciplineView({
     const environment = ambitionEnvironment(rulePackage);
     const roundNumber = scenario.rounds.findIndex((item) => item.id === round.id) + 1;
     if (value.kind === 'add') {
-      const position = value.role === 'extra' ? round.entries.filter((entry) => entry.role === 'extra').length : round.entries.length;
-      change(addAmbitions(workspace, plan.id, discipline, scenarioId, round.id, value.definition, value.role, value.count, position, profile, value.approvalNote, environment).workspace);
+      const position = round.entries.length;
+      change(addAmbitions(workspace, plan.id, discipline, scenarioId, round.id, value.definition, value.count, position, profile, value.approvalNote, environment).workspace);
       setEntryError('');
       setEntryStatus(`${roundNumber}. omgang: ambition tilføjet · ${springDisplayName(value.definition, rulePackage)} · mangler gymnast.`);
       return;
     }
     let next = workspace;
-    const current = round.entries.find((entry) => entry.id === value.entryId)!;
-    if (value.role !== current.role) {
-      const changed = round.entries.map((entry) => (entry.id === value.entryId ? { ...entry, role: value.role } : entry));
-      next = setRoundEntries(next, plan.id, discipline, scenarioId, round.id,
-        [...changed.filter((entry) => entry.role === 'extra'), ...changed.filter((entry) => entry.role === 'counting')], profile);
-    }
-    if (value.definition) next = changeAmbitionSkill(next, plan.id, discipline, scenarioId, round.id, value.entryId, value.definition, undefined, profile, environment);
+    if (value.definition) next = changeAmbitionSkill(next, plan.id, discipline, scenarioId, round.id, value.entryId, value.definition, profile, environment);
     if (value.approvalNote !== null) {
       const approvedId = next.plans.find((item) => item.id === plan.id)![discipline].find((item) => item.id === scenarioId)!.rounds.find((item) => item.id === round.id)!.entries.find((item) => item.id === value.entryId)!.plannedSkillId!;
       next = approveSharedConnection(next, approvedId, value.approvalNote, environment);
@@ -291,6 +307,26 @@ function SpringDisciplineView({
     } catch (error) {
       setEntryError(error instanceof Error ? error.message : 'Rækkefølgen kunne ikke ændres.');
     }
+  }
+  function placeRound(round: Round, toIndex: number, focus?: 'left' | 'right') {
+    const from = scenario.rounds.findIndex((item) => item.id === round.id);
+    if (from === toIndex || toIndex < 0 || toIndex >= scenario.rounds.length) return;
+    try {
+      change(moveRound(workspace, plan.id, discipline, scenarioId, round.id, toIndex));
+    } catch (error) {
+      setEntryError(error instanceof Error ? error.message : 'Omgangen kunne ikke flyttes.');
+      return;
+    }
+    setEntryError('');
+    setActiveRound(toIndex);
+    const crowned = toIndex === 0 ? ' og er nu holdomgang' : from === 0 ? '. Den nye 1. omgang er holdomgang' : '';
+    setEntryStatus(`Omgangen er flyttet fra plads ${from + 1} til plads ${toIndex + 1}${crowned}.`);
+    if (!focus) return;
+    requestAnimationFrame(() => {
+      const section = document.getElementById(`round-${round.id}`);
+      const preferred = section?.querySelector<HTMLButtonElement>(`.round-move[data-direction='${focus}']:not(:disabled)`);
+      (preferred ?? section?.querySelector<HTMLButtonElement>('.round-move:not(:disabled)'))?.focus({ preventScroll: true });
+    });
   }
   function spot(round: Round, participant: ParticipantEvaluation, value: SpotChange) {
     const name = accessibleName(participant);
@@ -353,7 +389,7 @@ function SpringDisciplineView({
         onPreview={setPreview} onRound={goToRound} onAnalysis={goToAnalysis} />
       <div className="round-tabs" aria-label="Vælg omgang">
         {scenario.rounds.map((round, index) => (
-          <button key={round.id} aria-pressed={activeRound === index} onClick={() => setActiveRound(index)}>
+          <button key={round.id} className={index === 0 ? 'team-round-tab' : undefined} aria-pressed={activeRound === index} onClick={() => setActiveRound(index)}>
             {index + 1}. {index === 0 ? 'Holdomgang' : 'Omgang'}
           </button>
         ))}
@@ -363,28 +399,72 @@ function SpringDisciplineView({
           const result = evaluation.rounds[roundIndex]!;
           return (
             <section
-              className={`round ${roundIndex === activeRound ? 'active-round' : ''}`}
+              className={`round${roundIndex === activeRound ? ' active-round' : ''}${roundIndex === 0 ? ' team-round' : ''}${roundDrag?.roundId === round.id ? ' round-dragging' : ''}${roundDrag && roundDrag.roundId !== round.id && roundDrag.over === roundIndex ? ' round-drop-target' : ''}`}
               key={round.id}
+              ref={(node) => {
+                if (node) roundNodes.current.set(round.id, node);
+                else roundNodes.current.delete(round.id);
+              }}
               id={`round-${round.id}`}
               tabIndex={-1}
               aria-label={`${roundIndex + 1}. omgang`}
+              onDragOver={(event) => {
+                if (!roundDrag) return;
+                event.preventDefault();
+                if (roundDrag.over !== roundIndex) setRoundDrag({ ...roundDrag, over: roundIndex });
+              }}
+              onDrop={(event) => {
+                if (!roundDrag) return;
+                event.preventDefault();
+                const moved = scenario.rounds.find((item) => item.id === roundDrag.roundId);
+                setRoundDrag(null);
+                if (moved) placeRound(moved, roundIndex);
+              }}
             >
               <div className="round-heading">
-                <h2>
-                  {roundIndex + 1}. {roundIndex === 0 ? 'Holdomgang' : 'Omgang'}
+                <h2 key={roundIndex === 0 ? `team-${round.id}` : round.id}>
+                  <span className="round-number">{roundIndex + 1}</span>
+                  <span className="sr-only">. </span>
+                  {roundIndex === 0 ? <span className="round-title team">Holdomgang</span> : <span className="round-title">Omgang</span>}
                 </h2>
-                {roundIndex > 0 && (
+                <div className="round-order" role="group" aria-label={`Placering af ${roundIndex + 1}. omgang`}>
                   <button
-                    className="quiet"
-                    disabled={!writable}
-                    onClick={() => {
-                      change(moveRoundFirst(workspace, plan.id, discipline, scenarioId, round.id));
-                      setActiveRound(0);
-                    }}
+                    className="round-move"
+                    data-direction="left"
+                    disabled={!writable || roundIndex === 0}
+                    aria-label={`Flyt ${roundIndex + 1}. omgang til plads ${roundIndex}${roundIndex === 1 ? ' som holdomgang' : ''}`}
+                    title={roundIndex === 1 ? 'Gør til holdomgang' : 'Flyt én plads frem'}
+                    onClick={() => placeRound(round, roundIndex - 1, 'left')}
                   >
-                    Gør til holdomgang
+                    <Icon name="left" />
                   </button>
-                )}
+                  <span
+                    className="round-grip"
+                    draggable={writable}
+                    aria-hidden="true"
+                    title="Træk for at flytte omgangen"
+                    onDragStart={(event) => {
+                      event.dataTransfer.effectAllowed = 'move';
+                      event.dataTransfer.setData('text/plain', round.id);
+                      const section = event.currentTarget.closest('section');
+                      if (section) event.dataTransfer.setDragImage(section, 40, 24);
+                      setRoundDrag({ roundId: round.id, over: null });
+                    }}
+                    onDragEnd={() => setRoundDrag(null)}
+                  >
+                    <Icon name="grip" />
+                  </span>
+                  <button
+                    className="round-move"
+                    data-direction="right"
+                    disabled={!writable || roundIndex === scenario.rounds.length - 1}
+                    aria-label={`Flyt ${roundIndex + 1}. omgang til plads ${roundIndex + 2}`}
+                    title="Flyt én plads tilbage"
+                    onClick={() => placeRound(round, roundIndex + 1, 'right')}
+                  >
+                    <Icon name="right" />
+                  </button>
+                </div>
               </div>
               <p className="round-totals">
                 D <strong>{points(result.panelD)}</strong>
@@ -415,6 +495,7 @@ function SpringDisciplineView({
                   ))}
               <ol className="round-entries">
                 {result.entries.map((participant, index) => {
+                  const firstCounting = result.entries.findIndex((item) => item.entry.role === 'counting');
                   const isAmbition = participant.entry.athleteId === null;
                   const springName = participant.skill ? springDisplayName(participant.skill, rulePackage) : 'Spring mangler';
                   const canNow = isAmbition ? ambitionCanNow(workspace, rulePackage, teamId, round, participant.entry.id) : 0;
@@ -426,14 +507,17 @@ function SpringDisciplineView({
                       if (node) rowNodes.current.set(participant.entry.id, node);
                       else rowNodes.current.delete(participant.entry.id);
                     }}
-                    className={`${participant.entry.role === 'extra' ? 'extra-entry' : ''}${isAmbition ? ' ambition-entry' : ''}${participant.entry.plannedSpot ? ' has-spot' : ''}${insertedEntryId === participant.entry.id ? ' reserve-inserted' : ''}${filledEntryId === participant.entry.id ? ' ambition-filled' : ''}`}
+                    className={`${participant.entry.role === 'extra' ? 'extra-entry' : ''}${index === firstCounting && firstCounting > 0 ? ' first-counting' : ''}${isAmbition ? ' ambition-entry' : ''}${participant.entry.plannedSpot ? ' has-spot' : ''}${insertedEntryId === participant.entry.id ? ' reserve-inserted' : ''}${filledEntryId === participant.entry.id ? ' ambition-filled' : ''}`}
                     onAnimationEnd={(event) => {
                       if (event.target !== event.currentTarget) return;
                       if (insertedEntryId === participant.entry.id) setInsertedEntryId(null);
                       if (filledEntryId === participant.entry.id) setFilledEntryId(null);
                     }}
                     draggable={writable}
-                    onDragStart={() => setDrag({ roundId: round.id, entryId: participant.entry.id })}
+                    onDragStart={(event) => {
+                      event.stopPropagation();
+                      setDrag({ roundId: round.id, entryId: participant.entry.id });
+                    }}
                     onDragOver={(event) => {
                       if (drag?.roundId === round.id) event.preventDefault();
                     }}
@@ -454,6 +538,11 @@ function SpringDisciplineView({
                       setDrag(null);
                     }}
                   >
+                    {index === firstCounting && firstCounting > 0 && (
+                      <span className="count-line" aria-hidden="true">
+                        <span>Tællende {profile.counting}</span>
+                      </span>
+                    )}
                     <div className="entry-main">
                       <button
                         className="entry-name"
@@ -600,6 +689,11 @@ function SpringDisciplineView({
               >
                 + Tilføj plads
               </button>
+              {profile.extra > 0 && round.entries.length >= profile.counting && round.entries.length < profile.counting + profile.extra && (
+                <p className="round-extra-hint">
+                  Flere end {profile.counting} gør de første til ekstra. Flyt en gymnast op over stregen for at gøre den til ekstra.
+                </p>
+              )}
               <ReserveList
                 inserted={setInsertedEntryId}
                 workspace={workspace}
@@ -801,10 +895,7 @@ function SpringDisciplineView({
               const changed = entryDialog.entry
                 ? entryDialog.round.entries.map((existing) => (existing.id === entry.id ? entry : existing))
                 : [...entryDialog.round.entries, entry];
-              entries(entryDialog.round, [
-                ...changed.filter((item) => item.role === 'extra'),
-                ...changed.filter((item) => item.role === 'counting'),
-              ]);
+              entries(entryDialog.round, changed);
               setEntryDialog(null);
               dirty.current = false;
               const action = pending.current;
@@ -1292,7 +1383,6 @@ function AthleteEntryForm({
     entry?.athleteId === initialAthlete ? (entry?.athleteSkillId ?? '') : '',
   );
   const [identity, setIdentity] = useState<string | null>(null);
-  const [role, setRole] = useState<RoundEntry['role']>(entry?.role ?? 'counting');
   const [switches, setSwitches] = useState(0);
   const [directionFilter, setDirectionFilter] = useState<SpringDirectionFilter>('all');
   const direction =
@@ -1310,7 +1400,8 @@ function AthleteEntryForm({
     [repetition, workspace, teamId, discipline, rulePackage, rounds, entry?.id],
   );
   const roundIndex = rounds.findIndex((item) => item.id === round.id);
-  const counting = !reserve && role === 'counting';
+  // En ny plads tilføjes sidst og tæller; en eksisterende plads beholder sin positionsbestemte rolle.
+  const counting = !reserve && (entry ? entry.role === 'counting' : true);
   const marks = (value: string) => usageMarks(usage.get(value), roundIndex, counting);
   const teamMode = athleteId === WHOLE_TEAM;
   const teamRow = identity ? teamRows.find((row) => row.identity === identity) : undefined;
@@ -1364,7 +1455,6 @@ function AthleteEntryForm({
           id: entry?.id ?? newEntityId(),
           athleteId,
           athleteSkillId: String(data.get('skill')) || null,
-          role: data.get('role') === 'extra' ? 'extra' : 'counting',
           plannedSkillId: null,
         })
       }
@@ -1431,19 +1521,6 @@ function AthleteEntryForm({
               usage: marks(evaluated.identity),
             }))}
           />
-        )}
-        {!reserve && (
-          <label>
-            Rolle
-            <select
-              name="role"
-              value={role}
-              onChange={(event) => setRole(event.target.value === 'extra' ? 'extra' : 'counting')}
-            >
-              <option value="counting">Tællende</option>
-              <option value="extra">Ekstra · først · indgår ikke i D/C/stabilitet</option>
-            </select>
-          </label>
         )}
       </fieldset>
       {teamMode && writable && (
