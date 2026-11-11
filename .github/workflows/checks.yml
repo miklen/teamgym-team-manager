@@ -28,5 +28,8 @@ jobs:
           VITE_GOOGLE_CLIENT_ID: synthetic-ci.apps.googleusercontent.com
           VITE_GOOGLE_PROJECT_NUMBER: '123456789'
           VITE_GOOGLE_API_KEY: synthetic-ci-browser-key
-      - run: npx playwright install --with-deps chromium
+      - run: npx playwright install chromium
+      # Runner-imaget har Chromiums biblioteker; ekstra skrifttyper hentes kun, hvis Ubuntus arkiver svarer.
+      - name: Systempakker til Chromium (bedste forsøg)
+        run: timeout 300 npx playwright install-deps chromium || echo "::warning::Systempakker til Chromium kunne ikke hentes; fortsætter med runner-imagets pakker."
       - run: npm run test:e2e

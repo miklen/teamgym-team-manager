@@ -29,7 +29,10 @@ jobs:
           VITE_GOOGLE_CLIENT_ID: ${{ vars.VITE_GOOGLE_CLIENT_ID }}
           VITE_GOOGLE_PROJECT_NUMBER: ${{ vars.VITE_GOOGLE_PROJECT_NUMBER }}
           VITE_GOOGLE_API_KEY: ${{ vars.VITE_GOOGLE_API_KEY }}
-      - run: npx playwright install --with-deps chromium
+      - run: npx playwright install chromium
+      # Runner-imaget har Chromiums biblioteker; ekstra skrifttyper hentes kun, hvis Ubuntus arkiver svarer.
+      - name: Systempakker til Chromium (bedste forsøg)
+        run: timeout 300 npx playwright install-deps chromium || echo "::warning::Systempakker til Chromium kunne ikke hentes; fortsætter med runner-imagets pakker."
       - run: npm run test:e2e
       - uses: actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9 # v5
         with:
