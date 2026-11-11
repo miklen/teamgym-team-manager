@@ -569,7 +569,6 @@ function SpringDisciplineView({
                     <EntryNotes
                       participant={participant}
                       uncertainties={[
-                        ...(participant.evaluation?.hasDouble ? ['A71-U01'] : []),
                         ...(repeatedStartSaltoIssue(participant.skill, participant.evaluation) ? ['A3-U01'] : []),
                         ...(participant.spotD.issues.includes('Q-SPOT-DUP') ? ['Q-SPOT-DUP'] : []),
                       ]}

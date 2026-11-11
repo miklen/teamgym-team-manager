@@ -451,7 +451,6 @@ export function AthleteInspector({
                       <summary>Beregningsgrundlag</summary>
                       <Decision value={evaluation.difficulty} />
                       <RuleUncertainty ids={evaluation.difficulty.issues} />
-                      {evaluation.hasDouble && <RuleUncertainty ids={['A71-U01']} />}
                       {repeatedStartSaltoIssue(skill, evaluation) && <RuleUncertainty ids={['A3-U01']} />}
                       <SkillBreakdown evaluation={evaluation} />
                       <SourceLinks sources={evaluation.explanation.sources} rulePackage={chosenPackage!} />

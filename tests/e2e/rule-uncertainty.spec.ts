@@ -75,6 +75,20 @@ test('gentagelser vises som holdfradrag med berørte omgange', async ({ page }) 
   await expect(repetition.locator('.rule-uncertainty')).toHaveCount(0);
 });
 
+test('licenstvivl ved dobbeltspring står kun under Reglement', async ({ page }) => {
+  const workspace = syntheticWorkspace().workspace;
+  const skill = workspace.skills.find((item) => item.discipline === 'trampet');
+  if (skill?.discipline !== 'trampet') throw Error('fixture');
+  skill.jump = { ...skill.jump, direction: 'forward', rotationQuarterTurns: 8, bodyPositions: ['tuck', 'tuck'], twistsHalfTurns: 0, twistDistribution: [] };
+  await openWorkspace(page, workspace);
+  await page.getByRole('link', { name: 'Springplan', exact: true }).click();
+  await page.getByRole('button', { name: 'Trampet', exact: true }).click();
+  await expect(page.getByRole('img', { name: 'Sværhed: 0,700' }).first()).toBeVisible();
+  await expect(page.locator('main')).not.toContainText(/licens/i);
+  await page.getByRole('link', { name: 'Reglement', exact: true }).click();
+  await expect(page.locator('main')).toContainText('Licens ved visse dobbeltspring');
+});
+
 test('tom springplan har hverken stort advarselsfelt eller for tidlig regeltrekant', async ({ page }) => {
   const workspace = syntheticWorkspace().workspace;
   for (const round of workspace.plans[0]!.tumbling[0]!.rounds) round.entries = [];

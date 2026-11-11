@@ -839,7 +839,6 @@ export function SkillEditor({
               <h3>Planlagt D</h3>
               <Decision value={evaluation.difficulty} />
               <RuleUncertainty ids={evaluation.difficulty.issues} />
-              {evaluation.hasDouble && <RuleUncertainty ids={['A71-U01']} />}
               {repeatedStartSaltoIssue(preview, evaluation) && <RuleUncertainty ids={['A3-U01']} />}
               <SkillBreakdown evaluation={evaluation} />
               <p>
