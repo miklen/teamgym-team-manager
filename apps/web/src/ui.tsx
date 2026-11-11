@@ -1,11 +1,12 @@
 export type IconName =
-  'teams' | 'athletes' | 'spring' | 'rhythm' | 'rules' | 'cloud' | 'settings' | 'plus' | 'arrow' | 'check' | 'up' | 'down' | 'assess' | 'remove';
+  'teams' | 'athletes' | 'spring' | 'profile' | 'rhythm' | 'rules' | 'cloud' | 'settings' | 'plus' | 'arrow' | 'check' | 'up' | 'down' | 'assess' | 'remove';
 
 const paths: Record<IconName, string> = {
   teams: 'M3 4h7v7H3z M14 4h7v7h-7z M3 15h7v6H3z M14 15h7v6h-7z',
   athletes:
     'M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2 M16 3a4 4 0 0 1 0 8 M22 21v-2a4 4 0 0 0-3-3.87 M13 7a4 4 0 1 1-8 0 4 4 0 0 1 8 0',
   spring: 'M3 19h18 M3 15c3 0 3-10 7-10s3 10 7 10h4 M17 11l4 4-4 4',
+  profile: 'M3 20h4v-5h4v-4h4V7h6 M3 9.5h2 M8 9.5h2 M13 9.5h2',
   rhythm: 'M4 12h3l3-8 4 16 3-8h3',
   rules: 'M12 5c-3-2-6-2-10-1v15c4-1 7-1 10 1 3-2 6-2 10-1V4c-4-1-7-1-10 1v15',
   cloud: 'M7 18a5 5 0 1 1 0-10 6 6 0 0 1 11.5 1.5A4.5 4.5 0 0 1 18 18 M9 14l3 3 5-5',

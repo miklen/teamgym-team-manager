@@ -18,11 +18,15 @@ Appen SHALL leveres som statiske filer på GitHub Pages under `/teamgym-team-man
 - **THEN** er det statiske output tilstrækkeligt til drift, og ingen API-server eller serverhemmelighed skal konfigureres.
 
 ### Requirement: Sammenhængende dansk arbejdsflade
-Appen SHALL have tydelig navigation mellem arbejdsrum, gymnastkartotek, hold, springopstilling og rytmeoverblik. Aktuelt hold, reglement/version og gemmetilstand SHALL være synlige i relevant kontekst. Produktnavnet SHALL være TeamGym Team Manager, og brugerrettet tekst SHALL være dansk med danske talvisninger.
+Appen SHALL have tydelig navigation mellem arbejdsrum, gymnastkartotek, hold, springopstilling, holdprofil og rytmeoverblik. Aktuelt hold, reglement/version og gemmetilstand SHALL være synlige i relevant kontekst. Produktnavnet SHALL være TeamGym Team Manager, og brugerrettet tekst SHALL være dansk med danske talvisninger.
 
 #### Scenario: Skift mellem hold
 - **WHEN** træneren skifter fra hold A's springopstilling til hold B's rytmeoverblik
 - **THEN** viser konteksten det nye hold og dets egen regelprofil uden at genbruge det gamle holds resultater.
+
+#### Scenario: Holdprofil i holdets navigation
+- **WHEN** træneren har valgt et hold
+- **THEN** tilbyder navigationen Holdprofil ved siden af Gymnaster, Springplan og Rytme. Et dybt hash-link til holdets Holdprofil åbner samme visning efter genindlæsning, og skift til et andet hold viser det nye holds profil.
 
 ### Requirement: Visuelt design efter projektets frontend-skill
 Brugerfladen SHALL have rolige flader, tydelig typografi, konsekvent afstandssystem, højst to skrifttyper og én primær accentfarve. Lister, tabeller, matricer og opdelt arbejdsflade SHALL være den primære informationsstruktur. Appen MUST NOT leveres som en generisk mosaik af dashboardkort eller med en markedsføringshero foran arbejdsfladen. Scenarier og reserver SHALL fremstå som en smuk, moderne, elegant og intuitiv del af appen gennem tydeligt hierarki, præcise afstande, læsbare data og sammenhængende betjening. Scenarielinjen SHALL ligge før disciplinens analyser og omgange. Disciplin, scenarie og omgang SHALL kunne skelnes visuelt uden tre konkurrerende, ens navigationsrækker. Reserver SHALL være en sekundær liste under den relevante omgang med tydelig forskel fra udførende og ekstra gymnaster.

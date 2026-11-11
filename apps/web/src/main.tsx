@@ -19,6 +19,7 @@ import {
   workspaceSession,
 } from './runtime';
 import { SpringPage } from './spring';
+import { TeamProfilePage } from './team-profile';
 import { RulesPage, Teams } from './teams';
 import { Brand, Icon, WelcomeArtwork } from './ui';
 import type { IconName } from './ui';
@@ -311,6 +312,7 @@ function App() {
     { key: 'arbejdsrum', label: 'Hold', icon: 'teams' },
     { key: 'gymnaster', label: 'Gymnaster', icon: 'athletes' },
     { key: 'spring', label: 'Springplan', icon: 'spring' },
+    { key: 'profil', label: 'Holdprofil', icon: 'profile' },
     { key: 'rytme', label: 'Rytme', icon: 'rhythm' },
     { key: 'reglement', label: 'Reglement', icon: 'rules' },
   ];
@@ -647,6 +649,13 @@ function App() {
               />
             ) : !team ? (
               <Empty>Vælg eller opret et hold først.</Empty>
+            ) : page === 'profil' ? (
+              <TeamProfilePage
+                key={teamId}
+                workspace={workspace}
+                teamId={teamId}
+                openAthletes={() => navigate('gymnaster')}
+              />
             ) : page === 'rytme' ? (
               <RhythmPage
                 key={teamId}

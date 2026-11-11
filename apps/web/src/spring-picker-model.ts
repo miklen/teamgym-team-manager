@@ -34,6 +34,8 @@ export interface TeamSkillRow {
   direction: string;
   purity: SpringPurity;
   difficulty: Fraction | null;
+  /** Repræsentativ definition (første registrering i gruppen). */
+  definition: SpringSkill;
   /** Ledige gymnaster med springet; højeste sikkerhed først. */
   available: TeamSkillAthlete[];
   /** Gymnaster (id), der kan springet, men allerede står i omgangen; alfabetisk. */
@@ -114,6 +116,7 @@ export function teamSkillRows(
       direction: springDirectionText(group.skill),
       purity: group.purity,
       difficulty: group.difficulty,
+      definition: group.skill,
       available: free,
       placed: all
         .filter((item) => !available.has(item.athleteId))

@@ -5,7 +5,7 @@ import { openWorkspace } from './drive-fixture';
 test('WCAG 2.2 AA på centrale arbejdsflader og vurderingsdialog', async ({ page }) => {
   const source = await openWorkspace(page);
   await expect(page.getByRole('heading', { name: 'Hold', exact: true })).toBeVisible();
-  for (const name of ['Hold', 'Gymnaster', 'Springplan', 'Rytme', 'Reglement']) {
+  for (const name of ['Hold', 'Gymnaster', 'Springplan', 'Holdprofil', 'Rytme', 'Reglement']) {
     await page.getByRole('link', { name, exact: true }).click();
     await expect(
       page.getByRole('heading', { name: name === 'Rytme' ? 'Rytmefællesnævnere' : name, exact: true }),
