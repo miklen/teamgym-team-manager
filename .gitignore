@@ -11,3 +11,5 @@ tmp/
 *.local
 *.log
 .DS_Store
+*.tsbuildinfo
+.obsidian/
