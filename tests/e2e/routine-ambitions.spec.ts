@@ -258,6 +258,35 @@ test('hel ambitionsomgang viser foreløbigt karakterpotentiale', async ({ page }
   await expect(remove).toHaveCSS('background-color', 'rgb(255, 240, 242)');
 });
 
+test('blandet omgang med gymnaster og ambitioner viser foreløbigt karakterpotentiale', async ({ page }) => {
+  const fixture = syntheticWorkspace();
+  const plan = fixture.workspace.plans[0]!;
+  const scenario = plan.trampet[0]!;
+  let workspace = fixture.workspace;
+  const registrations: string[] = [];
+  for (const athlete of workspace.athletes.slice(0, limits.counting)) {
+    const registered = registerAthleteSkill(workspace, athlete.id, jump060, fixture.environment);
+    workspace = registered.workspace;
+    registrations.push(registered.athleteSkillId);
+  }
+  for (const [index, filled] of [[0, limits.counting], [1, limits.counting - 2], [2, limits.counting]] as const) {
+    workspace = setRoundEntries(workspace, plan.id, 'trampet', scenario.id, scenario.rounds[index]!.id,
+      workspace.athletes.slice(0, filled).map((athlete, position) => ({
+        id: fixture.environment.id(), athleteId: athlete.id, athleteSkillId: registrations[position]!, role: 'counting',
+      })), limits, fixture.environment);
+  }
+  for (let index = limits.counting - 2; index < limits.counting; index++) {
+    workspace = addAmbition(workspace, plan.id, 'trampet', scenario.id, scenario.rounds[1]!.id,
+      jump060, 'counting', index, limits, fixture.environment).workspace;
+  }
+  await openWorkspace(page, workspace);
+  await trampet(page);
+  await expect(round(page, 2).locator('li.ambition-entry')).toHaveCount(2);
+  const maximum = page.locator('.maximum-metric');
+  await expect(maximum.locator('strong')).toHaveText(/^\d+,\d{3}$/);
+  await expect(maximum).toContainText('Foreløbigt potentiale');
+});
+
 test('kendt salto–rondat–flik beder ikke om godkendelse på omgang uden gymnast', async ({ page }) => {
   const fixture = syntheticWorkspace();
   const plan = fixture.workspace.plans[0]!;
