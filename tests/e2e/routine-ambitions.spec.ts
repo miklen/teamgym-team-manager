@@ -153,7 +153,7 @@ for (const width of [1440, 390]) {
       .getByRole('button', { name: 'Åbn gymnastens færdigheder: Syntetisk gymnast 8 · Test 8' })
       .click();
     await page.getByRole('button', { name: 'Tilføj færdighed', exact: true }).click();
-    await page.getByRole('combobox', { name: 'Disciplin', exact: true }).selectOption('trampet');
+    await page.getByRole('group', { name: 'Redskab', exact: true }).getByRole('button', { name: 'Trampet', exact: true }).click();
     await page.getByLabel('Søg sammensat spring eller alias').fill('strakt salto 900');
     await chooseSpring(page, /^Syntetisk strakt 900/, 4);
     await page.getByRole('switch', { name: 'Medtag fundament automatisk' }).uncheck();

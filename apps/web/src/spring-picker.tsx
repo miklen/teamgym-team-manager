@@ -1,7 +1,7 @@
 import { useId, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { STABILITY_ANCHORS } from '@teamgym/domain';
 import type { ElementExecution } from '@teamgym/domain';
-import type { Workspace } from '@teamgym/domain';
+import type { SpringDiscipline, Workspace } from '@teamgym/domain';
 import type { RulePackage } from '@teamgym/rules';
 import { springRegistrationPlan } from './spring-library';
 import { SpringChoiceRows } from './spring-choice-rows';
@@ -15,7 +15,8 @@ import type { SpringChoice, SpringSelection } from './spring-library';
 export function SpringPicker({
   controls,
   library,
-  discipline,
+  apparatus,
+  setApparatus,
   workspace,
   athleteId,
   rulePackage,
@@ -29,7 +30,9 @@ export function SpringPicker({
 }: {
   controls: FoundationControls;
   library: SpringChoice[];
-  discipline: 'tumbling' | 'trampet';
+  /** Redskabsfilter; Alle viser bane og trampet i samme liste. Gemmes aldrig. */
+  apparatus: SpringDiscipline | 'all';
+  setApparatus: (value: SpringDiscipline | 'all') => void;
   workspace: Workspace;
   athleteId: string;
   rulePackage: RulePackage;
@@ -52,13 +55,14 @@ export function SpringPicker({
   );
   const [chain, setChain] = useState<ChainState>(EMPTY_CHAIN);
   const [activeSlot, setActiveSlot] = useState<ChainSlot | null>(0);
-  const [chainDiscipline, setChainDiscipline] = useState(discipline);
-  if (chainDiscipline !== discipline) {
-    // Kædens pladser betyder noget andet på trampet; begynd forfra ved skift af disciplin.
-    setChainDiscipline(discipline);
+  // Kædens pladser betyder noget andet på trampet; begynd forfra ved skift af redskab.
+  const chooseApparatus = (next: SpringDiscipline | 'all') => {
+    if (next === apparatus) return;
+    setApparatus(next);
     setChain(EMPTY_CHAIN);
     setActiveSlot(0);
-  }
+    setOnlySelected(false);
+  };
   const [onlySelected, setOnlySelected] = useState(false);
   const selectionFilter = useRef<HTMLButtonElement>(null);
   const picker = useRef<HTMLElement>(null);
@@ -66,13 +70,16 @@ export function SpringPicker({
   useLayoutEffect(() => {
     const list = picker.current?.querySelector('.unified-spring-list');
     if (list) list.scrollTop = 0;
-  }, [query, minimum, unknown, chain, onlySelected]);
+  }, [query, minimum, unknown, chain, onlySelected, apparatus]);
   const disciplineLibrary = useMemo(
     // Atypiske indbyggede serier står uden for listen og bygges med Byg selv.
-    () => library.filter((item) => item.definition.discipline === discipline && listedSpring(item)),
-    [library, discipline],
+    () =>
+      library.filter(
+        (item) => (apparatus === 'all' || item.definition.discipline === apparatus) && listedSpring(item),
+      ),
+    [library, apparatus],
   );
-  const filtered = filterSpringChoices(library, discipline, query, EMPTY_CHAIN, minimum, unknown, rulePackage);
+  const filtered = filterSpringChoices(library, apparatus, query, EMPTY_CHAIN, minimum, unknown, rulePackage);
   const choices = filtered.filter((item) => matchesChain(item.definition, chain));
   const teamId = workspace.athletes.find((athlete) => athlete.id === athleteId)?.teamId;
   const teamCounts = useMemo(
@@ -90,7 +97,7 @@ export function SpringPicker({
     ? rows.filter((row) => springPickerRowRank(row, query) !== null).length
     : choices.length;
   const filtersActive = minimum !== '' || unknown;
-  const searching = !!query.trim() || !chainIsEmpty(chain) || filtersActive;
+  const searching = !!query.trim() || !chainIsEmpty(chain) || filtersActive || apparatus !== 'all';
   const prefill = chainPrefill(
     disciplineLibrary.map((item) => item.definition),
     chain,
@@ -102,6 +109,7 @@ export function SpringPicker({
     setMinimum('');
     setUnknown(false);
     setOnlySelected(false);
+    setApparatus('all');
   };
   const noResults = !onlySelected && choices.length === 0;
   const buildLink = noResults ? (
@@ -142,9 +150,22 @@ export function SpringPicker({
             }}
             placeholder="Søg, fx rondat-flik-1/1 eller kraft barani"
           />
+          <div className="picker-apparatus" role="group" aria-label="Redskab">
+            {APPARATUS.map(([value, label]) => (
+              <button
+                key={value}
+                type="button"
+                aria-pressed={apparatus === value}
+                onClick={() => chooseApparatus(value)}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
           <p className="picker-find-hint">… eller byg kæden op ét spring ad gangen:</p>
           <SpringChain
-            discipline={discipline}
+            discipline={apparatus}
+            chooseDiscipline={chooseApparatus}
             definitions={filtered.map((item) => item.definition)}
             labels={disciplineLibrary.map((item) => item.definition)}
             state={chain}
@@ -226,6 +247,7 @@ export function SpringPicker({
           </div>
           <SpringChoiceRows
             rows={rows}
+            showApparatus={apparatus === 'all' || onlySelected}
             {...{ selections, controls, rulePackage, workspace, athleteId, evaluations, teamCounts }}
             empty={
               onlySelected
@@ -294,3 +316,9 @@ export function SpringPicker({
     </section>
   );
 }
+
+const APPARATUS = [
+  ['all', 'Alle'],
+  ['tumbling', 'Bane'],
+  ['trampet', 'Trampet'],
+] as const;

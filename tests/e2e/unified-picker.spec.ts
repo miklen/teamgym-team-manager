@@ -90,6 +90,7 @@ test('nul resultater giver én Byg videre med kun kædens præcise start', async
   await page.getByRole('button', { name: /Alma Eksempel/ }).click();
   await page.getByRole('button', { name: 'Tilføj færdighed' }).click();
   const picker = page.getByRole('region', { name: 'Springvælger', exact: true });
+  await picker.getByRole('button', { name: /^Bane, \d+ spring$/ }).click();
   await picker.getByRole('group', { name: 'Valg til Første spring' }).getByRole('button', { name: /^Rondat, / }).click();
   await picker.getByRole('searchbox', { name: 'Søg sammensat spring eller alias' }).fill('syntetisk intet match');
   await expect(picker.getByRole('button', { name: /^Byg videre/ })).toHaveCount(1);
@@ -112,6 +113,7 @@ for (const width of [390, 1440]) {
     await page.getByRole('button', { name: 'Tilføj færdighed' }).click();
     const dialog = page.getByRole('dialog');
     await dialog.getByRole('button', { name: 'Byg selv', exact: true }).click();
+    await dialog.getByRole('group', { name: 'Redskab i Byg selv', exact: true }).getByRole('button', { name: 'Bane', exact: true }).click();
     await dialog.getByRole('searchbox', { name: 'Søg spring, kode eller alias' }).fill('strakt salto');
     await dialog.locator('.catalog-option', { hasText: 'Strakt salto' }).first().click();
     const variant = dialog.getByRole('button', { name: /^Redigér variant for element 1:/ });
@@ -162,7 +164,8 @@ for (const width of [1440, 390]) {
 
     const chain = picker.getByRole('list', { name: 'Kæde', exact: true });
     const tray = (slot: string) => picker.getByRole('group', { name: `Valg til ${slot}`, exact: true });
-    // Første plads er åben; Rondat har én variant, så kæden går videre af sig selv.
+    // Ved Alle vælges redskab først; derefter er første plads åben, og Rondat har én variant, så kæden går videre af sig selv.
+    await picker.getByRole('button', { name: /^Bane, \d+ spring$/ }).click();
     await tray('Første spring')
       .getByRole('button', { name: /^Rondat, \d+ spring$/ })
       .click();
@@ -243,6 +246,8 @@ for (const width of [1440, 390]) {
     await expectIncluded(direct);
 
     // Finder man ikke springet, fører Byg selv videre med kædens valg som start.
+    // Nulstil sætter også redskabsfilteret tilbage til Alle.
+    await picker.getByRole('button', { name: /^Bane, \d+ spring$/ }).click();
     if ((await first.getAttribute('aria-expanded')) !== 'true') await first.click();
     await tray('Første spring')
       .getByRole('button', { name: /^Rondat, / })

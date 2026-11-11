@@ -191,12 +191,12 @@ import type { ChainState } from './spring-chain-model';
 
 /** Fælles ren filtrering for gymnast og ambition; et allerede valgt spring vises særskilt. */
 export function filterSpringChoices(
-  library: readonly SpringChoice[], discipline: 'tumbling' | 'trampet', query: string,
+  library: readonly SpringChoice[], discipline: SpringDiscipline | 'all', query: string,
   chain: ChainState, minimum: string, unknown: boolean, rulePackage: Pick<RulePackage, 'evaluateSkill'>,
 ): SpringChoice[] {
   const threshold = /^\d+(?:[.,]\d+)?$/.test(minimum) ? Fraction.from(minimum.replace(',', '.')) : null;
   return library.filter((item) => {
-    if (item.definition.discipline !== discipline || !listedSpring(item) || !matchesSpring(item, query) || !matchesChain(item.definition, chain)) return false;
+    if ((discipline !== 'all' && item.definition.discipline !== discipline) || !listedSpring(item) || !matchesSpring(item, query) || !matchesChain(item.definition, chain)) return false;
     const difficulty = rulePackage.evaluateSkill(item.definition).difficulty.value;
     return unknown ? difficulty === null : !threshold || (difficulty?.compare(threshold) ?? -1) >= 0;
   });

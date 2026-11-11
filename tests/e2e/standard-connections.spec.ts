@@ -13,6 +13,7 @@ for (const width of [1440, 390]) {
     await page.getByRole('button', { name: /Maja Test Test 1/ }).click();
     await page.getByRole('button', { name: 'Tilføj færdighed' }).click();
     await page.getByRole('button', { name: 'Byg selv', exact: true }).click();
+    await page.getByRole('group', { name: 'Redskab i Byg selv', exact: true }).getByRole('button', { name: 'Bane', exact: true }).click();
     for (const [query, name] of [
       ['strakt forlæns', /^Strakt salto forlæns \\ /],
       ['Rondat', /^Rondat R/],

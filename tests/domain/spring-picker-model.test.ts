@@ -11,6 +11,7 @@ import type { Round, Workspace } from '@teamgym/domain';
 import { DK_V1 } from '@teamgym/rules';
 import { matchesSpring, springLibrary, springRegistrationPlan } from '../../apps/web/src/spring-library';
 import {
+  filterSpringChoices,
   matchesDirection,
   roundIdentityUsage,
   springPickerRows,
@@ -19,6 +20,7 @@ import {
   teamSkillRows,
   teamSpringCounts,
 } from '../../apps/web/src/spring-picker-model';
+import { EMPTY_CHAIN } from '../../apps/web/src/spring-chain-model';
 import { syntheticWorkspace } from '../fixtures/synthetic-workspace';
 
 const library = springLibrary(DK_V1, createWorkspace());
@@ -33,6 +35,18 @@ it('samler bibliotek, direkte valg og fundament til én række pr. identitet', (
   for (const item of plan)
     expect(rows.filter((row) => row.identity === skillIdentity(item.definition))).toHaveLength(1);
   expect(rows[0]!.planned?.explicit).toBe(true);
+});
+
+it('redskabsfilteret Alle søger på tværs af bane og trampet; et enkelt redskab udelukker det andet', () => {
+  const disciplines = (discipline: 'all' | 'tumbling' | 'trampet') =>
+    new Set(
+      filterSpringChoices(library, discipline, 'strakt 1/1', EMPTY_CHAIN, '', false, DK_V1).map(
+        (choice) => choice.definition.discipline,
+      ),
+    );
+  expect(disciplines('all')).toEqual(new Set(['tumbling', 'trampet']));
+  expect(disciplines('tumbling')).toEqual(new Set(['tumbling']));
+  expect(disciplines('trampet')).toEqual(new Set(['trampet']));
 });
 
 it('delt fundament og fravalg findes én gang og bevares, når alle katalogresultater filtreres væk', () => {

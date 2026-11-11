@@ -32,6 +32,7 @@ export function SpringChoiceRows({
   evaluations,
   teamCounts,
   empty,
+  showApparatus = false,
 }: {
   rows: SpringPickerRow[];
   selections: SpringSelection[];
@@ -45,6 +46,8 @@ export function SpringChoiceRows({
   teamCounts?: ReadonlyMap<string, number>;
   /** Vises, når ingen spring passer. */
   empty?: ReactNode;
+  /** Redskabsmærke, når listen kan blande bane og trampet. */
+  showApparatus?: boolean;
 }) {
   const existing = useMemo(() => {
     const identities = new Map(workspace.skills.map((skill) => [skill.id, skillIdentity(skill)]));
@@ -115,6 +118,7 @@ export function SpringChoiceRows({
                     : '';
           const name = springDisplayName(definition, rulePackage);
           const known = teamCounts?.get(identity) ?? 0;
+          const apparatus = showApparatus ? (definition.discipline === 'trampet' ? 'Trampet' : 'Bane') : '';
           const inherits = child && !planned.ownAssessment;
           const toggle = () => {
             if (child) {
@@ -142,7 +146,7 @@ export function SpringChoiceRows({
               data-spring-identity={identity}
               data-selection={planned ? (child ? 'foundation' : 'direct') : 'candidate'}
               data-included={checked}
-              aria-label={`${name} ${status} ${springDirectionText(definition)} ${row.choice?.group ?? ''} ${known ? `· Kendt af ${known} på holdet` : ''} · D: ${points(evaluation.difficulty.value)}`
+              aria-label={`${name} ${status} ${springDirectionText(definition)} ${row.choice?.group ?? ''} ${known ? `· Kendt af ${known} på holdet` : ''} · D: ${points(evaluation.difficulty.value)} ${apparatus ? `· ${apparatus}` : ''}`
                 .replace(/\s+/g, ' ')
                 .trim()}
               className={`spring-batch-row ${checked ? 'selected' : ''} ${child ? 'spring-foundation-row' : ''} ${planned?.excluded ? 'is-excluded' : ''}`}
@@ -150,8 +154,13 @@ export function SpringChoiceRows({
               <div className="spring-batch-choice">
                 <strong>{name}</strong>
                 <small className="spring-directions">{springDirectionText(definition)}</small>
-                {(status || known > 0) && (
+                {(status || known > 0 || apparatus) && (
                   <small className="spring-row-meta">
+                    {apparatus && (
+                      <span className="spring-row-apparatus" data-apparatus={definition.discipline}>
+                        {apparatus}
+                      </span>
+                    )}
                     {status && <span className="spring-row-origin">{status}</span>}
                     {known > 0 && <span className="spring-team-known">Kendt af {known} på holdet</span>}
                   </small>

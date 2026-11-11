@@ -1,5 +1,6 @@
 import { useRef } from 'react';
 import type { CSSProperties } from 'react';
+import type { SpringDiscipline } from '@teamgym/domain';
 import type { SpringDefinition } from './spring-library';
 import { chainOptions, chainPickLabel, setChainPick } from './spring-chain-model';
 import type { ChainSlot, ChainState } from './spring-chain-model';
@@ -13,7 +14,97 @@ function slotName(discipline: 'tumbling' | 'trampet', slot: ChainSlot) {
   return slot === 0 ? 'Første spring' : `${slot + 1}. spring`;
 }
 
-export function SpringChain({
+export function SpringChain(props: {
+  discipline: SpringDiscipline | 'all';
+  /** Kædens første trin, når listen viser begge redskaber. */
+  chooseDiscipline?: (discipline: SpringDiscipline) => void;
+  definitions: readonly SpringDefinition[];
+  labels: readonly SpringDefinition[];
+  state: ChainState;
+  change: (next: ChainState) => void;
+  active: ChainSlot | null;
+  setActive: (slot: ChainSlot | null) => void;
+}) {
+  const { discipline, ...rest } = props;
+  if (discipline === 'all') return <ApparatusStep {...props} />;
+  return <DisciplineChain discipline={discipline} {...rest} />;
+}
+
+const APPARATUS_LABEL = { tumbling: 'Bane', trampet: 'Trampet' } as const;
+
+/** Første trin ved Alle: vælg redskab med antal passende spring; valget sætter redskabsfilteret. */
+function ApparatusStep({
+  definitions,
+  chooseDiscipline,
+  active,
+  setActive,
+}: Parameters<typeof SpringChain>[0]) {
+  const tray = useRef<HTMLDivElement>(null);
+  const open = active !== null;
+  const options = (['tumbling', 'trampet'] as const).map((value) => ({
+    value,
+    count: definitions.filter((definition) => definition.discipline === value).length,
+  }));
+  const max = Math.max(1, ...options.map((option) => option.count));
+  return (
+    <div className="spring-chain" data-discipline="all">
+      <div className="chain-bar">
+        <ol className="chain-nodes" aria-label="Kæde">
+          <li className={`chain-node ${open ? 'is-active' : ''}`}>
+            <button
+              type="button"
+              className="chain-node-main"
+              aria-expanded={open}
+              aria-label="Bane eller trampet: alle"
+              onClick={() => {
+                setActive(open ? null : 0);
+                if (!open)
+                  requestAnimationFrame(() => tray.current?.querySelector<HTMLButtonElement>('.chain-tile')?.focus());
+              }}
+            >
+              <span className="chain-node-index" aria-hidden="true">
+                1
+              </span>
+              <span className="chain-node-text">
+                <small>Bane eller trampet</small>
+                <span>Vælg</span>
+              </span>
+            </button>
+          </li>
+        </ol>
+      </div>
+      {open && (
+        <div ref={tray} className="chain-tray" role="group" aria-label="Valg til Bane eller trampet">
+          <div className="chain-tiles">
+            {options.map(({ value, count }) => (
+              <button
+                key={value}
+                type="button"
+                className="chain-tile"
+                aria-pressed={false}
+                aria-label={`${APPARATUS_LABEL[value]}, ${count} spring`}
+                disabled={count === 0}
+                style={{ '--share': count / max } as CSSProperties}
+                onClick={(event) => {
+                  const root = event.currentTarget.closest('.picker-find') ?? document;
+                  chooseDiscipline?.(value);
+                  requestAnimationFrame(() => root.querySelector<HTMLButtonElement>('.chain-tray .chain-tile')?.focus());
+                }}
+              >
+                <span className="chain-tile-label">{APPARATUS_LABEL[value]}</span>
+                <span className="chain-tile-count" aria-hidden="true">
+                  {count}
+                </span>
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function DisciplineChain({
   discipline,
   definitions,
   labels,

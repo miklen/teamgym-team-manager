@@ -19,6 +19,7 @@ import type {
   Discipline,
   ElementExecution,
   SkillDefinition,
+  SpringDiscipline,
   Stability,
   Workspace,
 } from '@teamgym/domain';
@@ -115,6 +116,12 @@ export function SkillEditor({
     ? workspace.skills.find((skill) => skill.id === registration.skillId)
     : undefined;
   const [discipline, setDiscipline] = useState<Discipline>(original?.discipline ?? initialDiscipline);
+  /** Springvælgerens redskabsfilter; ren visning, gemmes aldrig. */
+  const [apparatus, setApparatus] = useState<SpringDiscipline | 'all'>(
+    registration || onDefinition ? (discipline === 'trampet' ? 'trampet' : 'tumbling') : 'all',
+  );
+  /** Byg selv kræver et redskab; fra Alle vælges det først i byggeren. */
+  const [builderPicked, setBuilderPicked] = useState(!!registration || !!onDefinition);
   const [query, setQuery] = useState('');
   const [building, setBuilding] = useState(!!registration || !!onDefinition);
   const [selections, setSelections] = useState<SpringSelection[]>([]);
@@ -179,6 +186,24 @@ export function SkillEditor({
   const [sharedNote, setSharedNote] = useState('');
   const updateElements = (next: ElementExecution[]) => { setElements(next); setConfirm(false); setConfirmation(''); setSharedApprove(false); setSharedNote(''); };
   const [name, setName] = useState(original ? springDisplayName(original, rulePackage) : '');
+  const chooseBuilderDiscipline = (next: SpringDiscipline) => {
+    if (next !== discipline) {
+      setDiscipline(next);
+      updateElements([]);
+      setName('');
+      setQuery('');
+      setAdvanced(null);
+    }
+    setBuilderPicked(true);
+  };
+  const startBuilding = (prefill: ElementExecution[] = []) => {
+    setBuilding(true);
+    setQuery('');
+    setAdvanced(null);
+    if (apparatus === 'all') setBuilderPicked(false);
+    else chooseBuilderDiscipline(apparatus);
+    if (prefill.length) updateElements(prefill);
+  };
   const [advanced, setAdvanced] = useState<number | null>(initialElements?.length ? initialElements.length - 1 : null);
   const practicalStatus = discipline === 'tumbling' && elements.length > 1 ? practicalConnectionStatus(elements) : null;
   const catalog = rulePackage.springCatalog.filter((item) => {
@@ -441,22 +466,30 @@ export function SkillEditor({
       {!onDefinition && <label className="discipline-field">
         Disciplin
         <select
-          value={discipline}
+          value={registration || discipline === 'rhythm' ? discipline : 'spring'}
           disabled={!!registration}
           onChange={(event) => {
-            setDiscipline(event.target.value as Discipline);
+            const next = event.target.value;
+            setDiscipline(next === 'rhythm' ? 'rhythm' : apparatus === 'trampet' ? 'trampet' : 'tumbling');
+            setBuilderPicked(apparatus !== 'all');
             updateElements([]);
             setName('');
             setQuery('');
             setConfirm(false);
           }}
         >
-          <option value="tumbling">Bane</option>
-          <option value="trampet">Trampet</option>
+          {registration ? (
+            <>
+              <option value="tumbling">Bane</option>
+              <option value="trampet">Trampet</option>
+            </>
+          ) : (
+            <option value="spring">Spring</option>
+          )}
           <option value="rhythm">Rytme</option>
         </select>
       </label>}
-      {discipline !== 'rhythm' && building && (
+      {discipline !== 'rhythm' && building && builderPicked && (
         <label>
           Navn på færdighed
           <input
@@ -550,11 +583,7 @@ export function SkillEditor({
               <button
                 type="button"
                 aria-pressed={building}
-                onClick={() => {
-                  setBuilding(true);
-                  setQuery('');
-                  setAdvanced(null);
-                }}
+                onClick={() => startBuilding()}
               >
                 Byg selv
               </button>
@@ -562,10 +591,10 @@ export function SkillEditor({
           )}
           {!building && (
             <SpringPicker
-              key={discipline}
               controls={controls}
               library={library}
-              discipline={discipline}
+              apparatus={apparatus}
+              setApparatus={setApparatus}
               workspace={workspace}
               athleteId={athleteId}
               rulePackage={rulePackage}
@@ -575,15 +604,27 @@ export function SkillEditor({
               setIncludeShorter={setIncludeShorter}
               assessedAt={assessedAt}
               setAssessedAt={setAssessedAt}
-              build={(prefill) => {
-                setBuilding(true);
-                setQuery('');
-                setAdvanced(null);
-                if (prefill.length) updateElements(prefill);
-              }}
+              build={startBuilding}
             />
           )}
-          {building && (
+          {building && !registration && !onDefinition && (
+            <div className="builder-apparatus">
+              <div className="segmented" role="group" aria-label="Redskab i Byg selv">
+                {(['tumbling', 'trampet'] as const).map((value) => (
+                  <button
+                    key={value}
+                    type="button"
+                    aria-pressed={builderPicked && discipline === value}
+                    onClick={() => chooseBuilderDiscipline(value)}
+                  >
+                    {value === 'tumbling' ? 'Bane' : 'Trampet'}
+                  </button>
+                ))}
+              </div>
+              {!builderPicked && <p className="muted">Vælg redskab for at bygge springet.</p>}
+            </div>
+          )}
+          {building && builderPicked && (
             <>
               {!registration && !onDefinition && (
                 <p className="muted">

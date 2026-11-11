@@ -31,7 +31,7 @@ for (const [query, name, count, distribution] of [
     const source = await openWorkspace(page, repertoire(0));
     await inspect(page);
     await page.getByRole('button', { name: 'Tilføj færdighed' }).click();
-    await page.getByRole('combobox', { name: 'Disciplin', exact: true }).selectOption('trampet');
+    await page.getByRole('group', { name: 'Redskab', exact: true }).getByRole('button', { name: 'Trampet', exact: true }).click();
     await page.getByLabel('Søg sammensat spring eller alias').fill(query);
     await chooseSpring(page, name);
     const review = page.getByRole('region', { name: 'Springvælger', exact: true });
@@ -108,7 +108,9 @@ test('minimum-D, direkte fravalg, egen sikkerhed og valg på tværs af disciplin
   ).toBeFocused();
   await expectIncluded(springRow(review, /^Rondat Fravalgt/), false);
   await rate(review, 'Vurdering for Rondat – flik', 2);
-  await page.getByRole('combobox', { name: 'Disciplin', exact: true }).selectOption('trampet');
+  // Søgning og D-filter bevares ved redskabsskift; ryd minimum, så rudy kan findes.
+  await page.getByLabel('Minimum-D', { exact: true }).fill('');
+  await page.getByRole('group', { name: 'Redskab', exact: true }).getByRole('button', { name: 'Trampet', exact: true }).click();
   await page.getByLabel('Søg sammensat spring eller alias').fill('rudi');
   await chooseSpring(page, /^Rudy \(strakt 540°\)/);
   await expect(review).toContainText('Rondat – flik – strakt 1/1');
@@ -146,7 +148,7 @@ test('dobbelt 540° kræver skruefordeling, før springet og 180°-fundamentet k
   const source = await openWorkspace(page, repertoire(0));
   await inspect(page);
   await page.getByRole('button', { name: 'Tilføj færdighed' }).click();
-  await page.getByRole('combobox', { name: 'Disciplin', exact: true }).selectOption('trampet');
+  await page.getByRole('group', { name: 'Redskab', exact: true }).getByRole('button', { name: 'Trampet', exact: true }).click();
   await page.getByLabel('Søg sammensat spring eller alias').fill('dobbelt lukket 540');
   await chooseSpring(page, /^Dobbelt lukket 1½ \(540°\)/);
   const review = page.getByRole('region', { name: 'Springvælger', exact: true });

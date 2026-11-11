@@ -47,7 +47,7 @@ for (const width of [1440, 390]) {
     await page.getByText('Hvad betyder sikkerhed 1–5?', { exact: true }).click();
     const scale = page.getByText('Hvad betyder sikkerhed 1–5?', { exact: true }).locator('..');
     await expect(scale.locator('li')).toHaveText(descriptions);
-    await page.getByRole('combobox', { name: 'Disciplin', exact: true }).selectOption('trampet');
+    await page.getByRole('group', { name: 'Redskab', exact: true }).getByRole('button', { name: 'Trampet', exact: true }).click();
     if (!(await scale.locator('ol').isVisible()))
       await page.getByText('Hvad betyder sikkerhed 1–5?', { exact: true }).click();
     await expect(scale.locator('ol')).toBeVisible();

@@ -28,7 +28,7 @@ test('trampetnavne har grader i listen og efter registrering fra Byg selv, og Mi
   await page.getByRole('button', { name: /Maja Test Test 1/ }).click();
   await expect(page.getByRole('button', { name: /^Rudy \(strakt 540°\)/ })).toBeVisible();
   await page.getByRole('button', { name: 'Tilføj færdighed' }).click();
-  await page.getByRole('combobox', { name: 'Disciplin', exact: true }).selectOption('trampet');
+  await page.getByRole('group', { name: 'Redskab', exact: true }).getByRole('button', { name: 'Trampet', exact: true }).click();
   for (const [query, name] of [
     ['rudy', /^Rudy \(strakt 540°\)/],
     ['overslag rudy', /^Overslag rudy \(strakt 540°\)/],
@@ -50,7 +50,7 @@ test('trampetnavne har grader i listen og efter registrering fra Byg selv, og Mi
   await page.getByRole('button', { name: 'Registrér færdighed', exact: true }).click();
   await expect(page.getByRole('button', { name: /^Randy \(strakt 900°\)/ })).toBeVisible();
   await page.getByRole('button', { name: 'Tilføj færdighed' }).click();
-  await page.getByRole('combobox', { name: 'Disciplin', exact: true }).selectOption('tumbling');
+  await page.getByRole('group', { name: 'Redskab', exact: true }).getByRole('button', { name: 'Bane', exact: true }).click();
   await page.getByRole('button', { name: 'Byg selv', exact: true }).click();
   await page.getByLabel('Søg spring, kode eller alias').fill('miller');
   await expect(page.getByRole('button', { name: /^Dobbelt strakt 3\/1 \(1080°\) baglæns/ })).toBeVisible();
@@ -67,6 +67,7 @@ test('ingen Grundspring eller løs baglæns salto i færdige valg, men alle elem
   await page.getByRole('button', { name: /Maja Test Test 1/ }).click();
   await page.getByRole('button', { name: 'Tilføj færdighed' }).click();
   await expect(page.getByRole('option', { name: 'Grundspring', exact: true })).toHaveCount(0);
+  await page.getByRole('button', { name: /^Bane, \d+ spring$/ }).click();
   await page.getByRole('button', { name: /^Rondat, \d+ spring$/ }).click();
   await expect(springRow(page, /^Rondat Baglæns/)).toBeVisible();
   await expect(springRow(page, /^Lukket salto baglæns/)).toHaveCount(0);
@@ -159,6 +160,7 @@ test('byg én gang, genbrug på anden gymnast med et selvstændigt valg af hele 
   await page.getByRole('button', { name: /Maja Test Test 1/ }).click();
   await page.getByRole('button', { name: 'Tilføj færdighed' }).click();
   await page.getByRole('button', { name: 'Byg selv', exact: true }).click();
+  await page.getByRole('group', { name: 'Redskab i Byg selv', exact: true }).getByRole('button', { name: 'Bane', exact: true }).click();
   for (const [query, name] of [
     ['Rondat', /^Rondat R/],
     ['flic', /^Flik F/],
@@ -184,6 +186,7 @@ test('byg én gang, genbrug på anden gymnast med et selvstændigt valg af hele 
   await page.reload();
   await page.getByRole('button', { name: /Maja Test Test 2/ }).click();
   await page.getByRole('button', { name: 'Tilføj færdighed' }).click();
+  await page.getByRole('button', { name: /^Bane, \d+ spring$/ }).click();
   await page.getByRole('button', { name: /^Rondat, / }).click();
   await page.getByRole('button', { name: /^Flik, / }).click();
   await page.getByLabel('Søg sammensat spring eller alias').fill('Syntetisk egen serie');
@@ -211,6 +214,35 @@ test('byg én gang, genbrug på anden gymnast med et selvstændigt valg af hele 
   expect(source.failures).toEqual([]);
 });
 
+test('redskabsfilteret Alle søger på tværs af bane og trampet, og kæden og Byg selv starter med redskab', async ({
+  page,
+}) => {
+  const source = await openWorkspace(page);
+  await page.getByRole('link', { name: 'Gymnaster', exact: true }).click();
+  await page.getByRole('button', { name: /Maja Test Test 1/ }).click();
+  await page.getByRole('button', { name: 'Tilføj færdighed' }).click();
+  const apparatus = page.getByRole('group', { name: 'Redskab', exact: true });
+  await expect(apparatus.getByRole('button', { name: 'Alle', exact: true })).toHaveAttribute('aria-pressed', 'true');
+  await page.getByLabel('Søg sammensat spring eller alias').fill('strakt 1/1');
+  await expect(springRow(page, /· Bane$/).first()).toBeVisible();
+  await expect(springRow(page, /· Trampet$/).first()).toBeVisible();
+  await expect(page.locator('.spring-row-apparatus').first()).toBeVisible();
+  await page.getByLabel('Søg sammensat spring eller alias').fill('');
+  await page.getByRole('button', { name: /^Trampet, \d+ spring$/ }).click();
+  await expect(apparatus.getByRole('button', { name: 'Trampet', exact: true })).toHaveAttribute('aria-pressed', 'true');
+  await expect(page.getByRole('button', { name: /^Med redskab, / })).toBeVisible();
+  await expect(springRow(page, /· Bane$/)).toHaveCount(0);
+  await expect(page.locator('.spring-row-apparatus')).toHaveCount(0);
+  await apparatus.getByRole('button', { name: 'Alle', exact: true }).click();
+  await page.getByRole('button', { name: 'Byg selv', exact: true }).click();
+  const builder = page.getByRole('group', { name: 'Redskab i Byg selv', exact: true });
+  await expect(page.getByLabel('Søg spring, kode eller alias')).toHaveCount(0);
+  await builder.getByRole('button', { name: 'Trampet', exact: true }).click();
+  await page.getByLabel('Søg spring, kode eller alias').fill('randy');
+  await expect(page.getByRole('button', { name: /^Randy \(strakt 900°\)/ })).toBeVisible();
+  expect(source.failures).toEqual([]);
+});
+
 test('valg bevares mellem grupper og discipliner, og en særskilt kortere vurdering har forrang', async ({
   page,
 }) => {
@@ -224,11 +256,12 @@ test('valg bevares mellem grupper og discipliner, og en særskilt kortere vurder
   await page.getByLabel('Søg sammensat spring eller alias').fill('strakt kraft');
   await expectIncluded(springRow(page, /^Strakt salto – kraftspring Arvet fra/));
   await rate(page, 'Vurdering for Strakt salto – kraftspring', 4);
-  await page.getByRole('combobox', { name: 'Disciplin', exact: true }).selectOption('trampet');
+  await page.getByLabel('Søg sammensat spring eller alias').fill('');
+  await page.getByRole('group', { name: 'Redskab', exact: true }).getByRole('button', { name: 'Trampet', exact: true }).click();
   await page.getByRole('button', { name: /^Med redskab, / }).click();
   await page.getByRole('button', { name: /^Overslag, / }).click();
   await chooseSpring(page, /^Overslag Med redskab/, 5);
-  await page.getByRole('combobox', { name: 'Disciplin', exact: true }).selectOption('tumbling');
+  await page.getByRole('group', { name: 'Redskab', exact: true }).getByRole('button', { name: 'Bane', exact: true }).click();
   await expectIncluded(springRow(page, /^Strakt salto – kraftspring – strakt 1\/1 \(360°\)/));
   await expectIncluded(springRow(page, /^Strakt salto – kraftspring Fundament · Egen vurdering/));
   await page.getByRole('button', { name: 'Registrér 2 spring', exact: true }).click();

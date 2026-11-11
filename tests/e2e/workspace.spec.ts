@@ -95,6 +95,7 @@ test('bane bygger komplet kæde, viser element-D og åbner eksisterende registre
   await page.getByRole('button', { name: /Maja Test Test 1/ }).click();
   await page.getByRole('button', { name: 'Tilføj færdighed' }).click();
   await page.getByRole('button', { name: 'Byg selv', exact: true }).click();
+  await page.getByRole('group', { name: 'Redskab i Byg selv', exact: true }).getByRole('button', { name: 'Bane', exact: true }).click();
   for (const [query, name] of [
     ['Rondat', /^Rondat R/],
     ['flic', /^Flik F/],
