@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { createTeam, createWorkspace, serializeWorkspace, skillIdentity, workspacePayload, renameScenario, setRoundReserves } from '@teamgym/domain';
+import { createTeam, createWorkspace, registerAthleteSkill, serializeWorkspace, skillIdentity, workspacePayload, renameScenario, setRoundReserves } from '@teamgym/domain';
 import { syntheticWorkspace } from '../fixtures/synthetic-workspace';
 import { scenarioWorkspace } from '../fixtures/scenario-workspace';
 import { registerSpringBatch, springFoundation, springLibrary } from '../../apps/web/src/spring-library';
@@ -157,14 +157,14 @@ describe.each([1, 2, 3, 4, 5])('format %i migration på den faktisk læste basis
     expect(session.exportOriginal()).toBe(original);
     session.cancelMigration(); expect(session.snapshot().draft).toBeNull();
     await session.open('file'); session.acceptMigration();
-    expect(session.snapshot().draft?.schemaVersion).toBe(6);
+    expect(session.snapshot().draft?.schemaVersion).toBe(7);
     expect(session.snapshot().draft?.plans.flatMap((plan) => [...plan.tumbling, ...plan.trampet]).flatMap((scenario) => scenario.rounds).flatMap((round) => round.entries).every((entry) => entry.plannedSpot === null && entry.plannedSkillId === null && entry.athleteId !== null)).toBe(true);
     expect(session.snapshot().loaded?.basis).toEqual(basis);
     expect(session.dirty()).toBe(true);
     expect(source.puts).toBe(0); expect(source.bytes).toBe(original);
     await session.save();
     expect(source.conditions).toEqual(['"2"']);
-    expect(JSON.parse(source.bytes).schemaVersion).toBe(6);
+    expect(JSON.parse(source.bytes).schemaVersion).toBe(7);
     expect(session.dirty()).toBe(false);
   });
   it('annulleret migration og afvist nyere/beskadiget fil bevarer en eksisterende kladde', async () => {
@@ -173,7 +173,7 @@ describe.each([1, 2, 3, 4, 5])('format %i migration på den faktisk læste basis
     const { original } = legacy(); source.replaceBytes(original);
     await session.open('file', true); session.cancelMigration();
     expect(session.exportDraft()).toBe(draft);
-    for (const bytes of ['{', JSON.stringify({ ...createWorkspace(), schemaVersion: 7 }), JSON.stringify({ ...createWorkspace(), schemaVersion: 99 })]) {
+    for (const bytes of ['{', JSON.stringify({ ...createWorkspace(), schemaVersion: 8 }), JSON.stringify({ ...createWorkspace(), schemaVersion: 99 })]) {
       source.replaceBytes(bytes); await session.open('file', true); expect(session.exportDraft()).toBe(draft);
     }
     expect(source.puts).toBe(0);
@@ -181,7 +181,7 @@ describe.each([1, 2, 3, 4, 5])('format %i migration på den faktisk læste basis
   it('migration med læseadgang kan eksporteres, men ikke overskrive originalen', async () => {
     const { source, original } = legacy(); source.setWritable(false);
     const session = new WorkspaceSession(source.client()); await session.open('file'); session.acceptMigration();
-    expect(JSON.parse(session.exportDraft()).schemaVersion).toBe(6);
+    expect(JSON.parse(session.exportDraft()).schemaVersion).toBe(7);
     expect(session.exportOriginal()).toBe(original);
     await session.save(); expect(source.puts).toBe(0); expect(source.bytes).toBe(original);
   });
@@ -426,7 +426,7 @@ describe('samlet scenariesamling med reserver', () => {
     const draft = session.exportDraft(); source.external(); const newer = source.bytes;
     await session.save(); expect(session.snapshot().state).toBe('conflict'); expect(session.exportDraft()).toBe(draft); expect(source.bytes).toBe(newer);
   });
-  it.each([3, 4])('gennemgang fletter en nyere fil i format %i mod den migrerede basis og gemmer format 6', async (version) => {
+  it.each([3, 4])('gennemgang fletter en nyere fil i format %i mod den migrerede basis og gemmer format 7', async (version) => {
     const { source, session } = await scenarios(); const workspace = session.snapshot().draft!; const plan = workspace.plans[0]!;
     session.edit(renameScenario(workspace, plan.id, 'tumbling', plan.tumbling[1]!.id, 'B lokalt'));
     const remote = renameScenario(workspace, plan.id, 'tumbling', plan.tumbling[0]!.id, 'A eksternt');
@@ -437,7 +437,26 @@ describe('samlet scenariesamling med reserver', () => {
     expect(session.snapshot().draft?.plans[0]!.tumbling.map((item) => item.name).slice(0, 2)).toEqual(['A eksternt', 'B lokalt']);
     expect(session.snapshot().state).toBe('changed'); expect(source.puts).toBe(0); expect(source.bytes).toBe(legacy);
     await session.save();
-    expect(JSON.parse(source.bytes).schemaVersion).toBe(6); expect(session.dirty()).toBe(false);
+    expect(JSON.parse(source.bytes).schemaVersion).toBe(7); expect(session.dirty()).toBe(false);
+  });
+  it('gennemgang fletter en nyere format 6-fil med uafklaret skruefordeling som out', async () => {
+    const { source, session } = await scenarios(); const workspace = session.snapshot().draft!; const plan = workspace.plans[0]!;
+    session.edit(renameScenario(workspace, plan.id, 'tumbling', plan.tumbling[1]!.id, 'B lokalt'));
+    const jump = { family: 'salto', direction: 'forward' as const, rotationQuarterTurns: 8, bodyPositions: ['tuck' as const, 'tuck' as const], twistsHalfTurns: 1,
+      twistDistribution: [1, 0], apparatus: 'trampet' as const, takeoff: 'two-feet' as const, landing: 'feet' as const, variant: {} };
+    const remote = registerAthleteSkill(workspace, workspace.athletes[0]!.id,
+      { id: 'syntetisk-dobbelt-180', name: 'Syntetisk dobbelt 180', archived: false, discipline: 'trampet', jump }).workspace;
+    source.replaceBytes(JSON.stringify({ ...remote, schemaVersion: 6,
+      skills: remote.skills.map((skill) => skill.id === 'syntetisk-dobbelt-180' && skill.discipline === 'trampet' ? { ...skill, jump: { ...skill.jump, twistDistribution: [] } } : skill) }));
+    await session.beginReview();
+    expect(session.snapshot().review?.result?.status).toBe('valid');
+    expect(await session.applyReview()).toBe(true);
+    const merged = session.snapshot().draft!;
+    const skill = merged.skills.find((item) => item.id === 'syntetisk-dobbelt-180')!;
+    expect(skill.discipline === 'trampet' && skill.jump.twistDistribution).toEqual([0, 1]);
+    expect(merged.plans[0]!.tumbling[1]!.name).toBe('B lokalt');
+    await session.save();
+    expect(JSON.parse(source.bytes).schemaVersion).toBe(7);
   });
   it('gennemgang afviser en nyere fil i format 1 eller 2 uden at ændre kladden', async () => {
     const { source, session } = await scenarios(); add(session); const draft = session.exportDraft();

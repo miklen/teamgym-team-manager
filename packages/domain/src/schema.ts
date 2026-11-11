@@ -1,6 +1,7 @@
 import { z } from 'zod';
+import { needsTwistDistribution } from './twist';
 
-export const CURRENT_SCHEMA_VERSION = 6;
+export const CURRENT_SCHEMA_VERSION = 7;
 export const WORKSPACE_FORMAT = 'teamgym-team-manager';
 export const idSchema = z.string().min(1).max(200).regex(/^[\w:.-]+$/);
 const nameSchema = z.string().min(1).max(200).refine((value) => value.trim().length > 0);
@@ -56,7 +57,7 @@ export const skillDefinitionV5Schema = z.discriminatedUnion('discipline', [
   z.strictObject({ ...skillFields, discipline: z.literal('rhythm'), momentId: idSchema,
     variant: z.record(z.string(), z.union([z.string(), z.number().finite(), z.boolean()])) }),
 ]);
-export const skillDefinitionSchema = z.discriminatedUnion('discipline', [
+const skillDefinitionUnion = z.discriminatedUnion('discipline', [
   z.strictObject({
     ...skillFields,
     discipline: z.literal('tumbling'),
@@ -71,10 +72,24 @@ export const skillDefinitionSchema = z.discriminatedUnion('discipline', [
     momentId: idSchema,
     variant: z.record(z.string(), z.union([z.string(), z.number().finite(), z.boolean()])),
   }),
-]).superRefine((skill, context) => {
+]);
+type SkillDefinitionShape = z.infer<typeof skillDefinitionUnion>;
+function checkTransitions(skill: SkillDefinitionShape, context: z.RefinementCtx) {
   if (skill.discipline === 'tumbling' && skill.connection.transitions.length !== skill.elements.length - 1) {
     context.addIssue({ code: 'custom', message: 'Hver elementovergang skal være beskrevet.', path: ['connection', 'transitions'] });
   }
+}
+/** Format 6 tillod flersaltoer med skrue uden fordeling; migreringen til format 7 afklarer dem. */
+export const skillDefinitionV6Schema = skillDefinitionUnion.superRefine(checkTransitions);
+export const skillDefinitionSchema = skillDefinitionUnion.superRefine((skill, context) => {
+  checkTransitions(skill, context);
+  if (skill.discipline === 'rhythm') return;
+  const elements = skill.discipline === 'trampet' ? [skill.jump] : skill.elements;
+  elements.forEach((element, index) => {
+    if (needsTwistDistribution(element))
+      context.addIssue({ code: 'custom', message: 'Vælg hvor skruen sker i hver salto.',
+        path: skill.discipline === 'trampet' ? ['jump', 'twistDistribution'] : ['elements', index, 'twistDistribution'] });
+  });
 });
 export type SkillDefinition = z.infer<typeof skillDefinitionSchema>;
 export type Discipline = SkillDefinition['discipline'];
@@ -166,6 +181,8 @@ export const workspaceV4Schema = z.strictObject({ ...workspaceFields, plans: z.a
   athleteSkills: z.array(athleteSkillSchema), inheritanceRelations: z.array(inheritanceRelationSchema), inheritanceExclusions: z.array(inheritanceExclusionSchema) });
 export const workspaceV5Schema = z.strictObject({ ...workspaceFields, plans: z.array(routinePlanSchema), schemaVersion: z.literal(5),
   athleteSkills: z.array(athleteSkillSchema), inheritanceRelations: z.array(inheritanceRelationSchema), inheritanceExclusions: z.array(inheritanceExclusionSchema) });
+export const workspaceV6Schema = z.strictObject({ ...workspaceFields, skills: z.array(skillDefinitionV6Schema), plans: z.array(routinePlanSchema), schemaVersion: z.literal(6),
+  athleteSkills: z.array(athleteSkillSchema), inheritanceRelations: z.array(inheritanceRelationSchema), inheritanceExclusions: z.array(inheritanceExclusionSchema) });
 export const workspaceSchema = z.strictObject({ ...workspaceFields, skills: z.array(skillDefinitionSchema), plans: z.array(routinePlanSchema), schemaVersion: z.literal(CURRENT_SCHEMA_VERSION),
   athleteSkills: z.array(athleteSkillSchema), inheritanceRelations: z.array(inheritanceRelationSchema), inheritanceExclusions: z.array(inheritanceExclusionSchema) });
 export type WorkspaceV1 = z.infer<typeof workspaceV1Schema>;
@@ -173,6 +190,7 @@ export type WorkspaceV2 = z.infer<typeof workspaceV2Schema>;
 export type WorkspaceV3 = z.infer<typeof workspaceV3Schema>;
 export type WorkspaceV4 = z.infer<typeof workspaceV4Schema>;
 export type WorkspaceV5 = z.infer<typeof workspaceV5Schema>;
+export type WorkspaceV6 = z.infer<typeof workspaceV6Schema>;
 export type ReserveEntry = z.infer<typeof reserveEntrySchema>;
 export type Scenario = z.infer<typeof scenarioSchema>;
 export type InheritanceRelation = z.infer<typeof inheritanceRelationSchema>;

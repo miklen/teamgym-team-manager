@@ -8,7 +8,7 @@ import { chooseAthlete, expect, test } from './test';
 function legacy(workspace: Workspace, version: number) {
   const value = structuredClone(workspace);
   for (const skill of value.skills)
-    if (skill.discipline === 'tumbling') delete (skill as Partial<typeof skill>).sharedConnectionApproval;
+    if (skill.discipline === 'tumbling' && version < 6) delete (skill as Partial<typeof skill>).sharedConnectionApproval;
   for (const plan of value.plans)
     for (const scenario of [...plan.tumbling, ...plan.trampet])
       for (const round of scenario.rounds)
@@ -16,6 +16,7 @@ function legacy(workspace: Workspace, version: number) {
           if (version < 5) delete (entry as Partial<typeof entry>).plannedSkillId;
           if (version < 4) delete (entry as Partial<typeof entry>).plannedSpot;
         }
+  if (version === 6) return JSON.stringify({ ...value, schemaVersion: 6 });
   if (version === 5) return JSON.stringify({ ...value, schemaVersion: 5 });
   if (version === 4) return JSON.stringify({ ...value, schemaVersion: 4 });
   if (version === 3) return JSON.stringify({ ...value, schemaVersion: 3 });
@@ -49,7 +50,7 @@ function legacy(workspace: Workspace, version: number) {
   );
 }
 
-for (const version of [1, 2, 3, 4, 5]) {
+for (const version of [1, 2, 3, 4, 5, 6]) {
   test(`format ${version}: originaleksport, annullering med åben kladde og lokal migration uden upload`, async ({
     page,
   }) => {
@@ -70,8 +71,8 @@ for (const version of [1, 2, 3, 4, 5]) {
     await page.getByRole('button', { name: 'Åbn link', exact: true }).click();
     const migration = page.getByRole('dialog', { name: 'Opgradér arbejdsrummet', exact: true });
     await expect(migration).toContainText(`Filen bruger format ${version}.`);
-    await expect(migration).toContainText('Opgradér til format 6');
-    await expect(migration).toContainText('Ældre appudgaver kan ikke åbne format 6.');
+    await expect(migration).toContainText('Opgradér til format 7');
+    await expect(migration).toContainText('Ældre appudgaver kan ikke åbne format 7.');
     const downloadEvent = page.waitForEvent('download');
     await migration.getByRole('button', { name: 'Eksportér original', exact: true }).click();
     const download = await downloadEvent;
@@ -90,7 +91,7 @@ for (const version of [1, 2, 3, 4, 5]) {
     expect(source.workspace.schemaVersion).toBe(version);
     await page.getByRole('button', { name: /Lokale ændringer/ }).click();
     await expect(page.getByRole('button', { name: 'Gemt', exact: true })).toBeVisible();
-    expect(source.workspace.schemaVersion).toBe(6);
+    expect(source.workspace.schemaVersion).toBe(7);
     expect(source.failures).toEqual([]);
   });
 }

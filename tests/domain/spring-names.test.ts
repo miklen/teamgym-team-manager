@@ -35,7 +35,7 @@ describe('fælles springnavne', () => {
 
   it('samler ens kropsstillinger, viser skiftende stillinger og skruefordeling', () => {
     expect(trampet('a4-f-11')).toBe('Dobbelt lukket salto');
-    expect(trampet('a4-f-14', { twistDistribution: [0, 1] })).toBe('Dobbelt lukket 1/2 (180°) · 0° + 180°');
+    expect(trampet('a4-f-14', { twistDistribution: [0, 1] })).toBe('Dobbelt lukket 1/2 (180°) · out');
     expect(trampet('a4-f-11', { bodyPositions: ['tuck', 'straight'] })).toBe('Dobbelt lukket → strakt salto');
     expect(bane('a3-b-01', 'a3-b-22')).toBe('Rondat – dobbelt strakt 3/1 (1080°)');
     expect(trampet('a4-f-21')).toBe('Trippel lukket 1/2 (180°)');

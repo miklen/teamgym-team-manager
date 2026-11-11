@@ -6,7 +6,10 @@ import {
   newEntityId,
   registerAthleteSkill,
   replaceAthleteSkill,
+  hasTwistDistributionChoice,
   skillDefinitionSchema,
+  skillDefinitionV6Schema,
+  skillNeedsTwistDistribution,
   skillIdentity,
   setOwnAssessment,
   validateWorkspace,
@@ -36,6 +39,7 @@ import { springCatalogElementName, springElementInSeries, springExecutionName } 
 import { SpringChoiceRows } from './spring-choice-rows';
 import { springPickerRows } from './spring-picker-model';
 import { restoreRemovedSkill } from './restore-skill';
+import { TwistSplit } from './twist-split';
 import {
   canStartFloorSeries,
   knownSeries,
@@ -222,7 +226,8 @@ export function SkillEditor({
       )
     );
   });
-  function definition(): SkillDefinition {
+  /** Preview tåler manglende skruefordeling, så D og navn vises mens træneren vælger; gem kræver den. */
+  function definition(strict = true): SkillDefinition {
     if (discipline !== 'rhythm' && !building) {
       throw new Error('Vælg spring fra listen.');
     }
@@ -235,7 +240,7 @@ export function SkillEditor({
           : springExecutionName(discipline, elements)),
       archived: false,
     };
-    return skillDefinitionSchema.parse(
+    return (strict ? skillDefinitionSchema : skillDefinitionV6Schema).parse(
       discipline === 'rhythm'
         ? { ...base, discipline, momentId, variant }
         : discipline === 'trampet'
@@ -260,7 +265,7 @@ export function SkillEditor({
   }
   let preview: SkillDefinition | null = null;
   try {
-    preview = definition();
+    preview = definition(false);
   } catch {
     /* Formularen forklarer manglende valg. */
   }
@@ -315,7 +320,12 @@ export function SkillEditor({
     includeShorter,
     { ...foundationOptions, workspace, athleteId },
   );
-  const needsClarification = planned.some((item) => !item.excluded && (item.unresolved || item.needsSource));
+  const twistChoices = discipline === 'rhythm' ? [] : elements
+    .map((element, index) => ({ element, index }))
+    .filter(({ element }) => hasTwistDistributionChoice(element));
+  const needsClarification =
+    (!batchMode && !!preview && skillNeedsTwistDistribution(preview)) ||
+    planned.some((item) => !item.excluded && (item.unresolved || item.needsSource || item.needsTwist));
   return (
     <ActionForm
       className="skill-editor"
@@ -642,6 +652,18 @@ export function SkillEditor({
                   </li>
                 ))}
               </ol>
+              {twistChoices.map(({ element, index }) => (
+                <TwistSplit
+                  key={index}
+                  element={element}
+                  label={twistChoices.length > 1 ? springElementInSeries(elements, index) : undefined}
+                  onChange={(twistDistribution) =>
+                    updateElements(
+                      elements.map((item, position) => (position === index ? { ...item, twistDistribution } : item)),
+                    )
+                  }
+                />
+              ))}
               {missingEntry && (
                 <p className="notice" role="status">
                   Serien mangler en indgang fra tilløb. Tilføj fx rondat før den baglæns salto, flik eller
@@ -843,7 +865,6 @@ function ElementVariant({
   value: ElementExecution;
   change: (value: ElementExecution) => void;
 }) {
-  const [distribution, setDistribution] = useState(value.twistDistribution.join(','));
   function update(patch: Partial<ElementExecution>) {
     change({ ...value, ...patch });
   }
@@ -925,20 +946,8 @@ function ElementVariant({
           Fjern sidste kropsposition
         </button>
       </div>
-      <label>
-        Skruefordeling pr. salto (antal halve skruer, fx 1,0)
-        <input
-          value={distribution}
-          onChange={(event) => {
-            setDistribution(event.target.value);
-            const parts = event.target.value.trim() ? event.target.value.split(',').map(Number) : [];
-            if (parts.every((number) => Number.isInteger(number) && number >= 0))
-              update({ twistDistribution: parts });
-          }}
-        />
-      </label>
       <p className="muted">
-        Kropsposition, rotationer og skruefordeling skal passe sammen. Ukendte koblinger forbliver uafklarede;
+        Kropsposition og rotationer skal passe sammen. Skruefordelingen vælges under springkæden. Ukendte koblinger forbliver uafklarede;
         der opfindes ingen officiel kode.
       </p>
     </fieldset>

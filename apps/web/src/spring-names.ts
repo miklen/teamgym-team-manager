@@ -102,9 +102,22 @@ export function springElementLabel(element: ElementExecution, context: SpringLab
   else label = `${rotation}${body} ${twistFraction(element.twistsHalfTurns)} (${degrees})`;
   if (!nickname && (context.expected === null || element.direction !== context.expected))
     label += ` ${DIRECTION_WORD[element.direction]}`;
-  if (element.twistDistribution.length > 1)
-    label += ` · ${element.twistDistribution.map((value) => `${value * 180}°`).join(' + ')}`;
+  if (element.twistDistribution.length > 1 && element.twistsHalfTurns > 0)
+    label += ` · ${twistSplitName(element.twistDistribution).toLocaleLowerCase('da-DK')}`;
   return `${prefix}${label}`;
+}
+
+const TWIST_WORD = ['0', '½', 'hel', '1½', 'dobbelt', '2½'];
+
+/** Fagsprogets navn for en skruefordeling: al skrue i første salto er in, al skrue i sidste er out. */
+export function twistSplitName(distribution: readonly number[]): string {
+  const total = distribution.reduce((sum, value) => sum + value, 0);
+  if (distribution.length < 2 || total === 0) return `${total * 180}°`;
+  if (distribution[0] === total) return 'In';
+  if (distribution.at(-1) === total) return 'Out';
+  if (distribution.length === 2 && total < TWIST_WORD.length)
+    return `${TWIST_WORD[distribution[0]!]} in, ${TWIST_WORD[distribution[1]!]} out`;
+  return distribution.map((value) => `${value * 180}°`).join(' + ');
 }
 
 export function capitalize(text: string) {

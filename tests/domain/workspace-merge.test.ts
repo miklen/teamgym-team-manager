@@ -367,6 +367,23 @@ describe('trevejsmotor', () => {
       expect(w.teams[1]!.name).toBe('Uafhængigt eksternt navn');
     }
   });
+  it('samme dobbeltspring registreret som in og out samtidig bevares som to spring i begge retninger', () => {
+    const { b, athleteA } = fixture();
+    const jump = (id: string, twistDistribution: number[]): SkillDefinition => ({
+      id, name: `Syntetisk ${id}`, archived: false, discipline: 'trampet',
+      jump: { family: 'salto', direction: 'forward', rotationQuarterTurns: 8, bodyPositions: ['tuck', 'tuck'], twistsHalfTurns: 1,
+        twistDistribution, apparatus: 'trampet', takeoff: 'two-feet', landing: 'feet', variant: {} },
+    });
+    const l = registerAthleteSkill(b, athleteA.id, jump('syntetisk-in', [1, 0])).workspace;
+    const r = registerAthleteSkill(b, athleteA.id, jump('syntetisk-out', [0, 1])).workspace;
+    for (const [local, remote] of [[l, r], [r, l]] as const) {
+      const merged = valid(mergeWorkspace(b, local, remote, context));
+      const added = merged.skills.filter((skill) => skill.id === 'syntetisk-in' || skill.id === 'syntetisk-out');
+      expect(added.map(skillIdentity)).toHaveLength(2);
+      expect(new Set(added.map(skillIdentity)).size).toBe(2);
+      expect(merged.athleteSkills.filter((item) => item.athleteId === athleteA.id && added.some((skill) => skill.id === item.skillId))).toHaveLength(2);
+    }
+  });
   it('forbindelsesbekræftelse mod udskiftet udførelse bliver ét forklarligt valg', () => {
     const { b, environment } = fixture();
     const old = b.skills[0]!;

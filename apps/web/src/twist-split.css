@@ -1,0 +1,136 @@
+.twist-split {
+  grid-column: 1 / -1;
+  min-width: 0;
+  margin: 6px 0 2px;
+  padding: 10px 12px 12px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: linear-gradient(180deg, #f8f9fd, #fff);
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+.twist-split.is-open {
+  border-color: color-mix(in srgb, var(--accent) 45%, var(--line));
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 9%, transparent);
+}
+.twist-split legend {
+  float: left;
+  width: 100%;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 2px 8px;
+  padding: 0 4px;
+}
+.twist-split-title {
+  color: var(--ink);
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+.twist-split-context {
+  color: var(--muted);
+  font-size: 0.7rem;
+}
+.twist-split-options {
+  clear: both;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(92px, 1fr));
+  gap: 6px;
+  margin-top: 8px;
+}
+.twist-split-option {
+  position: relative;
+  display: grid;
+  justify-items: center;
+  gap: 4px;
+  margin: 0;
+  padding: 8px 6px 7px;
+  border: 1px solid var(--line);
+  border-radius: 11px;
+  background: var(--paper);
+  cursor: pointer;
+  transition: border-color 0.15s ease, background 0.15s ease, transform 0.15s ease;
+}
+.twist-split-option:hover {
+  border-color: color-mix(in srgb, var(--accent) 40%, var(--line));
+}
+.twist-split-option:active {
+  transform: scale(0.98);
+}
+.twist-split-option[data-checked='true'] {
+  border-color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 7%, #fff);
+}
+.twist-split-option input {
+  position: absolute;
+  inset: 0;
+  margin: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+.twist-split-option:has(input:focus-visible) {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+.twist-split-figure {
+  display: flex;
+  align-items: flex-start;
+  gap: 4px;
+}
+.twist-split-salto {
+  display: grid;
+  justify-items: center;
+  gap: 1px;
+}
+.twist-split-salto small {
+  color: var(--muted);
+  font-size: 0.62rem;
+  line-height: 1.1;
+}
+.twist-split-ring {
+  width: 32px;
+  height: 32px;
+}
+.twist-split-track {
+  fill: none;
+  stroke: var(--line);
+  stroke-width: 2.6;
+}
+.twist-split-arc {
+  fill: none;
+  stroke: var(--accent);
+  stroke-width: 2.6;
+  stroke-linecap: round;
+  transition: stroke-dasharray 0.3s ease;
+}
+.twist-split-name {
+  color: var(--ink);
+  font-size: 0.72rem;
+  font-weight: 650;
+  text-align: center;
+  line-height: 1.2;
+}
+.twist-split-option[data-checked='true'] .twist-split-name {
+  color: var(--accent);
+}
+.twist-split-hint {
+  margin: 8px 4px 0;
+  color: var(--accent);
+  font-size: 0.7rem;
+  font-weight: 600;
+}
+.migration-twist {
+  display: grid;
+  gap: 4px;
+  margin: 10px 0 0;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: #f5f7fc;
+  font-size: 0.8rem;
+  list-style: none;
+}
+@media (prefers-reduced-motion: reduce) {
+  .twist-split,
+  .twist-split * {
+    transition: none !important;
+  }
+}

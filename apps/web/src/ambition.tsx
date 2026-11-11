@@ -1,6 +1,6 @@
 import { useId, useMemo, useState } from 'react';
 import type { RefObject } from 'react';
-import { changeAmbitionSkill, skillIdentity } from '@teamgym/domain';
+import { changeAmbitionSkill, skillIdentity, skillNeedsTwistDistribution } from '@teamgym/domain';
 import type { ElementExecution, Round, RoundEntry, SpringDiscipline, Workspace } from '@teamgym/domain';
 import { ambitionCandidates, ambitionEnvironment } from '@teamgym/rules';
 import type { AmbitionCandidate, RulePackage, TeamProfile } from '@teamgym/rules';
@@ -79,7 +79,7 @@ export function AmbitionCreateForm({ workspace, teamId, discipline, rulePackage,
     <ActionForm
       formRef={formRef}
       className="ambition-form"
-      disabled={!writable}
+      disabled={!writable || (!!selected && skillNeedsTwistDistribution(selected))}
       submit={(data) => {
         if (!selected) throw new Error(missingSpring);
         if (chosenCount < 1) throw new Error('Der er ingen ledige pladser i den valgte rolle.');
@@ -157,7 +157,7 @@ export function AmbitionFillForm({ workspace, teamId, discipline, rulePackage, p
     <ActionForm
       formRef={formRef}
       className="ambition-form"
-      disabled={!writable}
+      disabled={!writable || (!!replacement && skillNeedsTwistDistribution(replacement))}
       submit={(data) => {
         const athleteSkillId = String(data.get('ambition-athlete') ?? '') || null;
         request({ kind: 'update', entryId: entry.id, definition: replacement, role: roleOf(data), athleteSkillId, approvalNote });

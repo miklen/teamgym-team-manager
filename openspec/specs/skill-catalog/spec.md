@@ -173,7 +173,7 @@ Kataloget SHALL indeholde verificerbare henvisninger til officielle kilder og SH
 - **THEN** kan den oprettes struktureret med beregningsforklaring uden at kræve en opdigtet officiel kode.
 
 ### Requirement: Afgrænset trænerfagligt fundament
-Systemet SHALL have et versionsmærket katalog over præcise relationer mellem spring og deres fundament, adskilt fra officielle pointregler. De aftalte relationer SHALL omfatte præcise banebegyndelser, rondat-flik-strakt helskrue til samme indgang med lukket/hoftebøjet/strakt salto uden skrue, trampettens rudy til enkelt lukket/hoftebøjet/strakt salto uden skrue og med 180° samt præcis forlæns dobbelt med 540° uden redskab til dobbelt med 180° med samme kropspositionsforløb. For den dobbelte SHALL skruefordelingen bevares med hensyn til halve skruer pr. salto: 540°-fordelingerne [3,0] og [1,2] giver 180°-fordelingen [1,0], mens [2,1] og [0,3] giver [0,1], målt i halve skruer. Relationerne SHALL dække begge kropspositioners kombinationer af lukket, hoftebøjet og strakt uden at ændre dem. Disse børn SHALL medtages automatisk med arvet sikkerhed. En 540°-registrering uden nødvendig fordeling SHALL fortsat vise sit automatisk medtagne 180°-fundament som Afklar skruefordeling; den præcise fordeling SHALL vælges, før barnet kan registreres og bruges i planen. Retning, indgang, redskab, rotationsantal og nødvendige skruefordelinger SHALL være præcise i hver relation. Relationerne MUST NOT udledes alene af lavere D, aliaser eller en antagelse om, at alle lettere spring følger med. Forbudte eller uafklarede udførelser MUST NOT blive gyldige planlægningskandidater gennem afledning. Katalogændringer MUST NOT stiltiende tilføje nye personlige færdigheder ved genåbning.
+Systemet SHALL have et versionsmærket katalog over præcise relationer mellem spring og deres fundament, adskilt fra officielle pointregler. De aftalte relationer SHALL omfatte præcise banebegyndelser, rondat-flik-strakt helskrue til samme indgang med lukket/hoftebøjet/strakt salto uden skrue, trampettens rudy til enkelt lukket/hoftebøjet/strakt salto uden skrue og med 180° samt præcis forlæns dobbelt med 540° uden redskab til dobbelt med 180° med samme kropspositionsforløb. For den dobbelte SHALL skruefordelingen bevares med hensyn til halve skruer pr. salto: 540°-fordelingerne [3,0] og [1,2] giver 180°-fordelingen [1,0], mens [2,1] og [0,3] giver [0,1], målt i halve skruer. Relationerne SHALL dække begge kropspositioners kombinationer af lukket, hoftebøjet og strakt uden at ændre dem. Disse børn SHALL medtages automatisk med arvet sikkerhed. En dobbeltsalto med 1–5 halve skruer SHALL have valgt præcis fordeling, før den kan registreres eller bruges som ambition; barnet følger parentens valgte fordeling. Retning, indgang, redskab, rotationsantal og nødvendige skruefordelinger SHALL være præcise i hver relation. Relationerne MUST NOT udledes alene af lavere D, aliaser eller en antagelse om, at alle lettere spring følger med. Forbudte eller uafklarede udførelser MUST NOT blive gyldige planlægningskandidater gennem afledning. Katalogændringer MUST NOT stiltiende tilføje nye personlige færdigheder ved genåbning.
 
 #### Scenario: Rudy med baranivarianter
 - **WHEN** en strakt forlæns salto med 540° uden redskab vælges på trampet
@@ -185,7 +185,18 @@ Systemet SHALL have et versionsmærket katalog over præcise relationer mellem s
 
 #### Scenario: Dobbelt kræver præcisering
 - **WHEN** et dobbelt 540°-valg mangler den nødvendige skruefordeling
-- **THEN** vises det medfølgende 180°-fundament med behov for afklaring, og efter valg af [3,0] på parenten bliver barnet præcist [1,0] uden at træneren skal finde og tilføje barnet særskilt.
+- **THEN** er registrering spærret, og efter valg af [3,0] i Hvor sker skruen? bliver barnet præcist [1,0] uden at træneren skal finde og tilføje barnet særskilt.
+
+### Requirement: Påkrævet skruefordeling
+Systemet SHALL kræve en fuld skruefordeling pr. salto for elementer med flere saltoer og 1–5 halve skruer, fordi in og out er forskellige spring. Fordelingen SHALL vælges i en fælles visuel vælger med ét valg pr. mulig fordeling ordnet fra in til out i Byg selv, registreringsrækker og ambitioner. Ved 6 halve skruer eller flere SHALL kun totalen gemmes. Format 7 SHALL afvise definitioner uden nødvendig fordeling. Ved opgradering fra format 1–6 SHALL en manglende fordeling deterministisk blive out med hele skruen på sidste salto.
+
+#### Scenario: Dobbelt lukket med halv skrue
+- **WHEN** træneren vælger dobbelt lukket 180° på trampet
+- **THEN** kan springet først registreres, når In eller Out er valgt, og de to valg gemmes som forskellige spring.
+
+#### Scenario: Uafklaret spring opgraderes
+- **WHEN** et arbejdsrum i format 6 har dobbelt lukket 180° uden fordeling
+- **THEN** viser opgraderingsdialogen springet med "→ out", og efter opgradering kan registreringen vælges i omgangens springvælger.
 
 #### Scenario: Ingen forbindelse mellem redskaber
 - **WHEN** en gymnast registreres på rudy uden redskab
@@ -309,7 +320,7 @@ Alle spring på bane og trampet SHALL navngives af én fælles grammatik ud fra 
 - Faste elementer: rondat, flik, whipback, kraftspring, flyvespring, vejrmølle, overslag og mølleoverslag.
 - Salto uden skrue: rotation og kropsposition efterfulgt af "salto", fx "lukket salto", "strakt salto" og "dobbelt hoftebøjet salto". Forskellige kropspositioner i en dobbelt vises i rækkefølge, fx "dobbelt lukket → strakt salto".
 - Forlæns enkeltsalto med 1, 3, 5 eller 7 halve skruer: kaldenavnet barani, rudy, randy eller addy efterfulgt af kropsposition og grader i parentes, fx "barani (strakt 180°)", "barani (lukket 180°)" og "rudy (strakt 540°)".
-- Øvrige skruede saltoer: rotation, kropsposition, skruebrøk og grader i parentes, fx "strakt 1/2 (180°)", "strakt 1/1 (360°)", "strakt 1½ (540°)", "strakt 2/1 (720°)" og "dobbelt lukket 1/2 (180°)". En kendt skruefordeling i en dobbelt SHALL tilføjes som " · 0° + 180°".
+- Øvrige skruede saltoer: rotation, kropsposition, skruebrøk og grader i parentes, fx "strakt 1/2 (180°)", "strakt 1/1 (360°)", "strakt 1½ (540°)", "strakt 2/1 (720°)" og "dobbelt lukket 1/2 (180°)". Skruefordelingen i en dobbelt SHALL tilføjes som " · out", " · in" eller en dansk fordeling som " · hel in, ½ out".
 - Overslag-salto og Tsukahara på trampet: "overslag" eller "tsukahara" foran saltoens navn, fx "overslag barani (strakt 180°)" og "tsukahara strakt 1/1 (360°)".
 - Retning: "forlæns" eller "baglæns" SHALL tilføjes efter et saltonavn, når retningen afviger fra den forventede. En serie, der starter med en salto, og en salto efter kraftspring, flyvespring eller en forlæns salto forventes forlæns. En salto efter rondat, flik, whipback eller en baglæns salto forventes baglæns. Trampetsaltoer forventes forlæns, og Tsukahara forventes baglæns.
 
@@ -329,7 +340,7 @@ Bibliotek, fundament, præcise kortere serier, Byg selv og nye registreringer SH
 
 #### Scenario: Trampet følger samme grammatik
 - **WHEN** træneren ser strakt forlæns salto med 540° uden redskab og forlæns dobbelt lukket med 180° og fordeling [0,1]
-- **THEN** vises de som "Rudy (strakt 540°)" og "Dobbelt lukket 1/2 (180°) · 0° + 180°".
+- **THEN** vises de som "Rudy (strakt 540°)" og "Dobbelt lukket 1/2 (180°) · out".
 
 ### Requirement: Gennemgang af fundamentkataloget
 Projektet SHALL have en lokal gennemgangsrapport af det aktuelle trænerfaglige fundamentkatalog for DK-regelpakken, genereret med `npm run report:fundament` til en fil uden for Git. Rapporten SHALL for hvert biblioteksspring vise medfølgende fundament som træ med fælles navn, D, relationens danske navn, kæden af relationer og fundament, der kræver afklaring af skruefordeling. Rapporten SHALL også have en oversigt pr. relationstype med en kort dansk forklaring og alle konkrete kilde → fundament-par. Kun relationer, der faktisk forekommer, SHALL vises, og katalogversionen SHALL fremgå. Rapporten SHALL bruge præcis samme fundamentberegning som registreringen. Kataloget MUST NOT vises i appen for trænerteamet.

@@ -1,4 +1,4 @@
-# Arbejdsrumsformat 5
+# Arbejdsrumsformat 7
 
 Nye arbejdsrumsfiler bruger `format: "teamgym-team-manager"` og `schemaVersion: 5`. [Format 1](../examples/arbejdsrum-v1.json), [format 2](../examples/arbejdsrum-v2.json), [format 3](../examples/arbejdsrum-v3.json) og [format 4](../examples/arbejdsrum-v4.json) bevares som migrationsfixtures med kun syntetiske data. Alle fem formater har selvstændige strikte læsere; ukendte felter fjernes ikke stiltiende.
 
@@ -45,7 +45,9 @@ Nyere skemaer afvises med `newer-schema`. Format 1, 2, 3 og 4 kræver eksplicit 
 
 Drive-basis beholder hash af originalbytes, ETag, filversion og arbejdsrumsrevision. Den migrerede kladde er ugemt, også uden øvrige ændringer. Først **Gem på Drive** uploader format 5 med normal rettighedskontrol og `If-Match` på originalens basis. Konflikt eller et uklart uploadsvar bevarer kladden og afstemmes gennem den eksisterende operationshistorik. En læser kan migrere lokalt og eksportere, men ikke gemme over originalen. Annullering og afviste filer bevarer et allerede åbent arbejdsrum.
 
-Ældre apps skal afvise format 5. Tilbagerulning af appkode nedgraderer aldrig filen, og scenarier, reserver, modtagninger, ambitioner eller arvefelter må ikke fjernes for at gøre den læsbar i en gammel app. Google-forbindelsens særskilte lagerformat ændres ikke.
+Format 6 tilføjede fælles kædegodkendelse. Format 7 kræver en fuld skruefordeling på elementer med flere saltoer og 1–5 halve skruer; ved 6 halve skruer eller flere gemmes kun totalen. Ved opgradering fra format 1–6 bliver en manglende fordeling out (hele skruen på sidste salto), og dialogen viser de berørte spring. Identiteter i bekræftelser, godkendelser, relationer og fravalg omregnes. Findes samme out-spring allerede, samles referencerne på den eksisterende definition. Gemte navne bevares.
+
+Ældre apps skal afvise format 7. Tilbagerulning af appkode nedgraderer aldrig filen, og scenarier, reserver, modtagninger, ambitioner eller arvefelter må ikke fjernes for at gøre den læsbar i en gammel app. Google-forbindelsens særskilte lagerformat ændres ikke.
 
 ## Arvefelter og invariants
 

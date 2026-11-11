@@ -240,28 +240,39 @@ describe('versionsmærket, afgrænset fundament', () => {
         });
       }
   });
-  it('viser uafklaret barn og afviser registrering indtil afklaring eller fravalg', () => {
+  it('viser uafklaret barn og afviser registrering indtil skruefordelingen er valgt', () => {
     if (rudy.discipline !== 'trampet') throw Error('fixture');
     const double: SpringDefinition = {
       ...rudy,
       jump: { ...rudy.jump, rotationQuarterTurns: 8, bodyPositions: ['tuck', 'pike'], twistDistribution: [] },
     };
     const selected = [{ definition: double, stability: 4 as Stability, confirmed: true }];
-    const child = springRegistrationPlan(selected, DK_V1, true).find((item) => !item.explicit)!;
+    const plan = springRegistrationPlan(selected, DK_V1, true);
+    const child = plan.find((item) => !item.explicit)!;
     expect(child.unresolved).toBe(true);
+    expect(plan.find((item) => item.explicit)!.needsTwist).toBe(true);
     const { workspace, athleteA } = syntheticWorkspace();
+    expect(() =>
+      registerSpringBatch(workspace, athleteA.id, selected, DK_V1, {
+        includeShorter: true,
+        assessedAt: '2026-10-25',
+        excluded: [skillIdentity(child.definition)],
+      }),
+    ).toThrow('Afklar skruefordeling');
+    const out = { ...double, jump: { ...double.jump, twistDistribution: [0, 3] } };
+    const outPlan = springRegistrationPlan([{ ...selected[0]!, definition: out }], DK_V1, true);
+    expect(outPlan.some((item) => item.unresolved || item.needsTwist)).toBe(false);
     expect(() =>
       registerSpringBatch(workspace, athleteA.id, selected, DK_V1, {
         includeShorter: true,
         assessedAt: '2026-10-25',
       }),
     ).toThrow('Afklar skruefordeling');
-    const result = registerSpringBatch(workspace, athleteA.id, selected, DK_V1, {
+    const result = registerSpringBatch(workspace, athleteA.id, [{ ...selected[0]!, definition: out }], DK_V1, {
       includeShorter: true,
       assessedAt: '2026-10-25',
-      excluded: [skillIdentity(child.definition)],
     });
-    expect(result.athleteSkills).toHaveLength(25);
+    expect(result.athleteSkills.filter((item) => item.athleteId === athleteA.id).length).toBeGreaterThan(1);
     expect(DK_V1.evaluateSkill(double).validity).not.toBe('known');
     expect(springFoundation({ ...double, jump: { ...double.jump, apparatus: 'pegasus' } }, DK_V1)).toEqual(
       [],

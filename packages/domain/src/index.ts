@@ -19,6 +19,7 @@ export interface Diagnostic {
 
 export * from './schema';
 export * from './identity';
+export * from './twist';
 export * from './workspace';
 export * from './stability';
 export * from './spotting';

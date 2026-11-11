@@ -12,6 +12,8 @@ import { springDirectionText, springDisplayName, springLibrary } from './spring-
 import type { SpringDefinition } from './spring-library';
 import { PlanDifficulty } from './plan-skill-select';
 import { points } from './components';
+import { TwistSplit } from './twist-split';
+import { twistElements, withTwistDistribution } from './twist-choice';
 
 /** Samme katalog, kædefilter, D-filter og rangering som gymnastens vælger, uden personlig vurdering. */
 export function AmbitionSpringPicker({ workspace, rulePackage, discipline, teamId, selected, approvalNote, onSelect, onBuild }: {
@@ -73,6 +75,7 @@ export function AmbitionSpringPicker({ workspace, rulePackage, discipline, teamI
         <span className={`ambition-picker-count${selectedCapable ? ' has-capable' : ''}`}>{selectedCapable} kan springet</span>
         {selected.discipline === 'tumbling' && (selected.sharedConnectionApproval || approvalNote) && <small>Trænerbekræftet forbindelse{approvalNote ? ' ved gemning' : ''}</small>}
       </div>}
+      {selected && twistElements(selected).map(({ element, index, label }) => <TwistSplit key={index} element={element} label={label} onChange={(distribution) => onSelect(withTwistDistribution(selected, index, distribution))} />)}
       <div className="ambition-picker-results-head"><strong>Resultater</strong><span role="status">{choices.length} spring passer</span>{(query || minimum || unknown || !chainIsEmpty(chain) || (directional && direction !== 'all')) && <button type="button" className="quiet" onClick={reset}>Nulstil filtre</button>}</div>
       {choices.length ? <div className="ambition-picker-results" role="list">
         {rows.map((row) => {

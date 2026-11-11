@@ -117,6 +117,8 @@ Ambitionens planlagte spring SHALL være en eksplicit klassificeret del af plads
 ### Requirement: Nyt format åbnes ved et eksplicit lokalt valg
 Arbejdsrum i format 1–5 SHALL kunne læses gennem den eksisterende migrationskæde, når format 6 indføres. Et ældre arbejdsrum SHALL først opgraderes til en lokal kladde, når træneren udtrykkeligt vælger det i migrationsdialogen. Dialogen SHALL forklare, hvorfor det nye format kræves, at originalen kan eksporteres uændret, og at Drive-filen først ændres ved en særskilt gemmehandling. Annullering MUST NOT erstatte en åben kladde eller skrive til Drive. Personlige forbindelsesbekræftelser SHALL bevares som personlige og MUST NOT automatisk blive fælles godkendelser.
 
+Ved format 7 SHALL format 1–6 opgraderes gennem samme dialog, hvor manglende skruefordelinger bliver out, de berørte spring vises, og identiteter i bekræftelser, godkendelser, relationer og fravalg omregnes. En fil i format 3–6 SHALL migreres før sammenligning.
+
 #### Scenario: Åbn format 5 med ugemt kladde
 - **WHEN** træneren har en ugemt kladde og åbner en anden fil i format 5
 - **THEN** kan originalens bytes eksporteres og opgraderingen annulleres uden at ændre kladden eller uploade, eller træneren kan efter kassationsvalg opgradere den nye fil lokalt til format 6.

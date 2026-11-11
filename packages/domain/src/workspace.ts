@@ -1,8 +1,9 @@
 import { canonicalJson, skillIdentity, bindingFingerprint, newEntityId } from './identity';
-import { CURRENT_SCHEMA_VERSION, WORKSPACE_FORMAT, workspaceSchema, workspaceV1Schema, workspaceV2Schema, workspaceV3Schema, workspaceV4Schema, workspaceV5Schema } from './schema';
-import type { WorkspaceV1, WorkspaceV2, WorkspaceV3, WorkspaceV4, WorkspaceV5, SpringDiscipline, ReserveEntry, RoundEntry } from './schema';
+import { CURRENT_SCHEMA_VERSION, WORKSPACE_FORMAT, workspaceSchema, workspaceV1Schema, workspaceV2Schema, workspaceV3Schema, workspaceV4Schema, workspaceV5Schema, workspaceV6Schema } from './schema';
+import type { WorkspaceV1, WorkspaceV2, WorkspaceV3, WorkspaceV4, WorkspaceV5, WorkspaceV6, SpringDiscipline, ReserveEntry, RoundEntry } from './schema';
 import type { Workspace } from './schema';
 import type { Diagnostic } from './index';
+import { needsTwistDistribution, outTwistDistribution } from './twist';
 
 export class WorkspaceFormatError extends Error {
   constructor(public readonly code: 'invalid-json' | 'wrong-format' | 'newer-schema' | 'migration-required' | 'invalid-data', message: string) { super(message); }
@@ -237,7 +238,7 @@ export function migrateWorkspaceV4(input: unknown): Workspace {
 
 /** Format 5 → 6 bevarer alle eksisterende data og giver kun banedefinitioner en tom fælles godkendelse. */
 function upgradeV5(original: WorkspaceV5): Workspace {
-  return validateWorkspace({ ...structuredClone(original), schemaVersion: 6,
+  return migrateWorkspaceV6({ ...structuredClone(original), schemaVersion: 6,
     skills: original.skills.map((skill) => skill.discipline === 'tumbling' ? { ...skill, sharedConnectionApproval: null } : structuredClone(skill)),
   });
 }
@@ -253,6 +254,108 @@ export function migrateWorkspaceV5(input: unknown): Workspace {
   return upgradeV5(validateWorkspaceV5(input));
 }
 
+/**
+ * Format 6 → 7: en flersalto med skrue under tre hele skruer uden fordeling får hele skruen på sidste salto (out).
+ * Id'er, navne, vurderinger og pladser bevares. Findes den præcise out-udgave allerede, samles registreringerne på den.
+ */
+function upgradeV6(original: WorkspaceV6): Workspace {
+  const copy = structuredClone(original);
+  const identityMap = new Map<string, string>();
+  const changed = new Set<string>();
+  for (const skill of copy.skills) {
+    if (skill.discipline === 'rhythm') continue;
+    const elements = skill.discipline === 'trampet' ? [skill.jump] : skill.elements;
+    if (!elements.some(needsTwistDistribution)) continue;
+    const before = skillIdentity(skill);
+    for (const element of elements) if (needsTwistDistribution(element)) element.twistDistribution = outTwistDistribution(element);
+    identityMap.set(before, skillIdentity(skill));
+    changed.add(skill.id);
+  }
+  const remap = (identity: string) => identityMap.get(identity) ?? identity;
+  for (const skill of copy.skills) if (skill.discipline === 'tumbling' && skill.sharedConnectionApproval)
+    skill.sharedConnectionApproval.executionIdentity = remap(skill.sharedConnectionApproval.executionIdentity);
+  for (const registration of copy.athleteSkills) if (registration.connectionConfirmation)
+    registration.connectionConfirmation.executionIdentity = remap(registration.connectionConfirmation.executionIdentity);
+  // Samme præcise udførelse findes allerede: flyt referencer til den eksisterende definition og registrering.
+  const byIdentity = new Map<string, string>();
+  for (const skill of copy.skills) if (!changed.has(skill.id)) byIdentity.set(skillIdentity(skill), skill.id);
+  const skillTarget = new Map<string, string>();
+  for (const skill of copy.skills) {
+    if (!changed.has(skill.id)) continue;
+    const existing = byIdentity.get(skillIdentity(skill));
+    if (existing) skillTarget.set(skill.id, existing);
+    else byIdentity.set(skillIdentity(skill), skill.id);
+  }
+  const registrationTarget = new Map<string, string>();
+  for (const registration of copy.athleteSkills) {
+    const target = skillTarget.get(registration.skillId);
+    if (!target) continue;
+    const kept = copy.athleteSkills.find((item) => item.athleteId === registration.athleteId && item.skillId === target);
+    if (kept) registrationTarget.set(registration.id, kept.id);
+    else registration.skillId = target;
+  }
+  if (skillTarget.size) {
+    copy.skills = copy.skills.filter((skill) => !skillTarget.has(skill.id));
+    copy.athleteSkills = copy.athleteSkills.filter((registration) => !registrationTarget.has(registration.id));
+    const registrationOf = (id: string) => registrationTarget.get(id) ?? id;
+    for (const plan of copy.plans) for (const discipline of ['tumbling', 'trampet'] as const) for (const scenario of plan[discipline]) for (const round of scenario.rounds) {
+      for (const entry of round.entries) {
+        if (entry.athleteSkillId) entry.athleteSkillId = registrationOf(entry.athleteSkillId);
+        if (entry.plannedSkillId) entry.plannedSkillId = skillTarget.get(entry.plannedSkillId) ?? entry.plannedSkillId;
+        if (entry.plannedSpot) entry.plannedSpot.skillId = skillTarget.get(entry.plannedSpot.skillId) ?? entry.plannedSpot.skillId;
+      }
+      for (const reserve of round.reserves) if (reserve.athleteSkillId) reserve.athleteSkillId = registrationOf(reserve.athleteSkillId);
+    }
+    copy.inheritanceRelations = copy.inheritanceRelations
+      .map((relation) => ({ ...relation, sourceId: registrationOf(relation.sourceId), targetId: registrationOf(relation.targetId) }))
+      .filter((relation) => relation.sourceId !== relation.targetId);
+    for (const registration of copy.athleteSkills) {
+      if (registration.assessmentOrigin.kind !== 'inherited') continue;
+      const origin = registration.assessmentOrigin;
+      if (origin.sourceChoice) origin.sourceChoice.sourceId = registrationOf(origin.sourceChoice.sourceId);
+      if (origin.sourceId && registrationTarget.has(origin.sourceId)) {
+        origin.sourceId = registrationOf(origin.sourceId);
+        const source = copy.athleteSkills.find((item) => item.id === origin.sourceId);
+        if (source) { registration.stability = source.stability; registration.assessedAt = source.assessedAt; }
+      }
+    }
+  }
+  const skills = new Map(copy.skills.map((skill) => [skill.id, skill]));
+  const registrations = new Map(copy.athleteSkills.map((registration) => [registration.id, registration]));
+  const identityOfRegistration = (id: string, fallback: string) => {
+    const skill = skills.get(registrations.get(id)?.skillId ?? '');
+    return skill ? skillIdentity(skill) : remap(fallback);
+  };
+  const relationKeys = new Set<string>();
+  copy.inheritanceRelations = copy.inheritanceRelations.flatMap((relation) => {
+    const next = { ...relation, sourceIdentity: identityOfRegistration(relation.sourceId, relation.sourceIdentity), targetIdentity: identityOfRegistration(relation.targetId, relation.targetIdentity) };
+    const key = canonicalJson(next);
+    if (relationKeys.has(key)) return [];
+    relationKeys.add(key);
+    return [next];
+  });
+  const exclusionKeys = new Set<string>();
+  copy.inheritanceExclusions = copy.inheritanceExclusions.flatMap((exclusion) => {
+    const next = { ...exclusion, targetIdentity: remap(exclusion.targetIdentity) };
+    const key = canonicalJson(next);
+    if (exclusionKeys.has(key)) return [];
+    exclusionKeys.add(key);
+    return [next];
+  });
+  return validateWorkspace({ ...copy, schemaVersion: 7 });
+}
+
+export function validateWorkspaceV6(input: unknown): WorkspaceV6 {
+  const parsed = workspaceV6Schema.safeParse(input);
+  if (!parsed.success) fail('Ugyldige format 6-data. Originalen bevares.');
+  upgradeV6(parsed.data);
+  return parsed.data;
+}
+
+export function migrateWorkspaceV6(input: unknown): Workspace {
+  return upgradeV6(validateWorkspaceV6(input));
+}
+
 /** Migrerer en ældre, gyldig arbejdsrumsværdi til det aktuelle format; aktuelle filer valideres uændret. */
 export function migrateWorkspace(input: unknown): Workspace {
   const version = input && typeof input === 'object' && 'schemaVersion' in input ? input.schemaVersion : undefined;
@@ -261,6 +364,7 @@ export function migrateWorkspace(input: unknown): Workspace {
   if (version === 3) return migrateWorkspaceV3(input);
   if (version === 4) return migrateWorkspaceV4(input);
   if (version === 5) return migrateWorkspaceV5(input);
+  if (version === 6) return migrateWorkspaceV6(input);
   return validateWorkspace(input);
 }
 

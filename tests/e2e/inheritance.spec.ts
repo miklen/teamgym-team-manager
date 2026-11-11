@@ -25,7 +25,7 @@ async function inspect(page: import('@playwright/test').Page) {
 for (const [query, name, count, distribution] of [
   ['strakt 180', /^Barani \(strakt 180°\)/, 5, null],
   ['randy', /^Randy \(strakt 900°\)/, 7, null],
-  ['dobbelt hoftebøjet 180', /^Dobbelt hoftebøjet 1\/2 \(180°\)/, 9, '0,1'],
+  ['dobbelt hoftebøjet 180', /^Dobbelt hoftebøjet 1\/2 \(180°\)/, 9, 'Out'],
 ] as const) {
   test(`forlæns kæde ${query}: fundament, registrering og genåbning`, async ({ page }) => {
     const source = await openWorkspace(page, repertoire(0));
@@ -38,7 +38,7 @@ for (const [query, name, count, distribution] of [
     if (distribution) {
       await expect(page.getByRole('button', { name: 'Registrér 1 spring', exact: true })).toBeDisabled();
       await toggleSpring(review, 'Vurdering for Hoftebøjet salto');
-      await page.getByRole('combobox', { name: /^Skruefordeling for Dobbelt hoftebøjet/ }).selectOption(distribution);
+      await review.getByRole('radio', { name: new RegExp(`^${distribution}:`) }).check();
       await expectIncluded(springRow(review, /^Hoftebøjet salto [A-ZÆØÅ]/), false);
     }
     await expect(review.locator('[data-selection="foundation"]')).toHaveCount(count);
@@ -141,7 +141,7 @@ test('minimum-D, direkte fravalg, egen sikkerhed og valg på tværs af disciplin
   expect(source.failures).toEqual([]);
 });
 
-test('dobbelt 540° viser uafklaret 180° og kræver afklaring eller direkte fravalg', async ({ page }) => {
+test('dobbelt 540° kræver skruefordeling, før springet og 180°-fundamentet kan registreres', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 1000 });
   const source = await openWorkspace(page, repertoire(0));
   await inspect(page);
@@ -150,16 +150,18 @@ test('dobbelt 540° viser uafklaret 180° og kræver afklaring eller direkte fra
   await page.getByLabel('Søg sammensat spring eller alias').fill('dobbelt lukket 540');
   await chooseSpring(page, /^Dobbelt lukket 1½ \(540°\)/);
   const review = page.getByRole('region', { name: 'Springvælger', exact: true });
-  await expect(review).toContainText('Afklar skruefordeling');
+  const split = review.getByRole('group', { name: /Hvor sker skruen\?/ });
+  await expect(split).toContainText('Vælg fordelingen');
+  await expect(split.getByRole('radio')).toHaveCount(4);
   await expect(page.getByRole('button', { name: 'Registrér 1 spring' })).toBeDisabled();
   const unresolved = springRow(review, /Afklar skruefordeling/);
   await unresolved.getByRole('button', { name: 'Fravælg', exact: true }).click();
-  await expectIncluded(unresolved, false);
-  await expect(page.getByRole('button', { name: 'Registrér 1 spring' })).toBeEnabled();
+  await expect(page.getByRole('button', { name: 'Registrér 1 spring' })).toBeDisabled();
   await unresolved.getByRole('button', { name: 'Medtag igen', exact: true }).click();
-  await page.getByRole('combobox', { name: /^Skruefordeling for/ }).selectOption('2,1');
+  await split.getByRole('radio', { name: /^Hel in, ½ out/ }).check();
+  await expect(split.getByRole('radio', { name: /^Hel in, ½ out/ })).toBeChecked();
   await expect(page.getByRole('button', { name: 'Registrér 1 spring' })).toBeEnabled();
-  await expect(review).toContainText('0° + 180°');
+  await expect(review).toContainText('(180°) · out');
   const accessibility = await new AxeBuilder({ page })
     .withTags(['wcag2a', 'wcag2aa', 'wcag21aa', 'wcag22aa'])
     .analyze();
@@ -233,7 +235,7 @@ test('migration er et bevidst valg med eksport af original, annullering og separ
   expect(source.workspace.schemaVersion).toBe(1);
   await page.getByRole('button', { name: /Lokale ændringer/ }).click();
   await expect(page.getByRole('button', { name: 'Gemt', exact: true })).toBeVisible();
-  expect(source.workspace.schemaVersion).toBe(6);
+  expect(source.workspace.schemaVersion).toBe(7);
   expect(source.workspace.athleteSkills[0]!.assessmentOrigin.kind).toBe('own');
   expect(source.failures).toEqual([]);
 });
@@ -442,7 +444,7 @@ test('kendt egen D 0,80 med bidrag 0,00 samt ekstra og ukendt egen D', async ({ 
         rotationQuarterTurns: 8,
         bodyPositions: ['tuck', 'tuck'] as 'tuck'[],
         twistsHalfTurns: 3,
-        twistDistribution: [],
+        twistDistribution: [0, 3],
       },
     ],
   };

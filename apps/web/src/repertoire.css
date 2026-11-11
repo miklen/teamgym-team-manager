@@ -410,9 +410,9 @@
 }
 .unified-picker .selected .spring-rating button.spring-rating-toggle,
 .unified-picker .is-excluded .spring-rating button.spring-rating-toggle {
-  min-width: 34px;
+  min-width: 48px;
   border-style: solid;
-  font-size: 0.9rem;
+  white-space: nowrap;
 }
 .unified-picker .spring-rating button.spring-rating-inherit {
   margin-right: 4px;

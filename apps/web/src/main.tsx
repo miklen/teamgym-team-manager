@@ -2,7 +2,8 @@ import { ScenarioProvider } from './scenario-context';
 import { useEffect, useRef, useState, useSyncExternalStore } from 'react';
 import { createRoot } from 'react-dom/client';
 import { flushSync } from 'react-dom';
-import { CURRENT_SCHEMA_VERSION, createWorkspace } from '@teamgym/domain';
+import { CURRENT_SCHEMA_VERSION, createWorkspace, skillNeedsTwistDistribution } from '@teamgym/domain';
+import type { SkillDefinition } from '@teamgym/domain';
 import { DriveError, parseDriveLink, pickGoogleResource, prepareGoogle } from '@teamgym/drive';
 import type { DriveLink } from '@teamgym/drive';
 import { Athletes } from './athletes';
@@ -719,9 +720,14 @@ function App() {
         {data.migration && (
           <Dialog title="Opgradér arbejdsrummet" close={() => workspaceSession.cancelMigration()}>
             <p>
-              Filen bruger format {data.migration.sourceSchemaVersion}. Opgradér til format {CURRENT_SCHEMA_VERSION} for at
-              bruge fælles godkendelse af præcise springkæder. Formatet tilføjer et tomt godkendelsesfelt på banespring.
+              Filen bruger format {data.migration.sourceSchemaVersion}. Opgradér til format {CURRENT_SCHEMA_VERSION}, så
+              alle dobbeltspring med skrue har en præcis skruefordeling
+              {data.migration.sourceSchemaVersion !== undefined && data.migration.sourceSchemaVersion < 6
+                ? ', og banespring får fælles godkendelse af præcise springkæder'
+                : ''}
+              .
             </p>
+            <TwistMigrationList bytes={data.migration.originalBytes} />
             <p>
               {data.migration.sourceSchemaVersion !== undefined && data.migration.sourceSchemaVersion < 3
                 ? 'Eksisterende planer bevares som Plan A i hver disciplin. '
@@ -1005,3 +1011,33 @@ createRoot(root).render(
     <App />
   </ScenarioProvider>,
 );
+
+/** Viser de spring, der får hele skruen på sidste salto ved opgraderingen. Afledt af originalen; gemmes ikke. */
+function TwistMigrationList({ bytes }: { bytes: string | undefined }) {
+  let names: string[] = [];
+  try {
+    const raw = JSON.parse(bytes ?? '{}') as { skills?: unknown };
+    if (Array.isArray(raw.skills))
+      names = (raw.skills as SkillDefinition[])
+        .filter((skill) => !skill.archived && skillNeedsTwistDistribution(skill))
+        .map((skill) => skill.name);
+  } catch {
+    /* Ugyldige bytes afvises allerede ved indlæsning. */
+  }
+  if (!names.length) return null;
+  return (
+    <div className="migration-twist">
+      <p>
+        {names.length === 1 ? 'Ét spring' : `${names.length} spring`} mangler skruefordeling og får hele skruen på
+        sidste salto (out):
+      </p>
+      <ul>
+        {names.map((name, index) => (
+          <li key={`${name}:${index}`}>
+            {name} <span>→ out</span>
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}

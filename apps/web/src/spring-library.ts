@@ -2,12 +2,14 @@ import {
   canonicalJson,
   chooseInheritanceSource,
   confirmConnection,
+  hasTwistDistributionChoice,
   newEntityId,
   reconcileInheritance,
   registerAthleteSkill,
   relationKey,
   setOwnAssessment,
   skillIdentity,
+  skillNeedsTwistDistribution,
   validateWorkspace,
 } from '@teamgym/domain';
 import type {
@@ -92,7 +94,19 @@ export function springDisplayName(
   const current = springName(skill);
   const stored = normalizeSpringName(skill.name);
   if (stored === normalizeSpringName(current)) return current;
-  return automaticNames(skill, rulePackage ?? DK_V2).has(stored) ? current : skill.name;
+  const rules = rulePackage ?? DK_V2;
+  // Katalogets navne er skrevet uden skruefordeling; et sådant navn følger springet, når fordelingen er valgt.
+  return automaticNames(skill, rules).has(stored) || automaticNames(withoutTwistChoice(skill), rules).has(stored)
+    ? current
+    : skill.name;
+}
+
+function withoutTwistChoice(skill: SpringDefinition): SpringDefinition {
+  const clear = (element: ElementExecution) =>
+    hasTwistDistributionChoice(element) ? { ...element, twistDistribution: [] } : element;
+  return skill.discipline === 'trampet'
+    ? { ...skill, jump: clear(skill.jump) }
+    : { ...skill, elements: skill.elements.map(clear) };
 }
 
 interface BuiltinSprings {
@@ -777,6 +791,8 @@ export interface PlannedSpring extends SpringSelection {
   unresolved: boolean;
   ownAssessment: boolean;
   needsSource: boolean;
+  /** Direkte valgt flersalto, hvor træneren endnu ikke har valgt hvor skruen sker. */
+  needsTwist: boolean;
   relations: { sourceIdentity: string; relationId: string }[];
 }
 /** Samme deterministiske plan bruges af visning og registrering. */
@@ -890,9 +906,10 @@ export function springRegistrationPlan(
             ? previous!.stability
             : (source?.stability ?? null),
       excluded,
-      unresolved: !explicit && !!entry?.unresolved,
+      unresolved: !explicit && (!!entry?.unresolved || skillNeedsTwistDistribution(row.definition)),
       ownAssessment: !!explicit || !!own,
       needsSource: !explicit && !own && !excluded && !source,
+      needsTwist: !!explicit && skillNeedsTwistDistribution(explicit.definition),
       relations: candidates
         .filter((item) => !item.unresolved)
         .map((item) => ({ sourceIdentity: item.identity, relationId: item.relationId })),
@@ -914,7 +931,7 @@ export function registerSpringBatch(
     workspace,
     athleteId,
   });
-  if (plan.some((entry) => !entry.excluded && (entry.unresolved || entry.needsSource)))
+  if (plan.some((entry) => !entry.excluded && (entry.unresolved || entry.needsSource || entry.needsTwist)))
     throw new Error(
       'Afklar skruefordeling eller vælg en arvekilde før registrering. Du kan også fravælge fundamentet.',
     );

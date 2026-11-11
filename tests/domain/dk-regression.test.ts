@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { setPlannedSpot, setRoundEntries } from '@teamgym/domain';
-import type { RulesetBinding, SkillDefinition, SpringDiscipline } from '@teamgym/domain';
+import { hasTwistDistributionChoice, needsTwistDistribution, outTwistDistribution, setPlannedSpot, setRoundEntries } from '@teamgym/domain';
+import type { ElementExecution, RulesetBinding, SkillDefinition, SpringDiscipline } from '@teamgym/domain';
 import { DK_SPRING_CATALOG } from '../../packages/rules/src/catalog';
 import type { NumericDecision } from '../../packages/rules/src/dk-numeric';
 import { DK_V1, DK_V2 } from '../../packages/rules/src/dk-v1';
@@ -23,7 +23,17 @@ function element(sourceId: string): Spring {
   return source.source.sourceId === 'A3' ? fromRows([sourceId], `dk-snap-${sourceId}`) :
     { id: `dk-snap-${sourceId}`, name: `Syntetisk ${sourceId}`, archived: false, discipline: 'trampet', jump: structuredClone(source.execution) };
 }
+/** Format 7 kræver en valgt skruefordeling; planerne bruger samme out-fordeling som migreringen. */
+const out = (execution: ElementExecution): ElementExecution =>
+  needsTwistDistribution(execution) ? { ...execution, twistDistribution: outTwistDistribution(execution) } : execution;
 const series = (...rows: string[]) => fromRows(rows, `dk-snap-${rows.join('-')}`);
+const catalogExecution = (execution: ElementExecution): ElementExecution =>
+  hasTwistDistributionChoice(execution) ? { ...execution, twistDistribution: [] } : execution;
+const catalogDistribution = (definition: SkillDefinition): SkillDefinition =>
+  definition.discipline === 'tumbling' ? { ...definition, elements: definition.elements.map(catalogExecution) }
+    : definition.discipline === 'trampet' ? { ...definition, jump: catalogExecution(definition.jump) } : definition;
+const withOut = (definition: Spring): Spring =>
+  definition.discipline === 'tumbling' ? { ...definition, elements: definition.elements.map(out) } : { ...definition, jump: out(definition.jump) };
 const times = <T>(count: number, item: T): T[] => Array.from({ length: count }, () => item);
 
 interface PlanSpec { name: string; discipline: SpringDiscipline; rounds: { counting: Spring[]; extras?: Spring[] }[]; spots?: { round: number; entry: number; grade: 'support' | 'assist' | 'heavy' }[] }
@@ -77,7 +87,7 @@ function analyzePlan(spec: PlanSpec, binding: RulesetBinding, rulePackage: RuleP
   spec.rounds.forEach((round, roundIndex) => {
     const definitions = [...(round.extras ?? []), ...round.counting];
     const entries = definitions.map((definition, index) => ({ id: builder.environment.id(), athleteId: athletes[index]!.id,
-      athleteSkillId: builder.register(athletes[index]!.id, definition), role: index < (round.extras?.length ?? 0) ? 'extra' as const : 'counting' as const }));
+      athleteSkillId: builder.register(athletes[index]!.id, withOut(definition)), role: index < (round.extras?.length ?? 0) ? 'extra' as const : 'counting' as const }));
     const scenario = plan()[spec.discipline][0]!;
     builder.workspace = setRoundEntries(builder.workspace, plan().id, spec.discipline, scenario.id, scenario.rounds[roundIndex]!.id, entries, { counting: 6, extra: 2 }, builder.environment);
   });
@@ -86,6 +96,9 @@ function analyzePlan(spec: PlanSpec, binding: RulesetBinding, rulePackage: RuleP
     const round = scenario.rounds[spot.round]!;
     builder.workspace = setPlannedSpot(builder.workspace, plan().id, spec.discipline, scenario.id, round.id, round.entries[spot.entry]!.id, { grade: spot.grade }, builder.environment);
   }
+  // Snapshotten er skrevet med katalogets uafklarede fordelinger. Planen bygges gyldigt i format 7, men regelmotoren får de
+  // oprindelige definitioner, så billedet fortsat låser motorens adfærd og ikke dataformatet.
+  builder.workspace = { ...builder.workspace, skills: builder.workspace.skills.map(catalogDistribution) };
   const analysis = rulePackage.analyze(builder.workspace, team.id, spec.discipline, plan()[spec.discipline][0]!.id);
   const profile = rulePackage.profiles.find((item) => item.ageGroup === binding.ageGroup && item.teamType === binding.teamType)!;
   return {

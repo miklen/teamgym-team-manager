@@ -7,6 +7,8 @@ import { points, statusText } from './components';
 import { springDirectionText, springDisplayName, springFoundation } from './spring-library';
 import type { SpringDefinition, SpringSelection } from './spring-library';
 import type { SpringPickerRow } from './spring-picker-model';
+import { TwistSplit } from './twist-split';
+import { twistElements, withTwistDistribution } from './twist-choice';
 
 export interface FoundationControls {
   following: string[];
@@ -111,7 +113,6 @@ export function SpringChoiceRows({
                   : previous && !previous.archived
                     ? 'Allerede registreret'
                     : '';
-          const jump = definition.discipline === 'trampet' ? definition.jump : null;
           const name = springDisplayName(definition, rulePackage);
           const known = teamCounts?.get(identity) ?? 0;
           const inherits = child && !planned.ownAssessment;
@@ -214,74 +215,49 @@ export function SpringChoiceRows({
                   }
                   onClick={toggle}
                 >
-                  <span aria-hidden="true">{!planned ? 'Vælg' : planned.excluded ? '↺' : '×'}</span>
+                  <span aria-hidden="true">
+                    {!planned ? 'Vælg' : planned.excluded ? '↺ Medtag' : child ? '× Fravælg' : '× Fjern'}
+                  </span>
                 </button>
               </div>
               {planned?.explicit &&
-                jump?.rotationQuarterTurns === 8 &&
-                [1, 3].includes(jump.twistsHalfTurns) && (
-                  <label className="spring-row-detail">
-                    Skruefordeling for {name}
-                    <select
-                      value={jump.twistDistribution.join(',')}
-                      onChange={(event) => {
-                        const next = selections.map((item) => {
-                          if (
-                            skillIdentity(item.definition) !== identity ||
-                            item.definition.discipline !== 'trampet'
-                          )
-                            return item;
-                          const updated = {
-                            ...item.definition,
-                            jump: {
-                              ...item.definition.jump,
-                              twistDistribution: event.target.value
-                                ? event.target.value.split(',').map(Number)
-                                : [],
-                            },
-                          };
-                          const previousFoundation = springFoundation(item.definition, rulePackage);
-                          const updatedFoundation = springFoundation(updated, rulePackage);
-                          const excludedRelations = previousFoundation.filter((entry) =>
-                            controls.excluded.includes(skillIdentity(entry.definition)),
-                          );
-                          if (excludedRelations.length)
-                            controls.setExcluded([
-                              ...new Set([
-                                ...controls.excluded,
-                                ...excludedRelations.flatMap((previous) => {
-                                  const matches = updatedFoundation.filter(
-                                    (entry) => entry.relationId === previous.relationId,
-                                  );
-                                  const matching =
-                                    matches.find(
-                                      (entry) =>
-                                        skillIdentity(entry.definition) ===
-                                        skillIdentity(previous.definition),
-                                    ) ?? (matches.length === 1 ? matches[0] : undefined);
-                                  return matching ? [skillIdentity(matching.definition)] : [];
-                                }),
-                              ]),
-                            ]);
-                          return { ...item, definition: updated };
-                        });
-                        change(next);
-                      }}
-                    >
-                      <option value="">Afklar skruefordeling</option>
-                      {(jump.twistsHalfTurns === 1 ? ['1,0', '0,1'] : ['3,0', '1,2', '2,1', '0,3']).map(
-                        (value) => (
-                          <option key={value} value={value}>
-                            {value
-                              .split(',')
-                              .map((part) => `${Number(part) * 180}°`)
-                              .join(' + ')}
-                          </option>
-                        ),
-                      )}
-                    </select>
-                  </label>
-                )}
+                twistElements(definition).map(({ element, index, label }) => (
+                  <TwistSplit
+                    key={index}
+                    element={element}
+                    label={label}
+                    onChange={(distribution) => {
+                      const next = selections.map((item) => {
+                        if (skillIdentity(item.definition) !== identity) return item;
+                        const updated = withTwistDistribution(item.definition, index, distribution);
+                        const previousFoundation = springFoundation(item.definition, rulePackage);
+                        const updatedFoundation = springFoundation(updated, rulePackage);
+                        const excludedRelations = previousFoundation.filter((entry) =>
+                          controls.excluded.includes(skillIdentity(entry.definition)),
+                        );
+                        if (excludedRelations.length)
+                          controls.setExcluded([
+                            ...new Set([
+                              ...controls.excluded,
+                              ...excludedRelations.flatMap((previous) => {
+                                const matches = updatedFoundation.filter(
+                                  (entry) => entry.relationId === previous.relationId,
+                                );
+                                const matching =
+                                  matches.find(
+                                    (entry) =>
+                                      skillIdentity(entry.definition) === skillIdentity(previous.definition),
+                                  ) ?? (matches.length === 1 ? matches[0] : undefined);
+                                return matching ? [skillIdentity(matching.definition)] : [];
+                              }),
+                            ]),
+                          ]);
+                        return { ...item, definition: updated };
+                      });
+                      change(next);
+                    }}
+                  />
+                ))}
               {planned?.needsSource && (
                 <label className="spring-row-detail">
                   Arvekilde for {name}

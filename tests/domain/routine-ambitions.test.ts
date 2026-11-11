@@ -81,15 +81,15 @@ describe('ambitioner i arbejdsrummet', () => {
     expect(mutate((copy) => { roundOf(copy).reserves.push({ id: 'reserve-uden', athleteId: null, athleteSkillId: null }); })).toThrow();
   });
 
-  it('migrering af format 1-4 bevarer id\'er og tilføjer plannedSkillId: null; format 6 afvises', () => {
+  it('migrering af format 1-4 bevarer id\'er og tilføjer plannedSkillId: null; format 7 afvises', () => {
     for (const example of [v1, v2, v3, v4]) {
       const migrated = migrateWorkspace(structuredClone(example));
-      expect(migrated.schemaVersion).toBe(6);
+      expect(migrated.schemaVersion).toBe(7);
       const entries = migrated.plans.flatMap((plan) => [...plan.tumbling, ...plan.trampet].flatMap((scenario) => scenario.rounds.flatMap((round) => round.entries)));
       expect(entries.every((entry) => entry.plannedSkillId === null && entry.athleteId !== null)).toBe(true);
       expect(migrated.athletes.map((item) => item.id)).toEqual((example as { athletes: { id: string }[] }).athletes.map((item) => item.id));
     }
-    expect(() => migrateWorkspace({ ...v4, schemaVersion: 6 })).toThrow();
+    expect(() => migrateWorkspace({ ...v4, schemaVersion: 7 })).toThrow();
   });
 
   it('addAmbition genbruger en definition med samme identitet, opretter ellers én og overholder grænserne', () => {

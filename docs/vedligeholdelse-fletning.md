@@ -1,6 +1,6 @@
 # Vedligeholdelse af sammenligning og fletning
 
-`packages/domain/src/workspace-merge.ts` sammenligner basis B, lokal L og fil R uden mutation, netværk, ur eller tilfældige id'er. Alle tre skal være gyldige format 5-filer med samme workspaceId. En basis eller fil i format 3 eller 4 migreres først deterministisk uden nye id'er; format 1 og 2 flettes ikke. Konteksten injicerer en stabil fingerprint og ren afstemning med de aktuelle regelpakker. Uafgjorte/ugyldige resultater har ingen `candidate`; kun `status: 'valid'` kan anvendes. Konflikt-id'er er bundet til input og kontekst. Ingen valg er forhåndsudfyldt. Genberegn ved ændrede valg.
+`packages/domain/src/workspace-merge.ts` sammenligner basis B, lokal L og fil R uden mutation, netværk, ur eller tilfældige id'er. Alle tre skal være gyldige filer i det aktuelle format (7) med samme workspaceId. En basis eller fil i format 3–6 migreres først deterministisk uden nye id'er; format 1 og 2 flettes ikke. Konteksten injicerer en stabil fingerprint og ren afstemning med de aktuelle regelpakker. Uafgjorte/ugyldige resultater har ingen `candidate`; kun `status: 'valid'` kan anvendes. Konflikt-id'er er bundet til input og kontekst. Ingen valg er forhåndsudfyldt. Genberegn ved ændrede valg.
 
 ## Dækningsoversigt
 
@@ -68,6 +68,18 @@ Eksempel på samtidige kommandoer: `renameTeam(B, hold, navn)` og `updateAssessm
 **Præsentation:** Pladsen viser grad, eventuelt element og justeret D med tekst. En nulstillet modtagning vises som afledt status med handlinger til at fjerne den eller planlægge igen og præsenteres ikke som en trænerbeslutning. Formularer bruger `setPlannedSpot`/`clearPlannedSpot` og indfører ingen egne regler for nulstilling eller fletning.
 
 **Tests:** `tests/domain/workspace-merge.test.ts` (planlagt modtagning i trevejsfletning: samme omgang, forskellige omgange, to forskellige modtagninger på samme plads og ens ændringer i begge retninger samt udskiftet spring med afledt nulstilling), `tests/domain/planned-spotting.test.ts` (validering, migration og kommandoer), `tests/domain/planned-spotting-rules.test.ts` (D, E-loft og Maks. mulig karakter med faste facit) og `tests/drive/workspace-session.test.ts` (migration fra format 3, gennemgang mod en fil i format 3 og afvisning af format 5).
+
+### Påkrævet skruefordeling, format 7
+
+**Fælles data og identitet:** Der tilføjes intet gemt felt; betydningen af `twistDistribution` skærpes. Et element med flere saltoer og 1–5 halve skruer skal have en fuld fordeling pr. salto, fordi in og out er forskellige spring med hver sin `skillIdentity`. Ved 6 halve skruer eller flere gemmes kun totalen. Format 7 afviser definitioner uden fordeling ("Vælg hvor skruen sker i hver salto."). Format 1–6 migreres deterministisk uden nye id'er, ur eller tilfældighed: en manglende fordeling bliver out, dvs. hele skruen på sidste salto, fx 180° → 0° + 180° og 540° → 0° + 540°. Gemte navne ændres ikke.
+
+**Afhængigheder og identitetsskift:** Migrationen omregner identiteter i `connectionConfirmation`, `sharedConnectionApproval`, arverelationer og fravalg. Findes den præcise out-definition allerede, samles den uafklarede definition i den eksisterende: registreringer, planpladser, reserver, ambitioner og arveophav peger derefter på den bevarede id. Rækkefølge i omgange og scenarier ændres ikke. D, gyldighed, gentagelser og tillæg er afledte og genberegnes; regelmotoren beregner uændret.
+
+**Flettepolitik:** Feltet beholder sin plads i den atomiske udførelse. En basis eller fil i format 3–6 migreres før sammenligning, så begge sider sammenlignes i format 7 med samme out-regel. Registrerer to trænere samtidig samme dobbeltspring som in og out, er det to forskellige identiteter, der begge bevares uden valg. Samme fordeling under forskellige id'er samles af den eksisterende unikhedsregel. Formularer bruger domænekommandoerne og har ingen egen fletteregel.
+
+**Præsentation:** Valget sker i den fælles vælger **Hvor sker skruen?** med kort pr. fordeling fra in til out. Springet kan ikke gemmes, før fordelingen er valgt. Navne får ` · in`/` · out` eller en dansk fordeling, fx "hel in, ½ out". Opgraderingsdialogen viser de berørte spring med "→ out".
+
+**Tests:** `tests/domain/twist-distribution.test.ts` (rækkefølge, skemakrav, migration med identitetsomregning og determinisme samt sammenlægning med eksisterende out), `tests/domain/workspace-merge.test.ts` (in og out samtidig i begge fletteretninger) og `tests/drive/workspace-session.test.ts` (gennemgang mod en nyere format 6-fil med uafklaret fordeling).
 
 ### Fælles kædegodkendelse, format 6
 

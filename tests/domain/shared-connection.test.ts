@@ -21,7 +21,7 @@ describe('fælles forbindelsesgodkendelse', () => {
       }),
     };
     const migrated = migrateWorkspace(legacy);
-    expect(migrated.schemaVersion).toBe(6);
+    expect(migrated.schemaVersion).toBe(7);
     expect(migrated.skills.filter((skill) => skill.discipline === 'tumbling').every((skill) => skill.sharedConnectionApproval === null)).toBe(true);
     expect(migrated.athleteSkills).toEqual(withPersonal.athleteSkills);
     expect(migrated.skills.map((skill) => skill.id)).toEqual(withPersonal.skills.map((skill) => skill.id));
