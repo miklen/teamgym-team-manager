@@ -37,6 +37,10 @@ Ved udløb eller 401 SHALL tokenet slettes og kontohint/filreference bevares. Sy
 - **WHEN** Google-popup blokeres eller lukkes uden et token
 - **THEN** bevares kladden, problemet forklares, og træneren kan prøve igen uden en automatisk popup-løkke.
 
+#### Scenario: Fornyelse ved klik tæt på udløb
+- **WHEN** en forbundet træner klikker i appen, mens tokenet stadig er gyldigt men udløber inden for 10 minutter
+- **THEN** anmoder appen fra netop dette klik om et nyt token med samme `requestAccessToken`-indstillinger. Klikket afventer ikke fornyelsen. Et nyt token for samme konto erstatter det gamle uden genindlæsning af arbejdsrummet. Afvisning, lukket popup eller anden konto bevarer det gyldige token og pauser nye forsøg i 2 minutter. Der åbnes aldrig popup uden klik.
+
 ### Requirement: Lokal afbrydelse og kontoskift rydder adgang
 Afbryd forbindelse SHALL rydde lokalt gemt token, konto og filreferencer samt aktive arbejdsdata efter håndtering af ugemt arbejde. Andre appfaner SHALL underrettes og stoppe nye kald med den gamle adgang. En allerede afsendt upload SHALL håndteres som et særskilt muligt udfald. Tilbagekaldelse af Googles samtykke SHALL være en særskilt handling, så almindelig afbrydelse ikke fremtvinger nyt samtykke ved næste forbindelse.
 

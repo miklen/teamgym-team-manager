@@ -9,6 +9,8 @@ import type { BrowserFetch } from './index';
 
 export const DRIVE_SCOPE = 'https://www.googleapis.com/auth/drive.file';
 const EXPIRY_MARGIN = 30_000;
+export const RENEW_WINDOW = 10 * 60_000;
+const RENEW_RETRY = 2 * 60_000;
 export interface GoogleConfiguration {
   clientId: string;
   projectNumber: string;
@@ -66,6 +68,8 @@ export class GoogleConnection {
   };
   private persistent = true;
   private remember = false;
+  private renewing = false;
+  private renewPausedUntil = 0;
   private stopSignals: (() => void) | undefined;
   constructor(
     private store: ConnectionStore,
@@ -276,6 +280,71 @@ export class GoogleConnection {
         fail();
       }
     });
+  }
+  /**
+   * Fornyer tokenet stille, når det snart udløber. Skal kaldes direkte fra et brugerklik.
+   * Generationen bevares, så arbejdsrummet ikke genindlæses; et svar for en anden konto kasseres.
+   */
+  renewIfExpiring(): boolean {
+    const record = this.record;
+    const now = this.now();
+    if (
+      this.renewing ||
+      now < this.renewPausedUntil ||
+      this.view.status !== 'connected' ||
+      !record ||
+      !this.isValid() ||
+      record.expiresAt - RENEW_WINDOW > now
+    )
+      return false;
+    const generation = this.generation;
+    this.renewing = true;
+    const finish = (renewed: boolean) => {
+      this.renewing = false;
+      if (!renewed) this.renewPausedUntil = this.now() + RENEW_RETRY;
+    };
+    try {
+      this.oauth.request(
+        record.account.email,
+        (result) => {
+          void (async () => {
+            if (
+              generation !== this.generation ||
+              !result.token ||
+              !Number.isFinite(result.expiresIn) ||
+              result.expiresIn <= 30 ||
+              !result.scopes.includes(DRIVE_SCOPE)
+            )
+              return false;
+            const receivedAt = this.now();
+            const account = await new DriveClient(() => {
+              if (generation !== this.generation)
+                throw new DriveError('cancelled', 'Google-forbindelsen er afbrudt.');
+              return result.token;
+            }, this.fetcher).account();
+            if (
+              generation !== this.generation ||
+              !this.record ||
+              this.record.account.permissionId !== account.permissionId
+            )
+              return false;
+            this.record = {
+              ...this.record,
+              token: result.token,
+              receivedAt,
+              expiresAt: receivedAt + result.expiresIn * 1000,
+              scopes: result.scopes,
+            };
+            await this.persist(generation);
+            return true;
+          })().then(finish, () => finish(false));
+        },
+        () => finish(false),
+      );
+    } catch {
+      finish(false);
+    }
+    return true;
   }
   async rememberFile(file: FileReference) {
     if (!this.record || !this.isValid()) throw new DriveError('auth', 'Forbind Google før filvalg.');

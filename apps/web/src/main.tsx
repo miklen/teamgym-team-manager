@@ -144,8 +144,12 @@ function App() {
     };
     window.addEventListener('beforeunload', before);
     window.addEventListener('focus', focus);
+    // Google kræver et brugerklik for at åbne fornyelsesvinduet; selve klikket afventer ikke fornyelsen.
+    const renew = () => connection.renewIfExpiring();
+    document.addEventListener('click', renew, true);
     return () => {
       active = false;
+      document.removeEventListener('click', renew, true);
       window.removeEventListener('hashchange', hash);
       window.removeEventListener('beforeunload', before);
       window.removeEventListener('focus', focus);

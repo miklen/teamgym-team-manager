@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { DRIVE_SCOPE, GoogleConnection, MemoryConnectionStore } from '@teamgym/drive';
+import { DRIVE_SCOPE, GoogleConnection, MemoryConnectionStore, RENEW_WINDOW } from '@teamgym/drive';
 import type {
   BrowserFetch,
   ConnectionSignals,
@@ -188,6 +188,47 @@ describe('personlig Google-forbindelse uden automatisk popup', () => {
     await second;
     expect(h.connection.snapshot()).toMatchObject({ account: { permissionId: 'B' }, file: null });
     expect((await h.store.read()).connection?.file).toBeNull();
+  });
+  it('fornyer stille ved klik tæt på udløb uden ny generation og bevarer filvalg', async () => {
+    const h = harness();
+    await h.connection.restore();
+    const connecting = h.connection.connect(true);
+    h.token();
+    await connecting;
+    await h.connection.rememberFile({ id: 'file', name: 'Test.json', folderIds: [] });
+    const generation = h.connection.snapshot().generation;
+    expect(h.connection.renewIfExpiring()).toBe(false);
+    h.advance(3_600_000 - RENEW_WINDOW + 1);
+    expect(h.connection.renewIfExpiring()).toBe(true);
+    expect(h.connection.renewIfExpiring()).toBe(false);
+    expect(h.hint).toBe('A@example.invalid');
+    h.token({ token: 'synthetic-renewed' });
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    expect(h.connection.getToken()).toBe('synthetic-renewed');
+    expect(h.connection.snapshot()).toMatchObject({ status: 'connected', generation, file: { id: 'file' } });
+    expect((await h.store.read()).connection?.token).toBe('synthetic-renewed');
+    h.advance(3_600_000 - RENEW_WINDOW - 1_000);
+    expect(h.connection.renewIfExpiring()).toBe(false);
+    expect(h.requests).toBe(2);
+  });
+  it('mislykket eller fremmed fornyelse beholder token og pauser nye forsøg', async () => {
+    const h = harness();
+    await h.connection.restore();
+    const connecting = h.connection.connect(true);
+    h.token();
+    await connecting;
+    h.advance(3_600_000 - RENEW_WINDOW + 1);
+    expect(h.connection.renewIfExpiring()).toBe(true);
+    h.fail();
+    expect(h.connection.renewIfExpiring()).toBe(false);
+    h.advance(120_000);
+    expect(h.connection.renewIfExpiring()).toBe(true);
+    h.account('B');
+    h.token({ token: 'synthetic-foreign' });
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    expect(h.connection.getToken()).toBe('synthetic-access');
+    expect(h.connection.snapshot().account?.permissionId).toBe('A');
+    expect(h.connection.renewIfExpiring()).toBe(false);
   });
   it('lagerfejl understøtter kun hukommelsesbaseret adgang med tydelig besked', async () => {
     const bad: ConnectionStore = {
