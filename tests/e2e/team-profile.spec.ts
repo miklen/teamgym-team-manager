@@ -35,6 +35,16 @@ test('holdprofil viser trapper, status, detaljer og fokus uden at ændre data', 
   await row(page, double.name).hover();
   await expect(row(page, double.name)).toHaveCSS('background-color', 'rgba(0, 0, 0, 0)');
 
+  const chart = (await page.locator('.waterline-chart').boundingBox())!;
+  for (const bar of await page.locator('.wl-bar').all()) {
+    await bar.hover();
+    const tip = bar.locator('.wl-tip');
+    await expect(tip).toBeVisible();
+    await tip.evaluate((element) => Promise.all(element.getAnimations().map((animation) => animation.finished)));
+    const box = (await tip.boundingBox())!;
+    expect(box.y).toBeGreaterThanOrEqual(chart.y);
+  }
+
   await page.locator('.wl-bar.status-close').click();
   await expect(page.getByRole('dialog', { name: double.name })).toBeVisible();
   await page.keyboard.press('Escape');
