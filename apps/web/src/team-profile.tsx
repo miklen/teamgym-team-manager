@@ -538,7 +538,7 @@ export function TeamProfilePage({
       ) : (
         <>
           <Waterline
-            key={discipline}
+            key={`vandstand-${discipline}`}
             profile={profile}
             highlight={highlight}
             selected={selected}
@@ -622,7 +622,7 @@ export function TeamProfilePage({
               </button>
             ))}
           </div>
-          <div className="profile-lines" key={discipline}>
+          <div className="profile-lines" key={`linjer-${discipline}`}>
             {profile.lines.map((line, lineIndex) => {
               const open_ = expanded.has(line.family);
               const shown = open_ ? line.rows : line.visible;

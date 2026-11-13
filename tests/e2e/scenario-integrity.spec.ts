@@ -432,19 +432,22 @@ test('ændret reserveformular opdaterer kun den gamle plan før scenarieskift', 
   expect(source.failures).toEqual([]);
 });
 
-test('ugyldig pladsformular bliver åben ved Opdater før skift og kan rettes uden Drive-skrivning', async ({
+test('ugyldig pladsformular bliver åben ved Opdater før skift og kan kasseres uden Drive-skrivning', async ({
   page,
 }) => {
   const workspace = scenarioWorkspace();
   const round = workspace.plans[0]!.tumbling[0]!.rounds[0];
-  round.entries.unshift(...round.reserves.map((entry) => ({ ...entry, role: 'extra' as const, plannedSpot: null, plannedSkillId: null })));
+  // Ældre data med for mange pladser: enhver ændring af omgangen afvises, indtil der fjernes en plads.
+  const first = round.reserves[0]!;
+  const ambition = (id: string) => ({ id, athleteId: null, athleteSkillId: null, role: 'extra' as const, plannedSpot: null, plannedSkillId: 'skill-tumbling' });
+  round.entries.unshift({ ...first, role: 'extra' as const, plannedSpot: null, plannedSkillId: null }, ambition('legacy-ambition-1'), ambition('legacy-ambition-2'));
   round.reserves = [];
   const source = await openWorkspace(page, workspace);
   await expect(page.getByRole('heading', { name: 'Hold', exact: true })).toBeVisible();
   await page.getByRole('link', { name: 'Springplan', exact: true }).click();
-  await page.locator('.round-entries .entry-name').nth(2).click();
+  await page.locator('.round-entries .entry-name', { hasText: 'Syntetisk gymnast 3' }).first().click();
   const editor = page.getByRole('dialog', { name: 'Redigér omgangsplads', exact: true });
-  await editor.getByRole('combobox', { name: 'Rolle', exact: true }).selectOption('extra');
+  await chooseAthlete(editor, 'Syntetisk gymnast 8');
   await editor.getByLabel('Vis scenarie').selectOption({ label: 'Plan B' });
   await page
     .getByRole('dialog', { name: 'Gem formularændringer?', exact: true })
@@ -453,8 +456,9 @@ test('ugyldig pladsformular bliver åben ved Opdater før skift og kan rettes ud
   await expect(editor.getByRole('alert')).toContainText('højst 2 ekstra');
   await expect(editor).toBeVisible();
   await expect(page.locator('[role="tab"][aria-selected="true"]')).toHaveText('Plan A');
-  await editor.getByRole('combobox', { name: 'Rolle', exact: true }).selectOption('counting');
-  await editor.getByRole('button', { name: 'Opdater', exact: true }).click();
+  await editor.getByRole('button', { name: 'Luk dialog', exact: true }).click();
+  await page.getByRole('button', { name: 'Kassér', exact: true }).click();
+  await page.getByRole('tab', { name: 'Plan B', exact: true }).click();
   await expect(page.getByRole('tab', { name: 'Plan B', exact: true })).toHaveAttribute(
     'aria-selected',
     'true',

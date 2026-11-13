@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   moveScenario,
+  moveRound,
   checkMergePolicy,
   workspaceMergePolicy,
   mergeWorkspace,
@@ -617,6 +618,40 @@ describe('trevejsmotor', () => {
       expect(ids(valid(mergeWorkspace(b, l, r, context)))).toEqual(ids(moved).filter((id) => id !== bb));
     });
   });
+  describe('omgangenes rækkefølge med moveRound', () => {
+    const sides = [['lokal', false], ['fil', true]] as const;
+    const order = (w: Workspace) => w.plans[0]!.tumbling[0]!.rounds.map((round) => round.id);
+    const limits = { counting: 6, extra: 2 };
+    function setup() {
+      const { b, environment } = fixture();
+      const plan = b.plans[0]!, scenario = plan.tumbling[0]!;
+      const move = (index: number, to: number) => moveRound(b, plan.id, 'tumbling', scenario.id, scenario.rounds[index]!.id, to, environment);
+      return { b, plan, scenario, environment, move };
+    }
+    it.each(sides)('ny holdomgang og ændret deltagerliste flettes uden valg (flytning %s)', (_side, swap) => {
+      const { b, plan, scenario, environment, move } = setup();
+      const moved = move(2, 0);
+      const round = scenario.rounds[2]!;
+      const edited = setRoundEntries(b, plan.id, 'tumbling', scenario.id, round.id, [...round.entries].reverse(), limits, environment);
+      const [l, r] = swap ? [edited, moved] : [moved, edited];
+      const w = valid(mergeWorkspace(b, l, r, context));
+      expect(order(w)).toEqual(order(moved));
+      expect(w.plans[0]!.tumbling[0]!.rounds[0].entries).toEqual(edited.plans[0]!.tumbling[0]!.rounds[2].entries);
+    });
+    it('ens flytninger giver ingen konflikt', () => {
+      const { b, move } = setup();
+      expect(order(valid(mergeWorkspace(b, move(1, 0), move(1, 0), context)))).toEqual(order(move(1, 0)));
+    });
+    it.each(sides)('forskellige holdomgange kræver ét valg af hele rækkefølgen (%s først)', (_side, swap) => {
+      const { b, move } = setup();
+      const [l, r] = swap ? [move(2, 0), move(1, 0)] : [move(1, 0), move(2, 0)];
+      const review = mergeWorkspace(b, l, r, context);
+      expect(review.status).toBe('blocked');
+      expect(review.conflicts).toHaveLength(1);
+      expect(order(valid(mergeWorkspace(b, l, r, context, choose(review, 'local'))))).toEqual(order(l));
+      expect(order(valid(mergeWorkspace(b, l, r, context, choose(review, 'remote'))))).toEqual(order(r));
+    });
+  });
   it('regelbinding/planfingerprint/revurdering mod ny vurdering vælges samlet', () => {
     const { b, l, r } = fixture();
     l.teams[0]!.rulesetBinding.teamType = 'mix';
@@ -812,7 +847,7 @@ describe('ambitioner i trevejsfletning', () => {
     const trampetId = f.b.skills.find((skill) => skill.discipline === 'trampet')!.id;
     const definition = f.b.skills.find((skill) => skill.id === trampetId)!;
     const cleared = setRoundEntries(f.b, plan.id, 'trampet', scenario.id, roundAt(f.b).id, roundAt(f.b).entries.slice(0, 5), limits, f.environment);
-    const added = addAmbition(cleared, plan.id, 'trampet', scenario.id, roundAt(f.b).id, definition, 'counting', 5, limits, f.environment);
+    const added = addAmbition(cleared, plan.id, 'trampet', scenario.id, roundAt(f.b).id, definition, 5, limits, f.environment);
     const b = added.workspace, entryId = added.entryId;
     const registration = (workspace: Workspace, athleteIndex: number) =>
       workspace.athleteSkills.find((item) => item.athleteId === workspace.athletes[athleteIndex]!.id && item.skillId === trampetId)!.id;
@@ -821,17 +856,17 @@ describe('ambitioner i trevejsfletning', () => {
     const entry = (workspace: Workspace) => roundAt(workspace).entries.find((item) => item.id === entryId)!;
     const jump = (id: string): SkillDefinition => ({ ...definition, id, name: 'Syntetisk nyt ambitionsspring', jump: { ...(definition as { jump: object }).jump, twistsHalfTurns: 4, twistDistribution: [4] } } as SkillDefinition);
     const change = (workspace: Workspace, next: SkillDefinition) =>
-      changeAmbitionSkill(workspace, plan.id, 'trampet', scenario.id, roundAt(b).id, entryId, next, undefined, limits, f.environment);
+      changeAmbitionSkill(workspace, plan.id, 'trampet', scenario.id, roundAt(b).id, entryId, next, limits, f.environment);
     return { ...f, b, plan, scenario, roundAt, entryId, fill, entry, registration, jump, change, trampetId };
   }
 
   it.each(directions)('antalblokke i samme omgang kræver samlet valg (%s)', (_side, swap) => {
     const { b, plan, scenario, roundAt, jump } = ambitionSetup();
-    const first = addAmbitions(b, plan.id, 'trampet', scenario.id, roundAt(b).id, jump('blok-a'), 'extra', 2, 0, limits).workspace;
+    const first = addAmbitions(b, plan.id, 'trampet', scenario.id, roundAt(b).id, jump('blok-a'), 2, 0, limits).workspace;
     const secondJump = jump('blok-b');
     if (secondJump.discipline !== 'trampet') throw Error('fixture');
     secondJump.jump = { ...secondJump.jump, twistsHalfTurns: 6, twistDistribution: [6] };
-    const second = addAmbitions(b, plan.id, 'trampet', scenario.id, roundAt(b).id, secondJump, 'extra', 2, 0, limits).workspace;
+    const second = addAmbitions(b, plan.id, 'trampet', scenario.id, roundAt(b).id, secondJump, 2, 0, limits).workspace;
     const [local, remote] = swap ? [second, first] : [first, second];
     const review = mergeWorkspace(b, local, remote, context);
     expect(review.conflicts).toHaveLength(1);
@@ -843,11 +878,11 @@ describe('ambitioner i trevejsfletning', () => {
 
   it.each(directions)('antalblokke i forskellige omgange flettes uden valg (%s)', (_side, swap) => {
     const { b, plan, scenario, roundAt, jump } = ambitionSetup();
-    const first = addAmbitions(b, plan.id, 'trampet', scenario.id, roundAt(b, 0).id, jump('samme-a'), 'extra', 2, 0, limits).workspace;
+    const first = addAmbitions(b, plan.id, 'trampet', scenario.id, roundAt(b, 0).id, jump('samme-a'), 2, 0, limits).workspace;
     const next = jump('andet-b');
     if (next.discipline !== 'trampet') throw Error('fixture');
     next.jump = { ...next.jump, twistsHalfTurns: 6, twistDistribution: [6] };
-    const second = addAmbitions(b, plan.id, 'trampet', scenario.id, roundAt(b, 2).id, next, 'extra', 2, 0, limits).workspace;
+    const second = addAmbitions(b, plan.id, 'trampet', scenario.id, roundAt(b, 2).id, next, 2, 0, limits).workspace;
     const merged = valid(mergeWorkspace(b, swap ? second : first, swap ? first : second, context));
     const before = b.skills.length;
     expect(merged.skills).toHaveLength(before + 2);
@@ -857,8 +892,8 @@ describe('ambitioner i trevejsfletning', () => {
 
   it.each(directions)('identiske nye definitioner i forskellige omgange kræver identitetsvalg (%s)', (_side, swap) => {
     const { b, plan, scenario, roundAt, jump } = ambitionSetup();
-    const first = addAmbitions(b, plan.id, 'trampet', scenario.id, roundAt(b, 0).id, jump('samme-a'), 'extra', 2, 0, limits).workspace;
-    const second = addAmbitions(b, plan.id, 'trampet', scenario.id, roundAt(b, 2).id, jump('samme-b'), 'extra', 2, 0, limits).workspace;
+    const first = addAmbitions(b, plan.id, 'trampet', scenario.id, roundAt(b, 0).id, jump('samme-a'), 2, 0, limits).workspace;
+    const second = addAmbitions(b, plan.id, 'trampet', scenario.id, roundAt(b, 2).id, jump('samme-b'), 2, 0, limits).workspace;
     const [local, remote] = swap ? [second, first] : [first, second];
     const review = mergeWorkspace(b, local, remote, context);
     expect(review.conflicts).toHaveLength(1);
@@ -961,7 +996,7 @@ describe('samlet ambitionsoprettelse og fælles godkendelse', () => {
     const definition: SkillDefinition = { ...structuredClone(source), id: 'faelles-ny-kaede', name: 'Syntetisk ny kæde', elements: [source.elements[0]!, source.elements[0]!], connection: { kind: 'custom', transitions: ['direct'] }, sharedConnectionApproval: null };
     b.skills.push(definition);
     const plan = b.plans[0]!, scenario = plan.tumbling[0]!;
-    const add = (workspace: Workspace, index: number, note: string) => addAmbitions(workspace, plan.id, 'tumbling', scenario.id, scenario.rounds[index]!.id, definition, 'extra', 2, 0, limits, note, fixture.environment).workspace;
+    const add = (workspace: Workspace, index: number, note: string) => addAmbitions(workspace, plan.id, 'tumbling', scenario.id, scenario.rounds[index]!.id, definition, 2, 0, limits, note, fixture.environment).workspace;
     return { b: validateWorkspace(b), add };
   }
   it.each([false, true])('forskellige omgange samler begge blokke og samme kædegodkendelse (%s)', (swap) => {

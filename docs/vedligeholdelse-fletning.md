@@ -14,8 +14,8 @@
 | Spring | id; navn/arkivering særskilt; udførelse og forbindelsens overgange atomisk. Alle tre discipliner, elementfelter og variantværdier er eksplicit dækket. |
 | Registrering | id; sikkerhed/dato/ophav én gruppe, note særskilt, forbindelsesbekræftelse atomisk, revurderingsliste atomisk. updatedAt vælger ingen vinder. |
 | Plan | id og teamId; regel-fingerprint; discipliner indeholder scenarier med id. |
-| Scenarie | id; navn selvstændigt; rækkefølge eksplicit; tre omgange identificeres ved id. |
-| Omgang | id; deltagere og reserver hver en atomisk ordnet liste inklusive medlemmernes id, gymnast, spring og rolle. Deltagerens planlagte modtagning (grad, element og springreference) er én atomisk værdi i deltagerlisten. Flytning mellem lister kan samle valget. |
+| Scenarie | id; navn selvstændigt; rækkefølge eksplicit; tre omgange identificeres ved id, og deres rækkefølge (første er holdomgang) er ét eksplicit rækkefølgevalg. |
+| Omgang | id; deltagere og reserver hver en atomisk ordnet liste inklusive medlemmernes id, gymnast, spring og rolle. Rollen er afledt af positionen: de første pladser ud over holdprofilens tællende er ekstra. Deltagerens planlagte modtagning (grad, element og springreference) er én atomisk værdi i deltagerlisten. Flytning mellem lister kan samle valget. |
 | Arverelation | nøgle sourceId/targetId/catalogId/relationId; hele accepterede relation atomisk. |
 | Fravalg | nøgle athleteId/targetIdentity; hele fravalget atomisk. |
 | Ophav | own/inherited med eksplicit sourceId/sourceChoice/context; aktive arveværdier afstemmes, kildevalg bevares. |
@@ -97,7 +97,7 @@ Eksempel på samtidige kommandoer: `renameTeam(B, hold, navn)` og `updateAssessm
 
 **Fælles data:** En plads i en bane- eller trampetomgang har nu `athleteId: Id | null` og `plannedSkillId: Id | null`. Præcis ét af dem er sat: en besat plads har gymnast og `plannedSkillId: null`; en ambition har `athleteId: null`, `athleteSkillId: null`, `plannedSpot: null` og et `plannedSkillId`, der peger på en kendt definition i pladsens disciplin. Reserver har altid gymnast. Format 4 migreres deterministisk til format 5 med `plannedSkillId: null` på alle pladser uden nye id'er, ur eller tilfældighed; format 1–3 går gennem samme kæde. Ældre apps afviser format 5 som nyere.
 
-**Identiteter og rækkefølge:** Ambitionen er en almindelig plads med eget id, rolle og position. `addAmbition` genbruger en aktiv definition med samme springidentitet (regelpakkens identitet injiceres som `CommandEnvironment.springIdentity`) eller opretter definitionen i samme ændring. `fillAmbition` bevarer plads-id, rolle og position og sætter `plannedSkillId: null`. `setRoundEntries` kan ikke omdanne en plads mellem ambition og besat; det kræver de navngivne kommandoer. `duplicateScenario` og `moveRoundFirst` bevarer ambitioner. To sider, der definerer samme nye spring med forskellige id'er, samles af den eksisterende unikhedsregel for præcise spring.
+**Identiteter og rækkefølge:** Ambitionen er en almindelig plads med eget id, rolle og position. `addAmbition` genbruger en aktiv definition med samme springidentitet (regelpakkens identitet injiceres som `CommandEnvironment.springIdentity`) eller opretter definitionen i samme ændring. `fillAmbition` bevarer plads-id, rolle og position og sætter `plannedSkillId: null`. `setRoundEntries` kan ikke omdanne en plads mellem ambition og besat; det kræver de navngivne kommandoer. `duplicateScenario` og `moveRound` bevarer ambitioner. To sider, der definerer samme nye spring med forskellige id'er, samles af den eksisterende unikhedsregel for præcise spring.
 
 **Politik:** `merge-policy.ts` klassificerer `plannedSkillId` som værdi med betegnelsen "Planlagt spring" inden for den atomiske deltagerliste. Samme ambition besat med forskellige gymnaster, spring skiftet mens pladsen besættes, og besættelse mod reserve med samme gymnast giver ét valg for hele omgangen i begge fletteretninger; en blandet plads kan ikke opstå. Arkiveret definition mod en ny besættelse følger reglen om sletning mod ny reference og kræver ét valg; vælges arkiveringen, forbliver ambitionen med diagnosen `skill-archived`.
 
@@ -132,6 +132,18 @@ Eksempel på samtidige kommandoer: `renameTeam(B, hold, navn)` og `updateAssessm
 ### Omarrangering af scenarier
 
 `moveScenario` flytter et eksisterende scenarie til en ny plads i den samme disciplins scenarieliste. Der er ingen nye gemte felter og ingen ny formatversion; kun rækkefølgen i den eksisterende ordnede, id-nøglede scenarieliste ændres. Scenariets id, navn, omgange, pladser og reserver bevares uændret, og arkiverede hold afvises. Det valgte scenarie er fortsat lokal sessionsnavigation og gemmes ikke. Fletning følger den eksisterende scenariepolitik: forskellige samtidige flytninger kræver ét valg af hele rækkefølgen, ens flytninger giver ingen konflikt, og flytning mod omdøbning, omgangsændring, nyt scenarie eller sletning af et andet scenarie flettes uden valg. Træk og menupunkter bruger samme kommando og indfører ingen egen fletteregel. `tests/domain/workspace-merge.test.ts` dækker disse tilfælde i begge fletteretninger.
+
+### Omgangsrækkefølge og positionsbestemt ekstra
+
+**Fælles data:** Ingen nye gemte felter og ingen ny formatversion. `moveRound` flytter en omgang til en ny plads i scenariets tre omgange; første omgang er altid holdomgangen, så markeringen følger rækkefølgen og gemmes ikke særskilt. `moveRoundFirst` er en genvej til plads 1. Pladsens gemte `role` har fået skærpet betydning: `setRoundEntries` og ambitionskommandoerne udleder den altid af positionen (`positionalRole`), så de første pladser ud over holdprofilens tællende er ekstra. En angivet rolle i input ignoreres, og formularer har intet rollevalg.
+
+**Identiteter, rækkefølge og afhængigheder:** Omgangens id, pladser, reserver og modtagninger bevares ved flytning. Pladsrækkefølgen bestemmer rollen, og rollen ændres kun sammen med deltagerlisten. Ældre gemte roller, der ikke svarer til positionen, bevares, til omgangens deltagerliste ændres næste gang.
+
+**Politik:** Omgangslisten er nu ordnet i `merge-policy.ts`. Tidligere fulgte en flettet kandidat basisrækkefølgen, så en ensidig ny holdomgang kunne gå tabt. Nu flettes en ensidig flytning sammen med ændrede deltagere uden valg, ens flytninger giver ingen konflikt, og forskellige flytninger kræver ét valg af hele rækkefølgen. Rollen følger den atomiske deltagerliste og kan derfor ikke blandes mellem siderne. Pile, træk og menuer bruger de samme kommandoer og indfører ingen egen fletteregel.
+
+**Afledte værdier og præsentation:** D, C, rækkefølgefradrag og holdomgangskrav genberegnes fra den nye rækkefølge. Ekstra vises varmt nedtonet og adskilt fra ambitionens blå, og en streg markerer, hvor de tællende begynder.
+
+**Tests:** `tests/domain/workspace-merge.test.ts` (omgangenes rækkefølge i begge fletteretninger), `tests/domain/scenarios.test.ts` (`moveRound`), `tests/domain/routine-ambitions.test.ts` og `tests/domain/reg-fixtures.test.ts` (positionsbestemt rolle).
 
 ## Sessionens levetid og gemning
 

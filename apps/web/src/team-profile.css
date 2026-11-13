@@ -476,12 +476,18 @@
   z-index: -1;
 }
 .wl-tip {
+  --tip-h: 3.1rem;
   position: absolute;
   left: 50%;
-  bottom: calc(var(--h) * 100% + 12px);
+  /* Høje søjler: tippet lægger sig over søjletoppen i stedet for at blive klippet af grafens kant */
+  bottom: min(calc(var(--h) * 100% + 12px), calc(100% + var(--top) - var(--tip-h) - 8px));
+  box-sizing: border-box;
+  height: var(--tip-h);
   display: grid;
+  align-content: center;
   gap: 1px;
-  padding: 8px 12px;
+  padding: 0 12px;
+  line-height: 1.2;
   border-radius: 12px;
   background: color-mix(in srgb, #fff 90%, transparent);
   backdrop-filter: blur(12px);

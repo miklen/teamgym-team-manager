@@ -3,7 +3,7 @@ import type { Page } from '@playwright/test';
 import { setRoundEntries, setArchived } from '@teamgym/domain';
 import { openWorkspace } from './drive-fixture';
 import { scenarioWorkspace } from '../fixtures/scenario-workspace';
-import { expect, test } from './test';
+import { chooseAthlete, expect, test } from './test';
 
 async function spring(page: Page) {
   await expect(page.getByRole('heading', { name: 'Hold', exact: true })).toBeVisible();
@@ -164,17 +164,19 @@ test('scenarier omarrangeres via menu og træk med lys hover og bevidst gemning'
 
 for (const choice of ['Bliv', 'Kassér', 'Opdater']) {
   test(`ændret pladsformular: ${choice} beskytter scenariet og uploader ikke`, async ({ page }) => {
-    const source = await openWorkspace(page, scenarioWorkspace());
+    const workspace = scenarioWorkspace();
+    workspace.plans[0]!.tumbling[0]!.rounds[0].reserves = [];
+    const source = await openWorkspace(page, workspace);
     await spring(page);
     await page.locator('.round-entries .entry-name').first().click();
     const editor = page.getByRole('dialog', { name: 'Redigér omgangsplads', exact: true });
-    await editor.getByRole('combobox', { name: 'Rolle', exact: true }).selectOption('extra');
+    await chooseAthlete(editor, 'Syntetisk gymnast 8');
     await editor.getByLabel('Vis scenarie').selectOption({ label: 'Plan B' });
     const guard = page.getByRole('dialog', { name: 'Gem formularændringer?', exact: true });
     await guard.getByRole('button', { name: choice, exact: true }).click();
     if (choice === 'Bliv') {
       await expect(editor).toBeVisible();
-      await expect(editor.getByRole('combobox', { name: 'Rolle', exact: true })).toHaveValue('extra');
+      await expect(editor.getByRole('button', { name: 'Gymnast', exact: true })).toContainText('Syntetisk gymnast 8');
       await editor.getByLabel('Vis scenarie').selectOption({ label: 'Plan B' });
       await guard.getByRole('button', { name: 'Kassér', exact: true }).click();
     }
@@ -183,11 +185,11 @@ for (const choice of ['Bliv', 'Kassér', 'Opdater']) {
       'true',
     );
     await page.getByRole('tab', { name: 'Plan A', exact: true }).click();
-    await expect(page.locator('.round-entries > li').first()).toHaveClass(
-      choice === 'Opdater' ? 'extra-entry' : '',
+    await expect(page.locator('.round-entries .entry-name').first()).toContainText(
+      choice === 'Opdater' ? 'Syntetisk gymnast 8' : 'Maja Test',
     );
     expect(source.puts).toBe(0);
-    expect(source.workspace.plans[0]!.tumbling[0]!.rounds[0].entries[0]!.role).toBe('counting');
+    expect(source.workspace.plans[0]!.tumbling[0]!.rounds[0].entries[0]!.athleteId).toBe(workspace.athletes[0]!.id);
     expect(source.failures).toEqual([]);
   });
 }
@@ -271,7 +273,7 @@ test('reserve uden spring kan indsættes på ekstra plads, mens utilgængelige r
     'tumbling',
     scenario.id,
     round.id,
-    round.entries.map((entry, index) => (index === 0 ? { ...entry, role: 'extra' } : entry)),
+    [...round.entries, { id: 'seventh-ambition', athleteId: null, athleteSkillId: null, plannedSkillId: 'skill-tumbling' }],
     { counting: 6, extra: 2 },
   );
   workspace = setArchived(workspace, 'athletes', workspace.athletes[6]!.id, true);
@@ -436,4 +438,36 @@ test.describe('200 % visning med 720 CSS-pixels på 1440 fysiske pixels', () => 
     expect(source.puts).toBe(0);
     expect(source.failures).toEqual([]);
   });
+});
+
+test('omgange flyttes med pile, holdomgangen følger rækkefølgen, og en syvende plads gør den første til ekstra', async ({
+  page,
+}) => {
+  const workspace = scenarioWorkspace();
+  const before = workspace.plans[0]!.tumbling[0]!.rounds.map((round) => round.id);
+  const source = await openWorkspace(page, workspace);
+  await spring(page);
+  await page.getByRole('button', { name: 'Flyt 2. omgang til plads 1 som holdomgang', exact: true }).first().click();
+  await expect(page.getByText('Omgangen er flyttet fra plads 2 til plads 1 og er nu holdomgang.')).toBeAttached();
+  const first = page.getByRole('region', { name: '1. omgang', exact: true });
+  await expect(first.getByRole('heading', { level: 2 })).toHaveText('1. Holdomgang');
+  // Den tidligere første omgang har reserverne og står nu som 2. omgang.
+  await expect(page.getByRole('region', { name: '2. omgang', exact: true })).toContainText('Syntetisk gymnast 7');
+  await page.getByRole('button', { name: 'Flyt 2. omgang til plads 3', exact: true }).first().click();
+
+  await first.getByRole('button', { name: '+ Tilføj plads', exact: true }).click();
+  await chooseAthlete(page, 'Syntetisk gymnast 7');
+  await page.getByRole('button', { name: 'Opdater', exact: true }).click();
+  const rows = first.locator('.round-entries > li');
+  await expect(rows).toHaveCount(7);
+  await expect(rows.first()).toHaveClass(/extra-entry/);
+  await expect(rows.first().locator('.entry-extra')).toHaveText('EKSTRA');
+  await expect(rows.nth(1)).not.toHaveClass(/extra-entry/);
+
+  await page.getByRole('button', { name: /Lokale ændringer/ }).click();
+  await expect(page.getByRole('button', { name: 'Gemt', exact: true })).toBeVisible();
+  const saved = source.workspace.plans[0]!.tumbling[0]!.rounds;
+  expect(saved.map((round) => round.id)).toEqual([before[1], before[2], before[0]]);
+  expect(saved[0].entries.map((entry) => entry.role)).toEqual(['extra', ...Array(6).fill('counting')]);
+  expect(source.failures).toEqual([]);
 });

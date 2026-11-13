@@ -20,8 +20,8 @@ function setup() {
   const at = (workspace: Workspace) => workspace.plans[0]!.trampet[0]!.rounds[1]!;
   // Ryd én tællende plads, så der er plads til en ambition.
   const workspace = setRoundEntries(base.workspace, plan.id, 'trampet', scenario.id, round.id, round.entries.slice(0, 5), limits, base.environment);
-  const add = (current: Workspace, definition: SkillDefinition = trampetSkill, role: 'counting' | 'extra' = 'counting', position = 5) =>
-    addAmbition(current, plan.id, 'trampet', scenario.id, round.id, definition, role, position, limits, base.environment);
+  const add = (current: Workspace, definition: SkillDefinition = trampetSkill, position = 5) =>
+    addAmbition(current, plan.id, 'trampet', scenario.id, round.id, definition, position, limits, base.environment);
   const fill = (current: Workspace, entryId: string, registrationId: string) => fillAmbition(current, plan.id, 'trampet', scenario.id, round.id, entryId, registrationId, base.environment);
   const registrationOf = (current: Workspace, athleteIndex: number, skillId = trampetSkill.id) =>
     current.athleteSkills.find((item) => item.athleteId === current.athletes[athleteIndex]!.id && item.skillId === skillId)!.id;
@@ -39,7 +39,7 @@ describe('ambitioner i arbejdsrummet', () => {
       const definitions = [newJump, second, third];
       const blocks: string[][] = [];
       for (const [index, count] of counts.entries()) {
-        const result = addAmbitions(current, s.plan.id, 'trampet', s.scenario.id, s.round.id, definitions[index]!, 'counting', count!, s.at(current).entries.length, limits, null, s.environment);
+        const result = addAmbitions(current, s.plan.id, 'trampet', s.scenario.id, s.round.id, definitions[index]!, count!, s.at(current).entries.length, limits, null, s.environment);
         current = result.workspace;
         blocks.push(result.entryIds);
       }
@@ -51,15 +51,19 @@ describe('ambitioner i arbejdsrummet', () => {
       expect(current.plans[0]!.tumbling).toEqual(empty.plans[0]!.tumbling);
     }
     const before = serializeWorkspace(empty);
-    expect(() => addAmbitions(empty, s.plan.id, 'trampet', s.scenario.id, s.round.id, newJump, 'counting', 7, 0, limits, null, s.environment)).toThrow();
+    expect(() => addAmbitions(empty, s.plan.id, 'trampet', s.scenario.id, s.round.id, newJump, 9, 0, limits, null, s.environment)).toThrow();
     expect(serializeWorkspace(empty)).toBe(before);
     expect(empty.skills.find((item) => item.id === newJump.id)).toBeUndefined();
     const beforeExisting = s.at(s.workspace).entries.map((item) => item.id);
-    const withOne = addAmbitions(s.workspace, s.plan.id, 'trampet', s.scenario.id, s.round.id, newJump, 'counting', 1, beforeExisting.length, limits, null, s.environment).workspace;
+    const withOne = addAmbitions(s.workspace, s.plan.id, 'trampet', s.scenario.id, s.round.id, newJump, 1, beforeExisting.length, limits, null, s.environment).workspace;
     expect(s.at(withOne).entries.slice(0, beforeExisting.length).map((item) => item.id)).toEqual(beforeExisting);
-    expect(() => addAmbitions(s.workspace, s.plan.id, 'trampet', s.scenario.id, s.round.id, newJump, 'counting', 2, beforeExisting.length, limits, null, s.environment)).toThrow();
-    const extras = addAmbitions(s.workspace, s.plan.id, 'trampet', s.scenario.id, s.round.id, newJump, 'extra', 2, 0, limits, null, s.environment).workspace;
-    expect(s.at(extras).entries.map((item) => item.role)).toEqual(['extra', 'extra', ...Array(5).fill('counting')]);
+    expect(() => addAmbitions(s.workspace, s.plan.id, 'trampet', s.scenario.id, s.round.id, newJump, 4, beforeExisting.length, limits, null, s.environment)).toThrow();
+    // Rollen følger positionen: sidst tilføjede tæller, og de første ud over seks bliver ekstra.
+    const appended = addAmbitions(s.workspace, s.plan.id, 'trampet', s.scenario.id, s.round.id, newJump, 3, beforeExisting.length, limits, null, s.environment).workspace;
+    expect(s.at(appended).entries.map((item) => item.role)).toEqual(['extra', 'extra', ...Array(6).fill('counting')]);
+    expect(s.at(appended).entries.slice(0, 2).map((item) => item.id)).toEqual(beforeExisting.slice(0, 2));
+    const extras = addAmbitions(s.workspace, s.plan.id, 'trampet', s.scenario.id, s.round.id, newJump, 2, 0, limits, null, s.environment).workspace;
+    expect(s.at(extras).entries.map((item) => item.role)).toEqual(['extra', ...Array(6).fill('counting')]);
   });
   it('validering afviser ambitioner med registrering, modtagning, ukendt eller forkert spring og reserver uden gymnast', () => {
     const s = setup();
@@ -101,9 +105,10 @@ describe('ambitioner i arbejdsrummet', () => {
     expect(reused.workspace.skills).toHaveLength(skills);
     const created = s.add(s.workspace, newJump);
     expect(created.workspace.skills.map((item) => item.id)).toContain(newJump.id);
-    expect(() => s.add(reused.workspace)).toThrow();
-    const extra = s.add(reused.workspace, trampetSkill, 'extra', 0);
+    const extra = s.add(reused.workspace, trampetSkill, 0);
     expect(s.at(extra.workspace).entries[0]).toMatchObject({ id: extra.entryId, role: 'extra' });
+    const full = s.add(extra.workspace).workspace;
+    expect(() => s.add(full)).toThrow('højst 2 ekstra');
   });
 
   it('afviser et spring, hvis den præcise definition er arkiveret', () => {
@@ -115,15 +120,15 @@ describe('ambitioner i arbejdsrummet', () => {
   it('changeAmbitionSkill skifter spring og rolle, men aldrig på en besat plads', () => {
     const s = setup();
     const { workspace, entryId } = s.add(s.workspace);
-    const changed = changeAmbitionSkill(workspace, s.plan.id, 'trampet', s.scenario.id, s.round.id, entryId, newJump, undefined, limits, s.environment);
+    const changed = changeAmbitionSkill(workspace, s.plan.id, 'trampet', s.scenario.id, s.round.id, entryId, newJump, limits, s.environment);
     expect(s.at(changed).entries.find((item) => item.id === entryId)!.plannedSkillId).toBe(newJump.id);
     const filledId = s.at(workspace).entries[0]!.id;
-    expect(() => changeAmbitionSkill(workspace, s.plan.id, 'trampet', s.scenario.id, s.round.id, filledId, newJump, undefined, limits, s.environment)).toThrow(/besat/);
+    expect(() => changeAmbitionSkill(workspace, s.plan.id, 'trampet', s.scenario.id, s.round.id, filledId, newJump, limits, s.environment)).toThrow(/besat/);
   });
 
   it('fillAmbition bevarer id, rolle og position og fjerner det planlagte spring', () => {
     const s = setup();
-    const { workspace, entryId } = s.add(s.workspace, trampetSkill, 'counting', 2);
+    const { workspace, entryId } = s.add(s.workspace, trampetSkill, 2);
     const filled = s.fill(workspace, entryId, s.registrationOf(workspace, 6));
     const entries = s.at(filled).entries;
     expect(entries[2]).toEqual({ id: entryId, athleteId: filled.athletes[6]!.id, athleteSkillId: s.registrationOf(workspace, 6), role: 'counting', plannedSpot: null, plannedSkillId: null });

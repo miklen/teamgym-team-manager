@@ -16,8 +16,8 @@ export type SlotMode = 'athlete' | 'ambition';
 
 /** Hvad dialogen beder springplanen om; domænekommandoerne udføres samlet i én ændring. */
 export type AmbitionRequest =
-  | { kind: 'add'; definition: SpringDefinition; role: RoundEntry['role']; count: number; approvalNote: string | null }
-  | { kind: 'update'; entryId: string; definition: SpringDefinition | null; role: RoundEntry['role']; athleteSkillId: string | null; approvalNote: string | null };
+  | { kind: 'add'; definition: SpringDefinition; count: number; approvalNote: string | null }
+  | { kind: 'update'; entryId: string; definition: SpringDefinition | null; athleteSkillId: string | null; approvalNote: string | null };
 
 /** Segmenteret valg mellem gymnast og ambition. Native radioknapper giver piletaster og skærmlæser gratis. */
 export function SlotModeSwitch({ value, onChange, disabled }: { value: SlotMode; onChange: (mode: SlotMode) => void; disabled?: boolean }) {
@@ -38,19 +38,6 @@ export function SlotModeSwitch({ value, onChange, disabled }: { value: SlotMode;
   );
 }
 
-function RoleField({ value, onChange }: { value: RoundEntry['role']; onChange?: ((role: RoundEntry['role']) => void) | undefined }) {
-  return (
-    <label>
-      Rolle
-      <select name="role" defaultValue={value} onChange={(event) => onChange?.(event.target.value as RoundEntry['role'])}>
-        <option value="counting">Tællende</option>
-        <option value="extra">Ekstra · først · indgår ikke i D/C/stabilitet</option>
-      </select>
-    </label>
-  );
-}
-
-const roleOf = (data: FormData): RoundEntry['role'] => (data.get('role') === 'extra' ? 'extra' : 'counting');
 const missingSpring = 'En ambition kræver et spring. Vælg springet i kataloget.';
 
 /** Ny ambition: springet vælges i disciplinens katalog. */
@@ -61,10 +48,10 @@ export function AmbitionCreateForm({ workspace, teamId, discipline, rulePackage,
   const [selected, setSelected] = useState<SpringDefinition | null>(null);
   const [building, setBuilding] = useState<ElementExecution[] | null>(null);
   const [approvalNote, setApprovalNote] = useState<string | null>(null);
-  const [role, setRole] = useState<RoundEntry['role']>('counting');
   const [count, setCount] = useState(1);
-  const capacity = Math.max(0, (role === 'counting' ? profile.counting : profile.extra) - round.entries.filter((entry) => entry.role === role).length);
+  const capacity = Math.max(0, profile.counting + profile.extra - round.entries.length);
   const chosenCount = Math.min(count, capacity);
+  const extrasAfter = Math.max(0, round.entries.length + chosenCount - profile.counting);
   if (building !== null) return <div className="ambition-form">
     <button type="button" className="quiet" onClick={() => setBuilding(null)}>← Tilbage til springvalg</button>
     <SkillEditor key={JSON.stringify(building)} workspace={workspace} athleteId="" rulePackage={rulePackage} save={() => {}} openExisting={() => {}} initialDiscipline={discipline} initialElements={building} onDefinition={(definition, approve, note) => {
@@ -80,10 +67,10 @@ export function AmbitionCreateForm({ workspace, teamId, discipline, rulePackage,
       formRef={formRef}
       className="ambition-form"
       disabled={!writable || (!!selected && skillNeedsTwistDistribution(selected))}
-      submit={(data) => {
+      submit={() => {
         if (!selected) throw new Error(missingSpring);
-        if (chosenCount < 1) throw new Error('Der er ingen ledige pladser i den valgte rolle.');
-        request({ kind: 'add', definition: selected, role: roleOf(data), count: chosenCount, approvalNote });
+        if (chosenCount < 1) throw new Error('Omgangen er fuld.');
+        request({ kind: 'add', definition: selected, count: chosenCount, approvalNote });
       }}
     >
       <fieldset disabled={!writable} onChange={onDirty}>
@@ -92,13 +79,12 @@ export function AmbitionCreateForm({ workspace, teamId, discipline, rulePackage,
           <p>Planlæg springet nu. Pladsen tæller med i D og C og besættes, når en gymnast kan springet.</p>
         </div>
         <AmbitionSpringPicker workspace={workspace} rulePackage={rulePackage} discipline={discipline} teamId={teamId} selected={selected} approvalNote={approvalNote} onSelect={(definition) => { setSelected(definition); setApprovalNote(null); onDirty?.(); }} onBuild={setBuilding} />
-        <RoleField value="counting" onChange={(next) => { setRole(next); setCount(1); onDirty?.(); }} />
         <label>Antal nye pladser
           <select name="count" value={chosenCount} onChange={(event) => { setCount(Number(event.target.value)); onDirty?.(); }}>
             {Array.from({ length: capacity }, (_, index) => index + 1).map((value) => <option key={value} value={value}>{value}</option>)}
           </select>
         </label>
-        <p className="ambition-count-preview" role="status">{chosenCount} {role === 'counting' ? 'tællende' : 'ekstra'} {chosenCount === 1 ? 'plads' : 'pladser'} føjes til i rækkefølge efter de eksisterende {role === 'counting' ? 'tællende' : 'ekstra'} pladser. Ingen gymnast vælges.</p>
+        <p className="ambition-count-preview" role="status">{chosenCount} {chosenCount === 1 ? 'plads' : 'pladser'} føjes til sidst i omgangen. Ingen gymnast vælges.{extrasAfter > 0 && ` De første ${extrasAfter === 1 ? 'plads' : `${extrasAfter} pladser`} i omgangen bliver ekstra.`}</p>
       </fieldset>
       {!writable && <p className="notice">Arbejdsrummet har læseadgang. Du kan gennemse valgene, men ikke ændre dem.</p>}
     </ActionForm>
@@ -129,7 +115,7 @@ export function AmbitionFillForm({ workspace, teamId, discipline, rulePackage, p
   const candidates = useMemo((): AmbitionCandidate[] => {
     if (!replacement) return ambitionCandidates(workspace, rulePackage, teamId, round, entry.id);
     try {
-      const preview = changeAmbitionSkill(workspace, planId, discipline, scenarioId, round.id, entry.id, replacement, undefined, profile, ambitionEnvironment(rulePackage));
+      const preview = changeAmbitionSkill(workspace, planId, discipline, scenarioId, round.id, entry.id, replacement, profile, ambitionEnvironment(rulePackage));
       const previewRound = preview.plans.find((plan) => plan.id === planId)![discipline].find((item) => item.id === scenarioId)!.rounds.find((item) => item.id === round.id)!;
       return ambitionCandidates(preview, rulePackage, teamId, previewRound, entry.id);
     } catch {
@@ -160,7 +146,7 @@ export function AmbitionFillForm({ workspace, teamId, discipline, rulePackage, p
       disabled={!writable || (!!replacement && skillNeedsTwistDistribution(replacement))}
       submit={(data) => {
         const athleteSkillId = String(data.get('ambition-athlete') ?? '') || null;
-        request({ kind: 'update', entryId: entry.id, definition: replacement, role: roleOf(data), athleteSkillId, approvalNote });
+        request({ kind: 'update', entryId: entry.id, definition: replacement, athleteSkillId, approvalNote });
       }}
     >
       <fieldset disabled={!writable} onChange={onDirty}>
@@ -243,7 +229,6 @@ export function AmbitionFillForm({ workspace, teamId, discipline, rulePackage, p
             </>
           )}
         </div>
-        <RoleField value={entry.role} />
       </fieldset>
       <p className="muted">
         Kan springet viser holdets aktive gymnaster med en anvendelig registrering af samme spring, som ikke allerede er med i omgangen.

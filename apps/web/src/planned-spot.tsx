@@ -310,11 +310,10 @@ export function RoundPlannedExecution({ result }: { result: RoundEvaluation }) {
   );
 }
 
-/** Et foreløbigt tal vises kun, når en hel ambitionsomgang har kendt D. */
+/** Et foreløbigt tal vises kun, når en omgang med ambitioner, også blandet med gymnaster, har kendt D. */
 export function hasAmbitionScorePotential(evaluation: DisciplineEvaluation) {
   return evaluation.maximumScore.status === 'incomplete' && evaluation.rounds.some((round) =>
-    round.counting.length > 0 &&
-    round.counting.every((item) => item.entry.athleteId === null) &&
+    round.counting.some((item) => item.entry.athleteId === null) &&
     round.difficulty.value !== null,
   );
 }

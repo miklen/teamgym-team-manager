@@ -1,5 +1,5 @@
 export type IconName =
-  'teams' | 'athletes' | 'spring' | 'profile' | 'rhythm' | 'rules' | 'cloud' | 'settings' | 'plus' | 'arrow' | 'check' | 'up' | 'down' | 'assess' | 'remove';
+  'teams' | 'athletes' | 'spring' | 'profile' | 'rhythm' | 'rules' | 'cloud' | 'settings' | 'plus' | 'arrow' | 'check' | 'up' | 'down' | 'assess' | 'remove' | 'left' | 'right' | 'grip';
 
 const paths: Record<IconName, string> = {
   teams: 'M3 4h7v7H3z M14 4h7v7h-7z M3 15h7v6H3z M14 15h7v6h-7z',
@@ -18,6 +18,9 @@ const paths: Record<IconName, string> = {
   down: 'M12 5v14 M6 13l6 6 6-6',
   assess: 'M5 20v-5 M12 20V9 M19 20V4',
   remove: 'M7 7l10 10 M17 7L7 17',
+  left: 'M15 6l-6 6 6 6',
+  right: 'M9 6l6 6-6 6',
+  grip: 'M9 6h.01 M15 6h.01 M9 12h.01 M15 12h.01 M9 18h.01 M15 18h.01',
 };
 
 export function Icon({ name, className = '' }: { name: IconName; className?: string }) {

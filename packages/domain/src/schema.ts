@@ -201,7 +201,7 @@ export type Athlete = z.infer<typeof athleteSchema>;
 export type AthleteSkill = z.infer<typeof athleteSkillSchema>;
 export type RoundEntry = z.infer<typeof roundEntrySchema>;
 /** Pladsændringer udleder modtagningen fra den eksisterende plads; kun modtagningskommandoerne sætter den.
- * `plannedSkillId` udelades for en plads med gymnast. */
-export type RoundEntryInput = Omit<RoundEntry, 'plannedSpot' | 'plannedSkillId'> & { plannedSpot?: PlannedSpot | null; plannedSkillId?: string | null };
+ * `plannedSkillId` udelades for en plads med gymnast. Rollen udledes altid af positionen; en angivet rolle ignoreres. */
+export type RoundEntryInput = Omit<RoundEntry, 'plannedSpot' | 'plannedSkillId' | 'role'> & { role?: RoundEntry['role']; plannedSpot?: PlannedSpot | null; plannedSkillId?: string | null };
 export type Round = z.infer<typeof roundSchema>;
 export type RoutinePlan = z.infer<typeof routinePlanSchema>;

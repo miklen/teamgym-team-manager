@@ -63,7 +63,7 @@ describe('ambitioner i regelmotoren: faste facit', () => {
     expect(choice).toBeDefined();
     builder.workspace = addAmbition(
       builder.workspace, plan.id, 'tumbling', scenario.id, round.id,
-      choice!.definition, 'counting', 0, { counting: 6, extra: 2 }, builder.environment,
+      choice!.definition, 0, { counting: 6, extra: 2 }, builder.environment,
     ).workspace;
     const ambition = DK_V2.analyze(builder.workspace, team.id, 'tumbling', scenario.id).rounds[1]!.counting[0]!;
     expect(ambition.evaluation?.connection).toBe('verified');
@@ -79,7 +79,7 @@ describe('ambitioner i regelmotoren: faste facit', () => {
     const round = scenario.rounds[1]!;
     const definition = fromRows(['a3-b-04', 'a3-f-01'], 'syntetisk-baglaens-salto-moelle');
     for (let index = 0; index < 6; index++)
-      builder.workspace = addAmbition(builder.workspace, plan.id, 'tumbling', scenario.id, round.id, definition, 'counting', index, { counting: 6, extra: 2 }, builder.environment).workspace;
+      builder.workspace = addAmbition(builder.workspace, plan.id, 'tumbling', scenario.id, round.id, definition, index, { counting: 6, extra: 2 }, builder.environment).workspace;
     const before = DK_V2.analyze(builder.workspace, team.id, 'tumbling', scenario.id).rounds[1]!;
     expect(before.counting[0]!.originalD.value).toBeNull();
     expect(before.counting[0]!.diagnostics.some((item) => item.message.includes('godkende den præcise kæde'))).toBe(true);

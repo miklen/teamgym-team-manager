@@ -11,6 +11,7 @@ import {
   setRoundReserves,
   insertReserve,
   moveRoundFirst,
+  moveRound,
   validateWorkspace,
   validateWorkspaceV1,
   validateWorkspaceV2,
@@ -306,6 +307,11 @@ describe('format 3, scenarier og reserver', () => {
     expect(() => DK_V1.analyze(added, plan.teamId, 'trampet', scenario.id)).toThrow('Scenariet');
     const moved = moveRoundFirst(added, plan.id, 'tumbling', scenario.id, scenario.rounds[2].id, environment);
     expect(moved.plans[0]!.tumbling[0]!.rounds[1].reserves).toEqual([{ ...reserve, athleteSkillId: null }]);
+    const ids = scenario.rounds.map((item) => item.id);
+    const last = moveRound(added, plan.id, 'tumbling', scenario.id, ids[0]!, 2, environment);
+    expect(last.plans[0]!.tumbling[0]!.rounds.map((item) => item.id)).toEqual([ids[1], ids[2], ids[0]]);
+    expect(last.plans[0]!.tumbling[0]!.rounds[2].reserves).toEqual([{ ...reserve, athleteSkillId: null }]);
+    expect(() => moveRound(added, plan.id, 'tumbling', scenario.id, ids[0]!, 3, environment)).toThrow('Ugyldig placering');
     const filled = setRoundEntries(
       workspace,
       plan.id,
@@ -332,8 +338,16 @@ describe('format 3, scenarier og reserver', () => {
   it.each(['counting', 'extra'] as const)(
     'indsætter samlet på %s-plads og afviser forældet basis',
     (role) => {
-      const { workspace, plan, scenario, round, reserve, environment } = setup();
-      if (role === 'extra') round.entries[0]!.role = 'extra';
+      const fixture = setup();
+      const { plan, scenario, reserve, environment } = fixture;
+      // Med en syvende plads bliver den første positionsbestemt ekstra.
+      const workspace =
+        role === 'extra'
+          ? setRoundEntries(fixture.workspace, plan.id, 'tumbling', scenario.id, fixture.round.id,
+              [...fixture.round.entries, { id: 'extra-7', athleteId: fixture.workspace.athletes[7]!.id, athleteSkillId: null }], limits, environment)
+          : fixture.workspace;
+      const round = workspace.plans[0]!.tumbling[0]!.rounds[0];
+      expect(round.entries[0]!.role).toBe(role);
       const current = setRoundReserves(
         workspace,
         plan.id,

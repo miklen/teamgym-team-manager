@@ -239,7 +239,7 @@ test('hel ambitionsomgang viser foreløbigt karakterpotentiale', async ({ page }
   workspace = setRoundEntries(workspace, plan.id, 'trampet', scenario.id, scenario.rounds[1]!.id, [], limits, fixture.environment);
   for (let index = 0; index < limits.counting; index++) {
     workspace = addAmbition(workspace, plan.id, 'trampet', scenario.id, scenario.rounds[1]!.id,
-      definition, 'counting', index, limits, fixture.environment).workspace;
+      definition, index, limits, fixture.environment).workspace;
   }
   await openWorkspace(page, workspace);
   await trampet(page);
@@ -258,6 +258,35 @@ test('hel ambitionsomgang viser foreløbigt karakterpotentiale', async ({ page }
   await expect(remove).toHaveCSS('background-color', 'rgb(255, 240, 242)');
 });
 
+test('blandet omgang med gymnaster og ambitioner viser foreløbigt karakterpotentiale', async ({ page }) => {
+  const fixture = syntheticWorkspace();
+  const plan = fixture.workspace.plans[0]!;
+  const scenario = plan.trampet[0]!;
+  let workspace = fixture.workspace;
+  const registrations: string[] = [];
+  for (const athlete of workspace.athletes.slice(0, limits.counting)) {
+    const registered = registerAthleteSkill(workspace, athlete.id, jump060, fixture.environment);
+    workspace = registered.workspace;
+    registrations.push(registered.athleteSkillId);
+  }
+  for (const [index, filled] of [[0, limits.counting], [1, limits.counting - 2], [2, limits.counting]] as const) {
+    workspace = setRoundEntries(workspace, plan.id, 'trampet', scenario.id, scenario.rounds[index]!.id,
+      workspace.athletes.slice(0, filled).map((athlete, position) => ({
+        id: fixture.environment.id(), athleteId: athlete.id, athleteSkillId: registrations[position]!, role: 'counting',
+      })), limits, fixture.environment);
+  }
+  for (let index = limits.counting - 2; index < limits.counting; index++) {
+    workspace = addAmbition(workspace, plan.id, 'trampet', scenario.id, scenario.rounds[1]!.id,
+      jump060, index, limits, fixture.environment).workspace;
+  }
+  await openWorkspace(page, workspace);
+  await trampet(page);
+  await expect(round(page, 2).locator('li.ambition-entry')).toHaveCount(2);
+  const maximum = page.locator('.maximum-metric');
+  await expect(maximum.locator('strong')).toHaveText(/^\d+,\d{3}$/);
+  await expect(maximum).toContainText('Foreløbigt potentiale');
+});
+
 test('kendt salto–rondat–flik beder ikke om godkendelse på omgang uden gymnast', async ({ page }) => {
   const fixture = syntheticWorkspace();
   const plan = fixture.workspace.plans[0]!;
@@ -272,7 +301,7 @@ test('kendt salto–rondat–flik beder ikke om godkendelse på omgang uden gymn
     discipline: 'tumbling', elements: [start, rondat, flik],
     connection: { kind: 'standard', transitions: ['direct', 'direct'] }, sharedConnectionApproval: null,
   };
-  const prepared = addAmbition(empty, plan.id, 'tumbling', scenario.id, turn.id, definition, 'counting', 0, limits, fixture.environment).workspace;
+  const prepared = addAmbition(empty, plan.id, 'tumbling', scenario.id, turn.id, definition, 0, limits, fixture.environment).workspace;
   await openWorkspace(page, prepared);
   await page.getByRole('link', { name: 'Springplan', exact: true }).click();
   const second = round(page, 2);
@@ -299,7 +328,7 @@ test('kendt salto–flyvespring beder ikke om godkendelse på omgang uden gymnas
     discipline: 'tumbling', elements: [start, flyvespring],
     connection: { kind: 'standard', transitions: ['direct'] }, sharedConnectionApproval: null,
   };
-  const prepared = addAmbition(empty, plan.id, 'tumbling', scenario.id, turn.id, definition, 'counting', 0, limits, fixture.environment).workspace;
+  const prepared = addAmbition(empty, plan.id, 'tumbling', scenario.id, turn.id, definition, 0, limits, fixture.environment).workspace;
   await openWorkspace(page, prepared);
   await page.getByRole('link', { name: 'Springplan', exact: true }).click();
   const second = round(page, 2);
@@ -329,7 +358,7 @@ for (const width of [390, 1440]) {
       await dialog.getByRole('searchbox', { name: 'Søg sammensat spring eller alias' }).fill(name);
       await dialog.getByRole('button', { name: new RegExp(`^Vælg ${name}, \\d+ gymnaster? kan springet$`) }).click();
       await dialog.getByRole('combobox', { name: 'Antal nye pladser' }).selectOption('3');
-      await expect(dialog.locator('.ambition-count-preview')).toContainText('3 tællende pladser');
+      await expect(dialog.locator('.ambition-count-preview')).toContainText('3 pladser føjes til sidst i omgangen');
       expect(await dialog.evaluate((element) => element.scrollWidth <= element.clientWidth)).toBe(true);
       await dialog.getByRole('button', { name: 'Opdater', exact: true }).click();
     }
@@ -426,7 +455,7 @@ test('en eksisterende uafklaret ambition kan godkendes uden nyt spring', async (
   const fixture = syntheticWorkspace();
   const plan = fixture.workspace.plans[0]!, scenario = plan.tumbling[0]!, round = scenario.rounds[0]!;
   const definition: SkillDefinition = { ...tumblingSkill, id: 'syntetisk-uafklaret', name: 'Syntetisk uafklaret kæde', elements: [tumblingSkill.elements[0]!, tumblingSkill.elements[0]!], connection: { kind: 'custom', transitions: ['direct'] }, sharedConnectionApproval: null };
-  const prepared = addAmbition(fixture.workspace, plan.id, 'tumbling', scenario.id, round.id, definition, 'extra', 0, limits, fixture.environment).workspace;
+  const prepared = addAmbition(fixture.workspace, plan.id, 'tumbling', scenario.id, round.id, definition, 0, limits, fixture.environment).workspace;
   const source = await openWorkspace(page, prepared);
   await page.getByRole('link', { name: 'Springplan', exact: true }).click();
   const first = (roundNumber: number) => page.getByRole('region', { name: `${roundNumber}. omgang`, exact: true });

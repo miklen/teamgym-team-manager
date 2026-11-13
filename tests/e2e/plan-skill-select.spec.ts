@@ -123,7 +123,7 @@ test('springvalget nulstilles ved skift af gymnast og bevarer kladden ved luknin
   await expect(page.getByRole('option', { name: /1\/1/ })).toHaveCount(0);
   await page.getByRole('option', { name: /2\/1.*Ikke vurderet/ }).click();
   await trigger.click();
-  await page.getByRole('combobox', { name: 'Rolle', exact: true }).click();
+  await page.getByRole('dialog').getByRole('heading').first().click();
   await expect(trigger).toHaveAttribute('aria-expanded', 'false');
   await expect(trigger).toContainText('2/1');
   await page.getByRole('button', { name: 'Luk dialog', exact: true }).click();
@@ -210,14 +210,7 @@ test('Hele holdet viser holdets spring, indsnævrer gymnaster og markerer gentag
   await expect(repeated).toBeVisible();
   await expect(repeated.locator('.plan-usage.is-warning')).toContainText('Omg. 1 ×1');
   await page.keyboard.press('Escape');
-  await page.getByRole('combobox', { name: 'Rolle', exact: true }).selectOption('extra');
-  await trigger.click();
-  await expect(page.getByRole('option', { name: /2\/1.*tæller ikke med her/ })).toContainText(
-    'Omg. 1 ×1 · tæller ikke',
-  );
-  await page.keyboard.press('Escape');
   await page.getByRole('button', { name: 'Luk dialog', exact: true }).click();
-  await page.getByRole('button', { name: 'Kassér', exact: true }).click();
   await expect(page.getByRole('dialog')).toHaveCount(0);
 
   await page.getByRole('button', { name: /Lokale ændringer/ }).click();

@@ -1,6 +1,9 @@
 import AxeBuilder from '@axe-core/playwright';
 import type { Locator, Page } from '@playwright/test';
+import { registerAthleteSkill } from '@teamgym/domain';
+import type { SkillDefinition } from '@teamgym/domain';
 import { profileSprings, profileWorkspace } from '../fixtures/profile-workspace';
+import { salto, trampetSkill } from '../fixtures/synthetic-workspace';
 import { openWorkspace } from './drive-fixture';
 import { expect, test } from './test';
 
@@ -31,6 +34,16 @@ test('holdprofil viser trapper, status, detaljer og fokus uden at ændre data', 
   await expect(page.getByRole('region', { name: 'Vandstand' })).toContainText('3 af 4 spring rager over vandlinjen');
   await row(page, double.name).hover();
   await expect(row(page, double.name)).toHaveCSS('background-color', 'rgba(0, 0, 0, 0)');
+
+  const chart = (await page.locator('.waterline-chart').boundingBox())!;
+  for (const bar of await page.locator('.wl-bar').all()) {
+    await bar.hover();
+    const tip = bar.locator('.wl-tip');
+    await expect(tip).toBeVisible();
+    await tip.evaluate((element) => Promise.all(element.getAnimations().map((animation) => animation.finished)));
+    const box = (await tip.boundingBox())!;
+    expect(box.y).toBeGreaterThanOrEqual(chart.y);
+  }
 
   await page.locator('.wl-bar.status-close').click();
   await expect(page.getByRole('dialog', { name: double.name })).toBeVisible();
@@ -109,4 +122,25 @@ test('holdprofil på mobil: linjefaner, bundpanel og ingen vandret overflow', as
   expect(sheet!.y + sheet!.height).toBeLessThanOrEqual(nav!.y + 1);
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
   expect(source.failures).toEqual([]);
+});
+
+test('holdprofil udskifter vandstand og linjer ved skift mellem Bane og Trampet', async ({ page }) => {
+  let workspace = profileWorkspace();
+  const jump: SkillDefinition = {
+    id: trampetSkill.id,
+    name: trampetSkill.name,
+    archived: false,
+    discipline: 'trampet',
+    jump: { ...salto, direction: 'forward', bodyPositions: ['tuck'], twistsHalfTurns: 0, twistDistribution: [], apparatus: 'trampet' },
+  };
+  const athlete = workspace.athletes.find((item) => item.teamId === workspace.teams[0]!.id)!;
+  workspace = registerAthleteSkill(workspace, athlete.id, jump).workspace;
+  await openWorkspace(page, workspace);
+  await openProfile(page);
+  for (const discipline of ['Trampet', 'Bane', 'Trampet', 'Bane']) {
+    await page.getByRole('button', { name: discipline, exact: true }).click();
+    await expect(page.locator('.waterline')).toHaveCount(1);
+    await expect(page.locator('.profile-lines')).toHaveCount(1);
+  }
+  await expect(row(page, full.name)).toBeVisible();
 });

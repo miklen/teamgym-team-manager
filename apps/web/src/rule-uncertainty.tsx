@@ -7,8 +7,6 @@ const explanations: Record<string, string> = {
   Q05: 'Ingen serie har flertal i holdomgangen. Det er uklart, hvilken serie de øvrige skal sammenlignes med.',
   'H-U06':
     'Appen runder den præcise værdi direkte ned til 0,005. Det er uafklaret, om dommernes tal først skal behandles til to decimaler.',
-  'A71-U01':
-    'Visse dobbeltspring kræver trænerlicens og særskilt vurdering. Bilaget dokumenterer ikke, hvilken licensgyldighed der gælder i 2026/27.',
   'A1DK-U06':
     'Den nyere tabel beskriver Gumbis startretning; et ældre svar beskriver et friere startvalg. Knælende start er endnu ikke bekræftet for denne udgave.',
   'A1DK-U03':
