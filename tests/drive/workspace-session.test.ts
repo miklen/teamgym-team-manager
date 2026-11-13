@@ -59,6 +59,7 @@ function server() {
   const client = () => new DriveClient(() => 'synthetic-token', fetcher);
   return {
     replaceBytes(value: string) { bytes = value; version++; },
+    touch() { version++; },
     client,
     conditions,
     get puts() {
@@ -294,6 +295,34 @@ describe('produktionsadapterens konsistente læsning og skrivebetingelse', () =>
 });
 
 describe('basis, snapshot, kladde og uklart svar', () => {
+  it('ignorerer en ny Drive-version med uændret indhold og bevarer den lokale kladde', async () => {
+    const { source, session } = await open();
+    add(session);
+    const draft = workspacePayload(session.snapshot().draft!);
+    source.touch();
+    await session.checkRemote();
+    expect(session.snapshot()).toMatchObject({ state: 'changed', newer: false });
+    expect(session.snapshot().loaded!.basis.version).toBe('2');
+    expect(workspacePayload(session.snapshot().draft!)).toBe(draft);
+    await session.save();
+    expect(source.conditions).toEqual(['"2"']);
+    expect(session.snapshot()).toMatchObject({ state: 'saved', newer: false });
+  });
+  it('opdaterer basis ved gemning, hvis Drive-metadata er ændret siden sidste kontrol', async () => {
+    const { source, session } = await open();
+    add(session);
+    source.touch();
+    await session.save();
+    expect(source.conditions).toEqual(['"2"']);
+    expect(session.snapshot()).toMatchObject({ state: 'saved', newer: false });
+  });
+  it('behandler ændret formattering som uændret arbejdsrumsindhold', async () => {
+    const { source, session } = await open();
+    source.replaceBytes(JSON.stringify(JSON.parse(source.bytes), null, 2));
+    await session.checkRemote();
+    expect(session.snapshot()).toMatchObject({ state: 'unchanged', newer: false });
+    expect(session.snapshot().loaded!.basis.version).toBe('2');
+  });
   it('serialiserer dobbeltklik og bevarer redigering under upload', async () => {
     const { source, session } = await open();
     const held = deferred();

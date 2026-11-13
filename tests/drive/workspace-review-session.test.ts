@@ -15,6 +15,7 @@ class MemoryClient implements WorkspaceClient {
   drop = false;
   onRead: (() => Promise<void>) | null = null;
   beforeUpload: (() => void) | null = null;
+  touch() { this.version++; }
   external() {
     this.workspace = {
       ...createTeam(this.workspace, 'Eksternt hold', binding),
@@ -89,6 +90,28 @@ function add(session: WorkspaceSession, name = 'Lokalt hold') {
 }
 
 describe('gennemgangens snapshots, afstemning og revisionsbasis', () => {
+  it('bevarer en gyldig gennemgang, når kun Drive-metadata ændres', async () => {
+    const { source, session } = await open();
+    add(session);
+    await session.beginReview();
+    source.touch();
+    await session.checkRemote();
+    expect(session.snapshot().review?.status).toBe('ready');
+    expect(session.snapshot().newer).toBe(false);
+    expect(await session.applyReview()).toBe(true);
+    await session.save();
+    expect(source.conditions).toEqual(['"2"']);
+  });
+  it('anvender gennemgangen ved en metadataændring mellem visning og anvendelse', async () => {
+    const { source, session } = await open();
+    add(session);
+    source.external();
+    await session.beginReview();
+    source.touch();
+    expect(await session.applyReview()).toBe(true);
+    expect(session.snapshot().draft?.teams).toHaveLength(2);
+    expect(session.snapshot().loaded?.basis.version).toBe('3');
+  });
   it('fokus-/baggrundskontrol accepterer samme gennemgåede R og afviser en tredje version', async () => {
     const { source, session } = await open();
     add(session);

@@ -228,7 +228,7 @@ export class WorkspaceSession {
       return Promise.resolve();
     }
     const generation = this.generation;
-    const loaded = structuredClone(this.view.loaded);
+    let loaded = structuredClone(this.view.loaded);
     const draft = structuredClone(this.view.draft);
     this.publish({ state: 'saving', message: '' });
     const work = async () => {
@@ -240,6 +240,17 @@ export class WorkspaceSession {
         if (current.basis.etag !== loaded.basis.etag || current.basis.version !== loaded.basis.version) {
           this.publish({ newer: true });
           throw new DriveError('conflict', 'En anden session har ændret filen. Kladden er bevaret.');
+        }
+      } else {
+        const current = await this.client.read(loaded.basis.fileId);
+        if (generation !== this.generation) return;
+        if (current.basis.etag !== loaded.basis.etag || current.basis.version !== loaded.basis.version) {
+          if (workspacePayload(current.workspace) !== workspacePayload(loaded.workspace)) {
+            this.publish({ newer: true });
+            throw new DriveError('conflict', 'En anden session har ændret filen. Kladden er bevaret.');
+          }
+          this.adoptEquivalent(current);
+          loaded = structuredClone(current);
         }
       }
       const payload = workspacePayload(draft);
@@ -328,17 +339,50 @@ export class WorkspaceSession {
     });
     return true;
   }
+  /** Drive kan ændre ETag/version uden at arbejdsrummets fælles data ændres. */
+  private adoptEquivalent(current: LoadedWorkspace) {
+    const draft = this.view.draft!;
+    const changed = current.originalBytes !== undefined || workspacePayload(draft) !== workspacePayload(current.workspace);
+    const reviewedContentUnchanged =
+      this.comparison !== null &&
+      workspacePayload(current.workspace) === workspacePayload(this.comparison.remote.workspace);
+    if (reviewedContentUnchanged && this.comparison) this.comparison.remote = structuredClone(current);
+    this.publish({
+      loaded: current,
+      draft: changed
+        ? {
+            ...draft,
+            revision: current.workspace.revision,
+            updatedAt: current.workspace.updatedAt,
+            recentOperations: current.workspace.recentOperations,
+          }
+        : structuredClone(current.workspace),
+      newer: false,
+      state: this.inFlight ? 'saving' : changed ? 'changed' : 'unchanged',
+      message: '',
+      review: this.view.review && !reviewedContentUnchanged
+        ? { ...this.view.review, status: 'stale', message: 'Filens metadata er ændret. Gennemgå igen.' }
+        : this.view.review,
+    });
+    if (reviewedContentUnchanged && this.comparison) this.comparison.binding = this.binding();
+  }
   async checkRemote() {
     if (!this.view.loaded || this.inFlight) return;
     const generation = this.generation;
+    const observedBasis = this.view.loaded.basis;
     try {
       const current = await this.client.read(this.view.loaded.basis.fileId);
       if (generation !== this.generation || this.inFlight) return;
+      if (this.view.loaded?.basis !== observedBasis) return;
       if (this.pending && this.recognize(current, this.pending)) return;
       if (
         current.basis.etag !== this.view.loaded!.basis.etag ||
         current.basis.version !== this.view.loaded!.basis.version
-      )
+      ) {
+        if (workspacePayload(current.workspace) === workspacePayload(this.view.loaded!.workspace)) {
+          this.adoptEquivalent(current);
+          return;
+        }
         this.publish({
           loaded: { ...this.view.loaded!, metadata: current.metadata },
           newer: true,
@@ -348,7 +392,7 @@ export class WorkspaceSession {
           review:
             this.view.review &&
             this.comparison &&
-            (JSON.stringify(current.basis) !== JSON.stringify(this.comparison.remote.basis) ||
+            (workspacePayload(current.workspace) !== workspacePayload(this.comparison.remote.workspace) ||
               !current.metadata.writable ||
               this.binding() !== this.comparison.binding)
               ? {
@@ -358,7 +402,7 @@ export class WorkspaceSession {
                 }
               : this.view.review,
         });
-      else if (current.metadata.writable !== this.view.loaded!.metadata.writable)
+      } else if (current.metadata.writable !== this.view.loaded!.metadata.writable)
         this.publish({
           loaded: { ...this.view.loaded!, metadata: current.metadata },
           message: current.metadata.writable
@@ -491,12 +535,12 @@ export class WorkspaceSession {
         this.publish({ loaded: { ...this.view.loaded!, metadata: current.metadata } });
         throw new DriveError('permission', 'Skriveadgangen er fjernet. Kladden kan eksporteres.');
       }
-      if (JSON.stringify(current.basis) !== JSON.stringify(comparison.remote.basis))
+      if (workspacePayload(current.workspace) !== workspacePayload(comparison.remote.workspace))
         throw new DriveError('conflict', 'Filen er ændret siden gennemgangen. Gennemgå den nyeste fil igen.');
       const result = mergeWorkspace(
         comparison.base,
         comparison.local,
-        comparison.remote.workspace,
+        current.workspace,
         this.mergeContext(),
         review.choices,
       );
