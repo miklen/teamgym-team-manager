@@ -29,6 +29,7 @@ import './repertoire.css';
 import { reconcileWorkspace } from './inheritance-context';
 import { ReviewRequestContext } from './review-context';
 import { WorkspaceReview } from './workspace-review';
+import { AiWorkspaceEntry } from './ai-workspace-entry';
 
 const saveLabels = {
   loading: 'Indlæser',
@@ -797,6 +798,7 @@ function App() {
                   Linket giver ingen adgang i sig selv. Brug et Drive-link eller Google-filvælgeren for at
                   åbne filen med din egen konto.
                 </p>
+                <AiWorkspaceEntry fileId={data.loaded.basis.fileId} dirty={workspaceSession.dirty() || [...dirtyForms.current].some((form) => form.isConnected)} />
                 <button className="quiet" onClick={downloadDraft}>
                   Eksportér kladden
                 </button>

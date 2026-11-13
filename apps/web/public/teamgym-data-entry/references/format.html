@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="da">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light">
+  <title>Filkontrakt · format 7 · TeamGym</title>
+  <link rel="stylesheet" href="../reader.css">
+</head>
+<body>
+  <a class="skip-link" href="#indhold">Gå til indhold</a>
+  <header class="site-header">
+    <div class="site-header-inner">
+      <div class="brand"><span class="brand-mark" aria-hidden="true">T</span><span>TeamGym <small>Inddata med AI</small></span></div>
+      <a class="app-link" href="../../">Tilbage til appen <span aria-hidden="true">↗</span></a>
+    </div>
+  </header>
+  <div class="reader-layout">
+    <nav class="reader-nav" aria-label="Vejledningens afsnit"><a href="../index.html">Overblik</a>
+<a href="../references/format.html" aria-current="page">Filformat</a>
+<a href="../references/registration.html">Registrering</a>
+<a href="../references/scenarios.html">Scenarier</a>
+<a href="../references/drive.html">Gemning</a>
+<a href="../references/source-map-v7.html">Kilder</a></nav>
+    <main id="indhold" class="reader-content">
+      <div class="eyebrow">TeamGym · agentvejledning</div>
+      <article class="prose"><h1>Filkontrakt · format 7</h1>
+<p>Læs <a href="structure-v7.json">struktur-v7.json</a> for alle obligatoriske felter, datatyper, enumværdier og maksimallængder. JSON-schemaet er genereret fra appens Zod-schema og beskriver ikke alle krydsreferencer; reglerne nedenfor gælder også. Ukendte felter afvises. Kontroller <strong>hele filen</strong>, også scenarier der ikke ændres.</p>
+<h2>Rod og gemmemetadata</h2>
+<p><code>format</code> skal være <code>teamgym-team-manager</code>, <code>schemaVersion</code> skal være <code>7</code>, <code>workspaceId</code> er filens stabile interne ID. <code>revision</code> er et ikke-negativt heltal; <code>updatedAt</code> er et ISO-tidspunkt med tidszone. <code>recentOperations</code> har højst 30 app-gemmeoperationer <code>{id, payloadHash, revision, savedAt}</code>. En ekstern skrivning øger kun rodens <code>revision</code> med én og sætter <code>updatedAt</code> til et aktuelt ISO-tidspunkt. Bevar <code>recentOperations</code> uændret; opfind hverken app-operation eller payloadhash. Drive-filens ETag/version er særskilte metadata og er ikke rodens revision.</p>
+<h2>Samlinger og ID&#39;er</h2>
+<table>
+<thead>
+<tr>
+<th>Felt</th>
+<th>Betydning</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>teams</code></td>
+<td><code>{id, name, archived, rulesetBinding}</code>; bindingen har <code>rulesetId</code>, <code>packageVersion</code>, <code>ageGroup</code>, <code>teamType</code></td>
+</tr>
+<tr>
+<td><code>athletes</code></td>
+<td><code>{id, name, discriminator, teamId, archived, mixCategory}</code>; <code>teamId</code> kan være <code>null</code></td>
+</tr>
+<tr>
+<td><code>skills</code></td>
+<td>Præcise definitioner for <code>tumbling</code>, <code>trampet</code> og <code>rhythm</code>; se registrering</td>
+</tr>
+<tr>
+<td><code>athleteSkills</code></td>
+<td>Højst én registrering per <code>(athleteId, skillId)</code> med vurdering, dato, note og ophav</td>
+</tr>
+<tr>
+<td><code>inheritanceRelations</code></td>
+<td>Accepterede præcise kilde/mål-relationer; ingen automatisk skabelse</td>
+</tr>
+<tr>
+<td><code>inheritanceExclusions</code></td>
+<td>Personlige fravalg efter gymnast og målidentitet</td>
+</tr>
+<tr>
+<td><code>plans</code></td>
+<td>Præcis én plan per hold, med mindst ét scenarie i hver springdisciplin</td>
+</tr>
+</tbody></table>
+<p><code>workspaceId</code> og alle entitets-id&#39;er for hold, gymnaster, definitioner, registreringer, planer, scenarier, omgange og pladser skal være entydige i hele filen. Nye ID&#39;er skal overholde schemaet og må ikke genbruges. Navne, katalogets <code>referenceId</code> og officielle koder er ikke arbejdsrums-ID&#39;er. Vælg aldrig en anden fil ved navnelighed.</p>
+<p>Arrayorden er betydende: <code>skills[*].elements</code>, forbindelsens <code>transitions</code>, scenarier, de tre omgange, <code>entries</code> og <code>reserves</code> må ikke sorteres ved serialisering. Første omgang er holdomgang; flyttes en omgang efter trænerens valg, bevarer den sit ID og indhold. Udførende pladsers gemte <code>role</code> følger positionen og skal beregnes igen, når <code>entries</code> ændres; se <a href="scenarios.html">scenarier og omgange</a>. Kode, point, D, C, søgestatus, match og <em>Kan nu</em> er afledte værdier og gemmes ikke som ekstra felter. Et arkiveret eller flyttet objekt kan stadig være refereret og skal bevares til diagnose.</p>
+<p>For en flersalto med 1–5 halve skruer er <code>twistDistribution</code> obligatorisk med én ikke-negativ værdi per salto i <code>bodyPositions</code>. Summen skal være <code>twistsHalfTurns</code>. Fordelingen er en del af udførelsesidentiteten: <code>[1,0]</code> og <code>[0,1]</code> er to forskellige spring. Fra 6 halve skruer bruges kun totalen; nye definitioner har tom <code>twistDistribution</code>. En uklar note må ikke omsættes til en gættet fordeling.</p>
+<h2>Version og migration</h2>
+<p>Skriv kun til en fil, der allerede er format 7. Format 1–6 læses og migreres eksplicit i appen; en agent må ikke lave egen konvertering eller fjerne nye felter for at gøre filen læsbar for en ældre app. En nyere version, en ukendt binding eller en valideringsfejl er stop for direkte skrivning. Kilde- og målversion må ikke gættes.</p>
+</article>
+      <footer class="reader-footer"><span>Agentens kildefil</span><a href="format.md">Åbn rå Markdown</a></footer>
+    </main>
+  </div>
+</body>
+</html>

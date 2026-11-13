@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="da">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light">
+  <title>Inddata i TeamGym-arbejdsrum · TeamGym</title>
+  <link rel="stylesheet" href="reader.css">
+</head>
+<body>
+  <a class="skip-link" href="#indhold">Gå til indhold</a>
+  <header class="site-header">
+    <div class="site-header-inner">
+      <div class="brand"><span class="brand-mark" aria-hidden="true">T</span><span>TeamGym <small>Inddata med AI</small></span></div>
+      <a class="app-link" href="../">Tilbage til appen <span aria-hidden="true">↗</span></a>
+    </div>
+  </header>
+  <div class="reader-layout">
+    <nav class="reader-nav" aria-label="Vejledningens afsnit"><a href="index.html" aria-current="page">Overblik</a>
+<a href="references/format.html">Filformat</a>
+<a href="references/registration.html">Registrering</a>
+<a href="references/scenarios.html">Scenarier</a>
+<a href="references/drive.html">Gemning</a>
+<a href="references/source-map-v7.html">Kilder</a></nav>
+    <main id="indhold" class="reader-content">
+      <div class="eyebrow">TeamGym · agentvejledning</div>
+      <article class="prose"><h1>Inddata i TeamGym-arbejdsrum</h1>
+<p>Brug denne vejledning, når en træner beder dig registrere noter, vurderinger, færdigheder eller en allerede besluttet opstilling i en bestemt TeamGym JSON-fil på Google Drive. Du skal have adgang til filen gennem trænerens egen Google-forbindelse. Et fillink giver ikke i sig selv adgang. Skillen giver hverken adgangstoken eller en ny Google-integration.</p>
+<ol>
+<li>Få <strong>ét konkret Drive-fil-id</strong> fra træneren. Læs kun den fil og dens revisionsmetadata. Kontrollér <code>format: &quot;teamgym-team-manager&quot;</code> og <code>schemaVersion: 7</code>. Stop ved et andet, ukendt eller nyere format. Lad appen håndtere migration af format 1–6.</li>
+<li>Læs <a href="references/format.html">filkontrakten</a> og <a href="references/structure-v7.json">det genererede strukturschema</a>. Brug <a href="references/catalog-v7.json">katalogopslagene</a> for filens præcise <code>rulesetId</code> og <code>packageVersion</code>. Alle opslag er offentlige; arbejdsrummets ID&#39;er findes kun i den valgte fil.</li>
+<li>Følg <a href="references/registration.html">registrering og arv</a> ved gymnastdata og <a href="references/scenarios.html">scenarier og omgange</a> ved planlægning. Bed om præcisering ved tvetydige identiteter, vurderinger, udførelser eller sportslige valg. Registrér en opstilling, som træneren allerede har besluttet; beregn eller lov ikke officiel D/C eller sportslig kvalitet.</li>
+<li>Lav forslaget på en kopi af den læste fil. Bevar uvedkommende data og arrayrækkefølge. Vis træneren en kort, forståelig ændringsoversigt. Kontrollér hele den ændrede fil efter <a href="references/drive.html">gemmeforløbet</a>, genlæs sent, skriv kun til samme fil-id, og læs igen efter skrivning.</li>
+</ol>
+<p>Direkte Google MCP-skrivning er <strong>ikke</strong> appens konfliktbeskyttede gemning. Selv efter sen genlæsning kan en samtidig ændring mellem læsning og upload blive overskrevet. Stop ved enhver opdaget ændring; lov aldrig sikker fletning.</p>
+<p><a href="references/source-map-v7.html">Kildeoversigt og review</a> viser, hvilke produktkilder de offentlige opslag følger.</p>
+</article>
+      <footer class="reader-footer"><span>Agentens kildefil</span><a href="SKILL.md">Åbn rå Markdown</a></footer>
+    </main>
+  </div>
+</body>
+</html>

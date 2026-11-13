@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="da">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light">
+  <title>Opslag, registrering og arv · format 7 · TeamGym</title>
+  <link rel="stylesheet" href="../reader.css">
+</head>
+<body>
+  <a class="skip-link" href="#indhold">Gå til indhold</a>
+  <header class="site-header">
+    <div class="site-header-inner">
+      <div class="brand"><span class="brand-mark" aria-hidden="true">T</span><span>TeamGym <small>Inddata med AI</small></span></div>
+      <a class="app-link" href="../../">Tilbage til appen <span aria-hidden="true">↗</span></a>
+    </div>
+  </header>
+  <div class="reader-layout">
+    <nav class="reader-nav" aria-label="Vejledningens afsnit"><a href="../index.html">Overblik</a>
+<a href="../references/format.html">Filformat</a>
+<a href="../references/registration.html" aria-current="page">Registrering</a>
+<a href="../references/scenarios.html">Scenarier</a>
+<a href="../references/drive.html">Gemning</a>
+<a href="../references/source-map-v7.html">Kilder</a></nav>
+    <main id="indhold" class="reader-content">
+      <div class="eyebrow">TeamGym · agentvejledning</div>
+      <article class="prose"><h1>Opslag, registrering og arv · format 7</h1>
+<h2>Find den rigtige post</h2>
+<ol>
+<li>Find holdet i <code>teams</code> ved trænerens navn og bekræft <code>id</code> samt hele <code>rulesetBinding</code>. Find gymnasten i <code>athletes</code> med både navn, <code>discriminator</code>, <code>teamId</code> og arkiveringsstatus. Spørg ved navnesammenfald; et navn er ikke et ID.</li>
+<li>Find først en eksisterende definition i <strong>filens</strong> <code>skills</code>. Sammenlign hele den præcise udførelse, ikke kun navn eller officiel kode. For bane er identiteten <code>discipline + ordnede elements + connection.kind/transitions</code>; for trampet <code>discipline + jump</code>; for rytme <code>discipline + momentId + variant</code>. Udelad <code>id</code>, <code>name</code>, <code>archived</code> og godkendelser i sammenligningen. Objektfelternes nøgler sorteres, men arrays bevarer rækkefølge.</li>
+<li>For en ny definition: slå op i <a href="catalog-v7.json">versionsmærket katalog</a> under netop holdets <code>rulesetId</code> og <code>packageVersion</code>. <code>springCatalog.referenceId</code> og <code>rhythmCatalog.id</code> er katalogidentiteter, <strong>ikke</strong> filens <code>skills[*].id</code>. En officiel kode kan tilhøre flere poster; fx deler to rytmeposter <code>DB804</code>. Vælg præcis post og udførelsesvariant. <code>practicalSprings[*].recipeId</code> er et forslag til en hel springdefinition; kontrollér dens <code>executionIdentity</code> og hele <code>definition</code> før et nyt arbejdsrums-ID tildeles. En ukendt/forbudt post eller uafklaret variant kræver trænerens afklaring.</li>
+<li>Find gymnastens eksisterende <code>athleteSkills</code> ved både <code>athleteId</code> og definitionens <code>skillId</code>. Genbrug den, hvis den findes. Opret højst én manglende registrering. Opret ikke automatisk nye fundamentregistreringer, relationer eller fravalg. Genbrug aldrig en anden gymnasts registrerings-ID.</li>
+</ol>
+<p>En banedefinition har <code>elements</code> (1–30), <code>connection: {kind, transitions}</code> med netop ét overgangsord per nabopar og <code>sharedConnectionApproval: null</code> eller en faktisk trænergodkendelse med identitet, tidspunkt og note. Trampet har ét <code>jump</code>. Hvert element angiver familie, retning, rotation i kvarte omgange, kropspositioner, skruer i halve omgange, eventuel skruefordeling, redskab, afsæt, landing og <code>variant</code>. Rytme har <code>momentId</code> og en præcis <code>variant</code> med valg fra katalogpostens <code>options</code>. En personlig <code>connectionConfirmation</code> på en registrering kræver særskilt faktisk bekræftelse; opfind den ikke ud fra en note.</p>
+<p>Ved en flersalto med 1–5 halve skruer skal træneren angive, hvor mange halve skruer der sker på hver salto. <code>bodyPositions: [&quot;tuck&quot;,&quot;tuck&quot;]</code> og <code>twistsHalfTurns: 1</code> kræver enten <code>twistDistribution: [1,0]</code> (in) eller <code>[0,1]</code> (out); de er forskellige definitioner og registreringer. Spørg, hvis noten blot siger “dobbelt med en halv skrue”. Fra 6 halve skruer bruges totalen uden fordelingsvalg. Appens migration af en ældre fil kan sætte en manglende fordeling til out; det giver ikke agenten lov til at gætte ved ny indtastning.</p>
+<h2>Vurdering og note</h2>
+<p>Ingen post betyder <strong>ikke registreret</strong>. En post med <code>stability: null</code>, <code>assessedAt: null</code> betyder <strong>registreret, ikke vurderet</strong>. En vurdering er et heltal <code>1</code>–<code>5</code> med faktisk kalenderdato <code>YYYY-MM-DD</code>; <code>1</code> er en reel lav vurdering og må ikke erstatte ukendt. Skriv noten i <code>note</code> (højst 2000 tegn), og sæt registreringens <code>updatedAt</code> til tidspunktet for den faktiske redigering. Bevar <code>reviewRequiredFor</code>, medmindre træneren udtrykkeligt har revurderet den konkrete binding. Udled ikke dato, stabilitet eller godkendelse af formuleringer som “kan springet”.</p>
+<p>Syntetisk eksempel: Noten “Testgymnast A kan springet; ingen sikkerhedsvurdering endnu” kan føre til én post som nedenfor, hvis <code>athlete-test-a</code> og <code>skill-test-bane</code> allerede er entydigt fundet i filen. Alle øvrige felter og samlinger bevares.</p>
+<pre><code class="language-json">{
+  &quot;id&quot;: &quot;registration-test-a-bane&quot;,
+  &quot;athleteId&quot;: &quot;athlete-test-a&quot;,
+  &quot;skillId&quot;: &quot;skill-test-bane&quot;,
+  &quot;archived&quot;: false,
+  &quot;stability&quot;: null,
+  &quot;assessedAt&quot;: null,
+  &quot;updatedAt&quot;: &quot;2026-11-10T12:00:00.000Z&quot;,
+  &quot;note&quot;: &quot;Kan springet; endnu ikke vurderet.&quot;,
+  &quot;connectionConfirmation&quot;: null,
+  &quot;reviewRequiredFor&quot;: [],
+  &quot;assessmentOrigin&quot;: { &quot;kind&quot;: &quot;own&quot; }
+}
+</code></pre>
+<h2>Arv er et bevidst valg</h2>
+<p><code>assessmentOrigin: {&quot;kind&quot;:&quot;own&quot;}</code> bevarer egen vurdering, også en bevidst <code>null</code>. Aktiv arv bruger <code>{ &quot;kind&quot;:&quot;inherited&quot;, &quot;sourceId&quot;:&quot;&lt;registrerings-id&gt;&quot;, &quot;sourceChoice&quot;:null }</code>; uden kilde er <code>sourceId: null</code>, <code>stability: null</code> og <code>assessedAt: null</code>. <code>sourceChoice</code> kan kun pege på en accepteret kilde med en forklarende <code>context</code>. Gæt aldrig kilde ud fra ens tal.</p>
+<p>En accepteret relation kræver <code>sourceId</code>, <code>targetId</code> (registrerings-ID&#39;er), <code>sourceIdentity</code>, <code>targetIdentity</code> (præcise udførelsesidentiteter), <code>catalogId</code>, <code>catalogVersion</code>, <code>relationId</code>. Kilde og mål skal være hos samme gymnast og samme springdisciplin; de kan ikke være samme post eller danne en cyklus. Kataloget <code>spring-foundation</code> version <code>2</code> er aktuelt; historiske relationer fra version <code>1</code> bevares. Ukendte versioner bevares til gennemgang og bruges ikke som grundlag for en ny afledning. En <code>inheritanceExclusions</code>-post <code>{athleteId, targetIdentity}</code> er et bevidst fravalg og må ikke samtidig have aktiv arv.</p>
+<p>Når en kildes egen vurdering ændres, gennemgå alle dens <strong>aktive arvede</strong> børn og videre kæder i kildeførst orden: kopier <code>stability</code> og <code>assessedAt</code> fra den valgte kilde, og opdatér barnets <code>updatedAt</code> ved reel ændring. Bevar barnets <code>id</code>, <code>note</code>, <code>connectionConfirmation</code>, <code>reviewRequiredFor</code> og <code>sourceChoice</code>. Egne børn ændres ikke. Hvis en kilde fjernes eller arkiveres, må ingen aktiv arvet post beholde forældet værdi. Valg mellem flere kilder kræver katalog- og regelgrundlag samt eventuelt trænerens valg; vælg ikke vilkårligt.</p>
+<p>Kontrollér hele filen efter ændringen: alle referencer skal findes, <code>(athleteId, skillId)</code> være entydigt, effektive arveværdier stemme med aktiv kilde, og noter/datoer bevaret. Det offentlige JSON-schema kan ikke alene udføre denne kontrol.</p>
+</article>
+      <footer class="reader-footer"><span>Agentens kildefil</span><a href="registration.md">Åbn rå Markdown</a></footer>
+    </main>
+  </div>
+</body>
+</html>

@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="da">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light">
+  <title>Kilder og referenceafsnit · format 7 · TeamGym</title>
+  <link rel="stylesheet" href="../reader.css">
+</head>
+<body>
+  <a class="skip-link" href="#indhold">Gå til indhold</a>
+  <header class="site-header">
+    <div class="site-header-inner">
+      <div class="brand"><span class="brand-mark" aria-hidden="true">T</span><span>TeamGym <small>Inddata med AI</small></span></div>
+      <a class="app-link" href="../../">Tilbage til appen <span aria-hidden="true">↗</span></a>
+    </div>
+  </header>
+  <div class="reader-layout">
+    <nav class="reader-nav" aria-label="Vejledningens afsnit"><a href="../index.html">Overblik</a>
+<a href="../references/format.html">Filformat</a>
+<a href="../references/registration.html">Registrering</a>
+<a href="../references/scenarios.html">Scenarier</a>
+<a href="../references/drive.html">Gemning</a>
+<a href="../references/source-map-v7.html" aria-current="page">Kilder</a></nav>
+    <main id="indhold" class="reader-content">
+      <div class="eyebrow">TeamGym · agentvejledning</div>
+      <article class="prose"><h1>Kilder og referenceafsnit · format 7</h1>
+<table>
+<thead>
+<tr>
+<th>Kilde i produktet</th>
+<th>Offentligt opslag og menneskelig gennemgang</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>packages/domain/src/schema.ts</code>, <code>workspace.ts</code></td>
+<td><code>structure-v7.json</code>, <code>format.md</code>: felter, version, krydsreferencer, serialisering og migration</td>
+</tr>
+<tr>
+<td><code>identity.ts</code>, <code>commands.ts</code>, <code>twist.ts</code></td>
+<td><code>registration.md</code>, <code>scenarios.md</code>: stabile ID&#39;er, præcise udførelser, registreringer og ordnede pladser</td>
+</tr>
+<tr>
+<td><code>inheritance.ts</code>, <code>stability.ts</code></td>
+<td><code>registration.md</code>: egen/aktiv arv, dato og effektive værdier</td>
+</tr>
+<tr>
+<td><code>spotting.ts</code></td>
+<td><code>scenarios.md</code>: planlagt modtagning og afledte resultater</td>
+</tr>
+<tr>
+<td><code>packages/rules/src/catalog.ts</code>, <code>dk-data.ts</code>, <code>dk-v1.ts</code>, <code>reg-v1.ts</code>, <code>spring-rules.ts</code>, <code>rhythm.ts</code></td>
+<td><code>catalog-v7.json</code>, <code>registration.md</code>, <code>scenarios.md</code>: pakkeversioner, profiler, katalogposter, varianter og deltagergrænser</td>
+</tr>
+<tr>
+<td><code>practical-connections.ts</code>, <code>apps/web/src/spring-library.ts</code>, <code>spring-connections.ts</code>, <code>foundation-catalog-model.ts</code>, <code>spring-picker-model.ts</code>, <code>spring-names.ts</code>, <code>twist-choice.ts</code>, <code>twist-split.tsx</code>, <code>rhythm.tsx</code></td>
+<td><code>catalog-v7.json</code>, <code>registration.md</code>: praktiske springopskrifter, fundament og entydigt opslag</td>
+</tr>
+</tbody></table>
+<p><code>source-review-v7.json</code> fastholder et samlet fingerprint af disse kilder. En ændring kræver gennemgang af de nævnte tekster og syntetiske tests, selv når skemaversionen er uændret. JSON-schemaet udtrykker ikke alle krydsreferencer og domæneregler; referenceafsnittene og appens validering er nødvendige supplementer.</p>
+</article>
+      <footer class="reader-footer"><span>Agentens kildefil</span><a href="source-map-v7.md">Åbn rå Markdown</a></footer>
+    </main>
+  </div>
+</body>
+</html>

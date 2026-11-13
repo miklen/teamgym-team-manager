@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="da">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light">
+  <title>Scenarier og omgange · format 7 · TeamGym</title>
+  <link rel="stylesheet" href="../reader.css">
+</head>
+<body>
+  <a class="skip-link" href="#indhold">Gå til indhold</a>
+  <header class="site-header">
+    <div class="site-header-inner">
+      <div class="brand"><span class="brand-mark" aria-hidden="true">T</span><span>TeamGym <small>Inddata med AI</small></span></div>
+      <a class="app-link" href="../../">Tilbage til appen <span aria-hidden="true">↗</span></a>
+    </div>
+  </header>
+  <div class="reader-layout">
+    <nav class="reader-nav" aria-label="Vejledningens afsnit"><a href="../index.html">Overblik</a>
+<a href="../references/format.html">Filformat</a>
+<a href="../references/registration.html">Registrering</a>
+<a href="../references/scenarios.html" aria-current="page">Scenarier</a>
+<a href="../references/drive.html">Gemning</a>
+<a href="../references/source-map-v7.html">Kilder</a></nav>
+    <main id="indhold" class="reader-content">
+      <div class="eyebrow">TeamGym · agentvejledning</div>
+      <article class="prose"><h1>Scenarier og omgange · format 7</h1>
+<p>Find planen i <code>plans</code> med præcis <code>teamId</code>. <code>bindingFingerprint</code> er den kanoniske JSON af holdets <code>rulesetBinding</code> med sorterede objektnøgler. Planen har separate, ordnede arrays <code>tumbling</code> og <code>trampet</code>; bevar den anden disciplin og alle øvrige scenarier. Et scenarie <code>{id, name, rounds}</code> har et unikt ID, et trimmet navn på 1–200 tegn, som er entydigt uden forskel på store/små bogstaver inden for hold og disciplin, og <strong>præcis tre</strong> omgange. Første omgang er holdomgang. <code>rounds</code> må ikke omordnes for at passe et navn.</p>
+<h2>Opret, kopier eller ret</h2>
+<ul>
+<li>Ved oprettelse: vælg scenarieplacering sammen med træneren, opret nyt scenarie-ID og tre nye omgangs-ID&#39;er med tomme <code>entries</code> og <code>reserves</code>, og udfyld derefter den besluttede opstilling.</li>
+<li>Ved kopiering: kopiér det valgte scenaries indhold og ordener, men giv scenarie, alle tre omgange og hver udførende og reserveplads <strong>nye</strong> ID&#39;er. Fælles <code>athleteId</code>, <code>athleteSkillId</code>, <code>plannedSkillId</code> og <code>plannedSpot.skillId</code> refererer fortsat til de samme eksisterende objekter. Giv kopien et ledigt, trimmet navn. Redigér kun kopien, hvis træneren beder om det.</li>
+<li>Ved ændring: bevar eksisterende scenarie-, omgangs- og plads-ID&#39;er for uændrede objekter. Bevar den rækkefølge, træneren har angivet. Opret ikke en ny vurdering eller et nyt spring blot for at fylde en plads.</li>
+</ul>
+<p><code>entries</code> er udførende i springrækkefølge. En besat plads er <code>{id, athleteId, athleteSkillId, role, plannedSpot, plannedSkillId:null}</code>. <code>role</code> skal gemmes som <code>counting</code> eller <code>extra</code>, men udledes af <strong>positionen</strong>, ikke af et særskilt trænerønske: hvis omgangen har flere pladser end profilens <code>counting</code>, er netop de første <code>entries.length - counting</code> pladser <code>extra</code>, og alle efterfølgende er <code>counting</code>. Ved højst <code>counting</code> pladser er alle <code>counting</code>. Regelpakken angiver <code>participants.counting</code> og <code>participants.maxExtra</code> i <a href="catalog-v7.json">katalog-v7.json</a>, og profilen angiver holdets tal. Overskrid ikke summen af de to grænser. Genberegn rollerne efter indsættelse, fjernelse eller flytning af en plads, men bevar en urørt ældre omgangs gemte roller. Alle gymnaster i en omgang skal være forskellige på tværs af <code>entries</code> og <code>reserves</code>. En udførendes <code>athleteSkillId</code> skal pege på <strong>samme gymnasts</strong> registrering af en definition i omgangens disciplin. <code>athleteSkillId:null</code> er en lovlig, ufuldstændig kladde og må ikke fremstilles som et færdigt spring.</p>
+<p><code>reserves</code> er et særskilt prioriteret array af <code>{id, athleteId, athleteSkillId}</code>. Første reserve har højest prioritet. En reserve kan have <code>athleteSkillId:null</code>, men aldrig <code>athleteId:null</code> eller en rolle. Reserver tæller ikke som udførende og indgår ikke i D/C eller sikkerhedsaggregatet før trænerens indsættelse.</p>
+<p>En <strong>ambition</strong> er en udførende plads uden valgt gymnast: <code>{id, athleteId:null, athleteSkillId:null, role, plannedSpot:null, plannedSkillId:&quot;&lt;skill-id&gt;&quot;}</code>. <code>plannedSkillId</code> peger på en eksisterende præcis definition i samme disciplin. En besat plads har altid <code>plannedSkillId:null</code>. <em>Kan nu</em>, mulige kandidater og matchstatus er afledt i appen; gem dem ikke.</p>
+<p><code>plannedSpot</code> er <code>null</code> eller <code>{grade, skillId, elementIndex}</code> på en udførende plads med valgt spring. <code>grade</code> er <code>support</code>, <code>assist</code> eller <code>heavy</code>. <code>skillId</code> er definitionen, som modtagningen faktisk er planlagt for, normalt den valgte registrerings <code>skillId</code>. Ved <code>heavy</code> på bane er <code>elementIndex</code> et gyldigt nulbaseret indeks i seriens <code>elements</code>; ellers er feltet <code>null</code>. Bed om afklaring af modtaget element, hjælpens grad og springets identitet. En ændret springreference kræver fornyet modtagningsbeslutning; behold ikke en modtagning for det gamle spring.</p>
+<h2>Syntetisk noter-til-scenarie</h2>
+<p>Træneren har <strong>allerede besluttet</strong>: “Nyt banescenarie Sikker A efter Plan A. Alle tre omgange: Test A, B, C, D, E, F i den rækkefølge med deres registrerede baneserie. Test G er første reserve. F er observeret som den flotteste afslutter. I anden omgang får C let støtte til samme serie.” Hvis disse ID&#39;er og registreringer er entydigt fundet i filen, bliver den tilsigtede ændring:</p>
+<table>
+<thead>
+<tr>
+<th>Omgang</th>
+<th><code>entries</code> i præcis orden</th>
+<th><code>reserves</code> i præcis orden</th>
+<th>Modtagning</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>1, holdomgang</td>
+<td>A, B, C, D, E, F som <code>counting</code></td>
+<td>G</td>
+<td>alle <code>null</code></td>
+</tr>
+<tr>
+<td>2</td>
+<td>A, B, C, D, E, F som <code>counting</code></td>
+<td>G</td>
+<td>C: <code>{ &quot;grade&quot;:&quot;support&quot;, &quot;skillId&quot;:&quot;skill-test-bane&quot;, &quot;elementIndex&quot;:null }</code></td>
+</tr>
+<tr>
+<td>3</td>
+<td>A, B, C, D, E, F som <code>counting</code></td>
+<td>G</td>
+<td>alle <code>null</code></td>
+</tr>
+</tbody></table>
+<p>Scenariet, de tre omgange og 21 pladser får nye unikke ID&#39;er. Hver udførende får sin egen <code>athleteId</code> og <code>athleteSkillId</code>; G&#39;s reserveplads får G&#39;s registrering eller <code>null</code> efter det faktiske filindhold. Hver besat udførende får <code>plannedSkillId:null</code>. Alle andre scenarier, fælles registreringer og deres rækkefølge bevares. Hvis træneren kun har bedt om “den flotteste til sidst” uden at oplyse en observation af udførelsen, skal du spørge; stabilitetstallet må ikke bruges som mål for flot udførelse. Denne registrering beviser ikke sportslig kvalitet eller officielle point.</p>
+<p>Kontrollér efterfølgende hele filens ID-unikhed, scenarienavne, tre omgange, disciplin, gymnast/registrerings-referencer, reserver og modtagninger. En schema-valid fil kan stadig være en sportsligt uafklaret kladde; kald den ikke en godkendt opstilling uden trænerens valg.</p>
+</article>
+      <footer class="reader-footer"><span>Agentens kildefil</span><a href="scenarios.md">Åbn rå Markdown</a></footer>
+    </main>
+  </div>
+</body>
+</html>

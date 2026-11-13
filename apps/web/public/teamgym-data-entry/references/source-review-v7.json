@@ -1,0 +1,29 @@
+{
+  "schemaVersion": 7,
+  "sources": [
+    "packages/domain/src/schema.ts",
+    "packages/domain/src/workspace.ts",
+    "packages/domain/src/identity.ts",
+    "packages/domain/src/commands.ts",
+    "packages/domain/src/inheritance.ts",
+    "packages/domain/src/stability.ts",
+    "packages/domain/src/spotting.ts",
+    "packages/domain/src/twist.ts",
+    "packages/rules/src/catalog.ts",
+    "packages/rules/src/dk-data.ts",
+    "packages/rules/src/dk-v1.ts",
+    "packages/rules/src/reg-v1.ts",
+    "packages/rules/src/spring-rules.ts",
+    "packages/rules/src/rhythm.ts",
+    "packages/rules/src/practical-connections.ts",
+    "apps/web/src/spring-library.ts",
+    "apps/web/src/spring-connections.ts",
+    "apps/web/src/foundation-catalog-model.ts",
+    "apps/web/src/spring-picker-model.ts",
+    "apps/web/src/spring-names.ts",
+    "apps/web/src/twist-choice.ts",
+    "apps/web/src/twist-split.tsx",
+    "apps/web/src/rhythm.tsx"
+  ],
+  "fingerprint": "93145e5584e8998ef387714827f043244685a2e59f0c5524086e51e357064c79"
+}

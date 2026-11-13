@@ -2,11 +2,18 @@ import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import { fileURLToPath } from 'node:url';
 import { readFileSync } from 'node:fs';
+import type { IncomingMessage, ServerResponse } from 'node:http';
 
 const reference = new URL('./openspec/changes/archive/2026-10-25-build-teamgym-team-manager/reference/', import.meta.url);
 const manifest = JSON.parse(readFileSync(new URL('source-manifest.json', reference), 'utf8')) as {
   sources: { file: string }[];
 };
+
+function markdownUtf8(request: IncomingMessage, response: ServerResponse, next: () => void) {
+  if (/\/teamgym-data-entry\/(?:SKILL|references\/[^/?]+)\.md(?:\?|$)/.test(request.url ?? ''))
+    response.setHeader('Content-Type', 'text/markdown; charset=utf-8');
+  next();
+}
 
 export default defineConfig({
   base: process.env.PAGES_BASE_PATH ?? '/teamgym-team-manager/',
@@ -24,6 +31,7 @@ export default defineConfig({
           });
       },
       configureServer(server) {
+        server.middlewares.use(markdownUtf8);
         server.middlewares.use((request, response, next) => {
           const name = request.url?.split('?')[0]?.split('/').at(-1);
           const source =
@@ -36,6 +44,9 @@ export default defineConfig({
           response.setHeader('Content-Type', 'application/pdf');
           response.end(readFileSync(new URL(source.file, reference)));
         });
+      },
+      configurePreviewServer(server) {
+        server.middlewares.use(markdownUtf8);
       },
     },
   ],

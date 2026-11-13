@@ -48,5 +48,13 @@ Kildernes bytes og uafklarede regler skal bevares. Numeriske forventninger må i
 
 Læs projektets [frontend-skill](.agents/skills/frontend-skill/SKILL.md) ved UI-arbejde. Hold opgavestatus sandfærdig; markér kun fuldt implementerede og verificerede opgaver færdige.
 
+### Vedligeholdelse af AI-inddata-skill
+
+Den offentlige `apps/web/public/teamgym-data-entry/SKILL.md` og dens `references/` beskriver den aktuelle format-7-kontrakt. Ved ændringer i skema, identitet, registrering, arv, katalogopslag eller omgangsgrænser skal du gennemgå prosa, syntetiske eksempler og relevante adfærdsprøver. Generér derefter struktur og katalog med `node scripts/generate-ai-references.mjs --write`; opdatér først `source-review-v7.json` med `node scripts/verify-ai-skill.mjs --write-review`, når den semantiske gennemgang er udført. Den læsevenlige HTML-visning genereres fra de samme Markdown-filer med `node scripts/generate-ai-skill-pages.mjs --write`. `npm run check` sammenligner genererede opslag, HTML-visningen og kildefingerprint. Et nyt hash alene beviser ikke, at vejledningen er korrekt.
+
+## Scenarier og omgange i arbejdsrums-JSON
+
+Ved direkte redigering af scenarier og omgange i en arbejdsrums-JSON er tommelfingerreglen at starte hver omgang med en stabil gymnast og slutte med de mest stabile og flottest udførende. Bevar så vidt muligt gymnasternes indbyrdes rækkefølge på tværs af omgangene, når stabilitet, valgte spring og reglementets rækkefølgekrav tillader det. Færre skift gør rækkefølgen lettere for gymnasterne at huske. Vurdering af, hvem der springer flottest, kræver trænerens observation og kan ikke udledes af stabilitetstallet alene.
+
 # UI
 Alt implementering af UI skal bruge frontend-skill'en her i projektet. Useende skal være elegant, smukt og intuitivt. Det skal være en moderne app med innoverende og moderne UI og UX løsninger. Brugerne skal blive chokeret over hvor flot og elegant det grafiske udtryk i app'en er.

@@ -323,6 +323,28 @@ describe('basis, snapshot, kladde og uklart svar', () => {
     expect(session.snapshot()).toMatchObject({ state: 'unchanged', newer: false });
     expect(session.snapshot().loaded!.basis.version).toBe('2');
   });
+  it('opdager ekstern format-6-filændring og genåbner med ny Drive-basis', async () => {
+    const source = server();
+    const original = syntheticWorkspace().workspace;
+    source.replaceBytes(serializeWorkspace(original));
+    const session = new WorkspaceSession(source.client());
+    await session.open('file');
+    const firstBasis = structuredClone(session.snapshot().loaded!.basis);
+    const external = structuredClone(original);
+    external.athleteSkills[0]!.note = 'Syntetisk ekstern note.';
+    external.athleteSkills[0]!.updatedAt = '2026-11-10T12:00:00.000Z';
+    external.revision += 1;
+    external.updatedAt = '2026-11-10T12:00:00.000Z';
+    source.replaceBytes(serializeWorkspace(external));
+    await session.checkRemote();
+    expect(session.snapshot()).toMatchObject({ state: 'conflict', newer: true });
+    expect(session.snapshot().loaded!.basis).toEqual(firstBasis);
+    await session.open('file');
+    expect(session.snapshot().loaded!.basis).not.toEqual(firstBasis);
+    expect(session.snapshot().draft!.athleteSkills[0]!.note).toBe('Syntetisk ekstern note.');
+    expect(session.snapshot().draft!.recentOperations).toEqual(original.recentOperations);
+    expect(session.dirty()).toBe(false);
+  });
   it('serialiserer dobbeltklik og bevarer redigering under upload', async () => {
     const { source, session } = await open();
     const held = deferred();
@@ -468,7 +490,7 @@ describe('samlet scenariesamling med reserver', () => {
     await session.save();
     expect(JSON.parse(source.bytes).schemaVersion).toBe(7); expect(session.dirty()).toBe(false);
   });
-  it('gennemgang fletter en nyere format 6-fil med uafklaret skruefordeling som out', async () => {
+  it('gennemgang fletter en ekstern format 6-fil med uafklaret skruefordeling som out', async () => {
     const { source, session } = await scenarios(); const workspace = session.snapshot().draft!; const plan = workspace.plans[0]!;
     session.edit(renameScenario(workspace, plan.id, 'tumbling', plan.tumbling[1]!.id, 'B lokalt'));
     const jump = { family: 'salto', direction: 'forward' as const, rotationQuarterTurns: 8, bodyPositions: ['tuck' as const, 'tuck' as const], twistsHalfTurns: 1,

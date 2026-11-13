@@ -894,6 +894,46 @@ dialog > header h2 {
 .dialog-body code {
   overflow-wrap: anywhere;
 }
+.ai-workspace-entry {
+  margin: 24px 0;
+  padding: 22px 0 12px;
+  border-top: 1px solid var(--line);
+}
+.ai-workspace-entry h3 {
+  margin: 0 0 6px;
+  font-size: 1.05rem;
+}
+.ai-workspace-entry > p {
+  margin: 6px 0 14px;
+}
+.ai-workspace-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 22px;
+  margin: 14px 0 18px;
+  font-size: 0.875rem;
+}
+.ai-workspace-entry label {
+  margin-bottom: 7px;
+}
+.ai-workspace-entry textarea {
+  font-size: 0.82rem;
+  line-height: 1.5;
+  min-height: 130px;
+}
+.ai-workspace-entry .actions {
+  align-items: center;
+  margin-top: 10px;
+}
+.ai-workspace-draft {
+  padding-left: 12px;
+  border-left: 3px solid #a26916;
+  color: #6c4b18;
+}
+.ai-workspace-entry .ai-workspace-limit {
+  font-size: 0.78rem;
+  margin-bottom: 0;
+}
 .inspector-meta {
   margin: 14px 0;
 }

@@ -14,6 +14,10 @@ Mens Googles filvælger er åben, skjules appens dialog, så du kan vælge cooki
 
 **Arbejdsrum** øverst viser konto, fil-id, mappe, version og rettighed. Samme filnavn kan forekomme flere gange; fil-id bestemmer, hvor der gemmes. En læser kan gennemse analyser, men kan ikke ændre filen.
 
+### Inddata med egen AI-agent
+
+Åbn **Arbejdsrum** og find **Inddata med din egen AI-agent**. Her ligger [den læsevenlige inddata-skill](https://miklen.github.io/teamgym-team-manager/teamgym-data-entry/index.html), linket til netop den valgte Drive-fil og en starttekst, du kan kopiere til en agent med din egen Google-forbindelse. Agentens starttekst peger på den oprindelige `SKILL.md`. Skillen hjælper med at registrere dine noter, vurderinger og allerede besluttede opstillinger. Den planlægger ikke sportsligt eller vælger de bedste omgange ud fra D, C og reglementet. Hvis appen viser en ugemt kladde, så gem eller eksportér den først; agenten kan kun læse Drive-filen. Direkte Google-skrivning kan stadig ramme en samtidig ændring mellem kontrol og upload, så gennemgå agentens forslag og genåbn filen i appen efter skrivning.
+
 ## Hold og gymnaster
 
 Opret et hold med navn, præcis regelpakke og profil. Appen har to installerede pakker: Danmarksserien (`dk@1.1.0`, U14, junior og senior) og Regionsrækken (`reg@1.0.0`, U11, U14 og junior). Profilvalget viser kun den valgte pakkes aldersgrupper; juniorpiger er standard. Hvert hold starter med Plan A på bane og trampet, med tre omgange i hvert scenarie. Du kan oprette flere uafhængige scenarier i hver disciplin. Navne og profiler på andre hold ændres ikke ved redigering af ét hold.
