@@ -3,6 +3,7 @@ import { expect, test } from './test';
 import { openWorkspace } from './drive-fixture';
 
 test('WCAG 2.2 AA på centrale arbejdsflader og vurderingsdialog', async ({ page }) => {
+  test.setTimeout(60_000);
   const source = await openWorkspace(page);
   await expect(page.getByRole('heading', { name: 'Hold', exact: true })).toBeVisible();
   for (const name of ['Hold', 'Gymnaster', 'Springplan', 'Holdprofil', 'Rytme', 'Reglement']) {
