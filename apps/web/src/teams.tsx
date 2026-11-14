@@ -250,6 +250,7 @@ export function RulesPage({ workspace, change, writable, teamId }: DataProps & {
       <section className="rules-settings">
         <h2>Skift pakke eller profil</h2>
         <ActionForm
+          key={`${team.rulesetBinding.rulesetId}@${team.rulesetBinding.packageVersion}:${team.rulesetBinding.ageGroup}:${team.rulesetBinding.teamType}`}
           disabled={!writable || resolved.status !== 'known'}
           label="Vis før og efter"
           submit={(data) => {
@@ -449,7 +450,7 @@ export function RulesPage({ workspace, change, writable, teamId }: DataProps & {
             }}
             label="Opdater"
           >
-            <p className="muted">Annullering ændrer ingen data. Gem derefter arbejdsrummet på Drive.</p>
+            <p className="muted">Annullering ændrer ingen data. Gem derefter arbejdsrummet i den valgte fil.</p>
           </ActionForm>
           <button className="quiet" onClick={() => setPreview(null)}>
             Annuller

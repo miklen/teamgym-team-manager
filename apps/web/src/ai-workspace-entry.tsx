@@ -19,9 +19,9 @@ export function AiWorkspaceEntry({ fileId, dirty }: { fileId: string; dirty: boo
       setCopyStatus('Kopiér teksten manuelt fra feltet.');
     }
   }
-  return (
-    <section className="ai-workspace-entry" aria-labelledby="ai-workspace-title">
-      <h3 id="ai-workspace-title">Inddata med din egen AI-agent</h3>
+  return <details className="ai-workspace-entry">
+    <summary>Inddata med din egen AI-agent <span>Vejledning og starttekst</span></summary>
+    <div className="ai-workspace-content">
       <p className="muted">Lad agenten læse vejledningen og registrere dine noter i netop denne Drive-fil.</p>
       <div className="ai-workspace-links">
         <a href={guide} target="_blank" rel="noreferrer">Læs inddata-skill</a>
@@ -35,6 +35,6 @@ export function AiWorkspaceEntry({ fileId, dirty }: { fileId: string; dirty: boo
         <span role="status" aria-live="polite" className="muted">{copyStatus}</span>
       </div>
       <p className="muted ai-workspace-limit">Direkte Google-skrivning kan overskrive en samtidig ændring mellem genlæsning og upload. Appens egen gemning bruger en stærkere versionskontrol.</p>
-    </section>
-  );
+    </div>
+  </details>;
 }

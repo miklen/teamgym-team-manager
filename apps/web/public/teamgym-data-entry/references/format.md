@@ -6,6 +6,8 @@ Læs [struktur-v7.json](structure-v7.json) for alle obligatoriske felter, dataty
 
 `format` skal være `teamgym-team-manager`, `schemaVersion` skal være `7`, `workspaceId` er filens stabile interne ID. `revision` er et ikke-negativt heltal; `updatedAt` er et ISO-tidspunkt med tidszone. `recentOperations` har højst 30 app-gemmeoperationer `{id, payloadHash, revision, savedAt}`. En ekstern skrivning øger kun rodens `revision` med én og sætter `updatedAt` til et aktuelt ISO-tidspunkt. Bevar `recentOperations` uændret; opfind hverken app-operation eller payloadhash. Drive-filens ETag/version er særskilte metadata og er ikke rodens revision.
 
+Appens lokale Drive-kopier kan have en særskilt indpakning med `format: "teamgym-local-copy"`, arbejdsrum og kildebasis. Den indpakning er ikke Drive-filens format 7 og må aldrig skrives direkte til Drive. Denne skill arbejder kun med den rå, validerede arbejdsrumsfil på Drive.
+
 ## Samlinger og ID'er
 
 | Felt | Betydning |

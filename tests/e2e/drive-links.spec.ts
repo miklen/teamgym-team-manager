@@ -7,31 +7,20 @@ async function connectedStart(page: Page) {
   const source = await openWorkspace(page);
   await expect(page.getByRole('heading', { name: 'Hold', exact: true })).toBeVisible();
   await page.getByRole('button', { name: 'Arbejdsrum', exact: true }).click();
-  await page.getByRole('button', { name: 'Afbryd forbindelse / skift konto' }).click();
-  await expect(page.getByRole('dialog')).toHaveCount(0);
-  // Den huskede forbindelse ryddes asynkront efter visningen; genindlæs først, når den er væk.
-  await expect
-    .poll(() =>
-      page.evaluate(
-        () =>
-          new Promise<boolean>((resolve) => {
-            const request = indexedDB.open('teamgym-team-manager.connection.v1', 1);
-            request.onsuccess = () => {
-              const row = request.result.transaction('connection').objectStore('connection').get('active');
-              row.onsuccess = () => {
-                request.result.close();
-                resolve(Boolean((row.result as { connection?: unknown } | undefined)?.connection));
-              };
-            };
-          }),
-      ),
-    )
-    .toBe(false);
-  await page.goto('./');
-  await page.getByRole('button', { name: 'Forbind til Google Drive', exact: true }).click();
-  await expect(page.getByRole('heading', { name: 'Åbn holdets arbejdsrum' })).toBeVisible();
-  await expect(page.getByText('Virker Vælg ikke?', { exact: false })).toContainText('Google-loginvindue bag filvælgeren');
+  await page.getByRole('button', { name: 'Til startoverblik' }).click();
+  await expect(page.getByRole('heading', { name: 'Fortsæt, hvor du slap.' })).toBeVisible();
   return source;
+}
+
+async function openLinkChoice(page: Page) {
+  await page.getByRole('button', { name: 'Åbn en anden fil' }).click();
+  await page.getByRole('button', { name: 'Drive-link' }).click();
+}
+
+async function createDriveChoice(page: Page) {
+  await page.getByRole('button', { name: 'Start nyt arbejdsrum' }).click();
+  await page.getByRole('button', { name: /Lokale ændringer.*Vælg placering/ }).click();
+  await page.getByRole('button', { name: 'Gem i Google Drive' }).click();
 }
 
 async function pickerChoose(page: Page, action: 'Vælg' | 'Annuller' = 'Vælg') {
@@ -45,7 +34,7 @@ for (const width of [1440, 390]) {
   test(`fillink åbner allerede tilgængeligt arbejdsrum direkte ved ${width}`, async ({ page }) => {
     await page.setViewportSize({ width, height: 900 });
     const source = await connectedStart(page);
-    await page.getByRole('button', { name: 'Åbn fra link', exact: true }).click();
+    await openLinkChoice(page);
     await page
       .getByLabel('Link til fil eller mappe')
       .fill('https://drive.google.com/file/d/synthetic-file/view?usp=sharing&resourcekey=0-synthetic');
@@ -67,7 +56,7 @@ for (const width of [1440, 390]) {
   test(`mappelink starter filvalg inde i mappen ved ${width}`, async ({ page }) => {
     await page.setViewportSize({ width, height: 900 });
     const source = await connectedStart(page);
-    await page.getByRole('button', { name: 'Åbn fra link', exact: true }).click();
+    await openLinkChoice(page);
     await page
       .getByLabel('Link til fil eller mappe')
       .fill(
@@ -94,7 +83,7 @@ for (const width of [1440, 390]) {
     await page.setViewportSize({ width, height: 900 });
     const source = await connectedStart(page);
     const original = source.workspace;
-    await page.getByRole('button', { name: 'Opret arbejdsrum', exact: true }).click();
+    await createDriveChoice(page);
     await page.getByLabel('Arbejdsrummets navn').fill('Syntetisk linkmappe');
     await page
       .getByLabel('Link til mappe (valgfrit)')
@@ -119,7 +108,7 @@ test('nyt fillink beder kun om Google-bekræftelse for den angivne fil', async (
     if (!granted) await route.fulfill({ status: 404 });
     else await route.fallback();
   });
-  await page.getByRole('button', { name: 'Åbn fra link', exact: true }).click();
+  await openLinkChoice(page);
   await page
     .getByLabel('Link til fil eller mappe')
     .fill('https://drive.google.com/file/d/synthetic-file/view');
@@ -154,7 +143,7 @@ test('nyt mappelink bevarer formularen ved annullering og opretter først efter 
     if (!granted) await route.fulfill({ status: 403 });
     else await route.fallback();
   });
-  await page.getByRole('button', { name: 'Opret arbejdsrum', exact: true }).click();
+  await createDriveChoice(page);
   const link = 'https://drive.google.com/drive/folders/synthetic-folder';
   await page.getByLabel('Arbejdsrummets navn').fill('Syntetisk bekræftet');
   await page.getByLabel('Link til mappe (valgfrit)').fill(link);
@@ -175,21 +164,21 @@ test('nyt mappelink bevarer formularen ved annullering og opretter først efter 
   await expect(page.locator('iframe[title="Google Drive"]')).toBeVisible();
   granted = true;
   await pickerChoose(page);
-  await expect(page.getByRole('heading', { name: 'Hold', exact: true })).toBeVisible();
+  await expect(page.getByRole('contentinfo')).toContainText('Syntetisk bekræftet.json');
   expect(source.creates).toBe(1);
   expect(source.failures).toEqual([]);
 });
 
 test('ugyldigt link, fillink som mappe og skrivebeskyttet mappe opretter ingen fil', async ({ page }) => {
   const source = await connectedStart(page);
-  await page.getByRole('button', { name: 'Åbn fra link', exact: true }).click();
+  await openLinkChoice(page);
   await page
     .getByLabel('Link til fil eller mappe')
     .fill('https://drive.google.com.evil.invalid/file/d/synthetic-file/view');
   await page.getByRole('button', { name: 'Åbn link', exact: true }).click();
   await expect(page.getByRole('alert')).toContainText('gyldigt Google Drive-link');
   await page.getByRole('button', { name: 'Luk dialog', exact: true }).click();
-  await page.getByRole('button', { name: 'Opret arbejdsrum', exact: true }).click();
+  await createDriveChoice(page);
   await page.getByLabel('Arbejdsrummets navn').fill('Syntetisk ugyldig');
   await page
     .getByLabel('Link til mappe (valgfrit)')

@@ -71,7 +71,7 @@ test('redesign: selvhostede assets på startskærmen', async ({ page }) => {
   });
   await page.setViewportSize({ width: 1440, height: 1000 });
   await page.goto('./');
-  await expect(page.getByRole('heading', { name: 'Holdets fælles planlægning' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Planlæg dit hold.' })).toBeVisible();
   await page.evaluate(() => document.fonts.ready);
   await page.screenshot({ path: 'tmp/ui-qa/redesign-start.png', animations: 'disabled' });
   expect(failures).toEqual([]);

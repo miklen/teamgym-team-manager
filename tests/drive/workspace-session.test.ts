@@ -4,7 +4,8 @@ import { syntheticWorkspace } from '../fixtures/synthetic-workspace';
 import { scenarioWorkspace } from '../fixtures/scenario-workspace';
 import { registerSpringBatch, springFoundation, springLibrary } from '../../apps/web/src/spring-library';
 import { DK_V1 } from '@teamgym/rules';
-import { DriveClient, WorkspaceSession } from '@teamgym/drive';
+import { DriveClient, WorkspaceSession, openLocalHandle, readLocalFile, serializeLocalWorkspace } from '@teamgym/drive';
+import type { LocalHandle } from '@teamgym/drive';
 import type { BrowserFetch } from '@teamgym/drive';
 
 const binding = { rulesetId: 'dk', packageVersion: '1.0.0', ageGroup: 'junior', teamType: 'girls' };
@@ -113,6 +114,157 @@ function deferred() {
   });
   return { promise, resolve };
 }
+
+describe('kladde uden filplacering', () => {
+  it('kan redigeres og forbliver ugemt ved annulleret første gemning', () => {
+    const source = server();
+    const session = new WorkspaceSession(source.client());
+    session.startNew(createWorkspace());
+    add(session);
+    const draft = session.exportDraft();
+    expect(session.snapshot()).toMatchObject({ loaded: null, state: 'changed' });
+    expect(session.dirty()).toBe(true);
+    expect(session.snapshot().draft?.teams[0]?.name).toBe('Junior');
+    expect(session.exportDraft()).toBe(draft);
+    expect(source.puts).toBe(0);
+    expect(() => session.startNew(createWorkspace())).toThrow('Bekræft kassation');
+  });
+
+  it('kan placeres efter redigering og får først da gemt-status', async () => {
+    const source = server();
+    const session = new WorkspaceSession(source.client());
+    session.startNew(createWorkspace());
+    add(session);
+    await session.save();
+    expect(session.snapshot().state).toBe('changed');
+    expect(session.dirty()).toBe(true);
+    source.replaceBytes(session.exportDraft());
+    const created = await source.client().read('file');
+    session.adopt(created);
+    expect(session.snapshot().state).toBe('unchanged');
+    expect(session.snapshot().draft?.teams[0]?.name).toBe('Junior');
+    expect(session.dirty()).toBe(false);
+  });
+});
+
+describe('lokal kopi med fælles Drive-basis', () => {
+  it('gennemgår uafhængige ændringer og skifter først til Drive-kladde efter anvendelse', async () => {
+    const source = server();
+    const target = await source.client().read('file');
+    const base = target.workspace;
+    const local = createTeam(base, 'Lokalt hold', binding);
+    const copy = await readLocalFile(new File([serializeLocalWorkspace(local, { fileId: 'file', base })], 'lokal.json'));
+    const session = new WorkspaceSession(source.client());
+    session.adoptLocal(copy);
+    source.replaceBytes(serializeWorkspace(createTeam(base, 'Drive-hold', binding)));
+    await session.beginCopyReview(target);
+    expect(session.snapshot().review?.result?.status).toBe('valid');
+    expect(source.puts).toBe(0);
+    expect(session.snapshot().local?.name).toBe('lokal.json');
+    expect(await session.applyReview()).toBe(true);
+    expect(session.snapshot().local).toBeNull();
+    expect(session.snapshot().loaded?.basis.fileId).toBe('file');
+    expect(session.snapshot().draft?.teams.map((team) => team.name).sort()).toEqual(['Drive-hold', 'Lokalt hold']);
+    expect(source.puts).toBe(0);
+    await session.save();
+    expect(source.puts).toBe(1);
+  });
+
+  it('afviser forkert kildefil og manglende basis uden at miste lokal kladde', async () => {
+    const source = server();
+    const target = await source.client().read('file');
+    const session = new WorkspaceSession(source.client());
+    session.adoptLocal(await readLocalFile(new File([serializeWorkspace(target.workspace)], 'lokal.json')));
+    await expect(session.beginCopyReview(target)).rejects.toMatchObject({ code: 'format' });
+    const copy = await readLocalFile(new File([serializeLocalWorkspace(target.workspace, { fileId: 'other', base: target.workspace })], 'lokal.json'));
+    session.adoptLocal(copy);
+    await expect(session.beginCopyReview(target)).rejects.toMatchObject({ code: 'format' });
+    expect(session.snapshot().draft?.workspaceId).toBe(target.workspace.workspaceId);
+    expect(source.puts).toBe(0);
+  });
+
+  it('kræver valg ved forskellige rækkefølger i samme omgang', async () => {
+    const source = server();
+    const base = scenarioWorkspace();
+    source.replaceBytes(serializeWorkspace(base));
+    const target = await source.client().read('file');
+    const local = structuredClone(base);
+    local.plans[0]!.tumbling[0]!.rounds[0].entries.reverse();
+    const remote = structuredClone(base);
+    const moved = remote.plans[0]!.tumbling[0]!.rounds[0].entries.shift()!;
+    remote.plans[0]!.tumbling[0]!.rounds[0].entries.push(moved);
+    source.replaceBytes(serializeWorkspace(remote));
+    const session = new WorkspaceSession(source.client());
+    session.adoptLocal(await readLocalFile(new File([serializeLocalWorkspace(local, { fileId: 'file', base })], 'lokal.json')));
+    await session.beginCopyReview(target);
+    expect(session.snapshot().review?.result?.status).toBe('blocked');
+    expect(session.snapshot().review?.result?.conflicts).toHaveLength(1);
+    expect(await session.applyReview()).toBe(false);
+    expect(session.snapshot().local?.name).toBe('lokal.json');
+    expect(source.puts).toBe(0);
+  });
+
+  it('afviser en forældet gennemgang, når Drive ændres efter sammenligning', async () => {
+    const source = server();
+    const target = await source.client().read('file');
+    const base = target.workspace;
+    const session = new WorkspaceSession(source.client());
+    session.adoptLocal(await readLocalFile(new File([serializeLocalWorkspace(createTeam(base, 'Lokalt', binding), { fileId: 'file', base })], 'lokal.json')));
+    await session.beginCopyReview(target);
+    source.external();
+    expect(await session.applyReview()).toBe(false);
+    expect(session.snapshot().review?.status).toBe('stale');
+    expect(session.snapshot().draft?.teams.map((team) => team.name)).toEqual(['Lokalt']);
+    expect(source.puts).toBe(0);
+  });
+
+  it('afviser en forældet gennemgang, når den lokale kladde ændres efter sammenligning', async () => {
+    const source = server();
+    const target = await source.client().read('file');
+    const base = target.workspace;
+    const session = new WorkspaceSession(source.client());
+    session.adoptLocal(await readLocalFile(new File([serializeLocalWorkspace(base, { fileId: 'file', base })], 'lokal.json')));
+    await session.beginCopyReview(target);
+    add(session, 'Ny lokal ændring');
+    expect(await session.applyReview()).toBe(false);
+    expect(session.snapshot().draft?.teams.map((team) => team.name)).toEqual(['Ny lokal ændring']);
+    expect(source.puts).toBe(0);
+  });
+});
+
+describe('lokal sessionsgemning', () => {
+  it('holder en redigering under skrivning ugemt, selv efter filens efterlæsning', async () => {
+    let bytes = serializeWorkspace(createWorkspace());
+    const entered = deferred();
+    const release = deferred();
+    const handle: LocalHandle = {
+      name: 'syntetisk.json',
+      async getFile() { return new File([bytes], this.name); },
+      async queryPermission() { return 'granted'; },
+      async createWritable() {
+        let next = '';
+        return {
+          async write(value: string) { next = value; },
+          async close() { entered.resolve(); await release.promise; bytes = next; },
+        };
+      },
+    };
+    const session = new WorkspaceSession(server().client());
+    session.adoptLocal(await openLocalHandle(handle));
+    add(session, 'Første hold');
+    const saving = session.save();
+    await entered.promise;
+    add(session, 'Andet hold');
+    release.resolve();
+    await saving;
+    expect(session.snapshot().state).toBe('changed');
+    expect(session.snapshot().draft?.teams).toHaveLength(2);
+    expect(JSON.parse(bytes).teams).toHaveLength(1);
+    await session.save();
+    expect(session.snapshot().state).toBe('saved');
+    expect(JSON.parse(bytes).teams).toHaveLength(2);
+  });
+});
 
 function withoutAmbitions(workspace: ReturnType<typeof createWorkspace>) {
   const strip = (scenarios: typeof workspace.plans[number]['tumbling']) =>

@@ -98,6 +98,24 @@ describe('personlig Google-forbindelse uden automatisk popup', () => {
     const stored = JSON.stringify(await h.store.read());
     expect(stored).not.toMatch(/refresh_token|client_secret|athletes|athleteSkills/);
   });
+  it('læser kun referencen ved lokal start og verificerer først kontoen ved Drive-valg', async () => {
+    const h = harness();
+    await h.connection.restore();
+    const connecting = h.connection.connect(true);
+    h.token();
+    await connecting;
+    await h.connection.rememberFile({ id: 'file', name: 'Test.json', folderIds: [] });
+    const before = h.calls;
+    const reopened = new GoogleConnection(h.store, h.oauth, h.fetcher, () => 200_000);
+    await reopened.restore(false);
+    expect(h.calls).toBe(before);
+    expect(reopened.snapshot().status).toBe('disconnected');
+    expect(reopened.rememberedReference()).toMatchObject({ account: { permissionId: 'A' }, file: { id: 'file' } });
+    expect(await reopened.verifyRestored()).toBe(true);
+    expect(reopened.snapshot().status).toBe('connected');
+    expect(h.calls).toBe(before + 1);
+    expect(h.requests).toBe(1);
+  });
   it('udløb følger expires_in med margin, sletter token og bevarer kun konto/fil til ét brugerklik', async () => {
     const h = harness();
     await h.connection.restore();

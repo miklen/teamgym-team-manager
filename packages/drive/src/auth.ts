@@ -98,6 +98,9 @@ export class GoogleConnection {
     };
   };
   snapshot = () => this.view;
+  rememberedReference() {
+    return this.record?.file ? { account: this.record.account, file: this.record.file } : null;
+  }
   private publish(change: Partial<ConnectionView>) {
     this.view = { ...this.view, ...change, generation: this.generation };
     if (!this.persistent && !this.view.message)
@@ -120,7 +123,7 @@ export class GoogleConnection {
       return action(this.store);
     }
   }
-  async restore() {
+  async restore(verify = true) {
     const generation = this.generation;
     const stored = await this.storage((store) => store.read());
     if (generation !== this.generation) return;
@@ -131,6 +134,14 @@ export class GoogleConnection {
       this.resourceKeys.set(this.record.file.id, this.record.file.resourceKey);
     this.remember = !!stored.connection;
     if (!this.record) return;
+    if (!verify) {
+      this.publish({ status: 'disconnected', account: null, file: null, remembered: this.persistent });
+      return;
+    }
+    await this.verifyRestored(generation);
+  }
+  async verifyRestored(generation = this.generation) {
+    if (!this.record) return false;
     this.publish({
       status: 'connecting',
       account: this.record.account,
@@ -139,7 +150,7 @@ export class GoogleConnection {
     });
     if (!this.isValid()) {
       this.expire();
-      return;
+      return false;
     }
     try {
       const account = await this.client().account();
@@ -147,16 +158,18 @@ export class GoogleConnection {
       if (account.permissionId !== this.record?.account.permissionId) {
         await this.disconnect();
         this.publish({ message: 'Den gemte konto kunne ikke verificeres. Forbind igen.' });
-        return;
+        return false;
       }
       this.record.account = account;
       this.publish({ status: 'connected', account });
+      return true;
     } catch (error) {
       if (generation === this.generation)
         this.publish({
           status: error instanceof DriveError && error.code === 'auth' ? 'expired' : 'error',
           message: error instanceof Error ? error.message : 'Google-adgangen kunne ikke kontrolleres.',
         });
+      return false;
     }
   }
   private isValid() {
@@ -216,7 +229,7 @@ export class GoogleConnection {
     const generation = ++this.generation;
     const previous = this.record;
     this.remember = remember;
-    this.publish({ status: 'connecting', message: '' });
+    this.publish({ status: 'connecting', remembered: false, message: '' });
     return new Promise<void>((resolve) => {
       const fail = () => {
         if (generation === this.generation)

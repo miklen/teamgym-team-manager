@@ -28,6 +28,7 @@
 <p>Læs <a href="structure-v7.json">struktur-v7.json</a> for alle obligatoriske felter, datatyper, enumværdier og maksimallængder. JSON-schemaet er genereret fra appens Zod-schema og beskriver ikke alle krydsreferencer; reglerne nedenfor gælder også. Ukendte felter afvises. Kontroller <strong>hele filen</strong>, også scenarier der ikke ændres.</p>
 <h2>Rod og gemmemetadata</h2>
 <p><code>format</code> skal være <code>teamgym-team-manager</code>, <code>schemaVersion</code> skal være <code>7</code>, <code>workspaceId</code> er filens stabile interne ID. <code>revision</code> er et ikke-negativt heltal; <code>updatedAt</code> er et ISO-tidspunkt med tidszone. <code>recentOperations</code> har højst 30 app-gemmeoperationer <code>{id, payloadHash, revision, savedAt}</code>. En ekstern skrivning øger kun rodens <code>revision</code> med én og sætter <code>updatedAt</code> til et aktuelt ISO-tidspunkt. Bevar <code>recentOperations</code> uændret; opfind hverken app-operation eller payloadhash. Drive-filens ETag/version er særskilte metadata og er ikke rodens revision.</p>
+<p>Appens lokale Drive-kopier kan have en særskilt indpakning med <code>format: &quot;teamgym-local-copy&quot;</code>, arbejdsrum og kildebasis. Den indpakning er ikke Drive-filens format 7 og må aldrig skrives direkte til Drive. Denne skill arbejder kun med den rå, validerede arbejdsrumsfil på Drive.</p>
 <h2>Samlinger og ID&#39;er</h2>
 <table>
 <thead>

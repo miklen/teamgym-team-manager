@@ -4,7 +4,9 @@ import { createRoot } from 'react-dom/client';
 import { flushSync } from 'react-dom';
 import { CURRENT_SCHEMA_VERSION, createWorkspace, skillNeedsTwistDistribution } from '@teamgym/domain';
 import type { SkillDefinition } from '@teamgym/domain';
-import { DriveError, parseDriveLink, pickGoogleResource, prepareGoogle } from '@teamgym/drive';
+import { DriveError, openLocalHandle, overwriteDriveTarget, parseDriveLink, pickGoogleResource, prepareGoogle, readLocalFile, saveNewLocalHandle, serializeLocalWorkspace } from '@teamgym/drive';
+import type { LoadedWorkspace, LocalHandle, LocalOrigin, RecentWorkspace } from '@teamgym/drive';
+import type { Workspace } from '@teamgym/domain';
 import type { DriveLink } from '@teamgym/drive';
 import { Athletes } from './athletes';
 import { ActionForm, Dialog, Empty } from './components';
@@ -17,12 +19,14 @@ import {
   downloadDraft,
   googleConfig,
   restoreConnection,
+  recentWorkspaces,
   workspaceSession,
 } from './runtime';
 import { SpringPage } from './spring';
 import { TeamProfilePage } from './team-profile';
 import { RulesPage, Teams } from './teams';
-import { Brand, Icon, WelcomeArtwork } from './ui';
+import { Brand, Icon } from './ui';
+import { StartScreen } from './start-screen';
 import type { IconName } from './ui';
 import './style.css';
 import './repertoire.css';
@@ -53,7 +57,7 @@ function App() {
   const data = useSyncExternalStore(workspaceSession.subscribe, workspaceSession.snapshot);
   const [route, setRoute] = useState(location.hash || '#/arbejdsrum');
   const [ready, setReady] = useState(false);
-  const [googleLoading, setGoogleLoading] = useState(configured);
+  const [googleLoading, setGoogleLoading] = useState(false);
   const [googleError, setGoogleError] = useState('');
   const [pickerActive, setPickerActive] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -62,11 +66,20 @@ function App() {
   const [creating, setCreating] = useState(false);
   const [openingLink, setOpeningLink] = useState(false);
   const [folderLink, setFolderLink] = useState('');
-  const [remember, setRemember] = useState(true);
+  const [remember, setRemember] = useState(false);
   const [recovery, setRecovery] = useState<string | null>(null);
   const [restoring, setRestoring] = useState(true);
   const [editorEpoch, setEditorEpoch] = useState(0);
   const [reviewGuard, setReviewGuard] = useState(false);
+  const [openChoice, setOpenChoice] = useState(false);
+  const [saveChoice, setSaveChoice] = useState(false);
+  const [recent, setRecent] = useState<RecentWorkspace[]>([]);
+  const [recentError, setRecentError] = useState('');
+  const [recentRowError, setRecentRowError] = useState<Record<string, string>>({});
+  const [reselectRecent, setReselectRecent] = useState<Extract<RecentWorkspace, { kind: 'local-fallback' }> | null>(null);
+  const [downloadNotice, setDownloadNotice] = useState('');
+  const [driveTarget, setDriveTarget] = useState<{ target: LoadedWorkspace; sent: Workspace } | null>(null);
+  const localInput = useRef<HTMLInputElement>(null);
   const [guardError, setGuardError] = useState('');
   const dirtyForms = useRef(new Set<HTMLFormElement>());
   const reviewTrigger = useRef<HTMLElement | null>(null);
@@ -96,7 +109,7 @@ function App() {
       setReviewGuard(true);
     } else showReview();
   }
-  function updateForms() {
+  function commitForms() {
     for (const form of [...dirtyForms.current]) {
       if (!form.isConnected) {
         dirtyForms.current.delete(form);
@@ -106,33 +119,36 @@ function App() {
       flushSync(() => form.requestSubmit());
       if (form.isConnected && workspaceSession.snapshot().draft === before) {
         setGuardError('Formularen kunne ikke opdateres. Kontrollér oplysningerne, eller vælg Bliv.');
-        return;
+        return false;
       }
       dirtyForms.current.delete(form);
     }
-    showReview();
+    return true;
+  }
+  function updateForms() {
+    if (commitForms()) showReview();
   }
   const observedAccount = useRef<string | null>(null);
+  async function refreshRecent() {
+    try { setRecent(await recentWorkspaces.list()); setRecentError(''); }
+    catch { setRecentError('Seneste kan ikke læses på denne enhed. Du kan stadig åbne en fil direkte.'); }
+  }
+  async function rememberLocal(name: string, workspaceId: string, handle: LocalHandle | null) {
+    try { await recentWorkspaces.addLocal(name, workspaceId, handle); await refreshRecent(); }
+    catch { setRecentError('Filen er åbnet, men kunne ikke tilføjes til Seneste.'); }
+  }
+  async function rememberDrive(fileId: string, name: string, folderIds: string[], resourceKey?: string) {
+    const accountId = connection.snapshot().account?.permissionId;
+    if (!accountId) return;
+    try { await recentWorkspaces.addDrive(fileId, name, folderIds, accountId, resourceKey); await refreshRecent(); }
+    catch { setRecentError('Filen er åbnet, men kunne ikke tilføjes til Seneste.'); }
+  }
   useEffect(() => {
-    if (!configured) return;
-    let active = true;
-    void prepareGoogle()
-      .then(() => {
-        if (active) {
-          setReady(true);
-          setGoogleLoading(false);
-        }
-      })
-      .catch((error: unknown) => {
-        if (active) {
-          setGoogleLoading(false);
-          setGoogleError(error instanceof Error ? error.message : 'Google kunne ikke indlæses.');
-        }
-      });
-    return () => {
-      active = false;
-    };
-  }, []);
+    if (restoring) return;
+    const legacy = connection.rememberedReference();
+    if (legacy) void recentWorkspaces.addDrive(legacy.file.id, legacy.file.name, legacy.file.folderIds, legacy.account.permissionId, legacy.file.resourceKey).then(refreshRecent).catch(() => setRecentError('Den tidligere Drive-reference kunne ikke flyttes til Seneste.'));
+    else void refreshRecent();
+  }, [restoring]);
   useEffect(() => {
     let active = true;
     void restoreConnection()
@@ -145,7 +161,7 @@ function App() {
     const hash = () => setRoute(location.hash || '#/arbejdsrum');
     window.addEventListener('hashchange', hash);
     const before = (event: BeforeUnloadEvent) => {
-      if (workspaceSession.dirty() || workspaceSession.snapshot().state === 'saving') {
+      if (workspaceSession.dirty() || dirtyForms.current.size > 0 || workspaceSession.snapshot().state === 'saving') {
         event.preventDefault();
         event.returnValue = '';
       }
@@ -168,16 +184,19 @@ function App() {
   }, []);
   useEffect(() => {
     if (auth.status === 'disconnected') {
-      if (workspaceSession.dirty()) setRecovery(workspaceSession.exportDraft());
+      if (observedAccount.current)
+        void recentWorkspaces.removeDriveAccount(observedAccount.current).then(refreshRecent).catch(() => setRecentError('Drive-poster kunne ikke ryddes fra Seneste.'));
+      if (workspaceSession.snapshot().loaded && workspaceSession.dirty()) setRecovery(workspaceSession.exportDraft());
       setSettings(false);
       setOpeningLink(false);
       setCreating(false);
-      workspaceSession.clear();
+      if (workspaceSession.snapshot().loaded) workspaceSession.clear();
       observedAccount.current = null;
       return;
     }
     if (auth.status !== 'connected' || !auth.account) return;
     if (observedAccount.current && observedAccount.current !== auth.account.permissionId) {
+      void recentWorkspaces.removeDriveAccount(observedAccount.current).then(refreshRecent).catch(() => setRecentError('Den tidligere kontos poster kunne ikke ryddes.'));
       if (workspaceSession.dirty()) setRecovery(workspaceSession.exportDraft());
       workspaceSession.clear();
     }
@@ -187,8 +206,8 @@ function App() {
       return;
     }
     const fileFromLink = /^#\/arbejdsrum\/([\w-]+)/.exec(location.hash)?.[1];
-    const fileId = fileFromLink ?? auth.file?.id;
-    if (fileId) void workspaceSession.open(fileId);
+    const fileId = fileFromLink;
+    if (fileId && !['local', 'kladde'].includes(fileId)) void workspaceSession.open(fileId);
   }, [auth.status, auth.account, auth.file?.id]);
   async function run(action: () => Promise<void>) {
     setError('');
@@ -213,6 +232,74 @@ function App() {
       setGoogleLoading(false);
     }
   }
+  async function ensureGoogle() {
+    if (!configured) throw new Error('Google Drive er ikke konfigureret i denne udgave.');
+    try { await prepareGoogle(); }
+    catch (error) {
+      setGoogleError(error instanceof Error ? error.message : 'Google kunne ikke indlæses.');
+      throw error;
+    }
+    setGoogleError('');
+    setReady(true);
+    if (connection.snapshot().status === 'connected') return true;
+    if (await connection.verifyRestored()) return true;
+    await connection.connect(remember);
+    return connection.snapshot().status === 'connected';
+  }
+  function startNew() {
+    if (!confirmDiscard()) return;
+    workspaceSession.startNew(createWorkspace(), true);
+    location.hash = '#/arbejdsrum/kladde';
+    setOpenChoice(false);
+  }
+  async function openLocal() {
+    if (!confirmDiscard()) return;
+    setReselectRecent(null);
+    flushSync(() => setSettings(false));
+    const picker = window as Window & { showOpenFilePicker?: (options?: unknown) => Promise<LocalHandle[]> };
+    if (!picker.showOpenFilePicker) {
+      localInput.current?.click();
+      return;
+    }
+    await run(async () => {
+      let handles: LocalHandle[];
+      try { handles = await picker.showOpenFilePicker!({ multiple: false, types: [{ description: 'TeamGym JSON', accept: { 'application/json': ['.json'] } }] }); }
+      catch (error) { if (error instanceof DOMException && error.name === 'AbortError') return; throw error; }
+      const handle = handles[0];
+      if (!handle) return;
+      workspaceSession.adoptLocal(await openLocalHandle(handle), true);
+      if (!workspaceSession.snapshot().localMigration)
+        await rememberLocal(handle.name, workspaceSession.snapshot().draft!.workspaceId, handle);
+      location.hash = '#/arbejdsrum/lokal';
+      setOpenChoice(false);
+      setSettings(false);
+    });
+  }
+  async function saveAsLocal() {
+    if (!commitForms()) return;
+    const draft = workspaceSession.snapshot().draft;
+    if (!draft) return;
+    const origin: LocalOrigin | null = workspaceSession.snapshot().local?.origin ??
+      (workspaceSession.snapshot().loaded ? { fileId: workspaceSession.snapshot().loaded!.basis.fileId, base: workspaceSession.snapshot().loaded!.workspace } : null);
+    const picker = window as Window & { showSaveFilePicker?: (options?: unknown) => Promise<LocalHandle> };
+    if (!picker.showSaveFilePicker) {
+      downloadCopy(serializeLocalWorkspace(draft, origin), 'teamgym-arbejdsrum.json');
+      await rememberLocal('teamgym-arbejdsrum.json', draft.workspaceId, null);
+      setDownloadNotice('En kopi er hentet. Den oprindelige fil er ikke opdateret; vælg filen igen ved næste besøg.');
+      setSaveChoice(false);
+      return;
+    }
+    await run(async () => {
+      let handle: LocalHandle;
+      try { handle = await picker.showSaveFilePicker!({ suggestedName: 'teamgym-arbejdsrum.json', types: [{ description: 'TeamGym JSON', accept: { 'application/json': ['.json'] } }] }); }
+      catch (error) { if (error instanceof DOMException && error.name === 'AbortError') return; throw error; }
+      const saved = await saveNewLocalHandle(handle, draft, origin);
+      workspaceSession.placeLocal(saved, draft);
+      await rememberLocal(saved.name, saved.workspace.workspaceId, saved.handle);
+      location.hash = '#/arbejdsrum/lokal';
+      setSaveChoice(false);
+    });
+  }
   async function chooseGoogleResource(
     folder: boolean,
     target?: { fileId?: string; parentId?: string; includeFolders?: boolean },
@@ -228,7 +315,7 @@ function App() {
   }
   function confirmDiscard() {
     return (
-      !workspaceSession.dirty() ||
+      (!workspaceSession.dirty() && dirtyForms.current.size === 0) ||
       window.confirm(
         'Din ugemte kladde bliver kasseret. Eksportér den først, hvis den skal bevares. Fortsæt?',
       )
@@ -237,15 +324,84 @@ function App() {
   async function chooseFile() {
     await run(async () => {
       if (!confirmDiscard()) return;
+      if (!(await ensureGoogle())) return;
       const fileId = await chooseGoogleResource(false);
       if (!fileId) return;
       await workspaceSession.open(fileId, true);
       const loaded = workspaceSession.snapshot().loaded;
       if (loaded?.basis.fileId === fileId) {
         await connection.rememberFile(loaded.metadata);
+        await rememberDrive(fileId, loaded.metadata.name, loaded.metadata.folderIds, loaded.metadata.resourceKey);
         location.hash = `#/arbejdsrum/${fileId}`;
       }
     });
+  }
+  async function chooseOverwriteTarget() {
+    if (!commitForms()) return;
+    await run(async () => {
+      if (!(await ensureGoogle())) return;
+      const fileId = await chooseGoogleResource(false);
+      if (!fileId) return;
+      const target = await connection.client().read(fileId);
+      const sent = structuredClone(workspaceSession.snapshot().draft!);
+      setDriveTarget({ target, sent });
+      setSaveChoice(false);
+    });
+  }
+  async function overwriteTarget() {
+    if (!driveTarget) return;
+    await run(async () => {
+      const currentDraft = workspaceSession.snapshot().draft;
+      if (!currentDraft || JSON.stringify(currentDraft) !== JSON.stringify(driveTarget.sent))
+        throw new Error('Kladden er ændret siden advarslen. Vælg målfilen igen.');
+      const loaded = await overwriteDriveTarget(connection.client(), driveTarget.target, driveTarget.sent);
+      workspaceSession.placeDrive(loaded, driveTarget.sent);
+      await connection.rememberFile(loaded.metadata);
+      await rememberDrive(loaded.basis.fileId, loaded.metadata.name, loaded.metadata.folderIds, loaded.metadata.resourceKey);
+      location.hash = `#/arbejdsrum/${loaded.basis.fileId}`;
+      setDriveTarget(null);
+    });
+  }
+  function openRecent(entry: RecentWorkspace) {
+    if (!confirmDiscard()) return;
+    setRecentRowError((old) => ({ ...old, [entry.id]: '' }));
+    if (entry.kind === 'local-fallback') {
+      setReselectRecent(entry);
+      flushSync(() => setSettings(false));
+      localInput.current?.click();
+      return;
+    }
+    void run(async () => {
+      try {
+        if (entry.kind === 'local-handle') {
+          const opened = await openLocalHandle(entry.handle);
+          if (opened.workspace.workspaceId !== entry.workspaceId)
+            throw new Error('Den valgte fil er et andet arbejdsrum. Vælg den oprindelige fil igen.');
+          workspaceSession.adoptLocal(opened, true);
+          if (!workspaceSession.snapshot().localMigration)
+            await rememberLocal(opened.name, opened.workspace.workspaceId, entry.handle);
+          location.hash = '#/arbejdsrum/lokal';
+          setSettings(false);
+        } else {
+          if (!(await ensureGoogle())) return;
+          if (connection.snapshot().account?.permissionId !== entry.accountId)
+            throw new Error('Denne Drive-fil hører til en anden Google-konto. Skift konto, og prøv igen.');
+          const client = connection.client();
+          if (entry.resourceKey) client.rememberResourceKey(entry.fileId, entry.resourceKey);
+          const opened = await client.read(entry.fileId);
+          workspaceSession.adopt(opened);
+          await connection.rememberFile(opened.metadata);
+          await rememberDrive(entry.fileId, opened.metadata.name, opened.metadata.folderIds, opened.metadata.resourceKey);
+          location.hash = `#/arbejdsrum/${entry.fileId}`;
+          setSettings(false);
+        }
+      } catch (error) {
+        setRecentRowError((old) => ({ ...old, [entry.id]: error instanceof Error ? error.message : 'Filen kunne ikke åbnes.' }));
+      }
+    });
+  }
+  function removeRecent(entry: RecentWorkspace) {
+    void recentWorkspaces.remove(entry.id).then(refreshRecent).catch(() => setRecentRowError((old) => ({ ...old, [entry.id]: 'Posten kunne ikke fjernes fra Seneste.' })));
   }
   async function linkedMetadata(link: DriveLink, folderOnly = false) {
     const client = connection.client();
@@ -288,19 +444,21 @@ function App() {
       const loaded = await connection.client().read(linkedFile);
       workspaceSession.adopt(loaded);
       await connection.rememberFile(loaded.metadata);
+      await rememberDrive(loaded.basis.fileId, loaded.metadata.name, loaded.metadata.folderIds, loaded.metadata.resourceKey);
       location.hash = `#/arbejdsrum/${loaded.basis.fileId}`;
       setOpeningLink(false);
       setSettings(false);
     });
   }
   const workspace = data.draft;
-  const pendingFileId = /^#\/arbejdsrum\/([\w-]+)/.exec(route)?.[1] ?? auth.file?.id;
+  const pendingFileId = /^#\/arbejdsrum\/([\w-]+)/.exec(route)?.[1];
+  const deepLink = pendingFileId && !['kladde', 'lokal'].includes(pendingFileId) ? pendingFileId : null;
   const starting =
     !workspace &&
     (restoring ||
-      auth.status === 'connecting' ||
-      (auth.status === 'connected' && !!pendingFileId && data.state === 'loading'));
+      (auth.status === 'connected' && !!deepLink && data.state === 'loading'));
   const fileId = data.loaded?.basis.fileId;
+  const workspacePath = fileId ?? (data.local ? 'lokal' : 'kladde');
   const match = /\/hold\/([^/]+)(?:\/([^/]+))?/.exec(route);
   const teamId =
     match?.[1] && workspace?.teams.some((team) => team.id === match[1])
@@ -308,10 +466,10 @@ function App() {
       : (workspace?.teams.find((team) => !team.archived)?.id ?? '');
   const team = workspace?.teams.find((item) => item.id === teamId);
   const page = route.endsWith('/gymnaster') ? 'gymnaster' : (match?.[2] ?? 'arbejdsrum');
-  const writable = !!data.loaded?.metadata.writable && !team?.archived && auth.status === 'connected';
+  const writable = (!data.loaded || (data.loaded.metadata.writable && auth.status === 'connected')) && !team?.archived;
   function navigate(page: string, id = teamId) {
     const next =
-      page === 'arbejdsrum' ? `#/arbejdsrum/${fileId}` : `#/arbejdsrum/${fileId}/hold/${id}/${page}`;
+      page === 'arbejdsrum' ? `#/arbejdsrum/${workspacePath}` : `#/arbejdsrum/${workspacePath}/hold/${id}/${page}`;
     location.hash = next;
     setRoute(next);
     window.scrollTo({ top: 0, behavior: 'instant' });
@@ -328,11 +486,11 @@ function App() {
   ];
   const footerContent = (
     <>
-      <span>{data.loaded?.metadata.name ?? 'TeamGym Team Manager'}</span>
+      <span>{data.loaded?.metadata.name ?? data.local?.name ?? 'TeamGym Team Manager'}</span>
       <span>
         {workspace
-          ? `Revision ${data.loaded?.workspace.revision} · kladde kun i denne side`
-          : 'Personlig Google-adgang · fælles Drive-fil'}
+          ? data.loaded ? `Revision ${data.loaded.workspace.revision} · kladde kun i denne side` : data.local ? 'Lokal fil · kladde kun i denne side' : 'Ugemt kladde · kun i denne side'
+          : 'Vælg selv filplacering'}
       </span>
     </>
   );
@@ -344,13 +502,13 @@ function App() {
         className={`app-shell ${workspace ? 'has-workspace' : 'welcome-shell'}`}
         onChangeCapture={(event) => {
           const form = (event.target as HTMLElement).closest('form');
-          if (form && !data.review && !reviewGuard) dirtyForms.current.add(form);
+          if (form && !form.classList.contains('utility-form') && !data.review && !reviewGuard) dirtyForms.current.add(form);
         }}
         onClickCapture={(event) => {
           const target = event.target as HTMLElement;
           const form = target.closest('form');
           const button = target.closest('button');
-          if (form && button?.type === 'button' && !data.review && !reviewGuard) dirtyForms.current.add(form);
+          if (form && !form.classList.contains('utility-form') && button?.type === 'button' && !data.review && !reviewGuard) dirtyForms.current.add(form);
         }}
         onSubmitCapture={(event) => {
           const form = event.target as HTMLFormElement;
@@ -361,6 +519,39 @@ function App() {
           });
         }}
       >
+        <input
+          ref={localInput}
+          type="file"
+          accept=".json,application/json"
+          hidden
+          tabIndex={-1}
+          onChange={(event) => {
+            const file = event.target.files?.[0];
+            event.target.value = '';
+            if (!file) return;
+            void run(async () => {
+              try {
+                const opened = await readLocalFile(file);
+                if (reselectRecent && opened.workspace.workspaceId !== reselectRecent.workspaceId)
+                  throw new Error('Den valgte fil er et andet arbejdsrum. Vælg den oprindelige fil igen.');
+                workspaceSession.adoptLocal(opened, true);
+                if (!workspaceSession.snapshot().localMigration)
+                  await rememberLocal(opened.name, opened.workspace.workspaceId, null);
+                location.hash = '#/arbejdsrum/lokal';
+                setOpenChoice(false);
+                setSettings(false);
+                setReselectRecent(null);
+              } catch (error) {
+                if (reselectRecent) {
+                  const message = error instanceof Error ? error.message : 'Filen kunne ikke åbnes.';
+                  setRecentRowError((old) => ({ ...old, [reselectRecent.id]: message }));
+                  setError(message);
+                }
+                else throw error;
+              }
+            });
+          }}
+        />
         <a
           className="skip-link"
           href="#main-content"
@@ -375,7 +566,7 @@ function App() {
           {workspace ? (
             <>
               <div className="mobile-brand">
-                <Brand href={`#/arbejdsrum/${fileId}`} />
+                <Brand href={`#/arbejdsrum/${workspacePath}`} />
               </div>
               <div className="header-location">
                 <span>{page === 'arbejdsrum' ? 'Arbejdsrum' : team?.name}</span>
@@ -389,7 +580,7 @@ function App() {
             <Brand href="#/arbejdsrum" />
           )}
           <div className="header-actions">
-            <span className="connection-state">
+            {(workspace || deepLink) && <span className="connection-state">
               {starting
                 ? 'Forbinder til Google Drive…'
                 : auth.status === 'connected'
@@ -397,11 +588,11 @@ function App() {
                   : auth.status === 'expired'
                     ? 'Google-adgang udløbet'
                     : 'Intet arbejdsrum åbent'}
-            </span>
+            </span>}
             {workspace && (
               <button
                 className="quiet"
-                disabled={busy || data.state === 'saving' || !!data.review || auth.status !== 'connected'}
+                disabled={busy || data.state === 'saving' || !!data.review || !data.loaded || auth.status !== 'connected'}
                 onClick={requestReview}
               >
                 Gennemgå ændringer
@@ -412,27 +603,31 @@ function App() {
                 className={`save-state state-${data.state}`}
                 disabled={
                   data.state === 'saving' ||
-                  !data.loaded?.metadata.writable ||
-                  auth.status !== 'connected' ||
+                  (data.loaded ? !data.loaded.metadata.writable || auth.status !== 'connected' : false) ||
                   !!data.review ||
-                  (!workspaceSession.dirty() && data.state !== 'error')
+                  (!workspaceSession.dirty() && data.state !== 'error' && !!data.loaded)
                 }
-                onClick={() => void workspaceSession.save()}
+                onClick={() => {
+                  if (!commitForms()) return;
+                  if (!data.loaded && !data.local) setSaveChoice(true);
+                  else if (data.local && !data.local.handle) setSaveChoice(true);
+                  else void workspaceSession.save();
+                }}
               >
                 <Icon name={data.state === 'saved' || data.state === 'unchanged' ? 'check' : 'cloud'} />
                 {saveLabels[data.state]}
-                {data.state === 'changed' ? ' · Gem på Drive' : ''}
+                {data.state === 'changed' ? data.loaded ? ' · Gem på Drive' : data.local ? ' · Gem lokal fil' : ' · Vælg placering' : ''}
               </button>
             )}
-            <button className="quiet" disabled={starting} onClick={() => setSettings(true)}>
+            {workspace && <button className="quiet" disabled={starting} onClick={() => setSettings(true)}>
               <Icon name="settings" />
               <span>Arbejdsrum</span>
-            </button>
+            </button>}
           </div>
         </header>
         {workspace && (
           <aside className="workspace-bar">
-            <Brand href={`#/arbejdsrum/${fileId}`} />
+            <Brand href={`#/arbejdsrum/${workspacePath}`} />
             <label className="team-switcher">
               Aktuelt hold
               <select
@@ -469,8 +664,8 @@ function App() {
                   }}
                   href={
                     key === 'arbejdsrum'
-                      ? `#/arbejdsrum/${fileId}`
-                      : `#/arbejdsrum/${fileId}/hold/${teamId}/${key}`
+                      ? `#/arbejdsrum/${workspacePath}`
+                      : `#/arbejdsrum/${workspacePath}/hold/${teamId}/${key}`
                   }
                 >
                   <Icon name={icon} />
@@ -498,10 +693,10 @@ function App() {
               </div>
             </div>
             <div className="rail-file">
-              <Icon name="cloud" />
+              <Icon name={data.loaded ? 'cloud' : 'teams'} />
               <span>
-                {data.loaded?.metadata.name}
-                <small>Fælles arbejdsrum på Drive</small>
+                {data.loaded?.metadata.name ?? data.local?.name ?? 'Ugemt kladde'}
+                <small>{data.loaded ? 'Fælles arbejdsrum på Drive' : data.local ? 'Lokal fil' : 'Vælg placering ved første gemning'}</small>
               </span>
             </div>
           </aside>
@@ -520,11 +715,12 @@ function App() {
               </button>
             </div>
           )}
-          {(error || data.message || auth.message) && (
+          {(error || data.message || auth.message || downloadNotice) && (
             <div className="notice" role="status">
               {error && <p>{error}</p>}
               {auth.message && <p>{auth.message}</p>}
               {data.message && <p>{data.message}</p>}
+              {downloadNotice && <p>{downloadNotice}</p>}
               {workspace && (
                 <div className="actions">
                   <button className="quiet" onClick={downloadDraft}>
@@ -545,12 +741,12 @@ function App() {
               )}
             </div>
           )}
-          {workspace && (auth.status === 'expired' || auth.status === 'error') && (
+          {workspace && data.loaded && (auth.status === 'expired' || auth.status === 'error') && (
             <section className="reconnect">
               <p>Kladden er i denne side. Genforbind for at kontrollere filversion og fortsætte.</p>
               <button
-                disabled={!ready || busy || !configured}
-                onClick={() => void connection.connect(remember)}
+                disabled={busy || !configured}
+                onClick={() => void ensureGoogle()}
               >
                 Forbind til Google Drive
               </button>
@@ -573,84 +769,38 @@ function App() {
                   </p>
                 </div>
               </section>
-            ) : !workspace ? (
-              <div className="welcome-layout">
-                <div className="welcome-content">
-                  <h1>
-                    Holdets fælles <br />
-                    planlægning
-                  </h1>
-                  <p className="intro">Hold, gymnaster og opstillinger i én fælles fil på Google Drive.</p>
-                  <section className="connect-surface">
-                    <h2>
-                      {auth.status === 'connected' ? 'Åbn holdets arbejdsrum' : 'Forbind din Google-konto'}
-                    </h2>
-                    <p>
-                      {auth.status === 'connected'
-                        ? 'Vælg den fælles JSON-fil, eller opret et nyt arbejdsrum i en mappe, du vælger.'
-                        : 'Du vælger selv, hvilken fil appen får adgang til. Hver træner bruger sin egen konto.'}
-                    </p>
-                    {!configured && (
-                      <p className="notice">
-                        Google-konfiguration mangler i denne udgave. Konfigurér det offentlige client-id,
-                        projektnummer og browsernøglen ved bygning.
-                      </p>
-                    )}
-                    {auth.status === 'connected' ? (
-                      <>
-                        <div className="actions">
-                          <button disabled={busy || !ready} onClick={() => void chooseFile()}>
-                            Vælg eksisterende arbejdsrum
-                          </button>
-                          <button
-                            disabled={busy || !ready}
-                            className="quiet"
-                            onClick={() => {
-                              setError('');
-                              setOpeningLink(true);
-                            }}
-                          >
-                            Åbn fra link
-                          </button>
-                          <button disabled={busy || !ready} className="quiet" onClick={() => setCreating(true)}>
-                            Opret arbejdsrum
-                          </button>
-                        </div>
-                        <PickerLoginHelp />
-                      </>
-                    ) : (
-                      <>
-                        <label className="check">
-                          <input
-                            type="checkbox"
-                            checked={remember}
-                            onChange={(event) => setRemember(event.target.checked)}
-                          />
-                          Husk Google-forbindelsen på denne enhed
-                        </label>
-                        <button
-                          disabled={!ready || !configured || busy || auth.status === 'connecting'}
-                          onClick={() => void connection.connect(remember)}
-                        >
-                          <svg className="google-mark" viewBox="0 0 24 24" aria-hidden="true">
-                            <path
-                              fill="currentColor"
-                              d="M21.8 12.2c0-.7-.1-1.4-.2-2.1H12v4h5.5a4.7 4.7 0 0 1-2.1 3.1v2.6h3.4c2-1.8 3-4.5 3-7.6ZM12 22c2.7 0 5-.9 6.8-2.5l-3.4-2.6c-.9.6-2 1-3.4 1a6 6 0 0 1-5.7-4.2H2.8v2.7A10 10 0 0 0 12 22ZM6.3 13.7a6 6 0 0 1 0-3.4V7.6H2.8a10 10 0 0 0 0 8.8l3.5-2.7ZM12 6.1c1.5 0 2.8.5 3.8 1.5l3-2.9A10 10 0 0 0 2.8 7.6l3.5 2.7A6 6 0 0 1 12 6.1Z"
-                            />
-                          </svg>
-                          Forbind til Google Drive
-                        </button>
-                      </>
-                    )}
-                  </section>
+            ) : !workspace && deepLink ? (
+              <section className="startup-loading" aria-label="Åbn Drive-arbejdsrum">
+                <div className="startup-emblem" aria-hidden="true"><Icon name="cloud" /></div>
+                <div>
+                  <h1>Åbn arbejdsrum på Drive</h1>
+                  <p>Forbind den Google-konto, der har adgang til filen i linket.</p>
                 </div>
-                <WelcomeArtwork />
-              </div>
-            ) : page === 'arbejdsrum' ? (
+                <button disabled={busy || !configured} onClick={() => void run(async () => { await ensureGoogle(); })}>Forbind til Google Drive</button>
+                {data.message && <p role="alert">{data.message}</p>}
+              </section>
+            ) : !workspace ? (
+              <StartScreen
+                openChoice={openChoice}
+                setOpenChoice={setOpenChoice}
+                startNew={startNew}
+                openLocal={() => void openLocal()}
+                openDrive={() => void chooseFile()}
+                openLink={() => void run(async () => { if (await ensureGoogle()) setOpeningLink(true); })}
+                configured={configured}
+                busy={busy}
+                remember={remember}
+                setRemember={setRemember}
+                recent={recent}
+                recentError={recentError}
+                rowErrors={recentRowError}
+                openRecent={openRecent}
+                removeRecent={removeRecent}
+              />            ) : page === 'arbejdsrum' ? (
               <Teams
                 workspace={workspace}
                 change={(next) => workspaceSession.edit(reconcileWorkspace(next))}
-                writable={!!data.loaded?.metadata.writable && auth.status === 'connected'}
+                writable={!data.loaded || (data.loaded.metadata.writable && auth.status === 'connected')}
                 select={(id) => navigate('spring', id)}
               />
             ) : page === 'gymnaster' ? (
@@ -658,7 +808,7 @@ function App() {
                 key={teamId}
                 workspace={workspace}
                 change={(next) => workspaceSession.edit(reconcileWorkspace(next))}
-                writable={!!data.loaded?.metadata.writable && auth.status === 'connected'}
+                writable={!data.loaded || (data.loaded.metadata.writable && auth.status === 'connected')}
               />
             ) : !team ? (
               <Empty>Vælg eller opret et hold først.</Empty>
@@ -695,7 +845,7 @@ function App() {
               />
             )}
           </div>
-          {workspace && !data.loaded?.metadata.writable && (
+          {workspace && data.loaded && !data.loaded.metadata.writable && (
             <p className="notice">
               Læsetilstand · denne konto må se og analysere filen, men kan ikke redigere.
             </p>
@@ -722,10 +872,63 @@ function App() {
             </div>
           </Dialog>
         )}
+        {saveChoice && (
+          <Dialog title="Gem arbejdsrummet" suspended={pickerActive} close={() => setSaveChoice(false)}>
+            <p>Vælg, hvor filen skal gemmes. Din kladde forbliver her, hvis du annullerer.</p>
+            <label className="check"><input type="checkbox" checked={remember} onChange={(event) => setRemember(event.target.checked)} /> Husk Google-forbindelsen på denne enhed</label>
+            <div className="actions">
+              <button disabled={busy} onClick={() => void saveAsLocal()}>Gem som lokal fil</button>
+              <button disabled={busy || !configured} onClick={() => void run(async () => {
+                if (await ensureGoogle()) { setSaveChoice(false); setCreating(true); }
+              })}>Gem i Google Drive</button>
+              {data.draft && <button className="quiet" disabled={busy || !configured} onClick={() => void chooseOverwriteTarget()}>Vælg eksisterende Drive-fil…</button>}
+              <button className="quiet" onClick={() => setSaveChoice(false)}>Annuller</button>
+            </div>
+          </Dialog>
+        )}
+        {driveTarget && (
+          <Dialog title="Erstat Drive-fil?" suspended={pickerActive} close={() => setDriveTarget(null)}>
+            <p>Du har valgt <strong>{driveTarget.target.metadata.name}</strong> i Google Drive.</p>
+            <p className="muted">Fil-id: <code>{driveTarget.target.basis.fileId}</code> · Mappe: {driveTarget.target.metadata.folderIds.join(', ') || 'Min Drive'}</p>
+            <p role="alert">Overskriv erstatter hele indholdet i denne fil. Den fil, du arbejder i nu, bevares.</p>
+            {driveTarget.target.workspace.workspaceId !== driveTarget.sent.workspaceId && <p role="alert">Målfilen er et andet arbejdsrum. Dets hold, gymnaster og planer bliver erstattet.</p>}
+            <div className="actions">
+              <button disabled={busy || !driveTarget.target.metadata.writable} onClick={() => void overwriteTarget()}>Overskriv valgt fil</button>
+              {data.local?.origin?.fileId === driveTarget.target.basis.fileId && data.local.origin.base.workspaceId === driveTarget.sent.workspaceId && driveTarget.target.workspace.workspaceId === driveTarget.sent.workspaceId && (
+                <button className="quiet" disabled={busy} onClick={() => void run(async () => {
+                  await workspaceSession.beginCopyReview(driveTarget.target);
+                  setDriveTarget(null);
+                })}>Gennemgå og flet</button>
+              )}
+              <button className="quiet" onClick={() => setDriveTarget(null)}>Annuller</button>
+            </div>
+          </Dialog>
+        )}
+        {data.localMigration && (
+          <Dialog title="Opgradér lokal fil" close={() => workspaceSession.cancelMigration()}>
+            <p>Filen bruger format {data.localMigration.sourceSchemaVersion}. Den oprindelige fil bevares, indtil du vælger Gem.</p>
+            <div className="actions">
+              <button className="quiet" onClick={() => downloadCopy(workspaceSession.exportOriginal(), data.localMigration!.name)}>Eksportér original</button>
+              <button className="quiet" onClick={() => workspaceSession.cancelMigration()}>Annuller</button>
+              <button onClick={() => {
+                if (!confirmDiscard()) return;
+                const source = workspaceSession.snapshot().localMigration!;
+                workspaceSession.acceptMigration(true);
+                void rememberLocal(source.name, source.workspace.workspaceId, source.handle);
+              }}>Opgradér lokal kladde</button>
+            </div>
+          </Dialog>
+        )}
         {data.review && (
           <WorkspaceReview
             applied={() => {
               setEditorEpoch((epoch) => epoch + 1);
+              const loaded = workspaceSession.snapshot().loaded;
+              if (loaded) {
+                location.hash = `#/arbejdsrum/${loaded.basis.fileId}`;
+                void connection.rememberFile(loaded.metadata);
+                void rememberDrive(loaded.basis.fileId, loaded.metadata.name, loaded.metadata.folderIds, loaded.metadata.resourceKey);
+              }
             }}
           />
         )}
@@ -765,125 +968,87 @@ function App() {
           </Dialog>
         )}
         {settings && (
-          <Dialog title="Arbejdsrum og forbindelse" suspended={pickerActive} close={() => setSettings(false)}>
-            <p>{auth.account ? `${auth.account.name} · ${auth.account.email}` : 'Ingen konto forbundet.'}</p>
+          <Dialog title="Arbejdsrum og forbindelse" className="workspace-dialog" suspended={pickerActive} close={() => setSettings(false)}>
+            <div className="workspace-dialog-overview">
+              <span className="workspace-dialog-kicker">Aktiv fil</span>
+              <strong className="workspace-dialog-name">{data.loaded?.metadata.name ?? data.local?.name ?? 'Ugemt kladde'}</strong>
+              <span className="workspace-dialog-subtitle">{data.loaded ? `Google Drive · ${data.loaded.metadata.writable ? 'Skriveadgang' : 'Læseadgang'}` : data.local ? 'Lokal fil' : 'Vælg placering ved første gemning'}</span>
+              <div className="workspace-dialog-primary-actions">
+                {data.draft && <button disabled={busy || data.state === 'saving'} onClick={() => { if (commitForms()) { setSettings(false); setSaveChoice(true); } }}>Gem som…</button>}
+                {auth.status === 'connected' && <button className="quiet" disabled={busy} onClick={() => {
+                  if (data.loaded && !confirmDiscard()) return;
+                  void run(async () => {
+                    if (data.loaded) workspaceSession.clear();
+                    await connection.disconnect();
+                    setSettings(false);
+                  });
+                }}>Afbryd forbindelse / skift konto</button>}
+              </div>
+            </div>
             {error && !openingLink && !creating && <p className="notice" role="alert">{error}</p>}
-            <p>
-              {auth.remembered
-                ? 'Forbindelsen huskes indtil Googles token udløber.'
-                : 'Forbindelsen huskes ikke efter lukning.'}
-            </p>
-            {data.loaded && (
-              <>
-                <p>
-                  <strong>{data.loaded.metadata.name}</strong>
-                </p>
-                <p>
-                  Fil-id: <code>{data.loaded.basis.fileId}</code>
-                </p>
-                <p>
-                  Mappe:{' '}
-                  {data.loaded.metadata.folderIds.map((id) => (
-                    <a
-                      key={id}
-                      href={`https://drive.google.com/drive/folders/${id}`}
-                      target="_blank"
-                      rel="noreferrer"
-                    >
-                      {id}
-                    </a>
-                  ))}
-                </p>
-                <p>
-                  Version: {data.loaded.basis.version} ·{' '}
-                  {data.loaded.metadata.writable ? 'Skriveadgang' : 'Læseadgang'}
-                </p>
-                <label>
-                  Link til arbejdsrummet
-                  <input
-                    readOnly
-                    value={`${location.origin}${location.pathname}#/arbejdsrum/${fileId}`}
-                    onFocus={(event) => event.target.select()}
-                  />
-                </label>
-                <p className="muted">
-                  Linket giver ingen adgang i sig selv. Brug et Drive-link eller Google-filvælgeren for at
-                  åbne filen med din egen konto.
-                </p>
-                <AiWorkspaceEntry fileId={data.loaded.basis.fileId} dirty={workspaceSession.dirty() || [...dirtyForms.current].some((form) => form.isConnected)} />
-                <button className="quiet" onClick={downloadDraft}>
-                  Eksportér kladden
-                </button>
-              </>
-            )}
-            {auth.status === 'connected' && (
-              <>
-                <div className="actions">
-                  <button
-                    disabled={!ready || busy || data.state === 'saving'}
-                    onClick={() => void chooseFile()}
-                  >
-                    Vælg anden fil
-                  </button>
-                  <button
-                    disabled={!ready || busy || data.state === 'saving'}
-                    className="quiet"
-                    onClick={() => {
-                      setError('');
-                      setOpeningLink(true);
-                    }}
-                  >
-                    Åbn fra link
-                  </button>
-                  <button
-                    disabled={!ready || busy || data.state === 'saving'}
-                    onClick={() => {
-                      if (confirmDiscard()) setCreating(true);
-                    }}
-                  >
-                    Opret arbejdsrum
-                  </button>
+            <p className="workspace-dialog-connection">{auth.account
+              ? `${auth.account.name} · ${auth.account.email} · ${auth.remembered ? 'Forbindelsen huskes, til adgangen udløber' : 'Forbindelsen huskes ikke efter lukning'}`
+              : 'Ingen Google-konto forbundet. Du kan stadig bruge lokale filer.'}</p>
+            {data.local && <p className="workspace-dialog-guidance">{data.local.handle ? 'Gem skriver til denne fil efter ny adgangskontrol.' : 'Denne browser kan ikke skrive tilbage til den åbnede fil. Hent en ny kopi ved Gem.'}</p>}
+            <section className="workspace-dialog-section" aria-labelledby="workspace-file-actions-title">
+              <h3 id="workspace-file-actions-title">Filer og kopier</h3>
+              <div className="workspace-dialog-file-groups">
+                <div className="workspace-dialog-file-group">
+                  <h4>Åbn en fil</h4>
+                  <button className="quiet" disabled={busy || data.state === 'saving'} onClick={() => void openLocal()}>Åbn lokal fil</button>
+                  {auth.status === 'connected' && <>
+                    <button className="quiet" disabled={busy || data.state === 'saving'} onClick={() => void chooseFile()}>Vælg anden fil</button>
+                    <button className="quiet" disabled={busy || data.state === 'saving'} onClick={() => { setError(''); setOpeningLink(true); }}>Åbn fra link</button>
+                  </>}
                 </div>
-                <PickerLoginHelp />
-              </>
-            )}
-            <div className="actions">
-              <button
-                className="quiet"
-                disabled={busy}
-                onClick={() => {
-                  if (confirmDiscard())
+                <div className="workspace-dialog-file-group">
+                  <h4>Andre valg</h4>
+                  {(data.loaded || data.local) && <button className="quiet" onClick={downloadDraft}>{data.local ? 'Eksportér kladden som rå JSON' : 'Eksportér kladden'}</button>}
+                  {data.draft && <button className="quiet" disabled={busy || data.state === 'saving'} onClick={() => {
+                    if (!confirmDiscard()) return;
+                    workspaceSession.clear();
+                    setSettings(false);
+                    location.hash = '#/arbejdsrum';
+                  }}>Til startoverblik</button>}
+                </div>
+              </div>
+            </section>
+            {data.loaded && <details className="workspace-dialog-disclosure">
+              <summary>Filoplysninger og link</summary>
+              <div className="workspace-dialog-detail-content">
+                <dl>
+                  <div><dt>Fil-id</dt><dd><code>{data.loaded.basis.fileId}</code></dd></div>
+                  <div><dt>Version</dt><dd>{data.loaded.basis.version}</dd></div>
+                  <div><dt>Adgang</dt><dd>{data.loaded.metadata.writable ? 'Skriveadgang' : 'Læseadgang'}</dd></div>
+                  <div><dt>Mappe</dt><dd>{data.loaded.metadata.folderIds.length ? data.loaded.metadata.folderIds.map((id) => <a key={id} href={`https://drive.google.com/drive/folders/${id}`} target="_blank" rel="noreferrer">{id}</a>) : 'Ingen mappe angivet'}</dd></div>
+                </dl>
+                <label>Link til arbejdsrummet<input readOnly value={`${location.origin}${location.pathname}#/arbejdsrum/${fileId}`} onFocus={(event) => event.target.select()} /></label>
+                <p className="muted">Linket giver ingen adgang i sig selv. Åbn filen med din egen Google-konto.</p>
+              </div>
+            </details>}
+            {recent.length > 0 && <details className="workspace-dialog-disclosure workspace-dialog-recent">
+              <summary>Seneste filer <span>{recent.length}</span></summary>
+              <ul>{recent.map((entry) => <li key={entry.id}>
+                <button className="quiet" disabled={busy} onClick={() => openRecent(entry)}>{entry.name} · {entry.kind === 'drive' ? 'Google Drive' : 'Lokal fil'}{entry.kind === 'local-fallback' ? ' · Vælg fil igen' : ''}</button>
+                {recentRowError[entry.id] && <p role="alert">{recentRowError[entry.id]}</p>}
+              </li>)}</ul>
+            </details>}
+            {auth.status === 'connected' && <details className="workspace-dialog-disclosure workspace-dialog-advanced">
+              <summary>Avanceret om Google-adgang</summary>
+              <div className="workspace-dialog-detail-content">
+                <button className="quiet" disabled={busy} onClick={() => {
+                  if ((!data.loaded || confirmDiscard()) && window.confirm('Tilbagekald appens Google-adgang? Nyt samtykke kan blive nødvendigt.'))
                     void run(async () => {
-                      workspaceSession.clear();
-                      await connection.disconnect();
-                      setSettings(false);
-                    });
-                }}
-              >
-                Afbryd forbindelse / skift konto
-              </button>
-              <button
-                className="quiet"
-                disabled={busy || auth.status !== 'connected'}
-                onClick={() => {
-                  if (
-                    confirmDiscard() &&
-                    window.confirm('Tilbagekald appens Google-adgang? Nyt samtykke kan blive nødvendigt.')
-                  )
-                    void run(async () => {
-                      workspaceSession.clear();
+                      if (data.loaded) workspaceSession.clear();
                       await connection.disconnect(true);
                       setSettings(false);
                     });
-                }}
-              >
-                Tilbagekald Google-adgang
-              </button>
-            </div>
-            <p className="muted">
-              Afbrydelse rydder lokal adgang og arbejdsdata i appens faner. En allerede afsendt upload kan
-              stadig være gennemført.
-            </p>
+                }}>Tilbagekald Google-adgang</button>
+                <p className="muted">Afbrydelse rydder lokal adgang og arbejdsdata i appens faner. En allerede afsendt upload kan stadig være gennemført.</p>
+                <PickerLoginHelp />
+              </div>
+            </details>}
+            {data.loaded && <AiWorkspaceEntry fileId={data.loaded.basis.fileId} dirty={workspaceSession.dirty() || [...dirtyForms.current].some((form) => form.isConnected)} />}
           </Dialog>
         )}
         {recovery && (
@@ -915,6 +1080,7 @@ function App() {
             close={() => setCreating(false)}
           >
             <ActionForm
+              className="utility-form"
               disabled={busy}
               label={folderLink.trim() ? 'Opret arbejdsrum i mappen' : 'Vælg mappe og opret JSON-fil'}
               submit={(form) => {
@@ -937,8 +1103,10 @@ function App() {
                     folder = await chooseGoogleResource(true);
                   }
                   if (!folder) return;
-                  const loaded = await connection.client().create(folder, name, createWorkspace());
-                  workspaceSession.adopt(loaded);
+                  const draft = workspaceSession.snapshot().draft ?? createWorkspace();
+                  const loaded = await connection.client().create(folder, name, draft);
+                  if (workspaceSession.snapshot().draft) workspaceSession.placeDrive(loaded, draft);
+                  else workspaceSession.adopt(loaded);
                   await connection.rememberFile(loaded.metadata);
                   location.hash = `#/arbejdsrum/${loaded.basis.fileId}`;
                   setCreating(false);
@@ -988,6 +1156,7 @@ function App() {
           >
             <p>Et fillink åbner arbejdsrummet. Et mappelink viser filerne i mappen.</p>
             <ActionForm
+              className="utility-form"
               label={busy ? 'Åbner…' : 'Åbn link'}
               disabled={busy || auth.status !== 'connected'}
               submit={(form) => {

@@ -1,4 +1,4 @@
-import { createBrowserConnection, WorkspaceSession } from '@teamgym/drive';
+import { createBrowserConnection, IndexedRecentStore, RecentWorkspaces, WorkspaceSession } from '@teamgym/drive';
 import type { GoogleConfiguration } from '@teamgym/drive';
 import { reconcileWorkspace } from './inheritance-context';
 import { registry } from './rules';
@@ -10,6 +10,7 @@ export const googleConfig: GoogleConfiguration = {
 };
 export const configured = Object.values(googleConfig).every(Boolean);
 export const connection = createBrowserConnection(googleConfig);
+export const recentWorkspaces = new RecentWorkspaces(new IndexedRecentStore());
 export const workspaceSession = new WorkspaceSession(
   connection.client(),
   undefined,
@@ -28,17 +29,17 @@ export const workspaceSession = new WorkspaceSession(
 );
 let restoration: Promise<void> | undefined;
 export function restoreConnection() {
-  return (restoration ??= connection.restore());
+  return (restoration ??= connection.restore(/^#\/arbejdsrum\/[\w-]+/.test(location.hash) && !location.hash.includes('/kladde') && !location.hash.includes('/lokal')));
 }
 export function downloadDraft() {
   downloadCopy(workspaceSession.exportDraft());
 }
-export function downloadCopy(bytes: string) {
+export function downloadCopy(bytes: string, name = 'teamgym-kladde.json') {
   const blob = new Blob([bytes], { type: 'application/json' });
   const url = URL.createObjectURL(blob);
   const link = document.createElement('a');
   link.href = url;
-  link.download = 'teamgym-kladde.json';
+  link.download = name;
   link.click();
   setTimeout(() => URL.revokeObjectURL(url), 1000);
 }

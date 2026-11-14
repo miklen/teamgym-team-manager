@@ -696,7 +696,7 @@ export function WorkspaceReview({ applied }: { applied: () => void }) {
         </div>
         <div className="review-primary-action">
           <span>
-            {!data.loaded?.metadata.writable
+            {!(data.loaded?.metadata.writable ?? review.targetWritable)
               ? 'Du har kun læseadgang'
               : unresolved.length
                 ? 'Træf alle valg for at fortsætte'
@@ -707,7 +707,7 @@ export function WorkspaceReview({ applied }: { applied: () => void }) {
           ) : (
             <button
               disabled={
-                review.status !== 'ready' || result?.status !== 'valid' || !data.loaded?.metadata.writable
+                review.status !== 'ready' || result?.status !== 'valid' || !(data.loaded?.metadata.writable ?? review.targetWritable)
               }
               onClick={() =>
                 void workspaceSession.applyReview().then((success) => {

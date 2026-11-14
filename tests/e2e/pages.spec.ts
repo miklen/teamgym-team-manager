@@ -8,8 +8,8 @@ test('produktionsbase, assets, dybt hash-link og genindlæsning virker uden Goog
   });
   page.on('pageerror', (error) => errors.push(error.message));
   await page.goto('./#/arbejdsrum/syntetisk/hold/syntetisk/spring');
-  await expect(page.getByRole('heading', { level: 1 })).toHaveText('Holdets fælles planlægning');
-  await expect(page.getByText('Intet arbejdsrum åbent')).toBeVisible();
+  await expect(page.getByRole('heading', { level: 1 })).toHaveText('Åbn arbejdsrum på Drive');
+  await expect(page.getByRole('button', { name: 'Forbind til Google Drive' })).toBeVisible();
   await page.reload();
   await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
   expect(new URL(page.url()).hash).toContain('/hold/syntetisk/spring');
@@ -26,7 +26,7 @@ for (const viewport of [
   test(`starttilstand ved ${viewport.width}×${viewport.height} uden side-overflow`, async ({ page }) => {
     await page.setViewportSize(viewport);
     await page.goto('./');
-    await expect(page.getByRole('heading', { name: 'Forbind din Google-konto' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Planlæg dit hold.' })).toBeVisible();
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
     await page.getByRole('link', { name: 'TeamGym Team Manager' }).focus();
     await expect(page.getByRole('link', { name: 'TeamGym Team Manager' })).toBeFocused();

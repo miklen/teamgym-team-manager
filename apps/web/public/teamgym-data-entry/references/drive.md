@@ -2,6 +2,8 @@
 
 Brug kun den valgte Drive-fil gennem trænerens egen Google-forbindelse. Google MCP-værktøjer kan have forskellige navne; find funktioner til at læse filindhold og metadata, og til at erstatte indholdet i **samme fil-id**. Et fillink er en identifikator, ikke en adgangsbillet. Eksportér ikke arbejdsrumsindhold til en anden konto, fil eller tjeneste.
 
+En lokal kopi med `teamgym-local-copy`-indpakning er et separat filformat til appens egen sammenligning. Skriv aldrig indpakningen eller dens `origin` til Drive-filen.
+
 1. **Læs basis.** Hent hele JSON-filens bytes og Drive-metadata (fil-id, ETag og/eller version, ændringstid, skrivbarhed). Gem denne basis under arbejdet. Kontrollér `format: "teamgym-team-manager"` og `schemaVersion: 7` før redigering; lad appen migrere ældre formater. Hvis appen har en ugemt lokal kladde, ser agenten den ikke; bed træneren gemme eller eksportere den først.
 2. **Lav forslag.** Arbejd på en kopi. Slå alle berørte ID'er og pakkeversioner op i den læste fil, følg [filkontrakt](format.md), [registrering](registration.md) og [scenarier](scenarios.md), og bevar uvedkommende data. Øg rodens `revision` med én og sæt `updatedAt` til faktisk tidspunkt med tidszone. Bevar `recentOperations` helt uændret; en ekstern skrivning er ikke en app-operation. Sortér gerne objektnøgler, men aldrig betydende arrays. Vis træneren ændringer i almindeligt sprog, inklusive usikkerheder.
 3. **Kontrollér hele resultatet.** Kontrollér schema, alle ID'er og referencer, præcise definitioner, arveværdier og tre omgange i **alle** scenarier. Et JSON-schema alene kan ikke kontrollere tværgående domæneregler. Hvis du ikke kan kontrollere resultatet pålideligt, så stop og lad træneren bruge appen eller afklare det manglende.

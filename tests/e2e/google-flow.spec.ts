@@ -1,11 +1,14 @@
 import { expect, test } from './test';
 import { openWorkspace } from './drive-fixture';
 
-test('Google indlæses automatisk, men login starter først ved brugerens klik', async ({ page }) => {
+test('Google indlæses først, når en Drive-handling vælges', async ({ page }) => {
   await page.goto('./');
-  await expect(page.getByRole('button', { name: 'Forbind til Google Drive', exact: true })).toBeEnabled();
-  await expect(page.getByRole('button', { name: /Klargør/ })).toHaveCount(0);
+  await expect(page.getByRole('heading', { name: 'Planlæg dit hold.' })).toBeVisible();
   expect(await page.evaluate(() => 'syntheticTokenOptions' in window)).toBe(false);
+  await page.getByRole('button', { name: 'Åbn en gemt fil' }).click();
+  await page.getByRole('button', { name: 'Google Drive' }).click();
+  await expect(page.getByRole('status')).toContainText('Google-vinduet blev lukket');
+  expect(await page.evaluate(() => 'syntheticTokenOptions' in window)).toBe(true);
 });
 
 test('en indlæsningsfejl kan prøves igen uden ekstra normaltrin eller automatisk login', async ({
@@ -14,9 +17,11 @@ test('en indlæsningsfejl kan prøves igen uden ekstra normaltrin eller automati
 }) => {
   googleMock.failLoads = 1;
   await page.goto('./');
+  await page.getByRole('button', { name: 'Åbn en gemt fil' }).click();
+  await page.getByRole('button', { name: 'Google Drive' }).click();
   await expect(page.getByRole('button', { name: 'Prøv Google igen' })).toBeVisible();
   await page.getByRole('button', { name: 'Prøv Google igen' }).click();
-  await expect(page.getByRole('button', { name: 'Forbind til Google Drive', exact: true })).toBeEnabled();
+  await expect(page.getByRole('button', { name: 'Google Drive' })).toBeEnabled();
   expect(await page.evaluate(() => 'syntheticTokenOptions' in window)).toBe(false);
 });
 
@@ -26,7 +31,8 @@ for (const width of [1440, 390]) {
     const source = await openWorkspace(page);
     await expect(page.getByRole('heading', { name: 'Hold', exact: true })).toBeVisible();
     await page.getByRole('button', { name: 'Arbejdsrum', exact: true }).click();
-    await page.getByRole('button', { name: 'Opret arbejdsrum', exact: true }).click();
+    await page.getByRole('button', { name: 'Gem som…' }).click();
+    await page.getByRole('button', { name: 'Gem i Google Drive' }).click();
     await page.getByLabel('Arbejdsrummets navn').fill('Syntetisk sæson');
     await page.getByRole('button', { name: 'Vælg mappe og opret JSON-fil' }).click();
     expect(await page.evaluate(() => document.querySelectorAll('dialog:modal').length)).toBe(0);
@@ -47,7 +53,7 @@ for (const width of [1440, 390]) {
     await expect(page.getByRole('dialog')).toHaveCount(0);
     await expect(page.locator('iframe[title="Google Drive"]')).toHaveCount(0);
     expect(source.creates).toBe(1);
-    expect(source.created?.workspace.teams).toHaveLength(0);
+    expect(source.created?.workspace.teams).toHaveLength(source.workspace.teams.length);
     expect(source.workspace.athletes).toHaveLength(8);
     expect(source.failures).toEqual([]);
   });
@@ -59,6 +65,7 @@ test('filvalg fra indstillinger har heller ingen appmodal hen over Google', asyn
   await page.getByRole('button', { name: 'Arbejdsrum', exact: true }).click();
   await expect(page.getByText('Virker Vælg ikke?', { exact: false })).toContainText('Google-loginvindue bag filvælgeren');
   await page.getByRole('button', { name: 'Vælg anden fil' }).click();
+  await expect(page.locator('iframe[title="Google Drive"]')).toBeVisible();
   expect(await page.evaluate(() => (window as typeof window & { syntheticPickerTitles: string[] }).syntheticPickerTitles.at(-1)))
     .toBe('Vælg fil · Tjek Google-loginvindue bagved');
   expect(await page.evaluate(() => document.querySelectorAll('dialog:modal').length)).toBe(0);

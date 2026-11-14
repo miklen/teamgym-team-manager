@@ -16,3 +16,7 @@ export * from './storage';
 export * from './client';
 export * from './auth';
 export * from './workspace-session';
+export * from './local-workspace';
+export * from './local-file';
+export * from './recent';
+export * from './copy-target';

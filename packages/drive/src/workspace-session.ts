@@ -9,11 +9,15 @@ import type { MergeChoices, MergeContext, MergeResult, Workspace } from '@teamgy
 import { sha256 } from './client';
 import type { LoadedWorkspace, WorkspaceClient } from './client';
 import { DriveError } from './errors';
+import { saveLocalHandle } from './local-file';
+import type { OpenLocalFile } from './local-file';
 
 export type SaveState = 'loading' | 'unchanged' | 'changed' | 'saving' | 'saved' | 'conflict' | 'error';
 export interface WorkspaceView {
   migration: LoadedWorkspace | null;
+  localMigration: OpenLocalFile | null;
   loaded: LoadedWorkspace | null;
+  local: OpenLocalFile | null;
   draft: Workspace | null;
   state: SaveState;
   message: string;
@@ -24,6 +28,7 @@ export interface WorkspaceView {
     result: MergeResult | null;
     choices: MergeChoices;
     message: string;
+    targetWritable?: boolean;
   } | null;
 }
 interface PendingOperation {
@@ -37,7 +42,9 @@ interface PendingOperation {
 export class WorkspaceSession {
   private view: WorkspaceView = {
     migration: null,
+    localMigration: null,
     loaded: null,
+    local: null,
     draft: null,
     state: 'loading',
     message: '',
@@ -56,7 +63,9 @@ export class WorkspaceSession {
     remote: LoadedWorkspace;
     binding: string;
     context: MergeContext;
+    copy?: boolean;
   } | null = null;
+  private copyTarget: LoadedWorkspace | null = null;
   private contentGeneration = 0;
   private listeners = new Set<() => void>();
   constructor(
@@ -105,7 +114,9 @@ export class WorkspaceSession {
     this.contentGeneration++;
     this.publish({
       migration: null,
+      localMigration: null,
       loaded: structuredClone(loaded),
+      local: null,
       draft,
       state:
         loaded.originalBytes !== undefined || workspacePayload(draft) !== workspacePayload(loaded.workspace)
@@ -117,20 +128,94 @@ export class WorkspaceSession {
       review: null,
     });
   }
-  acceptMigration(discard = false) {
-    if (!this.view.migration) return;
+  startNew(workspace: Workspace, discard = false) {
+    if (this.inFlight) throw new DriveError('cancelled', 'Vent på gemningen, før du skifter arbejdsrum.');
     if (this.dirty() && !discard)
       throw new DriveError('cancelled', 'Bekræft kassation af kladden, eller eksportér den først.');
-    this.adoptAccepted(this.view.migration);
+    const draft = this.prepareDraft(structuredClone(validateWorkspace(workspace)));
+    this.generation++;
+    this.pending = null;
+    this.confirmedBase = null;
+    this.releaseReview();
+    this.contentGeneration++;
+    this.publish({
+      migration: null,
+      localMigration: null,
+      loaded: null,
+      local: null,
+      draft,
+      state: 'changed',
+      message: '',
+      newer: false,
+      operationCompleted: false,
+      review: null,
+    });
+  }
+  adoptLocal(opened: OpenLocalFile, discard = false) {
+    if (this.inFlight) throw new DriveError('cancelled', 'Vent på gemningen, før du skifter fil.');
+    if (this.dirty() && !discard)
+      throw new DriveError('cancelled', 'Bekræft kassation af kladden, eller eksportér den først.');
+    if (opened.originalBytes !== undefined) {
+      this.publish({ localMigration: opened, state: this.dirty() ? 'changed' : 'unchanged' });
+      return;
+    }
+    this.adoptLocalAccepted(opened);
+  }
+  private adoptLocalAccepted(opened: OpenLocalFile) {
+    const draft = this.prepareDraft(structuredClone(opened.workspace));
+    this.generation++;
+    this.pending = null;
+    this.confirmedBase = null;
+    this.releaseReview();
+    this.contentGeneration++;
+    this.publish({
+      migration: null,
+      localMigration: null,
+      loaded: null,
+      local: opened,
+      draft,
+      state: opened.originalBytes !== undefined || workspacePayload(draft) !== workspacePayload(opened.workspace)
+        ? 'changed' : 'unchanged',
+      message: '',
+      newer: false,
+      operationCompleted: false,
+      review: null,
+    });
+  }
+  placeLocal(opened: OpenLocalFile, sent: Workspace) {
+    if (!this.view.draft || this.view.draft.workspaceId !== sent.workspaceId || opened.workspace.workspaceId !== sent.workspaceId)
+      throw new DriveError('cancelled', 'Arbejdsrummet er ændret under gemning. Åbn den oprettede fil bevidst.');
+    const changedSince = workspacePayload(this.view.draft) !== workspacePayload(sent);
+    const current = this.view.draft;
+    this.adoptLocalAccepted(opened);
+    if (changedSince) this.publish({ draft: current, state: 'changed', message: 'Filen er oprettet. Du har nyere lokale ændringer.' });
+    else this.publish({ state: 'saved' });
+  }
+  placeDrive(loaded: LoadedWorkspace, sent: Workspace) {
+    if (!this.view.draft || this.view.draft.workspaceId !== sent.workspaceId || loaded.workspace.workspaceId !== sent.workspaceId)
+      throw new DriveError('cancelled', 'Arbejdsrummet er ændret under gemning. Åbn den oprettede fil bevidst.');
+    const changedSince = workspacePayload(this.view.draft) !== workspacePayload(sent);
+    const current = this.view.draft;
+    this.adoptAccepted(loaded);
+    if (changedSince) this.publish({ draft: current, state: 'changed', message: 'Filen er oprettet. Du har nyere lokale ændringer.' });
+    else this.publish({ state: 'saved' });
+  }
+  acceptMigration(discard = false) {
+    if (!this.view.migration && !this.view.localMigration) return;
+    if (this.dirty() && !discard)
+      throw new DriveError('cancelled', 'Bekræft kassation af kladden, eller eksportér den først.');
+    if (this.view.migration) this.adoptAccepted(this.view.migration);
+    else if (this.view.localMigration) this.adoptLocalAccepted(this.view.localMigration);
   }
   cancelMigration() {
     this.publish({
       migration: null,
-      state: this.dirty() ? 'changed' : this.view.loaded ? 'unchanged' : 'loading',
+      localMigration: null,
+      state: this.dirty() ? 'changed' : this.view.loaded || this.view.local ? 'unchanged' : 'loading',
     });
   }
   exportOriginal() {
-    const bytes = this.view.migration?.originalBytes ?? this.view.loaded?.originalBytes;
+    const bytes = this.view.migration?.originalBytes ?? this.view.localMigration?.originalBytes ?? this.view.loaded?.originalBytes ?? this.view.local?.originalBytes;
     if (bytes === undefined)
       throw new DriveError('format', 'Ingen original i et ældre format er indlæst.');
     return bytes;
@@ -142,7 +227,9 @@ export class WorkspaceSession {
     this.releaseReview();
     this.publish({
       loaded: null,
+      local: null,
       migration: null,
+      localMigration: null,
       draft: null,
       state: 'loading',
       message: '',
@@ -154,16 +241,18 @@ export class WorkspaceSession {
   dirty() {
     return (
       !!this.view.draft &&
-      !!this.view.loaded &&
-      (this.view.loaded.originalBytes !== undefined ||
-        workspacePayload(this.view.draft) !== workspacePayload(this.view.loaded.workspace))
+      (this.view.local
+        ? this.view.local.originalBytes !== undefined ||
+          workspacePayload(this.view.draft) !== workspacePayload(this.view.local.workspace)
+        : !this.view.loaded || this.view.loaded.originalBytes !== undefined ||
+          workspacePayload(this.view.draft) !== workspacePayload(this.view.loaded.workspace))
     );
   }
   edit(workspace: Workspace) {
-    if (!this.view.loaded?.metadata.writable)
+    if (!this.view.draft || (this.view.loaded && !this.view.loaded.metadata.writable))
       throw new DriveError('permission', 'Arbejdsrummet er åbent med læseadgang.');
     validateWorkspace(workspace);
-    if (workspace.workspaceId !== this.view.loaded.workspace.workspaceId)
+    if (workspace.workspaceId !== this.view.draft.workspaceId)
       throw new DriveError('format', 'Kladden tilhører et andet arbejdsrum.');
     this.contentGeneration++;
     this.publish({
@@ -179,8 +268,10 @@ export class WorkspaceSession {
         ? 'saving'
         : this.view.state === 'conflict'
           ? 'conflict'
-          : this.view.loaded.originalBytes === undefined &&
-              workspacePayload(workspace) === workspacePayload(this.view.loaded.workspace)
+          : (this.view.local?.originalBytes === undefined &&
+              !!this.view.local && workspacePayload(workspace) === workspacePayload(this.view.local.workspace)) ||
+            (this.view.loaded?.originalBytes === undefined &&
+              !!this.view.loaded && workspacePayload(workspace) === workspacePayload(this.view.loaded.workspace))
             ? 'unchanged'
             : 'changed',
     });
@@ -213,6 +304,7 @@ export class WorkspaceSession {
   save(): Promise<void> {
     if (this.view.review) return Promise.resolve();
     if (this.inFlight) return this.inFlight;
+    if (this.view.local) return this.saveLocal();
     if (!this.view.loaded || !this.view.draft || (!this.dirty() && !this.pending)) return Promise.resolve();
     if (!this.view.loaded.metadata.writable) {
       this.fail(new DriveError('permission', 'Filen er åbnet med læseadgang.'));
@@ -297,6 +389,36 @@ export class WorkspaceSession {
       .finally(() => {
         this.inFlight = null;
       });
+    return this.inFlight;
+  }
+  private saveLocal(): Promise<void> {
+    const local = this.view.local;
+    const draft = this.view.draft;
+    if (!local || !draft || !this.dirty()) return Promise.resolve();
+    if (!local.handle) {
+      this.fail(new DriveError('permission', 'Denne browser kan ikke skrive tilbage til den valgte fil. Hent en ny kopi.'));
+      return Promise.resolve();
+    }
+    const generation = this.generation;
+    const snapshot = structuredClone(draft);
+    this.publish({ state: 'saving', message: '' });
+    this.inFlight = saveLocalHandle(local.handle, local.basisBytes, snapshot, local.origin)
+      .then((saved) => {
+        if (generation !== this.generation) return;
+        const current = this.view.draft!;
+        const changedSince = workspacePayload(current) !== workspacePayload(snapshot);
+        this.publish({
+          local: saved,
+          draft: changedSince ? current : structuredClone(saved.workspace),
+          state: changedSince ? 'changed' : 'saved',
+          message: changedSince ? 'Filen er gemt. Du har nyere lokale ændringer.' : '',
+          operationCompleted: true,
+        });
+      })
+      .catch((error: unknown) => {
+        if (generation === this.generation) this.fail(error);
+      })
+      .finally(() => { this.inFlight = null; });
     return this.inFlight;
   }
   private recognize(current: LoadedWorkspace, operation: PendingOperation) {
@@ -417,6 +539,7 @@ export class WorkspaceSession {
   private releaseReview() {
     this.reviewGeneration++;
     this.comparison = null;
+    this.copyTarget = null;
   }
   cancelReview() {
     this.releaseReview();
@@ -427,6 +550,8 @@ export class WorkspaceSession {
       this.generation,
       this.contentGeneration,
       this.view.loaded?.basis,
+      this.view.local?.basisBytes,
+      this.view.local?.origin?.fileId,
       this.view.loaded?.metadata.writable,
       this.view.loaded && workspacePayload(this.view.loaded.workspace),
       this.view.draft && workspacePayload(this.view.draft),
@@ -435,6 +560,7 @@ export class WorkspaceSession {
     ]);
   }
   async beginReview() {
+    if (this.copyTarget && this.view.local) return this.beginCopyReview(this.copyTarget);
     if (this.inFlight || !this.view.loaded || !this.view.draft) return;
     this.releaseReview();
     const request = this.reviewGeneration;
@@ -490,6 +616,36 @@ export class WorkspaceSession {
       });
     }
   }
+  async beginCopyReview(target: LoadedWorkspace) {
+    const origin = this.view.local?.origin;
+    if (this.inFlight || !this.view.local || !this.view.draft || !origin)
+      throw new DriveError('format', 'Den lokale kopi har ingen kendt fælles basis.');
+    if (origin.fileId !== target.basis.fileId || origin.base.workspaceId !== this.view.draft.workspaceId || target.workspace.workspaceId !== this.view.draft.workspaceId)
+      throw new DriveError('format', 'Kopien har ikke en kendt fælles basis med den valgte Drive-fil.');
+    this.releaseReview();
+    this.copyTarget = target;
+    const request = this.reviewGeneration;
+    const generation = this.generation;
+    const binding = this.binding();
+    this.publish({ review: { status: 'loading', result: null, choices: {}, message: 'Henter den nyeste Drive-fil…', targetWritable: target.metadata.writable } });
+    try {
+      const current = await this.client.read(target.basis.fileId);
+      if (request !== this.reviewGeneration || generation !== this.generation) return;
+      if (binding !== this.binding()) throw new DriveError('cancelled', 'Kladden eller forbindelsen er ændret. Gennemgå igen.');
+      if (!current.metadata.writable) throw new DriveError('permission', 'Skriveadgangen er fjernet. Kladden er bevaret.');
+      if (current.workspace.workspaceId !== origin.base.workspaceId) throw new DriveError('format', 'Drive-filen er et andet arbejdsrum.');
+      const base = structuredClone(origin.base);
+      const local = structuredClone(this.view.draft!);
+      const context = this.mergeContext();
+      const result = mergeWorkspace(base, local, current.workspace, context);
+      this.comparison = { base, local, remote: structuredClone(current), binding: this.binding(), context, copy: true };
+      this.publish({ review: { status: 'ready', result, choices: {}, message: '', targetWritable: true } });
+    } catch (error) {
+      if (request !== this.reviewGeneration || generation !== this.generation) return;
+      this.comparison = null;
+      this.publish({ review: { status: binding !== this.binding() ? 'stale' : 'error', result: null, choices: {}, message: error instanceof Error ? error.message : 'Drive-filen kunne ikke hentes.', targetWritable: false } });
+    }
+  }
   chooseReview(choices: MergeChoices) {
     const comparison = this.comparison;
     if (!comparison || !this.view.review || this.view.review.status !== 'ready') return;
@@ -506,7 +662,7 @@ export class WorkspaceSession {
       comparison.context,
       choices,
     );
-    this.publish({ review: { status: 'ready', result, choices: { ...choices }, message: '' } });
+    this.publish({ review: { ...this.view.review, status: 'ready', result, choices: { ...choices }, message: '' } });
   }
   async applyReview(): Promise<boolean> {
     const comparison = this.comparison,
@@ -532,7 +688,7 @@ export class WorkspaceSession {
       if (comparison.binding !== this.binding())
         throw new DriveError('cancelled', 'Kladden eller forbindelsen er ændret. Gennemgå igen.');
       if (!current.metadata.writable) {
-        this.publish({ loaded: { ...this.view.loaded!, metadata: current.metadata } });
+        if (!comparison.copy && this.view.loaded) this.publish({ loaded: { ...this.view.loaded, metadata: current.metadata } });
         throw new DriveError('permission', 'Skriveadgangen er fjernet. Kladden kan eksporteres.');
       }
       if (workspacePayload(current.workspace) !== workspacePayload(comparison.remote.workspace))
@@ -557,6 +713,7 @@ export class WorkspaceSession {
       this.contentGeneration++;
       this.publish({
         loaded: current,
+        local: null,
         draft,
         review: null,
         newer: false,
