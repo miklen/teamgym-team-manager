@@ -57,12 +57,30 @@ test('filvalg fra indstillinger har heller ingen appmodal hen over Google', asyn
   const source = await openWorkspace(page);
   await expect(page.getByRole('heading', { name: 'Hold', exact: true })).toBeVisible();
   await page.getByRole('button', { name: 'Arbejdsrum', exact: true }).click();
+  await expect(page.getByText('Virker Vælg ikke?', { exact: false })).toContainText('Google-loginvindue bag filvælgeren');
   await page.getByRole('button', { name: 'Vælg anden fil' }).click();
+  expect(await page.evaluate(() => (window as typeof window & { syntheticPickerTitles: string[] }).syntheticPickerTitles.at(-1)))
+    .toBe('Vælg fil · Tjek Google-loginvindue bagved');
   expect(await page.evaluate(() => document.querySelectorAll('dialog:modal').length)).toBe(0);
   const picker = page.frameLocator('iframe[title="Google Drive"]');
   await picker.getByRole('button', { name: 'Accepter kun nødvendige' }).click();
   await picker.getByRole('button', { name: 'Annuller', exact: true }).click();
   await expect(page.getByRole('dialog', { name: 'Arbejdsrum og forbindelse' })).toBeVisible();
+  expect(source.puts).toBe(0);
+  expect(source.failures).toEqual([]);
+});
+
+test('Google-filvælgerens fejl lukker vælgeren og forklarer fejlen i arbejdsrummets dialog', async ({ page }) => {
+  const source = await openWorkspace(page);
+  await page.getByRole('button', { name: 'Arbejdsrum', exact: true }).click();
+  await page.getByRole('button', { name: 'Vælg anden fil' }).click();
+  await page.frameLocator('iframe[title="Google Drive"]').locator('body').evaluate(() => {
+    window.parent.postMessage({ source: 'synthetic-picker', action: 'error' }, '*');
+  });
+  await expect(page.locator('iframe[title="Google Drive"]')).toHaveCount(0);
+  await expect(page.getByRole('dialog', { name: 'Arbejdsrum og forbindelse' }).getByRole('alert'))
+    .toContainText('Google-filvælgeren meldte en fejl');
+  await expect(page.getByRole('heading', { name: 'Hold', exact: true })).toBeVisible();
   expect(source.puts).toBe(0);
   expect(source.failures).toEqual([]);
 });

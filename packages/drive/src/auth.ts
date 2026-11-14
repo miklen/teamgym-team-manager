@@ -446,7 +446,7 @@ export function pickGoogleResource(
   folder: boolean,
   target?: { fileId?: string; parentId?: string; includeFolders?: boolean },
 ): Promise<string | null> {
-  return new Promise((resolve) => {
+  return new Promise((resolve, reject) => {
     const view = new google.picker.DocsView(folder ? google.picker.ViewId.FOLDERS : google.picker.ViewId.DOCS)
       .setIncludeFolders(folder || !!target?.includeFolders)
       .setSelectFolderEnabled(folder || !!target?.includeFolders)
@@ -460,11 +460,20 @@ export function pickGoogleResource(
       .setOAuthToken(token)
       .setOrigin(location.origin)
       .setLocale('da')
+      .setTitle(`${folder ? 'Vælg mappe' : 'Vælg fil'} · Tjek Google-loginvindue bagved`)
       .addView(view)
       .setCallback((data) => {
-        if (data.action === google.picker.Action.PICKED || data.action === google.picker.Action.CANCEL) {
+        if (data.action === google.picker.Action.CANCEL) {
           picker.dispose();
-          resolve(data.action === google.picker.Action.PICKED ? (data.docs?.[0]?.id ?? null) : null);
+          resolve(null);
+        } else if (data.action === google.picker.Action.ERROR) {
+          picker.dispose();
+          reject(new DriveError('network', 'Google-filvælgeren meldte en fejl. Prøv igen, eller brug Åbn fra link.'));
+        } else if (data.action === google.picker.Action.PICKED) {
+          picker.dispose();
+          const fileId = data.docs?.[0]?.id;
+          if (fileId) resolve(fileId);
+          else reject(new DriveError('format', 'Google-filvælgeren returnerede ingen fil. Prøv igen.'));
         }
       })
       .build();

@@ -30,6 +30,7 @@ async function connectedStart(page: Page) {
   await page.goto('./');
   await page.getByRole('button', { name: 'Forbind til Google Drive', exact: true }).click();
   await expect(page.getByRole('heading', { name: 'Åbn holdets arbejdsrum' })).toBeVisible();
+  await expect(page.getByText('Virker Vælg ikke?', { exact: false })).toContainText('Google-loginvindue bag filvælgeren');
   return source;
 }
 

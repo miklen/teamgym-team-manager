@@ -38,17 +38,18 @@ export const test = base.extend<{ googleMock: GoogleMock }>({
         class DocsView { constructor(id) { this.folder = id === 'folders'; } setIncludeFolders(value){this.includeFolders=value;return this;} setSelectFolderEnabled(){return this;} setMimeTypes(){return this;} setMode(){return this;} setFileIds(value){this.fileId=value;return this;} setParent(value){this.parentId=value;return this;} }
         class PickerBuilder {
           setAppId(){return this;} setDeveloperKey(){return this;} setOAuthToken(){return this;} setOrigin(){return this;} setLocale(){return this;}
+          setTitle(value){window.syntheticPickerTitles=[...(window.syntheticPickerTitles||[]),value];return this;}
           addView(view){this.folder=view.folder;this.fileId=view.fileId; window.syntheticPickerViews=[...(window.syntheticPickerViews||[]),{folder:view.folder,fileId:view.fileId,parentId:view.parentId,includeFolders:view.includeFolders}]; return this;} setCallback(callback){this.callback=callback; return this;}
           build(){
             const wrapper = document.createElement('div'); wrapper.style.cssText='position:fixed;inset:0;z-index:200000;background:#ffffffee;display:grid;place-items:center';
             const frame = document.createElement('iframe'); frame.title='Google Drive'; frame.src='https://docs.google.com/picker?synthetic=true'; frame.style.cssText='width:min(600px,95vw);height:400px;border:1px solid'; wrapper.append(frame);
             const handler = (event) => { if(event.source !== frame.contentWindow || event.data.source !== 'synthetic-picker') return;
-              this.callback(event.data.action === 'cancel' ? {action:'cancel'} : {action:'picked', docs:[{id:this.fileId||(this.folder?'synthetic-folder':'synthetic-file')}]});
+              this.callback(event.data.action === 'cancel' ? {action:'cancel'} : event.data.action === 'error' ? {action:'error'} : {action:'picked', docs:[{id:this.fileId||(this.folder?'synthetic-folder':'synthetic-file')}]});
             };
             return {setVisible:()=>{document.body.append(wrapper);window.addEventListener('message',handler);},dispose:()=>{wrapper.remove();window.removeEventListener('message',handler);}};
           }
         }
-        window.google.picker={DocsView,PickerBuilder,DocsViewMode:{LIST:'list'},ViewId:{FOLDERS:'folders',DOCS:'docs'},Action:{PICKED:'picked',CANCEL:'cancel'}}; options.callback();
+        window.google.picker={DocsView,PickerBuilder,DocsViewMode:{LIST:'list'},ViewId:{FOLDERS:'folders',DOCS:'docs'},Action:{PICKED:'picked',CANCEL:'cancel',ERROR:'error'}}; options.callback();
       }};`,
       }),
     );

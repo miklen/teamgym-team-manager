@@ -40,6 +40,14 @@ const saveLabels = {
   conflict: 'Nyere fil · kladde bevaret',
   error: 'Fejl · kladde bevaret',
 };
+function PickerLoginHelp() {
+  return (
+    <p className="picker-login-help">
+      Virker Vælg ikke? Se efter et Google-loginvindue bag filvælgeren. Log ind dér med den samme konto,
+      og prøv igen.
+    </p>
+  );
+}
 function App() {
   const auth = useSyncExternalStore(connection.subscribe, connection.snapshot);
   const data = useSyncExternalStore(workspaceSession.subscribe, workspaceSession.snapshot);
@@ -589,24 +597,27 @@ function App() {
                       </p>
                     )}
                     {auth.status === 'connected' ? (
-                      <div className="actions">
-                        <button disabled={busy || !ready} onClick={() => void chooseFile()}>
-                          Vælg eksisterende arbejdsrum
-                        </button>
-                        <button
-                          disabled={busy || !ready}
-                          className="quiet"
-                          onClick={() => {
-                            setError('');
-                            setOpeningLink(true);
-                          }}
-                        >
-                          Åbn fra link
-                        </button>
-                        <button disabled={busy || !ready} className="quiet" onClick={() => setCreating(true)}>
-                          Opret arbejdsrum
-                        </button>
-                      </div>
+                      <>
+                        <div className="actions">
+                          <button disabled={busy || !ready} onClick={() => void chooseFile()}>
+                            Vælg eksisterende arbejdsrum
+                          </button>
+                          <button
+                            disabled={busy || !ready}
+                            className="quiet"
+                            onClick={() => {
+                              setError('');
+                              setOpeningLink(true);
+                            }}
+                          >
+                            Åbn fra link
+                          </button>
+                          <button disabled={busy || !ready} className="quiet" onClick={() => setCreating(true)}>
+                            Opret arbejdsrum
+                          </button>
+                        </div>
+                        <PickerLoginHelp />
+                      </>
                     ) : (
                       <>
                         <label className="check">
@@ -756,6 +767,7 @@ function App() {
         {settings && (
           <Dialog title="Arbejdsrum og forbindelse" suspended={pickerActive} close={() => setSettings(false)}>
             <p>{auth.account ? `${auth.account.name} · ${auth.account.email}` : 'Ingen konto forbundet.'}</p>
+            {error && !openingLink && !creating && <p className="notice" role="alert">{error}</p>}
             <p>
               {auth.remembered
                 ? 'Forbindelsen huskes indtil Googles token udløber.'
@@ -805,32 +817,35 @@ function App() {
               </>
             )}
             {auth.status === 'connected' && (
-              <div className="actions">
-                <button
-                  disabled={!ready || busy || data.state === 'saving'}
-                  onClick={() => void chooseFile()}
-                >
-                  Vælg anden fil
-                </button>
-                <button
-                  disabled={!ready || busy || data.state === 'saving'}
-                  className="quiet"
-                  onClick={() => {
-                    setError('');
-                    setOpeningLink(true);
-                  }}
-                >
-                  Åbn fra link
-                </button>
-                <button
-                  disabled={!ready || busy || data.state === 'saving'}
-                  onClick={() => {
-                    if (confirmDiscard()) setCreating(true);
-                  }}
-                >
-                  Opret arbejdsrum
-                </button>
-              </div>
+              <>
+                <div className="actions">
+                  <button
+                    disabled={!ready || busy || data.state === 'saving'}
+                    onClick={() => void chooseFile()}
+                  >
+                    Vælg anden fil
+                  </button>
+                  <button
+                    disabled={!ready || busy || data.state === 'saving'}
+                    className="quiet"
+                    onClick={() => {
+                      setError('');
+                      setOpeningLink(true);
+                    }}
+                  >
+                    Åbn fra link
+                  </button>
+                  <button
+                    disabled={!ready || busy || data.state === 'saving'}
+                    onClick={() => {
+                      if (confirmDiscard()) setCreating(true);
+                    }}
+                  >
+                    Opret arbejdsrum
+                  </button>
+                </div>
+                <PickerLoginHelp />
+              </>
             )}
             <div className="actions">
               <button
