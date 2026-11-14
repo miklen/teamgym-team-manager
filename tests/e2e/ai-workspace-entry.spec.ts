@@ -29,7 +29,8 @@ test('AI-indgangen bruger kun valgt fil, kopierer starttekst og advarer om ugemt
   await expect(dialog.getByRole('heading', { name: 'Inddata med din egen AI-agent' })).toBeVisible();
   await expect(dialog.getByText(/Direkte Google-skrivning kan overskrive en samtidig ændring/)).toBeVisible();
   const skill = dialog.getByRole('link', { name: 'Læs inddata-skill' });
-  await expect(skill).toHaveAttribute('href', /\/teamgym-team-manager\/teamgym-data-entry\/index\.html$/);
+  const expectedGuide = new URL('teamgym-data-entry/index.html', page.url()).href;
+  await expect(skill).toHaveAttribute('href', expectedGuide);
   await expect(dialog.getByRole('link', { name: 'Åbn den valgte Drive-fil' })).toHaveAttribute('href', 'https://drive.google.com/file/d/synthetic-file/view');
   const start = dialog.getByLabel('Starttekst til din agent');
   const text = await start.inputValue();
