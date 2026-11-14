@@ -3,6 +3,30 @@ import { createWorkspace, renameTeam, serializeWorkspace } from '@teamgym/domain
 import { readFile } from 'node:fs/promises';
 import { openWorkspace } from './drive-fixture';
 
+test('nyt arbejdsrum viser hvorfor holdet skal oprettes før navigationen åbner', async ({ page }) => {
+  await page.goto('./');
+  await page.getByRole('button', { name: 'Start fra bunden' }).click();
+
+  await expect(page.getByRole('heading', { name: 'Opret dit første hold' })).toBeVisible();
+  await expect(page.getByText(/Vælg reglement og holdprofil, så appen kan tilpasse planlægningen/)).toBeVisible();
+  const navigation = page.getByRole('navigation', { name: 'Hovednavigation' });
+  await expect(navigation.getByRole('link', { name: 'Hold', exact: true })).toBeVisible();
+  for (const name of ['Gymnaster', 'Springplan', 'Holdprofil', 'Rytme', 'Reglement']) {
+    await expect(navigation.getByRole('button', { name, exact: true })).toBeDisabled();
+  }
+
+  await page.getByRole('button', { name: 'Opret hold', exact: true }).click();
+  await expect(page.getByRole('dialog', { name: 'Opret hold' })).toBeVisible();
+  await expect(page.getByLabel('Regelpakke')).toBeVisible();
+  await expect(page.getByLabel('Holdprofil')).toBeVisible();
+  await page.getByLabel('Holdnavn').fill('Syntetisk første hold');
+  await page.getByRole('button', { name: 'Opdater' }).click();
+
+  await expect(navigation.getByRole('link', { name: 'Springplan' })).toBeVisible();
+  await navigation.getByRole('link', { name: 'Springplan' }).click();
+  await expect(page.getByRole('heading', { name: 'Springplan' })).toBeVisible();
+});
+
 test('første kladde kan redigeres, annulleres og hentes som lokal fil uden Google', async ({ page }) => {
   await page.addInitScript(() => {
     Object.defineProperty(window, 'showSaveFilePicker', { value: undefined });

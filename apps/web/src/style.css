@@ -401,10 +401,12 @@ p {
   flex-direction: column;
   gap: 6px;
 }
-.workspace-bar nav a {
+.workspace-bar nav a,
+.workspace-bar nav button {
   display: flex;
   align-items: center;
   gap: 13px;
+  width: 100%;
   min-height: 48px;
   padding: 11px 16px;
   border-radius: 9px;
@@ -412,9 +414,16 @@ p {
   color: #bfccdf;
   font-size: 0.85rem;
   font-weight: 550;
+  justify-content: flex-start;
+  text-align: left;
   transition:
     background 140ms ease,
     color 140ms ease;
+}
+.workspace-bar nav button:disabled {
+  background: none;
+  color: #a0aec4;
+  opacity: 0.65;
 }
 .workspace-bar nav a:hover {
   background: #ffffff09;
@@ -425,7 +434,7 @@ p {
   color: #fff;
   box-shadow: 0 4px 10px #0a17331a;
 }
-.workspace-bar nav a .icon {
+.workspace-bar nav :is(a, button) .icon {
   width: 19px;
   height: 19px;
   flex-basis: 19px;
@@ -2144,6 +2153,104 @@ footer {
   max-width: none;
   font-size: 0.875rem;
 }
+.team-onboarding {
+  display: grid;
+  grid-template-columns: minmax(0, 1.5fr) minmax(230px, 0.85fr);
+  max-width: 1050px;
+  min-height: 370px;
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  overflow: hidden;
+  box-shadow: 0 18px 48px #2437580a;
+}
+.team-onboarding-intro {
+  padding: clamp(30px, 5vw, 66px);
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: center;
+}
+.team-onboarding-step {
+  color: var(--accent);
+  font-size: 0.7rem;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  margin-bottom: 20px;
+}
+.team-onboarding h2 {
+  font-size: clamp(1.8rem, 3.1vw, 2.65rem);
+  line-height: 1.15;
+  letter-spacing: -0.055em;
+  margin-bottom: 14px;
+}
+.team-onboarding-intro p {
+  color: var(--muted);
+  max-width: 47ch;
+  font-size: 0.92rem;
+  line-height: 1.75;
+  margin: 0 0 28px;
+}
+.team-onboarding-intro button {
+  padding-inline: 20px;
+  min-height: 48px;
+}
+.team-onboarding-intro button .icon {
+  width: 17px;
+  height: 17px;
+  flex-basis: 17px;
+  transition: transform 140ms ease;
+}
+.team-onboarding-intro button:hover:not(:disabled) .icon {
+  transform: translateX(3px);
+}
+.team-onboarding-intro > small {
+  margin-top: 12px;
+}
+.team-onboarding-path {
+  list-style: none;
+  margin: 0;
+  padding: 38px clamp(24px, 3vw, 42px);
+  background: #f6f8fc;
+  border-left: 1px solid var(--line);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+.team-onboarding-path li {
+  display: grid;
+  grid-template-columns: 34px minmax(0, 1fr);
+  column-gap: 12px;
+  align-items: baseline;
+  padding: 17px 0;
+  border-bottom: 1px solid #dfe5f0;
+  color: #65728a;
+}
+.team-onboarding-path li:last-child {
+  border: 0;
+}
+.team-onboarding-path li > span {
+  grid-row: span 2;
+  color: #8491a9;
+  font-size: 0.75rem;
+  font-weight: 750;
+}
+.team-onboarding-path strong {
+  color: #475671;
+  font-size: 0.82rem;
+  font-weight: 700;
+}
+.team-onboarding-path small {
+  grid-column: 2;
+  color: #79869c;
+  font-size: 0.72rem;
+  margin-top: 2px;
+}
+.team-onboarding-path .is-current > span,
+.team-onboarding-path .is-current strong {
+  color: var(--accent);
+}
 .notice {
   border-radius: 10px;
   font-size: 0.875rem;
@@ -2391,7 +2498,8 @@ footer {
     border-radius: 17px;
     box-shadow: 0 8px 32px #16274430;
   }
-  .workspace-bar nav a {
+  .workspace-bar nav a,
+  .workspace-bar nav button {
     flex: 1;
     flex-direction: column;
     gap: 4px;
@@ -2399,8 +2507,10 @@ footer {
     font-size: 0.6rem;
     min-height: 52px;
     border-radius: 11px;
+    justify-content: center;
+    text-align: center;
   }
-  .workspace-bar nav a .icon {
+  .workspace-bar nav :is(a, button) .icon {
     width: 20px;
     height: 20px;
     flex-basis: 20px;
@@ -2421,6 +2531,23 @@ footer {
     min-height: 0;
     overflow: auto;
     margin-bottom: calc(94px + env(safe-area-inset-bottom, 0px));
+  }
+  .team-onboarding {
+    grid-template-columns: 1fr;
+  }
+  .team-onboarding-intro {
+    padding: 30px 24px 34px;
+  }
+  .team-onboarding-step {
+    margin-bottom: 16px;
+  }
+  .team-onboarding-path {
+    border-left: 0;
+    border-top: 1px solid var(--line);
+    padding: 15px 24px;
+  }
+  .team-onboarding-path li {
+    padding: 10px 0;
   }
   .has-workspace footer {
     display: none;

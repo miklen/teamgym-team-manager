@@ -646,7 +646,12 @@ function App() {
               </select>
             </label>
             <nav aria-label="Hovednavigation">
-              {navigation.map(({ key, label, icon }) => (
+              {navigation.map(({ key, label, icon }) => !teamId && key !== 'arbejdsrum' ? (
+                <button key={key} type="button" disabled aria-describedby="team-setup-hint">
+                  <Icon name={icon} />
+                  {label}
+                </button>
+              ) : (
                 <a
                   key={key}
                   aria-current={page === key ? 'page' : undefined}
@@ -683,12 +688,12 @@ function App() {
                       ? 'Ukendt regelpakke'
                       : 'Intet hold endnu'}
                 </strong>
-                <small>
+                <small id={!teamId ? 'team-setup-hint' : undefined}>
                   {binding?.status === 'known'
                     ? `${team?.rulesetBinding.rulesetId} ${team?.rulesetBinding.packageVersion}`
                     : team
                       ? 'Data er bevaret'
-                      : 'Opret dit første hold'}
+                      : 'Opret hold for at åbne siderne'}
                 </small>
               </div>
             </div>

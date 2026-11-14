@@ -5,7 +5,7 @@ import { applyVersionChange, previewVersionChange } from '@teamgym/rules';
 import { reconcileVersionPreview } from './inheritance-context';
 import type { VersionChangePreview } from '@teamgym/rules';
 import type { DataProps } from './athletes';
-import { ActionForm, Decision, Dialog, Empty, points, SourceLinks, statusText } from './components';
+import { ActionForm, Decision, Dialog, points, SourceLinks, statusText } from './components';
 import { registry } from './rules';
 import { Avatar, Icon } from './ui';
 
@@ -28,15 +28,32 @@ export function Teams({
       <div className="page-title">
         <div>
           <h1>Hold</h1>
-          <p className="page-description">Vælg et hold, og fortsæt planlægningen.</p>
+          {teams.length > 0 && <p className="page-description">Vælg et hold, og fortsæt planlægningen.</p>}
         </div>
-        <button disabled={!writable} onClick={() => setCreating(true)}>
-          <Icon name="plus" />
-          Opret hold
-        </button>
+        {teams.length > 0 && (
+          <button disabled={!writable} onClick={() => setCreating(true)}>
+            <Icon name="plus" />
+            Opret hold
+          </button>
+        )}
       </div>
       {!teams.length ? (
-        <Empty>Opret det første hold. Hvert hold får sit eget reglement og seks omgange.</Empty>
+        <section className="team-onboarding" aria-labelledby="first-team-heading">
+          <div className="team-onboarding-intro">
+            <span className="team-onboarding-step">01 / Kom i gang</span>
+            <h2 id="first-team-heading">Opret dit første hold</h2>
+            <p>Vælg reglement og holdprofil, så appen kan tilpasse planlægningen til holdet. Derefter åbner de øvrige sider.</p>
+            <button disabled={!writable} onClick={() => setCreating(true)}>
+              Opret hold <Icon name="arrow" />
+            </button>
+            {!writable && <small>Du skal have skriveadgang til arbejdsrummet for at oprette et hold.</small>}
+          </div>
+          <ol className="team-onboarding-path" aria-label="Sådan kommer du i gang">
+            <li className="is-current"><span>01</span><strong>Hold og reglement</strong><small>Start her</small></li>
+            <li><span>02</span><strong>Gymnaster</strong><small>Åbner med holdet</small></li>
+            <li><span>03</span><strong>Planlægning</strong><small>Åbner med holdet</small></li>
+          </ol>
+        </section>
       ) : (
         <ul className="entity-list team-list">
           {teams.map((team) => {
