@@ -1,5 +1,7 @@
 import AxeBuilder from '@axe-core/playwright';
+import { readFile } from 'node:fs/promises';
 import type { Page } from '@playwright/test';
+import { PDFDocument } from 'pdf-lib';
 import { setRoundEntries, setArchived } from '@teamgym/domain';
 import { openWorkspace } from './drive-fixture';
 import { scenarioWorkspace } from '../fixtures/scenario-workspace';
@@ -17,6 +19,84 @@ async function menu(page: Page, name: string) {
   await page.getByRole('button', { name: /^Menu for / }).click();
   await page.getByRole('menuitem', { name, exact: true }).click();
 }
+
+test('PDF følger valgt ugemt scenarie uden Drive-kald eller gemning', async ({ page }) => {
+  const workspace = scenarioWorkspace();
+  workspace.plans[0]!.tumbling[1]!.rounds[0].entries.reverse();
+  const source = await openWorkspace(page, workspace);
+  await spring(page);
+  await page.getByRole('tab', { name: 'Plan B', exact: true }).click();
+  await expect(page.getByRole('button', { name: 'Download som PDF' })).toBeVisible();
+  await page.getByRole('button', { name: /^Handlinger for Syntetisk gymnast 5.*i 1\. omgang$/ }).click();
+  await page.getByRole('menuitem', { name: /^Flyt Syntetisk gymnast 5.* op i 1\. omgang$/ }).click();
+  await expect(page.getByRole('button', { name: /Lokale ændringer/ })).toBeVisible();
+  let driveRequests = 0;
+  page.on('request', (request) => { if (request.url().startsWith('https://www.googleapis.com/')) driveRequests++; });
+  const downloadEvent = page.waitForEvent('download');
+  await page.getByRole('button', { name: 'Download som PDF' }).click();
+  const download = await downloadEvent;
+  expect(download.suggestedFilename()).toBe('Syntetisk hold A - Bane - Plan B.pdf');
+  const document = await PDFDocument.load(await readFile(await download.path()));
+  expect(document.getTitle()).toContain('Plan B');
+  expect(document.getTitle()).not.toContain('Plan A');
+  expect(document.getKeywords()).toContain('Ugemt kladde');
+  const subject = document.getSubject()!;
+  expect(subject.indexOf('Syntetisk gymnast 5')).toBeLessThan(subject.indexOf('Syntetisk gymnast 6'));
+  expect(document.getPageCount()).toBeGreaterThan(0);
+  expect(source.puts).toBe(0);
+  expect(driveRequests).toBe(0);
+  await expect(page.getByRole('button', { name: /Lokale ændringer/ })).toBeVisible();
+  expect(source.failures).toEqual([]);
+});
+
+test('PDF kan downloades med læseadgang', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  const source = await openWorkspace(page, scenarioWorkspace(), false);
+  await spring(page);
+  await expect(page.getByRole('button', { name: 'Download som PDF' })).toBeVisible();
+  const event = page.waitForEvent('download');
+  await page.getByRole('button', { name: 'Download som PDF' }).click();
+  expect((await event).suggestedFilename()).toContain('Plan A.pdf');
+  expect(source.puts).toBe(0);
+  expect(source.failures).toEqual([]);
+});
+
+test('PDF-fejl forklares uden at ændre kladden', async ({ page }) => {
+  const source = await openWorkspace(page, scenarioWorkspace());
+  await spring(page);
+  await page.getByRole('tab', { name: 'Plan B', exact: true }).click();
+  await page.getByRole('button', { name: /^Menu for / }).click();
+  await page.getByRole('menuitem', { name: 'Flyt til venstre' }).click();
+  await expect(page.getByRole('button', { name: /Lokale ændringer/ })).toBeVisible();
+  await page.route('**/fonts/manrope-variable.ttf', (route) => route.fulfill({ status: 503, body: '' }));
+  await page.getByRole('button', { name: 'Download som PDF' }).click();
+  await expect(page.getByRole('alert')).toContainText('PDF-skrifttypen kunne ikke indlæses');
+  await expect(page.getByRole('button', { name: /Lokale ændringer/ })).toBeVisible();
+  expect(source.puts).toBe(0);
+  expect(source.failures).toEqual([]);
+});
+
+test('ikke anvendte formularvalg kommer ikke med i PDF', async ({ page }) => {
+  const workspace = scenarioWorkspace();
+  workspace.plans[0]!.tumbling[0]!.rounds[0].reserves = [];
+  const source = await openWorkspace(page, workspace);
+  await spring(page);
+  await page.locator('.round-entries .entry-name').first().click();
+  const editor = page.getByRole('dialog', { name: 'Redigér omgangsplads' });
+  await chooseAthlete(editor, 'Syntetisk gymnast 8');
+  await editor.getByRole('button', { name: 'Luk dialog' }).click();
+  const guard = page.getByRole('dialog', { name: 'Gem formularændringer?' });
+  await expect(guard).toBeVisible();
+  await guard.getByRole('button', { name: 'Kassér' }).click();
+  const event = page.waitForEvent('download');
+  await page.getByRole('button', { name: 'Download som PDF' }).click();
+  const document = await PDFDocument.load(await readFile(await (await event).path()));
+  const firstRound = document.getSubject()!.split(' | ')[0]!;
+  expect(firstRound).toContain('Maja Test');
+  expect(firstRound).not.toContain('Syntetisk gymnast 8');
+  expect(source.puts).toBe(0);
+  expect(source.failures).toEqual([]);
+});
 
 test('scenarier er lokal navigation pr. hold og disciplin og huskes mellem sider', async ({ page }) => {
   const source = await openWorkspace(page, scenarioWorkspace());

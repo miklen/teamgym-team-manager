@@ -45,6 +45,7 @@ for (const width of [1440, 390]) {
     await page.screenshot({ path: `tmp/ui-qa/drive-fillink-${width}.png`, animations: 'disabled' });
     await page.getByRole('button', { name: 'Åbn link', exact: true }).click();
     await expect(page.getByRole('heading', { name: 'Hold', exact: true })).toBeVisible();
+    await expect(page).toHaveURL(/#\/arbejdsrum\/synthetic-file$/);
     await expect(page.locator('iframe[title="Google Drive"]')).toHaveCount(0);
     expect(page.url()).not.toContain('resourcekey');
     expect(source.puts).toBe(0);

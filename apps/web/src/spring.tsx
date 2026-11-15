@@ -20,6 +20,7 @@ import { registry } from './rules';
 import { usePotentials } from './use-potentials';
 import { springDirectionText, springDisplayName } from './spring-library';
 import { ScenarioBar } from './scenario-bar';
+import { projectScenarioPdf } from './scenario-pdf-model';
 import { useScenarioSelection } from './scenario-context';
 import { ReserveList } from './reserves';
 import {
@@ -43,7 +44,7 @@ import { MaximumScoreMetric, RoundPlannedExecution, RoundSpotShare, SlotSpot, sp
 import type { SpotChange } from './planned-spot';
 import './round-order.css';
 
-export function SpringPage(props: DataProps & { teamId: string }) {
+export function SpringPage(props: DataProps & { teamId: string; unsaved: boolean }) {
   const team = props.workspace.teams.find((item) => item.id === props.teamId)!;
   const resolved = registry.resolve(team.rulesetBinding);
   const [discipline, setDiscipline] = useState<SpringDiscipline>('tumbling');
@@ -54,6 +55,32 @@ export function SpringPage(props: DataProps & { teamId: string }) {
   );
   const leave = useRef<((action: () => void) => void) | null>(null);
   const request = (action: () => void) => (leave.current ? leave.current(action) : action());
+  const [exportRequested, setExportRequested] = useState(false);
+  const [exportBusy, setExportBusy] = useState(false);
+  const [exportError, setExportError] = useState('');
+  useEffect(() => {
+    if (!exportRequested) return;
+    setExportRequested(false);
+    const snapshot = structuredClone(props.workspace);
+    const selectedTeam = props.teamId;
+    const selectedDiscipline = discipline;
+    const selectedScenario = scenarioId;
+    const exportedAt = new Date();
+    const unsaved = props.unsaved;
+    setExportBusy(true);
+    setExportError('');
+    void (async () => {
+      try {
+        const model = projectScenarioPdf({ workspace: snapshot, teamId: selectedTeam, discipline: selectedDiscipline, scenarioId: selectedScenario, rulePackage: resolved.status === 'known' ? resolved.rulePackage : null, exportedAt, unsaved });
+        const { downloadScenarioPdf } = await import('./scenario-pdf');
+        await downloadScenarioPdf(model);
+      } catch (error) {
+        setExportError(error instanceof Error ? error.message : 'PDF kunne ikke oprettes. Prøv igen.');
+      } finally {
+        setExportBusy(false);
+      }
+    })();
+  }, [exportRequested]);
   return (
     <>
       <div className="page-title spring-title">
@@ -84,6 +111,9 @@ export function SpringPage(props: DataProps & { teamId: string }) {
         profile={resolved.status === 'known' ? resolved.profile : null}
         rulePackage={resolved.status === 'known' ? resolved.rulePackage : null}
         select={(id) => request(() => selectScenario(id))}
+        onExport={() => request(() => setExportRequested(true))}
+        exportBusy={exportBusy}
+        exportError={exportError}
       />
       <div
         role="tabpanel"

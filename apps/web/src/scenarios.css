@@ -18,10 +18,37 @@
   font-weight: 650;
   letter-spacing: 0.08em;
   text-transform: uppercase;
+  flex-wrap: wrap;
 }
 .scenario-heading small {
   letter-spacing: 0;
   text-transform: none;
+}
+.scenario-heading button.quiet.scenario-export {
+  margin-left: auto;
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 8px 12px;
+  border: 1px solid var(--line, #e0e5ef);
+  border-radius: 8px;
+  background: var(--paper, #fff);
+  color: #435572;
+  font-size: 0.8rem;
+  font-weight: 650;
+  letter-spacing: normal;
+  text-transform: none;
+  white-space: nowrap;
+}
+.scenario-heading button.quiet.scenario-export:hover:not(:disabled) {
+  border-color: #c5d0e3;
+  background: #f5f7fc;
+  color: var(--accent);
+}
+.scenario-heading button.quiet.scenario-export .icon {
+  width: 16px;
+  height: 16px;
 }
 .scenario-navigation {
   display: flex;

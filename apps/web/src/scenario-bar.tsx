@@ -11,6 +11,7 @@ import type { SpringDiscipline } from '@teamgym/domain';
 import type { RulePackage, TeamProfile } from '@teamgym/rules';
 import type { DataProps } from './athletes';
 import { Dialog, extraLimitText } from './components';
+import { Icon } from './ui';
 import './scenarios.css';
 
 export function ScenarioBar({
@@ -23,6 +24,9 @@ export function ScenarioBar({
   profile,
   rulePackage,
   select,
+  onExport,
+  exportBusy,
+  exportError,
 }: DataProps & {
   planId: string;
   discipline: SpringDiscipline;
@@ -30,6 +34,9 @@ export function ScenarioBar({
   profile: TeamProfile | null;
   rulePackage: RulePackage | null;
   select: (id: string) => void;
+  onExport: () => void;
+  exportBusy: boolean;
+  exportError: string;
 }) {
   const scenarios = workspace.plans.find((item) => item.id === planId)![discipline];
   const current = scenarios.find((item) => item.id === scenarioId)!;
@@ -142,11 +149,23 @@ export function ScenarioBar({
     setMode(null);
     select(id);
   }
+  function requestExport() {
+    if (mode && ['new', 'copy', 'rename'].includes(mode) && name !== initialName.current) {
+      setError('Anvend eller forkast navneformularens valg før PDF-download.');
+      form.current?.scrollIntoView({ block: 'center' });
+      return;
+    }
+    onExport();
+  }
   return (
     <section className="scenario-bar" aria-label="Scenarier">
       <div className="scenario-heading">
         <span>Scenarier</span>
         {!writable && <small>Læseadgang · ændringer er låst</small>}
+        <button className="quiet scenario-export" type="button" disabled={exportBusy} onClick={requestExport}>
+          <Icon name="download" />
+          {exportBusy ? 'Opretter PDF…' : 'Download som PDF'}
+        </button>
       </div>
       <div className="scenario-navigation">
         <div
@@ -340,6 +359,7 @@ export function ScenarioBar({
       <p className="sr-only" role="status">
         {status}
       </p>
+      {exportError && <p className="notice" role="alert">PDF-download mislykkedes: {exportError}</p>}
       {mode && ['new', 'copy', 'rename'].includes(mode) && (
         <form
           ref={form}

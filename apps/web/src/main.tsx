@@ -847,6 +847,7 @@ function App() {
                 change={(next) => workspaceSession.edit(reconcileWorkspace(next))}
                 writable={writable}
                 teamId={teamId}
+                unsaved={!data.loaded || workspaceSession.dirty()}
               />
             )}
           </div>
