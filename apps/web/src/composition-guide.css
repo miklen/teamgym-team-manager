@@ -17,9 +17,12 @@
 .guide-overview-toggle span { display: inline-block; margin-left: 4px; }
 .composition-guide-disclosure[open] .guide-overview-toggle span { transform: rotate(180deg); }
 .composition-guide-expanded { border-top: 1px solid var(--line); padding: 14px 22px 14px; }
+.composition-guide-expanded { display: flex; flex-direction: column; gap: 20px; }
 .composition-guide-heading { display: flex; justify-content: space-between; align-items: center; gap: 16px; margin-bottom: 14px; }
+.composition-guide-heading { margin-bottom: 0; }
+.composition-guide-heading h2 { margin: 0 0 3px; font-size: 1rem; letter-spacing: -.025em; }
 .composition-guide-heading p, .composition-guide-note { margin: 0; color: var(--muted); font-size: .76rem; }
-.composition-guide-groups { display: grid; grid-template-columns: 1fr 1fr; gap: 32px; }
+.composition-guide-groups { display: grid; grid-template-columns: 1fr 1fr; gap: 32px; order: 2; }
 .composition-guide-group { min-width: 0; }
 .composition-guide-group h3 { margin: 0 0 6px; font-size: .69rem; text-transform: uppercase; letter-spacing: .09em; color: var(--muted); }
 .composition-guide-row { border-top: 1px solid var(--line); }
@@ -37,12 +40,43 @@
 .guide-row-status small { display: block; color: var(--muted); font-size: .68rem; font-weight: 450; }
 .guide-row-detail { padding: 0 2px 12px; font-size: .8rem; line-height: 1.45; }
 .guide-row-detail p { margin: 6px 0; }
+.guide-round-data { display: grid; gap: 9px; margin: 12px 0 14px; }
+.guide-round-series > strong { display: block; margin-bottom: 5px; color: var(--muted); font-size: .68rem; font-weight: 650; }
+.guide-round-values { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; }
+.guide-round-value { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; min-width: 0; padding: 8px 9px; border: 1px solid var(--line); border-radius: 7px; background: #f8fafd; color: inherit; cursor: pointer; text-align: left; transition: background .16s, border-color .16s, transform .16s; }
+button.guide-round-value:hover:not(:disabled) { background: #edf3fc; border-color: #b9cbea; box-shadow: none; transform: translateY(-1px); }
+.guide-round-value:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.guide-round-value span { color: var(--muted); font-size: .63rem; white-space: nowrap; }
+.guide-round-value b { font-size: .85rem; font-variant-numeric: tabular-nums; }
+.guide-account { order: 1; padding: 17px 18px; border-radius: 11px; background: #f5f8fc; }
+.guide-account-head { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; margin-bottom: 12px; }
+.guide-account-head h3 { margin: 0; font-size: .84rem; letter-spacing: -.015em; }
+.guide-account-head span { color: var(--muted); font-size: .7rem; }
+.guide-account-equation { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); align-items: stretch; }
+.guide-account-equation > div { display: flex; flex-direction: column; gap: 3px; min-width: 0; padding: 4px 14px; border-left: 1px solid #dce5f1; }
+.guide-account-equation > div:first-child { padding-left: 0; border-left: 0; }
+.guide-account-equation small { color: var(--muted); font-size: .69rem; }
+.guide-account-equation strong { font-size: 1.05rem; letter-spacing: -.03em; font-variant-numeric: tabular-nums; }
+.guide-account-equation .guide-account-result strong { color: var(--accent); }
+.guide-extra-deductions { margin-top: 15px; padding-top: 12px; border-top: 1px solid #dce5f1; }
+.guide-extra-deductions h4 { margin: 0 0 4px; color: var(--muted); font-size: .65rem; text-transform: uppercase; letter-spacing: .08em; }
+.guide-deduction { border-top: 1px solid #e0e8f3; }
+.guide-deduction:first-of-type { border-top: 0; }
+.guide-deduction summary { display: grid; grid-template-columns: minmax(0, 1fr) auto auto; align-items: center; gap: 14px; padding: 9px 0; cursor: pointer; list-style: none; font-size: .79rem; }
+.guide-deduction summary::-webkit-details-marker { display: none; }
+.guide-deduction summary::marker { content: ''; }
+.guide-deduction summary:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.guide-deduction summary strong { font-variant-numeric: tabular-nums; }
+.guide-deduction[open] .guide-chevron { transform: rotate(180deg); }
+.guide-deduction-detail { padding: 0 0 10px; color: var(--muted); font-size: .76rem; }
+.guide-deduction-detail p { margin: 3px 0 8px; }
 .guide-potential { margin: 10px 0; padding: 10px 12px; background: var(--surface, #f7f9fd); border-radius: 8px; }
 .guide-potential p { margin: 0 0 4px; }
 .guide-potential small { display: block; color: var(--muted); }
 .guide-potential button { margin-top: 8px; }
 .guide-row-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
 .composition-guide-note { border-top: 1px solid var(--line); margin-top: 10px; padding-top: 10px; }
+.composition-guide-note { order: 3; }
 .composition-guide-note p { margin: 0; }
 .composition-guide-note p + p { margin-top: 6px; }
 .analysis-strip { padding: 12px 18px; gap: 12px; margin-bottom: 14px; }
@@ -55,11 +89,20 @@
   .guide-overview-maximum { padding-left: 12px; border-left: 1px solid var(--line); }
   .guide-overview-metric strong { white-space: normal; }
   .guide-overview-note { display: block; }
-  .composition-guide-expanded { padding: 14px 16px; }
+  .composition-guide-expanded { padding: 14px 16px; gap: 16px; }
   .composition-guide-groups { grid-template-columns: 1fr; gap: 14px; }
   .composition-guide-row summary { grid-template-columns: minmax(0, 1fr) minmax(0, 8rem); }
   .composition-guide-heading { align-items: center; }
   .composition-guide-heading p { max-width: 14rem; }
+  .guide-account { padding: 13px 14px; }
+  .guide-account-head { display: block; }
+  .guide-account-head span { display: block; margin-top: 3px; }
+  .guide-account-equation { grid-template-columns: repeat(3, minmax(0, 1fr)); row-gap: 10px; }
+  .guide-account-equation > div { padding: 2px 8px; }
+  .guide-account-equation > div:nth-child(4) { grid-column: 1 / -1; border-left: 0; border-top: 1px solid #dce5f1; padding: 10px 0 0; }
+  .guide-account-equation strong { font-size: .93rem; }
+  .guide-round-value { padding: 7px 6px; }
+  .guide-round-value span { font-size: .59rem; }
   .analysis-strip { padding: 11px; gap: 6px; }
   .analysis-strip > div > strong { font-size: 1.1rem; }
   .analysis-strip small { font-size: .58rem; line-height: 1.25; }

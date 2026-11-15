@@ -284,11 +284,6 @@ function SpringDisciplineView({
       target?.scrollIntoView({ behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'instant' : 'smooth', block: 'start' });
     });
   }
-  function goToAnalysis() {
-    const target = document.getElementById('spring-composition-analysis');
-    target?.focus({ preventScroll: true });
-    target?.scrollIntoView({ behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'instant' : 'smooth', block: 'start' });
-  }
   function entries(round: Round, next: RoundEntryInput[]) {
     change(setRoundEntries(workspace, plan.id, discipline, scenarioId, round.id, next, profile));
     setEntryError('');
@@ -416,7 +411,7 @@ function SpringDisciplineView({
       </div>
       <CompositionGuide rows={guide} overview={guideOverview} maximum={evaluation} profile={profile} rulePackage={rulePackage}
         potentials={potentials.result} potentialError={potentials.error} onCancelSearch={potentials.cancel}
-        onPreview={setPreview} onRound={goToRound} onAnalysis={goToAnalysis} />
+        onPreview={setPreview} onRound={goToRound} />
       <div className="round-tabs" aria-label="Vælg omgang">
         {scenario.rounds.map((round, index) => (
           <button key={round.id} className={index === 0 ? 'team-round-tab' : undefined} aria-pressed={activeRound === index} onClick={() => setActiveRound(index)}>
@@ -812,54 +807,6 @@ function SpringDisciplineView({
           );
         })}
       </div>
-      <section className="composition" id="spring-composition-analysis" tabIndex={-1}>
-        <h2>C · bidrag og fradrag</h2>
-        <p>
-          Planlagt sammensætning; udførelse og flow vurderes ved observation. En fuld konkurrencekarakter
-          beregnes ikke.
-        </p>
-        <div className="contribution-list">
-          {evaluation.contributions.map((item) => (
-            <details key={item.id}>
-              <summary>
-                <span>{item.label}</span>
-                {item.kind === 'observation' ? (
-                  <span>Kræver observation</span>
-                ) : (
-                  <Decision value={item.decision} />
-                )}
-              </summary>
-              <RuleUncertainty ids={item.decision.issues} />
-              <p>
-                {item.kind === 'deduction'
-                  ? 'Råt fradrag før netto'
-                  : item.kind === 'bonus'
-                    ? 'Valgt tillæg'
-                    : item.kind === 'observation'
-                      ? 'Kræver observation'
-                      : 'Grundværdi'}
-              </p>
-              <SourceLinks sources={item.sources} rulePackage={rulePackage} />
-              <p>
-                {item.id === 'C-GENTAG' && !rulePackage.knownIssues.some((issue) => issue.id === 'Q03') ? 'Berørte omgange' : 'Berørte valg'}:{' '}
-                {item.affectedIds
-                  .map((id) => {
-                    const roundIndex = evaluation.rounds.findIndex((round) => round.id === id);
-                    if (roundIndex >= 0) return `Omgang ${roundIndex + 1}`;
-                    return workspace.athletes.find((athlete) => athlete.id === id)?.name ??
-                      evaluation.rounds.flatMap((round) => round.entries).find((entry) => entry.entry.id === id)?.athleteName ??
-                      'Omgang/disciplin';
-                  })
-                  .join(', ') || 'Hele disciplinen'}
-              </p>
-            </details>
-          ))}
-        </div>
-        <p>
-          Rå C: {points(evaluation.composition.raw)} · netto efter minimum 0:{' '}
-          {points(evaluation.composition.value)} · panel: {points(evaluation.composition.panel)}
-        </p>
-      </section>
       {evaluation.diagnostics.length > 0 && (
         <details>
           <summary>Planens øvrige advarsler ({evaluation.diagnostics.length})</summary>

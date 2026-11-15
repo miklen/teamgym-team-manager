@@ -81,7 +81,8 @@ test('ukendt pakke bevares uden at ødelægge et kendt hold', async ({ page }) =
   await page.getByLabel('Aktuelt hold').selectOption({ label: 'Syntetisk hold B' });
   await expect(page.getByText(/Holdets præcise regelpakke er ikke installeret/)).toBeVisible();
   await page.getByLabel('Aktuelt hold').selectOption({ label: 'Syntetisk hold A' });
-  await expect(page.getByRole('heading', { name: 'C · bidrag og fradrag' })).toBeVisible();
+  await page.locator('.composition-guide-overview').click();
+  await expect(page.getByRole('heading', { name: 'C-regnskab' })).toBeVisible();
   expect(source.workspace.teams[1]!.rulesetBinding.rulesetId).toBe('test-only');
   expect(source.failures).toEqual([]);
 });

@@ -35,15 +35,19 @@ for (const width of [1440, 390]) {
     await page.keyboard.press('Enter');
     await expect(disclosure).toHaveAttribute('open', '');
     await expect(guide.getByText('Pr. gymnast · bedste omgang').first()).toBeVisible();
-    await expect(guide.getByText('Holdprofil: 6 tællende')).toBeVisible();
+    await expect(guide.getByRole('heading', { name: 'Planen mod reglementet' })).toBeVisible();
+    await expect(guide.getByText('6 tællende ·', { exact: false }).first()).toBeVisible();
+    await expect(guide.getByRole('heading', { name: 'C-regnskab' })).toBeVisible();
+    await expect(page.locator('.composition')).toHaveCount(0);
     expect(await guide.locator('summary').count()).toBeLessThan(12);
     const twist = guide.locator('.composition-guide-row').filter({ has: page.getByText('Skrue', { exact: true }) }).first();
     await twist.locator('summary').focus();
     await page.keyboard.press('Enter');
     await expect(twist).toHaveAttribute('open', '');
     await expect(twist).toContainText('Eksempel at træne frem mod');
-    await expect(twist).toContainText('Regelbaseret træningsmål');
-    await twist.getByRole('button', { name: 'Se 1. omgang' }).click();
+    await expect(twist).toContainText('Maksimalt tillæg');
+    await guide.screenshot({ path: testInfo.outputPath(`springguide-expanded-${width}.png`), animations: 'disabled' });
+    await twist.locator('.guide-round-value').first().click();
     await expect(page.getByRole('region', { name: '1. omgang', exact: true })).toBeVisible();
     await expect(page.getByRole('region', { name: '1. omgang', exact: true })).toBeFocused();
     await expect(page.getByRole('button', { name: 'Uændret' })).toBeVisible();
@@ -52,6 +56,23 @@ for (const width of [1440, 390]) {
     expect(source.failures).toEqual([]);
   });
 }
+
+test('C-regnskabet samler fradrag og omgangstal ét sted', async ({ page }) => {
+  await openWorkspace(page);
+  await page.getByRole('link', { name: 'Springplan', exact: true }).click();
+  const guide = page.getByRole('region', { name: 'Guide til springplanens komposition' });
+  await guide.locator('.composition-guide-overview').click();
+  await expect(guide.getByRole('heading', { name: 'C-regnskab' })).toBeVisible();
+  await expect(guide.locator('.guide-account-equation')).toContainText('Grundværdi');
+  await expect(guide.locator('.guide-account-equation')).toContainText('Planlagt C');
+  await expect(guide.locator('.guide-deduction').first()).toContainText('Gentagne serier eller spring mellem omgange');
+  await expect(page.locator('.composition')).toHaveCount(0);
+  const direction = guide.locator('.composition-guide-row').filter({ has: page.getByText('Retninger', { exact: true }) });
+  await direction.locator('summary').click();
+  await expect(direction.locator('.guide-round-series')).toHaveCount(2);
+  await direction.locator('.guide-round-value').nth(1).click();
+  await expect(page.getByRole('region', { name: '2. omgang', exact: true })).toBeFocused();
+});
 
 test('disciplin og scenarie skifter guide uden at genbruge gamle søgeresultater', async ({ page }) => {
   let workspace = syntheticWorkspace().workspace;

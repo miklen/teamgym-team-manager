@@ -74,7 +74,7 @@ test('konkret potentiale 4/6 til 6/6 forhåndsvises uden automatisk anvendelse',
   await expect(page.getByRole('heading', { name: 'Holdets dokumenterede muligheder' })).toHaveCount(0);
   await guide.screenshot({ path: 'tmp/ui-qa/guide-potential.png', animations: 'disabled' });
   await screw.locator('summary').click();
-  await expect(screw).toContainText('Valgt i planen: 0,400 · Dokumenteret med registreret kunnen: 0,600.');
+  await expect(screw).toContainText('Planlagt 0,400 · dokumenteret mulighed 0,600.');
   await screw.getByRole('button', { name: 'Se konkrete ændringer' }).click();
   await expect(page.getByRole('heading', { name: 'Skruetillæg', exact: true })).toBeVisible();
   await page.screenshot({ path: 'tmp/ui-qa/potentiale.png' });
@@ -83,7 +83,7 @@ test('konkret potentiale 4/6 til 6/6 forhåndsvises uden automatisk anvendelse',
   await screw.getByRole('button', { name: 'Se konkrete ændringer' }).click();
   await page.getByRole('button', { name: 'Opdater' }).click();
   await expect(page.getByRole('button', { name: /Lokale ændringer/ })).toBeVisible();
-  await expect(screw).toContainText('Valgt i planen: 0,600 · Dokumenteret med registreret kunnen: 0,600.');
+  await expect(screw).toContainText('Planlagt 0,600 · dokumenteret mulighed 0,600.');
   expect(source.puts).toBe(0);
   expect(source.failures).toEqual([]);
 });

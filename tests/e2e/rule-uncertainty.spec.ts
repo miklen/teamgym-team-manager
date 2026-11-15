@@ -68,7 +68,8 @@ test('hold på udfaset DK 1.0.0 kan skiftes til 1.1.0 med før og efter', async 
 test('gentagelser vises som holdfradrag med berørte omgange', async ({ page }) => {
   await openWorkspace(page);
   await page.getByRole('link', { name: 'Springplan', exact: true }).click();
-  const repetition = page.locator('.contribution-list details').filter({ hasText: 'Gentagne serier eller spring mellem omgange' });
+  await page.locator('.composition-guide-overview').click();
+  const repetition = page.locator('.guide-deduction').filter({ hasText: 'Gentagne serier eller spring mellem omgange' });
   await repetition.locator('summary').click();
   await expect(repetition).toContainText('2,400');
   await expect(repetition).toContainText('Berørte omgange: Omgang 1, Omgang 2, Omgang 3');
@@ -102,12 +103,11 @@ test('DK 1.1 viser det afklarede elementtillæg uden Q01-trekant', async ({ page
   const workspace = syntheticWorkspace().workspace;
   await openWorkspace(page, workspace);
   await page.getByRole('link', { name: 'Springplan', exact: true }).click();
-  const contribution = page.locator('.contribution-list details').filter({ hasText: 'Forskellige elementer efter seriens første' });
-  await expect(contribution).toContainText('0,000');
-  await expect(contribution).not.toContainText('Q01');
   const guide = page.getByRole('region', { name: 'Guide til springplanens komposition' });
   await guide.locator('.composition-guide-overview').click();
   const row = guide.locator('.composition-guide-row').filter({ has: page.getByText('Elementer', { exact: true }) });
+  await expect(row).toContainText('0,00 point');
+  await expect(row).not.toContainText('Q01');
   await expect(row).toContainText('Pr. serie · over tre omgange');
   await expect(row).not.toContainText('Uafklaret');
   await row.locator('summary').click();

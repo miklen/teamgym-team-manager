@@ -339,7 +339,7 @@ test('sene workersvar er bundet til scenariet og kan aldrig vises som den nye pl
   const screw = page.getByRole('region', { name: 'Guide til springplanens komposition' })
     .locator('.composition-guide-row').filter({ has: page.getByText('Skrue', { exact: true }) });
   await screw.locator('summary').click();
-  await expect(screw).toContainText('Dokumenteret med registreret kunnen: 0,400');
+  await expect(screw).toContainText('dokumenteret mulighed 0,400');
   await expect(screw).not.toContainText('0,200');
   await expect(screw.getByRole('button', { name: 'Se konkrete ændringer' })).toBeDisabled();
   expect(source.puts).toBe(0);
