@@ -37,6 +37,45 @@ test('udtrykkeligt husket Drive-forbindelse fra start gemmes til genbesøg', asy
   expect(source.failures).toEqual([]);
 });
 
+test('husket konto og fil bevares ved genforbindelse efter udløb og genindlæsning', async ({ page }) => {
+  const source = await openWorkspace(page);
+  await page.evaluate(async () => {
+    const request = indexedDB.open('teamgym-team-manager.connection.v1', 1);
+    const db = await new Promise<IDBDatabase>((resolve) => { request.onsuccess = () => resolve(request.result); });
+    await new Promise<void>((resolve) => {
+      const transaction = db.transaction('connection', 'readwrite');
+      const store = transaction.objectStore('connection');
+      const item = store.get('active');
+      item.onsuccess = () => {
+        const row = item.result;
+        row.connection.expiresAt = Date.now() - 1;
+        store.put(row, 'active');
+      };
+      transaction.oncomplete = () => resolve();
+    });
+    db.close();
+  });
+  await page.reload();
+  await expect(page.getByRole('button', { name: 'Forbind til Google Drive' })).toBeEnabled();
+  await page.getByRole('button', { name: 'Forbind til Google Drive' }).click();
+  await expect(page.getByRole('heading', { name: 'Hold', exact: true })).toBeVisible();
+  expect(await page.evaluate(() => (window as Window & { syntheticTokenOptions?: { login_hint?: string } }).syntheticTokenOptions?.login_hint)).toBe('coach@example.invalid');
+  const connection = await page.evaluate(async () => {
+    const request = indexedDB.open('teamgym-team-manager.connection.v1', 1);
+    const db = await new Promise<IDBDatabase>((resolve) => { request.onsuccess = () => resolve(request.result); });
+    const item = db.transaction('connection').objectStore('connection').get('active');
+    const value = await new Promise<{ token: string | null; fileId: string | null }>((resolve) => {
+      item.onsuccess = () => resolve({ token: item.result.connection?.token ?? null, fileId: item.result.connection?.file?.id ?? null });
+    });
+    db.close();
+    return value;
+  });
+  expect(connection).toEqual({ token: 'synthetic-renewed-access', fileId: 'synthetic-file' });
+  await page.reload();
+  await expect(page.getByRole('heading', { name: 'Hold', exact: true })).toBeVisible();
+  expect(source.failures).toEqual([]);
+});
+
 test('GIS-adapteren skriver og rydder browserlager uden token i URL eller gymnastfil', async ({ page }) => {
   const source = await openWorkspace(page);
   await expect(page.getByRole('heading', { name: 'Hold', exact: true })).toBeVisible();

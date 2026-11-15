@@ -152,6 +152,9 @@ function App() {
   useEffect(() => {
     let active = true;
     void restoreConnection()
+      .then(() => {
+        if (active) setRemember(connection.snapshot().remembered);
+      })
       .catch((error: unknown) => {
         if (active) setError(error instanceof Error ? error.message : 'Forbindelsen kunne ikke genoprettes.');
       })
@@ -184,6 +187,7 @@ function App() {
   }, []);
   useEffect(() => {
     if (auth.status === 'disconnected') {
+      setRemember(false);
       if (observedAccount.current)
         void recentWorkspaces.removeDriveAccount(observedAccount.current).then(refreshRecent).catch(() => setRecentError('Drive-poster kunne ikke ryddes fra Seneste.'));
       if (workspaceSession.snapshot().loaded && workspaceSession.dirty()) setRecovery(workspaceSession.exportDraft());
