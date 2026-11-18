@@ -31,7 +31,7 @@ Systemet SHALL bevare det aktuelle access token med udløbstid, scopes, kontoref
 - **THEN** kan træneren stadig forbinde og arbejde i den aktuelle side, men appen oplyser, at forbindelsen ikke huskes efter lukning.
 
 ### Requirement: Udløbet adgang genoptages med genbrugt samtykke
-Ved udløb eller 401 SHALL tokenet slettes og kontohint/filreference bevares. Systemet SHALL tilbyde én Forbind til Google Drive-handling, der fra brugerens klik anvender `requestAccessToken`, kendt `login_hint`, `include_granted_scopes:true` og `prompt:''`. Systemet MUST NOT tvinge consent eller select_account ved hvert besøg, love ubegrænset tavs tokenfornyelse eller åbne gentagne baggrundspopups. Google-krævet login/samtykke SHALL håndteres som en mulig tilstand. En genforbindelse SHALL bevare kladden og kontrollere filversion/rettighed igen før gemning.
+Ved udløb eller 401 SHALL tokenet slettes og kontohint/filreference bevares. Ved klik på Forbind til Google Drive SHALL tokenklienten med en kendt konto anmode om adgang med `login_hint`, `include_granted_scopes:true` og `prompt:'none'`. Den verificerede konto SHALL stemme med den kendte konto, før et stille svar kan overtages. Hvis Google kræver brugerhandling, SHALL et nyt klik tillade Googles login og samtykke med `prompt:''` og samme kontohint. Systemet MUST NOT tvinge consent eller select_account ved hvert besøg, love ubegrænset tavs tokenfornyelse eller åbne gentagne baggrundspopups. En genforbindelse SHALL bevare kladden og kontrollere filversion/rettighed igen før gemning.
 
 #### Scenario: Tilbage efter tokenudløb
 - **WHEN** træneren vender tilbage med udløbet token, tidligere samtykke og et aktivt Google-login
@@ -43,7 +43,7 @@ Ved udløb eller 401 SHALL tokenet slettes og kontohint/filreference bevares. Sy
 
 #### Scenario: Fornyelse ved klik tæt på udløb
 - **WHEN** en forbundet træner klikker i appen, mens tokenet stadig er gyldigt men udløber inden for 10 minutter
-- **THEN** anmoder appen fra netop dette klik om et nyt token med samme `requestAccessToken`-indstillinger. Klikket afventer ikke fornyelsen. Et nyt token for samme konto erstatter det gamle uden genindlæsning af arbejdsrummet. Afvisning, lukket popup eller anden konto bevarer det gyldige token og pauser nye forsøg i 2 minutter. Der åbnes aldrig popup uden klik.
+- **THEN** anmoder appen fra netop dette klik om et nyt token med `prompt:'none'` og den kendte konto. Klikket afventer ikke fornyelsen. Et nyt token for samme konto erstatter det gamle uden genindlæsning af arbejdsrummet. Afvisning, lukket popup eller anden konto bevarer det gyldige token og pauser nye forsøg i 2 minutter. Der åbnes aldrig popup uden klik.
 
 ### Requirement: Lokal afbrydelse og kontoskift rydder adgang
 Afbryd forbindelse SHALL rydde lokalt gemt Google-token, konto og Drive-filreferencer samt aktive Drive-arbejdsdata efter håndtering af ugemt arbejde. Et åbent lokalt arbejdsrum SHALL ikke ryddes alene på grund af Google-afbrydelse. Andre appfaner SHALL underrettes og stoppe nye kald med den gamle adgang. En allerede afsendt upload SHALL håndteres som et særskilt muligt udfald. Tilbagekaldelse af Googles samtykke SHALL være en særskilt handling, så almindelig afbrydelse ikke fremtvinger nyt samtykke ved næste forbindelse.

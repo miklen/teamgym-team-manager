@@ -130,6 +130,24 @@ describe('scenarie-PDF', () => {
     expect(pages[0]).toContain('D — (Regelpakke mangler)');
   });
 
+  it('viser kun springene på startpladserne i omgangsorden', async () => {
+    const model = fullRoundModel(3);
+    const firstRound = model.rounds[0]!;
+    firstRound.starters[0]!.spring = 'Overslag';
+    firstRound.starters[1]!.spring = 'Spring mangler';
+    firstRound.starters[1]!.direction = '';
+    firstRound.starters[1]!.warning = 'Mangler gymnast';
+    firstRound.reserves[0]!.spring = 'Reservespring';
+    model.rounds[2]!.starters = [];
+
+    const bytes = await createScenarioPdf(model, font, 'springs-only');
+    const pages = await extract(bytes);
+    expect(pages).toHaveLength(1);
+    expect(pages[0]).toMatch(/1\. Holdomgang .*1\. Overslag .*2\. Spring mangler .*3\. Rondat .*2\. omgang .*3\. omgang .*Ingen planlagte spring/);
+    expect(pages[0]).not.toMatch(/Syntetisk gymnast|Test \d|RESERVER|Reservespring|Modtagning|Mangler gymnast|TÆLLENDE|Planlagt [CD]/);
+    expect(scenarioPdfFilename(model, 'springs-only')).toBe('Syntetisk hold - Bane - Plan med fulde omgange - Kun spring.pdf');
+  });
+
   it('har to ekstra, seks tællende og to reserver i alle tre omgange på én side', async () => {
     const bytes = await createScenarioPdf(fullRoundModel(2), font);
     const pages = await extract(bytes);

@@ -35,6 +35,8 @@ Atomiske lister kræver valg ved forskellige samtidige ændringer i samme liste.
 
 **Ren visning:** Ændring af lokal navigation eller tekststørrelse begrundes som uden indflydelse på fælles data og motor. Ingen ny flettepolitik kræves.
 
+**Springplanens PDF med kun spring:** Brugeren vælger PDF-udgave ved hver download. Eksporten læser det valgte scenaries springreferencer fra kladdens øjebliksbillede og viser startpladsernes spring i den gemte omgangs- og pladsrækkefølge, også for ekstra pladser og ambitioner. Gymnastnavne, reserver, modtagning og beregnede bedømmelser udelades fra denne PDF-visning. Fælles felter, identiteter, afhængigheder, rækkefølge, afledte beregninger og flettepolitik påvirkes ikke.
+
 ### Forlæns springfundament, katalog 3
 
 Version 3 udvider de accepterbare relationer for Barani, Rudy, Randy, 3½ skrue og forlæns dobbeltsaltoer. Version 1 og 2 beholder deres præcise matrix og relations-id'er. Genåbning afstemmer kun allerede accepterede relationer; nye relationer og registreringer oprettes ved et bevidst valg med gennemgang af fundamentet. En gyldig ældre relation genbruges frem for en dublet.

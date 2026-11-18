@@ -11,8 +11,8 @@ import type {
 function harness(store: ConnectionStore = new MemoryConnectionStore()) {
   let time = 100_000;
   let success!: (result: TokenResult) => void;
-  let fail!: () => void;
-  let lastHint: string | undefined;
+  let fail!: Parameters<OAuthBridge['request']>[2];
+  let lastOptions!: Parameters<OAuthBridge['request']>[0];
   let requests = 0;
   let account = 'A';
   let calls = 0;
@@ -27,9 +27,9 @@ function harness(store: ConnectionStore = new MemoryConnectionStore()) {
     });
   };
   const oauth: OAuthBridge = {
-    request(hint, done, error) {
+    request(options, done, error) {
       requests++;
-      lastHint = hint;
+      lastOptions = options;
       success = done;
       fail = error;
     },
@@ -57,8 +57,8 @@ function harness(store: ConnectionStore = new MemoryConnectionStore()) {
     get calls() {
       return calls;
     },
-    get hint() {
-      return lastHint;
+    get options() {
+      return lastOptions;
     },
     advance(ms: number) {
       time += ms;
@@ -130,7 +130,7 @@ describe('personlig Google-forbindelse uden automatisk popup', () => {
     expect((await h.store.read()).connection?.token).toBeNull();
     expect(h.requests).toBe(1);
     const retry = h.connection.connect(true);
-    expect(h.hint).toBe('A@example.invalid');
+    expect(h.options).toEqual({ hint: 'A@example.invalid', prompt: 'none' });
     h.token();
     await retry;
     expect(h.requests).toBe(2);
@@ -192,7 +192,7 @@ describe('personlig Google-forbindelse uden automatisk popup', () => {
       ),
     ).toBe(false);
   });
-  it('kontoskift genbruger aldrig tidligere kontos filreference', async () => {
+  it('stille genforbindelse beholder den gamle reference ved fremmed konto og adskiller et efterfølgende kontoskift', async () => {
     const h = harness();
     await h.connection.restore();
     const first = h.connection.connect(true);
@@ -204,6 +204,12 @@ describe('personlig Google-forbindelse uden automatisk popup', () => {
     const second = h.connection.connect(true);
     h.token();
     await second;
+    expect(h.connection.snapshot()).toMatchObject({ status: 'error', account: { permissionId: 'A' }, file: { id: 'old' } });
+    expect((await h.store.read()).connection).toMatchObject({ token: null, file: { id: 'old' } });
+    const third = h.connection.connect(true);
+    expect(h.options).toEqual({ hint: 'A@example.invalid', prompt: '' });
+    h.token();
+    await third;
     expect(h.connection.snapshot()).toMatchObject({ account: { permissionId: 'B' }, file: null });
     expect((await h.store.read()).connection?.file).toBeNull();
   });
@@ -219,7 +225,7 @@ describe('personlig Google-forbindelse uden automatisk popup', () => {
     h.advance(3_600_000 - RENEW_WINDOW + 1);
     expect(h.connection.renewIfExpiring()).toBe(true);
     expect(h.connection.renewIfExpiring()).toBe(false);
-    expect(h.hint).toBe('A@example.invalid');
+    expect(h.options).toEqual({ hint: 'A@example.invalid', prompt: 'none' });
     h.token({ token: 'synthetic-renewed' });
     await new Promise((resolve) => setTimeout(resolve, 0));
     expect(h.connection.getToken()).toBe('synthetic-renewed');

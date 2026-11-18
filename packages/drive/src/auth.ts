@@ -11,6 +11,13 @@ export const DRIVE_SCOPE = 'https://www.googleapis.com/auth/drive.file';
 const EXPIRY_MARGIN = 30_000;
 export const RENEW_WINDOW = 10 * 60_000;
 const RENEW_RETRY = 2 * 60_000;
+const OAUTH_INTERACTION_ERRORS = new Set([
+  'access_denied',
+  'account_selection_required',
+  'consent_required',
+  'interaction_required',
+  'login_required',
+]);
 export interface GoogleConfiguration {
   clientId: string;
   projectNumber: string;
@@ -23,7 +30,11 @@ export interface TokenResult {
 }
 export interface OAuthBridge {
   /** Skal kaldes direkte fra brugerens klik, efter scripts er klar. */
-  request(hint: string | undefined, success: (result: TokenResult) => void, failure: () => void): void;
+  request(
+    options: { hint: string | undefined; prompt: '' | 'none' },
+    success: (result: TokenResult) => void,
+    failure: (reason?: 'interaction-required') => void,
+  ): void;
   revoke(token: string): Promise<void>;
 }
 export interface ConnectionSignals {
@@ -68,6 +79,7 @@ export class GoogleConnection {
   };
   private persistent = true;
   private remember = false;
+  private interactiveRetry = false;
   private renewing = false;
   private renewPausedUntil = 0;
   private stopSignals: (() => void) | undefined;
@@ -82,6 +94,7 @@ export class GoogleConnection {
       this.resourceKeys.clear();
       this.generation++;
       this.record = null;
+      this.interactiveRetry = false;
       this.publish({
         status: 'disconnected',
         account: null,
@@ -228,21 +241,27 @@ export class GoogleConnection {
   connect(remember: boolean): Promise<void> {
     const generation = ++this.generation;
     const previous = this.record;
+    const hint = previous?.account.email;
+    const silent = !!hint && !this.interactiveRetry;
     this.remember = remember;
     this.publish({ status: 'connecting', remembered: false, message: '' });
     return new Promise<void>((resolve) => {
-      const fail = () => {
-        if (generation === this.generation)
+      const fail = (reason?: 'interaction-required') => {
+        if (generation === this.generation) {
+          const needsInteraction = silent && reason === 'interaction-required';
+          if (needsInteraction) this.interactiveRetry = true;
           this.publish({
             status: 'error',
-            message:
-              'Google-vinduet blev lukket eller blokeret, eller den nødvendige filadgang blev ikke givet. Prøv igen fra knappen; kladden er bevaret.',
+            message: needsInteraction
+              ? 'Google skal bekræfte kontoen. Vælg »Forbind til Google Drive« igen for at fortsætte.'
+              : 'Google-vinduet blev lukket eller blokeret, eller den nødvendige filadgang blev ikke givet. Prøv igen fra knappen; kladden er bevaret.',
           });
+        }
         resolve();
       };
       try {
         this.oauth.request(
-          previous?.account.email,
+          { hint, prompt: silent ? 'none' : '' },
           (result) => {
             void (async () => {
               if (generation !== this.generation) return;
@@ -264,6 +283,10 @@ export class GoogleConnection {
               }, this.fetcher).account();
               if (generation !== this.generation) return;
               const sameAccount = previous?.account.permissionId === account.permissionId;
+              if (silent && !sameAccount) {
+                fail('interaction-required');
+                return;
+              }
               if (!sameAccount) this.resourceKeys.clear();
               if (!sameAccount || !remember) {
                 this.epoch = await this.storage((store) => store.clear());
@@ -272,6 +295,7 @@ export class GoogleConnection {
               if (generation !== this.generation) return;
               if (!this.epoch) this.epoch = (await this.storage((store) => store.read())).epoch;
               if (generation !== this.generation) return;
+              this.interactiveRetry = false;
               this.record = {
                 schemaVersion: 1,
                 token: result.token,
@@ -284,7 +308,7 @@ export class GoogleConnection {
               this.publish({ status: 'connected', account, file: this.record.file });
               await this.persist(generation);
             })()
-              .catch(fail)
+              .catch(() => fail())
               .finally(resolve);
           },
           fail,
@@ -305,7 +329,7 @@ export class GoogleConnection {
       this.renewing ||
       now < this.renewPausedUntil ||
       this.view.status !== 'connected' ||
-      !record ||
+      !record?.account.email ||
       !this.isValid() ||
       record.expiresAt - RENEW_WINDOW > now
     )
@@ -318,7 +342,7 @@ export class GoogleConnection {
     };
     try {
       this.oauth.request(
-        record.account.email,
+        { hint: record.account.email, prompt: 'none' },
         (result) => {
           void (async () => {
             if (
@@ -370,6 +394,7 @@ export class GoogleConnection {
     const token = this.record?.token;
     this.generation++;
     this.record = null;
+    this.interactiveRetry = false;
     this.resourceKeys.clear();
     this.publish({
       status: 'disconnected',
@@ -424,12 +449,18 @@ export function prepareGoogle() {
 }
 export function browserOAuth(config: GoogleConfiguration): OAuthBridge {
   return {
-    request(hint, success, failure) {
+    request({ hint, prompt }, success, failure) {
       const client = google.accounts.oauth2.initTokenClient({
         client_id: config.clientId,
         scope: DRIVE_SCOPE,
         include_granted_scopes: true,
+        prompt,
+        ...(hint ? { login_hint: hint } : {}),
         callback: (response) => {
+          if (prompt === 'none' && response.error && OAUTH_INTERACTION_ERRORS.has(response.error)) {
+            failure('interaction-required');
+            return;
+          }
           if (
             response.error ||
             !response.access_token ||
@@ -444,9 +475,9 @@ export function browserOAuth(config: GoogleConfiguration): OAuthBridge {
             scopes: response.scope.split(/\s+/),
           });
         },
-        error_callback: failure,
+        error_callback: () => failure(),
       });
-      client.requestAccessToken({ ...(hint ? { login_hint: hint } : {}), prompt: '' });
+      client.requestAccessToken();
     },
     revoke(token) {
       return new Promise<void>((resolve) => google.accounts.oauth2.revoke(token, resolve));

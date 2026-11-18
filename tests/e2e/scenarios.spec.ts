@@ -20,6 +20,11 @@ async function menu(page: Page, name: string) {
   await page.getByRole('menuitem', { name, exact: true }).click();
 }
 
+async function chooseNamedPdf(page: Page) {
+  await page.getByRole('button', { name: 'Download som PDF' }).click();
+  await page.getByRole('menuitem', { name: 'Med gymnastnavne', exact: true }).click();
+}
+
 test('PDF følger valgt ugemt scenarie uden Drive-kald eller gemning', async ({ page }) => {
   const workspace = scenarioWorkspace();
   workspace.plans[0]!.tumbling[1]!.rounds[0].entries.reverse();
@@ -33,7 +38,7 @@ test('PDF følger valgt ugemt scenarie uden Drive-kald eller gemning', async ({ 
   let driveRequests = 0;
   page.on('request', (request) => { if (request.url().startsWith('https://www.googleapis.com/')) driveRequests++; });
   const downloadEvent = page.waitForEvent('download');
-  await page.getByRole('button', { name: 'Download som PDF' }).click();
+  await chooseNamedPdf(page);
   const download = await downloadEvent;
   expect(download.suggestedFilename()).toBe('Syntetisk hold A - Bane - Plan B.pdf');
   const document = await PDFDocument.load(await readFile(await download.path()));
@@ -49,14 +54,38 @@ test('PDF følger valgt ugemt scenarie uden Drive-kald eller gemning', async ({ 
   expect(source.failures).toEqual([]);
 });
 
-test('PDF kan downloades med læseadgang', async ({ page }) => {
+test('begge PDF-udgaver kan vælges i menuen med læseadgang', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   const source = await openWorkspace(page, scenarioWorkspace(), false);
   await spring(page);
-  await expect(page.getByRole('button', { name: 'Download som PDF' })).toBeVisible();
+  const trigger = page.getByRole('button', { name: 'Download som PDF' });
+  const pdfMenu = page.getByRole('menu', { name: 'PDF-udgave' });
+  const withNames = pdfMenu.getByRole('menuitem', { name: 'Med gymnastnavne', exact: true });
+  const withoutNames = pdfMenu.getByRole('menuitem', { name: 'Uden gymnastnavne', exact: true });
+  await expect(trigger).toHaveAttribute('aria-expanded', 'false');
+  await expect(pdfMenu).toBeHidden();
+  await trigger.press('Enter');
+  await expect(withNames).toBeFocused();
+  await page.keyboard.press('Escape');
+  await expect(pdfMenu).toBeHidden();
+  await expect(trigger).toBeFocused();
+
   const event = page.waitForEvent('download');
-  await page.getByRole('button', { name: 'Download som PDF' }).click();
+  await chooseNamedPdf(page);
   expect((await event).suggestedFilename()).toContain('Plan A.pdf');
+
+  await trigger.press('Enter');
+  await expect(withNames).toBeFocused();
+  await page.keyboard.press('ArrowDown');
+  await expect(withoutNames).toBeFocused();
+  const springsOnlyEvent = page.waitForEvent('download');
+  await page.keyboard.press('Enter');
+  const springsOnlyDownload = await springsOnlyEvent;
+  await expect(pdfMenu).toBeHidden();
+  await expect(trigger).toBeFocused();
+  expect(springsOnlyDownload.suggestedFilename()).toContain('Plan A - Kun spring.pdf');
+  const document = await PDFDocument.load(await readFile(await springsOnlyDownload.path()));
+  expect(document.getSubject()).toBe('Springplan · Kun spring');
   expect(source.puts).toBe(0);
   expect(source.failures).toEqual([]);
 });
@@ -69,7 +98,7 @@ test('PDF-fejl forklares uden at ændre kladden', async ({ page }) => {
   await page.getByRole('menuitem', { name: 'Flyt til venstre' }).click();
   await expect(page.getByRole('button', { name: /Lokale ændringer/ })).toBeVisible();
   await page.route('**/fonts/manrope-variable.ttf', (route) => route.fulfill({ status: 503, body: '' }));
-  await page.getByRole('button', { name: 'Download som PDF' }).click();
+  await chooseNamedPdf(page);
   await expect(page.getByRole('alert')).toContainText('PDF-skrifttypen kunne ikke indlæses');
   await expect(page.getByRole('button', { name: /Lokale ændringer/ })).toBeVisible();
   expect(source.puts).toBe(0);
@@ -89,7 +118,7 @@ test('ikke anvendte formularvalg kommer ikke med i PDF', async ({ page }) => {
   await expect(guard).toBeVisible();
   await guard.getByRole('button', { name: 'Kassér' }).click();
   const event = page.waitForEvent('download');
-  await page.getByRole('button', { name: 'Download som PDF' }).click();
+  await chooseNamedPdf(page);
   const document = await PDFDocument.load(await readFile(await (await event).path()));
   const firstRound = document.getSubject()!.split(' | ')[0]!;
   expect(firstRound).toContain('Maja Test');

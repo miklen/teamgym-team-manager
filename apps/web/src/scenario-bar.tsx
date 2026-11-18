@@ -1,4 +1,5 @@
 import { useLayoutEffect, useRef, useState } from 'react';
+import type { KeyboardEvent as ReactKeyboardEvent } from 'react';
 import {
   createScenario,
   duplicateScenario,
@@ -11,6 +12,7 @@ import type { SpringDiscipline } from '@teamgym/domain';
 import type { RulePackage, TeamProfile } from '@teamgym/rules';
 import type { DataProps } from './athletes';
 import { Dialog, extraLimitText } from './components';
+import type { ScenarioPdfContent } from './scenario-pdf';
 import { Icon } from './ui';
 import './scenarios.css';
 
@@ -34,14 +36,14 @@ export function ScenarioBar({
   profile: TeamProfile | null;
   rulePackage: RulePackage | null;
   select: (id: string) => void;
-  onExport: () => void;
+  onExport: (content: ScenarioPdfContent) => void;
   exportBusy: boolean;
   exportError: string;
 }) {
   const scenarios = workspace.plans.find((item) => item.id === planId)![discipline];
   const current = scenarios.find((item) => item.id === scenarioId)!;
   const [mode, setMode] = useState<'new' | 'copy' | 'rename' | 'delete' | 'all' | null>(null);
-  const [menu, setMenu] = useState(false);
+  const [menu, setMenu] = useState<'scenario' | 'export' | null>(null);
   const [name, setName] = useState('');
   const [query, setQuery] = useState('');
   const [allOpen, setAllOpen] = useState(false);
@@ -54,6 +56,7 @@ export function ScenarioBar({
   const list = useRef<HTMLDivElement>(null);
   const menuRoot = useRef<HTMLDivElement>(null);
   const trigger = useRef<HTMLButtonElement>(null);
+  const exportTrigger = useRef<HTMLButtonElement>(null);
   const input = useRef<HTMLInputElement>(null);
   const lastTrigger = useRef<HTMLElement | null>(null);
   const fieldId = `scenario-name-${planId}-${discipline}`;
@@ -110,16 +113,17 @@ export function ScenarioBar({
   }, [mode]);
   useLayoutEffect(() => {
     if (!menu) return;
-    menuRoot.current?.querySelector<HTMLButtonElement>('[role="menuitem"]')?.focus();
+    const root = menuRoot.current;
+    root?.querySelector<HTMLButtonElement>('[role="menuitem"]')?.focus();
     const outside = (event: PointerEvent) => {
-      if (event.target instanceof Node && !menuRoot.current?.contains(event.target)) setMenu(false);
+      if (event.target instanceof Node && !root?.contains(event.target)) setMenu(null);
     };
     document.addEventListener('pointerdown', outside);
     return () => document.removeEventListener('pointerdown', outside);
   }, [menu]);
   function open(next: typeof mode) {
     lastTrigger.current = document.activeElement instanceof HTMLElement ? document.activeElement : null;
-    setMenu(false);
+    setMenu(null);
     if (next === 'all') {
       setAllOpen(true);
       return;
@@ -149,23 +153,63 @@ export function ScenarioBar({
     setMode(null);
     select(id);
   }
-  function requestExport() {
+  function handleMenuKeys(event: ReactKeyboardEvent<HTMLDivElement>) {
+    if (!menu) return;
+    if (event.key === 'Escape' || (event.key === 'Tab' && menu === 'export')) {
+      if (event.key === 'Escape') event.stopPropagation();
+      setMenu(null);
+      (menu === 'export' ? exportTrigger.current : trigger.current)?.focus();
+      return;
+    }
+    if (!['ArrowDown', 'ArrowUp', 'Home', 'End'].includes(event.key)) return;
+    const items = Array.from(event.currentTarget.querySelectorAll<HTMLButtonElement>('[role="menuitem"]:not(:disabled)'));
+    const index = items.indexOf(document.activeElement as HTMLButtonElement);
+    const next = event.key === 'Home' ? 0
+      : event.key === 'End' ? items.length - 1
+      : (index + (event.key === 'ArrowDown' ? 1 : items.length - 1)) % items.length;
+    event.preventDefault();
+    items[next]?.focus();
+  }
+  function requestExport(content: ScenarioPdfContent) {
+    setMenu(null);
+    exportTrigger.current?.focus();
     if (mode && ['new', 'copy', 'rename'].includes(mode) && name !== initialName.current) {
       setError('Anvend eller forkast navneformularens valg før PDF-download.');
       form.current?.scrollIntoView({ block: 'center' });
       return;
     }
-    onExport();
+    onExport(content);
   }
   return (
     <section className="scenario-bar" aria-label="Scenarier">
       <div className="scenario-heading">
         <span>Scenarier</span>
         {!writable && <small>Læseadgang · ændringer er låst</small>}
-        <button className="quiet scenario-export" type="button" disabled={exportBusy} onClick={requestExport}>
-          <Icon name="download" />
-          {exportBusy ? 'Opretter PDF…' : 'Download som PDF'}
-        </button>
+        <div
+          className="scenario-menu scenario-export-menu"
+          ref={menu === 'export' ? menuRoot : undefined}
+          onKeyDown={menu === 'export' ? handleMenuKeys : undefined}
+        >
+          <button
+            ref={exportTrigger}
+            className="quiet scenario-export"
+            type="button"
+            aria-haspopup="menu"
+            aria-expanded={menu === 'export'}
+            aria-disabled={exportBusy || undefined}
+            onClick={() => { if (!exportBusy) setMenu(menu === 'export' ? null : 'export'); }}
+          >
+            <Icon name="download" />
+            {exportBusy ? 'Opretter PDF…' : 'Download som PDF'}
+            <Icon name="right" className="scenario-export-chevron" />
+          </button>
+          {menu === 'export' && (
+            <div className="scenario-menu-items" role="menu" aria-label="PDF-udgave">
+              <button type="button" role="menuitem" tabIndex={-1} onClick={() => requestExport('full')}>Med gymnastnavne</button>
+              <button type="button" role="menuitem" tabIndex={-1} onClick={() => requestExport('springs-only')}>Uden gymnastnavne</button>
+            </div>
+          )}
+        </div>
       </div>
       <div className="scenario-navigation">
         <div
@@ -253,45 +297,20 @@ export function ScenarioBar({
           </button>
           <div
             className="scenario-menu"
-            ref={menuRoot}
-            onKeyDown={(event) => {
-              if (event.key === 'Escape') {
-                event.stopPropagation();
-                setMenu(false);
-                trigger.current?.focus();
-              }
-              if (
-                event.key === 'ArrowDown' ||
-                event.key === 'ArrowUp' ||
-                event.key === 'Home' ||
-                event.key === 'End'
-              ) {
-                const items = Array.from(
-                  menuRoot.current!.querySelectorAll<HTMLButtonElement>('[role="menuitem"]:not(:disabled)'),
-                );
-                const index = items.indexOf(document.activeElement as HTMLButtonElement);
-                const next =
-                  event.key === 'Home'
-                    ? 0
-                    : event.key === 'End'
-                      ? items.length - 1
-                      : (index + (event.key === 'ArrowDown' ? 1 : items.length - 1)) % items.length;
-                event.preventDefault();
-                items[next]?.focus();
-              }
-            }}
+            ref={menu === 'scenario' ? menuRoot : undefined}
+            onKeyDown={menu === 'scenario' ? handleMenuKeys : undefined}
           >
             <button
               ref={trigger}
               className="quiet"
               aria-label={`Menu for ${current.name}`}
               aria-haspopup="menu"
-              aria-expanded={menu}
-              onClick={() => setMenu(!menu)}
+              aria-expanded={menu === 'scenario'}
+              onClick={() => setMenu(menu === 'scenario' ? null : 'scenario')}
             >
               •••
             </button>
-            {menu && (
+            {menu === 'scenario' && (
               <div className="scenario-menu-items" role="menu" aria-label={`Scenarie ${current.name}`}>
                 <strong>{current.name}</strong>
                 <button role="menuitem" disabled={!writable} onClick={() => open('copy')}>

@@ -1,6 +1,10 @@
 import { expect, test } from './test';
 import { openWorkspace } from './drive-fixture';
 
+function tokenOptions() {
+  return (window as Window & { syntheticTokenOptions?: { login_hint?: string; prompt?: string } }).syntheticTokenOptions;
+}
+
 test('udtrykkeligt husket Drive-forbindelse fra start gemmes til genbesøg', async ({ page }) => {
   const source = await openWorkspace(page);
   await page.getByRole('button', { name: 'Arbejdsrum', exact: true }).click();
@@ -19,6 +23,7 @@ test('udtrykkeligt husket Drive-forbindelse fra start gemmes til genbesøg', asy
   await page.getByRole('button', { name: 'Google Drive', exact: true }).click();
   const picker = page.frameLocator('iframe[title="Google Drive"]');
   await picker.getByRole('button', { name: 'Accepter kun nødvendige' }).click();
+  expect(await page.evaluate(tokenOptions)).toEqual({ prompt: '' });
   await picker.getByRole('button', { name: 'Vælg', exact: true }).click();
   await expect(page.getByRole('heading', { name: 'Hold', exact: true })).toBeVisible();
   const token = await page.evaluate(async () => {
@@ -59,7 +64,7 @@ test('husket konto og fil bevares ved genforbindelse efter udløb og genindlæsn
   await expect(page.getByRole('button', { name: 'Forbind til Google Drive' })).toBeEnabled();
   await page.getByRole('button', { name: 'Forbind til Google Drive' }).click();
   await expect(page.getByRole('heading', { name: 'Hold', exact: true })).toBeVisible();
-  expect(await page.evaluate(() => (window as Window & { syntheticTokenOptions?: { login_hint?: string } }).syntheticTokenOptions?.login_hint)).toBe('coach@example.invalid');
+  expect(await page.evaluate(tokenOptions)).toEqual({ login_hint: 'coach@example.invalid', prompt: 'none' });
   const connection = await page.evaluate(async () => {
     const request = indexedDB.open('teamgym-team-manager.connection.v1', 1);
     const db = await new Promise<IDBDatabase>((resolve) => { request.onsuccess = () => resolve(request.result); });
@@ -150,10 +155,35 @@ test('afbrudt Google-genforbindelse kan prøves igen uden at miste kladden', asy
   await expect(page.getByRole('button', { name: 'Forbind til Google Drive', exact: true })).toBeVisible();
   await page.getByRole('button', { name: 'Forbind til Google Drive', exact: true }).click();
   await expect(page.getByText('Syntetisk træner', { exact: true })).toBeVisible();
+  expect(await page.evaluate(tokenOptions)).toEqual({ login_hint: 'coach@example.invalid', prompt: 'none' });
   await expect(page.getByRole('button', { name: /^Kladde gennem Google-afbrydelse/ })).toBeVisible();
   await page.getByRole('button', { name: 'Fejl · kladde bevaret' }).click();
   await expect(page.getByRole('button', { name: 'Gemt', exact: true })).toBeVisible();
   expect(source.puts).toBe(1);
   expect(source.workspace.teams[0]!.name).toBe('Kladde gennem Google-afbrydelse');
+  expect(source.failures).toEqual([]);
+});
+
+test('Google-krævet login tilbydes først ved et nyt klik og bevarer det åbne arbejdsrum', async ({ page, googleMock }) => {
+  googleMock.requireInteraction = true;
+  const source = await openWorkspace(page);
+  await page.getByRole('button', { name: 'Redigér hold Syntetisk hold A' }).click();
+  await page.getByLabel('Holdnavn').fill('Kladde mens Google kræver login');
+  await page.getByRole('button', { name: 'Opdater' }).click();
+  source.deny(401);
+  await page.getByRole('button', { name: /Lokale ændringer/ }).click();
+  await expect(page.getByText('Google-adgang udløbet', { exact: true })).toBeVisible();
+  source.deny(0);
+  const connect = page.getByRole('button', { name: 'Forbind til Google Drive', exact: true });
+  await connect.click();
+  await expect(page.getByText(/Google skal bekræfte kontoen/)).toBeVisible();
+  expect(await page.evaluate(tokenOptions)).toEqual({ login_hint: 'coach@example.invalid', prompt: 'none' });
+  await expect(page.getByRole('button', { name: /^Kladde mens Google kræver login/ })).toBeVisible();
+
+  await connect.click();
+  await expect(page.getByText('Syntetisk træner', { exact: true })).toBeVisible();
+  expect(await page.evaluate(tokenOptions)).toEqual({ login_hint: 'coach@example.invalid', prompt: '' });
+  await expect(page.getByRole('button', { name: /^Kladde mens Google kræver login/ })).toBeVisible();
+  expect(source.puts).toBe(0);
   expect(source.failures).toEqual([]);
 });

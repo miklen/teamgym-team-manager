@@ -124,7 +124,7 @@ it('genbruger husket filnøgle efter genåbning og rydder den ved kontoskift', a
     return Response.json(metadata());
   };
   const oauth: OAuthBridge = {
-    request(_hint, success) {
+    request(_options, success) {
       success({ token: 'synthetic-token', expiresIn: 3600, scopes: [DRIVE_SCOPE] });
     },
     async revoke() {},
@@ -138,6 +138,7 @@ it('genbruger husket filnøgle efter genåbning og rydder den ved kontoskift', a
   await next.client().metadata('synthetic-file');
   expect(keys.at(-1)).toBe('synthetic-file/0-synthetic');
   account = 'B';
+  await next.connect(true);
   await next.connect(true);
   await next.client().metadata('synthetic-file');
   expect(keys.at(-1)).toBeNull();

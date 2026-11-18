@@ -21,6 +21,7 @@ import { usePotentials } from './use-potentials';
 import { springDirectionText, springDisplayName } from './spring-library';
 import { ScenarioBar } from './scenario-bar';
 import { projectScenarioPdf } from './scenario-pdf-model';
+import type { ScenarioPdfContent } from './scenario-pdf';
 import { useScenarioSelection } from './scenario-context';
 import { ReserveList } from './reserves';
 import {
@@ -59,12 +60,12 @@ export function SpringPage(props: DataProps & { teamId: string; unsaved: boolean
   );
   const leave = useRef<((action: () => void) => void) | null>(null);
   const request = (action: () => void) => (leave.current ? leave.current(action) : action());
-  const [exportRequested, setExportRequested] = useState(false);
+  const [exportRequested, setExportRequested] = useState<ScenarioPdfContent | null>(null);
   const [exportBusy, setExportBusy] = useState(false);
   const [exportError, setExportError] = useState('');
   useEffect(() => {
     if (!exportRequested) return;
-    setExportRequested(false);
+    setExportRequested(null);
     const snapshot = structuredClone(props.workspace);
     const selectedTeam = props.teamId;
     const selectedDiscipline = discipline;
@@ -77,7 +78,7 @@ export function SpringPage(props: DataProps & { teamId: string; unsaved: boolean
       try {
         const model = projectScenarioPdf({ workspace: snapshot, teamId: selectedTeam, discipline: selectedDiscipline, scenarioId: selectedScenario, rulePackage: resolved.status === 'known' ? resolved.rulePackage : null, exportedAt, unsaved });
         const { downloadScenarioPdf } = await import('./scenario-pdf');
-        await downloadScenarioPdf(model);
+        await downloadScenarioPdf(model, exportRequested);
       } catch (error) {
         setExportError(error instanceof Error ? error.message : 'PDF kunne ikke oprettes. Prøv igen.');
       } finally {
@@ -115,7 +116,7 @@ export function SpringPage(props: DataProps & { teamId: string; unsaved: boolean
         profile={resolved.status === 'known' ? resolved.profile : null}
         rulePackage={resolved.status === 'known' ? resolved.rulePackage : null}
         select={(id) => request(() => selectScenario(id))}
-        onExport={() => request(() => setExportRequested(true))}
+        onExport={(content) => request(() => setExportRequested(content))}
         exportBusy={exportBusy}
         exportError={exportError}
       />
