@@ -1,9 +1,9 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import type { RefObject } from 'react';
-import { addAmbitions, approveSharedConnection, changeAmbitionSkill, clearPlannedSpot, fillAmbition, formatStability, moveRound, newEntityId, setPlannedSpot, setRoundEntries } from '@teamgym/domain';
+import { addAmbitions, approveSharedConnection, changeAmbitionSkill, clearPlannedSpot, fillAmbition, formatStability, moveRound, newEntityId, roundApparatusLookup, setPlannedSpot, setRoundEntries } from '@teamgym/domain';
 import type { Round, RoundEntry, RoundEntryInput, SpringDiscipline, Workspace } from '@teamgym/domain';
 import { ambitionCanNow, ambitionEnvironment, applyPotentialPreview } from '@teamgym/rules';
-import type { BonusPotential, ParticipantEvaluation, RoundEvaluation, RulePackage, TeamProfile } from '@teamgym/rules';
+import type { BonusPotential, ParticipantEvaluation, PlanFinding, RoundEvaluation, RulePackage, TeamProfile } from '@teamgym/rules';
 import type { DataProps } from './athletes';
 import { AthleteInspector } from './athletes';
 import {
@@ -38,6 +38,10 @@ import { repeatedStartSaltoIssue } from './start-salto-uncertainty';
 import { Icon } from './ui';
 import type { IconName } from './ui';
 import { CompositionGuide } from './composition-guide';
+import { bonusFindings } from './composition-opportunities';
+import { PotentialPreviewDialog } from './potential-preview';
+import { RoundFindings } from './round-findings';
+import { ApparatusSwitchDialog, apparatusName, apparatusRestriction } from './round-apparatus';
 import { AmbitionReadiness, AmbitionCreateForm, AmbitionFillForm, ambitionLabel, SlotModeSwitch } from './ambition';
 import type { AmbitionRequest, SlotMode } from './ambition';
 import { MaximumScoreMetric, RoundPlannedExecution, RoundSpotShare, SlotSpot, spotGradeLabel } from './planned-spot';
@@ -187,6 +191,7 @@ function SpringDisciplineView({
 }) {
   const plan = workspace.plans.find((item) => item.teamId === teamId)!;
   const scenario = plan[discipline].find((item) => item.id === scenarioId)!;
+  const apparatusFor = discipline === 'trampet' ? roundApparatusLookup(workspace) : null;
   const evaluation = rulePackage.analyze(workspace, teamId, discipline, scenarioId);
   const hasPlannedEntries = evaluation.rounds.some((round) => round.entries.length > 0);
   const orderRule = rulePackage.springRules[discipline].orderDeduction;
@@ -239,6 +244,7 @@ function SpringDisciplineView({
     roundPositions.current = rounds;
   }, [workspace, discipline, activeRound]);
   const [entryDialog, setEntryDialog] = useState<{ round: Round; entry?: RoundEntry } | null>(null);
+  const [switchRoundId, setSwitchRoundId] = useState<string | null>(null);
   const dirty = useRef(false);
   const entryForm = useRef<HTMLFormElement>(null);
   const pending = useRef<(() => void) | null>(null);
@@ -254,6 +260,7 @@ function SpringDisciplineView({
       setLeaving(true);
     } else {
       setEntryDialog(null);
+      setSwitchRoundId(null);
       action();
     }
   }
@@ -274,6 +281,31 @@ function SpringDisciplineView({
   const potentials = usePotentials(workspace, teamId, discipline, scenarioId);
   const guide = rulePackage.guide(evaluation, profile, potentials.result);
   const guideOverview = rulePackage.guideOverview(evaluation);
+  const planFindings = [
+    ...evaluation.planFindings.filter((item) => item.status !== 'opportunity'),
+    ...bonusFindings(guide, potentials.result),
+  ];
+  const guideRoot = useRef<HTMLDivElement>(null);
+  function openGuide(finding: PlanFinding) {
+    const guide = guideRoot.current?.querySelector<HTMLDetailsElement>('.composition-guide-disclosure');
+    if (!guide) return;
+    guide.open = true;
+    const ruleId = finding.contributionId === 'C-GRUND' ? 'G-RAMME' : finding.contributionId;
+    const detail = guide.querySelector<HTMLDetailsElement>(`[data-guide-rule="${CSS.escape(ruleId)}"]`);
+    if (detail) detail.open = true;
+    (detail ?? guide).querySelector<HTMLElement>('summary')?.focus();
+  }
+  function findingAction(finding: PlanFinding, round: Round, entry?: RoundEntry) {
+    if (finding.status === 'opportunity') {
+      const potential = potentials.result?.find((item) => item.id === finding.contributionId);
+      if (potential?.preview) return { label: 'Se konkrete ændringer', run: () => setPreview(potential) };
+    }
+    if (finding.action === 'order' && writable) return { label: 'Se foreslået rækkefølge', run: () => setSortRoundId(round.id) };
+    if (finding.action === 'apparatus' && writable) return { label: 'Skift redskab', run: () => setSwitchRoundId(round.id) };
+    if (finding.action === 'change-spring' && entry && writable) return { label: 'Redigér pladsen', run: () => openEntry({ round, entry }) };
+    return { label: 'Åbn kompositionsguiden', run: () => openGuide(finding) };
+  }
+  const switchRound = scenario.rounds.find((round) => round.id === switchRoundId);
   function goToRound(roundId: string) {
     const index = scenario.rounds.findIndex((round) => round.id === roundId);
     if (index < 0) return;
@@ -409,9 +441,9 @@ function SpringDisciplineView({
         </div>
         <MaximumScoreMetric evaluation={evaluation} roundIds={scenario.rounds.map((round) => round.id)} rulePackage={rulePackage} onRound={goToRound} />
       </div>
-      <CompositionGuide rows={guide} overview={guideOverview} maximum={evaluation} profile={profile} rulePackage={rulePackage}
+      <div ref={guideRoot}><CompositionGuide rows={guide} overview={guideOverview} maximum={evaluation} profile={profile} rulePackage={rulePackage}
         potentials={potentials.result} potentialError={potentials.error} onCancelSearch={potentials.cancel}
-        onPreview={setPreview} onRound={goToRound} />
+        onPreview={setPreview} onRound={goToRound} /></div>
       <div className="round-tabs" aria-label="Vælg omgang">
         {scenario.rounds.map((round, index) => (
           <button key={round.id} className={index === 0 ? 'team-round-tab' : undefined} aria-pressed={activeRound === index} onClick={() => setActiveRound(index)}>
@@ -422,6 +454,8 @@ function SpringDisciplineView({
       <div className="round-grid">
         {scenario.rounds.map((round, roundIndex) => {
           const result = evaluation.rounds[roundIndex]!;
+          const apparatus = apparatusFor?.(round.entries).type;
+          const findings = planFindings.filter((item) => item.roundIds.includes(round.id));
           return (
             <section
               className={`round${roundIndex === activeRound ? ' active-round' : ''}${roundIndex === 0 ? ' team-round' : ''}${roundDrag?.roundId === round.id ? ' round-dragging' : ''}${roundDrag && roundDrag.roundId !== round.id && roundDrag.over === roundIndex ? ' round-drop-target' : ''}`}
@@ -503,13 +537,11 @@ function SpringDisciplineView({
                 <RoundPlannedExecution result={result} />
               </p>
               <RuleUncertainty ids={result.difficulty.issues} />
-              {evaluation.diagnostics
-                .filter((item) => item.code === 'mixed-apparatus' && item.affectedIds.includes(round.id))
-                .map((item) => (
-                  <p key={item.code} className="entry-warning" role="status">
-                    {item.message} Vælg spring med samme redskab til hele omgangen.
-                  </p>
-                ))}
+              {apparatus && (apparatus !== 'mixed' || writable) && <div className="round-apparatus">
+                {apparatus !== 'mixed' && <strong>{apparatusName[apparatus]}</strong>}
+                {writable && <button type="button" className="quiet" onClick={() => setSwitchRoundId(round.id)}>Skift redskab</button>}
+              </div>}
+              <RoundFindings findings={findings.filter((item) => !item.entryIds.length || item.action === 'apparatus')} rulePackage={rulePackage} action={(finding) => findingAction(finding, round)} />
               {round.entries.some((entry) => entry.athleteId === null) &&
                 evaluation.diagnostics
                   .filter((item) => item.code === 'mix-quota' && item.affectedIds.includes(round.id))
@@ -700,6 +732,7 @@ function SpringDisciplineView({
                               })
                               .join(' ')}
                     />
+                    <RoundFindings findings={findings.filter((item) => item.action !== 'apparatus' && item.entryIds.includes(participant.entry.id))} rulePackage={rulePackage} action={(finding) => findingAction(finding, round, participant.entry)} />
                   </li>
                   );
                 })}
@@ -925,6 +958,9 @@ function SpringDisciplineView({
           </div>
         </Dialog>
       )}
+      {switchRound && <ApparatusSwitchDialog workspace={workspace} planId={plan.id} teamId={teamId} scenarioId={scenarioId} round={switchRound}
+        roundNumber={scenario.rounds.indexOf(switchRound) + 1} rulePackage={rulePackage} profile={profile} writable={writable}
+        change={(next) => { change(next); setEntryStatus('Omgangens redskab er opdateret.'); }} close={() => setSwitchRoundId(null)} />}
       {sortRoundId && (
         <Dialog title="Foreslået rækkefølge" close={() => setSortRoundId(null)}>
           <p>
@@ -981,137 +1017,20 @@ function SpringDisciplineView({
         />
       )}
       {preview?.preview && (
-        <Dialog wide title={preview.label} close={() => setPreview(null)}>
-          <p>
-            <strong>{scenario.name}</strong> · {discipline === 'tumbling' ? 'Bane' : 'Trampet'}
-          </p>
-          <p>
-            Dokumenteret {points(preview.documentedValue)}. Hele den nødvendige vidneopstilling anvendes
-            samlet.
-          </p>
-          <div className="comparison">
-            <div>
-              Før · D {points(preview.preview.before.panelD)} · C{' '}
-              {points(preview.preview.before.composition.panel)}
-            </div>
-            <div>
-              Efter · D {points(preview.preview.after.panelD)} · C{' '}
-              {points(preview.preview.after.composition.panel)}
-            </div>
-          </div>
-          <ul>
-            {preview.preview.changes.map((item, index) => {
-              const beforeRound = preview.preview!.before.rounds.find((round) => round.id === item.roundId)!;
-              const afterRound = preview.preview!.after.rounds.find((round) => round.id === item.roundId)!;
-              const beforeIndex = beforeRound.entries.findIndex(
-                (entry) => entry.entry.athleteId === item.athleteId,
-              );
-              const afterIndex = afterRound.entries.findIndex(
-                (entry) => entry.entry.athleteId === item.athleteId,
-              );
-              return (
-                <li key={index}>
-                  <strong>
-                    {preview.preview!.before.rounds.indexOf(beforeRound) + 1}. omgang · {item.athleteName}
-                    {workspace.athletes.find((athlete) => athlete.id === item.athleteId)?.discriminator
-                      ? ` · ${workspace.athletes.find((athlete) => athlete.id === item.athleteId)!.discriminator}`
-                      : ''}
-                  </strong>
-                  <small>
-                    Plads {beforeIndex < 0 ? 'ikke valgt' : beforeIndex + 1} →{' '}
-                    {afterIndex < 0 ? 'ikke valgt' : afterIndex + 1} · rolle{' '}
-                    {beforeIndex < 0
-                      ? 'ikke valgt'
-                      : beforeRound.entries[beforeIndex]!.entry.role === 'extra'
-                        ? 'ekstra'
-                        : 'tællende'}{' '}
-                    →{' '}
-                    {afterIndex < 0
-                      ? 'ikke valgt'
-                      : afterRound.entries[afterIndex]!.entry.role === 'extra'
-                        ? 'ekstra'
-                        : 'tællende'}
-                  </small>
-                  {workspace.skills.find(
-                    (skill) =>
-                      skill.id ===
-                      workspace.athleteSkills.find(
-                        (registration) => registration.id === item.beforeRegistrationId,
-                      )?.skillId,
-                  )?.name ?? 'Ikke valgt'}{' '}
-                  →{' '}
-                  {workspace.skills.find(
-                    (skill) =>
-                      skill.id ===
-                      workspace.athleteSkills.find(
-                        (registration) => registration.id === item.afterRegistrationId,
-                      )?.skillId,
-                  )?.name ?? 'Ikke valgt'}{' '}
-                  · stabilitet{' '}
-                  {workspace.athleteSkills.find(
-                    (registration) => registration.id === item.beforeRegistrationId,
-                  )?.stability ?? '—'}{' '}
-                  →{' '}
-                  {workspace.athleteSkills.find(
-                    (registration) => registration.id === item.afterRegistrationId,
-                  )?.stability ?? '—'}
-                  {item.plannedSpotRemoved && (
-                    <span className="spot-removed">
-                      Planlagt modtagning bortfalder
-                      {beforeIndex >= 0 && beforeRound.entries[beforeIndex]!.entry.plannedSpot
-                        ? ` (${spotGradeLabel(beforeRound.entries[beforeIndex]!.entry.plannedSpot!.grade, rulePackage)})`
-                        : ''}
-                      .
-                    </span>
-                  )}
-                </li>
-              );
-            })}
-          </ul>
-          {preview.preview.reserveChanges.length > 0 && (
-            <p>
-              Bliver udførende og fjernes fra reservelisten:{' '}
-              {preview.preview.reserveChanges
-                .map(
-                  (item) =>
-                    `${scenario.rounds.findIndex((round) => round.id === item.roundId) + 1}. omgang · ${workspaceName(workspace, item.athleteId)}`,
-                )
-                .join('; ')}
-              .
-            </p>
-          )}
-          <div className="comparison">
-            <div>
-              <h3>Stabilitet før</h3>
-              {preview.preview.before.rounds.map((round) => (
-                <StabilitySummary key={round.id} value={round.stability.counting} />
-              ))}
-            </div>
-            <div>
-              <h3>Stabilitet efter</h3>
-              {preview.preview.after.rounds.map((round) => (
-                <StabilitySummary key={round.id} value={round.stability.counting} />
-              ))}
-            </div>
-          </div>
-          <ActionForm
-            disabled={!writable}
-            label="Opdater"
-            submit={() => {
-              if (preview.preview!.scenarioId !== scenarioId)
-                throw new Error('Forslaget tilhører et andet scenarie. Beregn igen.');
-              change(applyPotentialPreview(workspace, preview.preview!));
-              setPreview(null);
-            }}
-          >
-            <p className="muted">
-              Andre tillæg kan ændre sig. C kan fortsat være uafklaret; stabilitet er ingen pointfaktor.
-            </p>
-          </ActionForm>
-          <button className="quiet" onClick={() => setPreview(null)}>
-            Annuller
-          </button>
-        </Dialog>
+        <PotentialPreviewDialog
+          proposal={{ ...preview, preview: preview.preview }}
+          workspace={workspace}
+          scenarioName={scenario.name}
+          rulePackage={rulePackage}
+          writable={writable}
+          close={() => setPreview(null)}
+          submit={() => {
+            if (preview.preview!.scenarioId !== scenarioId)
+              throw new Error('Forslaget tilhører et andet scenarie. Beregn igen.');
+            change(applyPotentialPreview(workspace, preview.preview!));
+            setPreview(null);
+          }}
+        />
       )}
     </>
   );
@@ -1354,6 +1273,7 @@ function AthleteEntryForm({
       (!busy.has(athlete.id) || entry?.athleteId === athlete.id),
   );
   const freeKey = athletes.map((athlete) => athlete.id).join(',');
+  const apparatus = discipline === 'trampet' && !reserve ? apparatusRestriction(workspace, round, entry?.id) : null;
   const initialAthlete = athletes.find((athlete) => athlete.id === entry?.athleteId)?.id ?? WHOLE_TEAM;
   const [athleteId, setAthleteId] = useState(initialAthlete);
   const [skillId, setSkillId] = useState(
@@ -1364,10 +1284,11 @@ function AthleteEntryForm({
   const [directionFilter, setDirectionFilter] = useState<SpringDirectionFilter>('all');
   const direction =
     discipline === 'tumbling' ? { value: directionFilter, change: setDirectionFilter } : undefined;
-  const teamRows = useMemo(
+  const allTeamRows = useMemo(
     () => teamSkillRows(workspace, teamId, discipline, rulePackage, freeKey ? freeKey.split(',') : []),
     [workspace, teamId, discipline, rulePackage, freeKey],
   );
+  const teamRows = apparatus ? allTeamRows.filter((row) => apparatus.allows(row.definition)) : allTeamRows;
   const repetition = 'C-GENTAG' in rulePackage.springRules[discipline].sources;
   const usage = useMemo(
     () =>
@@ -1389,6 +1310,7 @@ function AthleteEntryForm({
         if (registration.athleteId !== athleteId || registration.archived || !skill || skill.archived)
           return [];
         if (skill.discipline !== discipline) return [];
+        if (apparatus && !apparatus.allows(skill)) return [];
         const evaluated = rulePackage.evaluateSkill(skill, registration);
         return evaluated.validity === 'known' ? [{ registration, skill, evaluated }] : [];
       });
@@ -1437,6 +1359,7 @@ function AthleteEntryForm({
       }
     >
       <fieldset disabled={!writable} onChange={onDirty}>
+        {apparatus?.message && <p className="muted">{apparatus.message}</p>}
         <PlanAthleteSelect
           value={athleteId}
           onChange={chooseAthlete}

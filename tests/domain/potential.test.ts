@@ -116,15 +116,23 @@ describe('konkrete individuelle tillægsmuligheder med fulde vidneopstillinger',
     expect(Object.hasOwn(results, 'combinedMaximum')).toBe(false);
   });
 
-  it('en uafklaret A4-værdi bliver ikke en sikker sjette redskabskandidat', async () => {
+  it('blander ikke redskab for at få et højere tillæg i en omgang uden Pegasus', async () => {
     const builder = workspaceBuilder(); const team = builder.team('Trampet', undefined, 6);
     const jump = (sourceId: string) => ({ id: sourceId, name: 'Syntetisk trampetspring', archived: false, discipline: 'trampet' as const, jump: structuredClone(DK_SPRING_CATALOG.find((entry) => entry.referenceId === sourceId)!.execution) });
     const basic = jump('a4-f-03');
     for (let index = 0; index < 3; index++) builder.fill(team.id, 'trampet', index, Array.from({ length: 6 }, () => basic));
     for (const [index, athlete] of builder.workspace.athletes.entries()) builder.register(athlete.id, jump(index === 5 ? 'a4-v-12' : 'a4-v-03'));
     const result = (await DK_V1.potentials(builder.workspace, team.id, 'trampet', builder.workspace.plans.find((plan) => plan.teamId === team.id)!.trampet[0]!.id)).find((item) => item.id === 'T-DOBBELT-REDSKAB')!;
-    expect(result.documentedValue?.toString()).toBe('1/2');
-    expect(result.preview?.after.rounds.flatMap((round) => round.counting).some((item) => item.skill?.id === 'a4-v-12')).toBe(false);
+    expect(result.documentedValue?.toString()).toBe('0');
+    const preview = result.preview!;
+    expect(preview.after.rounds.flatMap((round) => round.counting).every((item) => item.evaluation?.apparatus === 'free')).toBe(true);
+    const altered = structuredClone(preview.workspace);
+    const round = altered.plans[0]!.trampet[0]!.rounds[0]!;
+    const entry = round.entries[0]!;
+    entry.athleteSkillId = altered.athleteSkills.find((item) => item.athleteId === entry.athleteId && item.skillId === 'a4-v-03')!.id;
+    const before = JSON.stringify(builder.workspace);
+    expect(() => applyPotentialPreview(builder.workspace, { ...preview, workspace: altered })).toThrow(/Skift redskab/);
+    expect(JSON.stringify(builder.workspace)).toBe(before);
   });
 
   it('mix-vidner har seks forskellige gymnaster og 3+3 eksplicitte kategorier', async () => {

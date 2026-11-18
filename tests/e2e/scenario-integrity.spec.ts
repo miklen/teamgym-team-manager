@@ -307,7 +307,7 @@ test('sene workersvar er bundet til scenariet og kan aldrig vises som den nye pl
                     documentedValue: { numerator: name === 'Plan B' ? 2n : 1n, denominator: 5n },
                     status: 'proven',
                     issue: null,
-                    preview: null,
+                    preview: { changes: [], before: { contributions: [] }, after: { contributions: [], rounds: [] } },
                     independent: true,
                     searchedCandidates: 0,
                   },
@@ -327,7 +327,7 @@ test('sene workersvar er bundet til scenariet og kan aldrig vises som den nye pl
   await expect(page.getByRole('heading', { name: 'Hold', exact: true })).toBeVisible();
   await page.getByRole('link', { name: 'Springplan', exact: true }).click();
   await page.locator('.composition-guide-overview').click();
-  await expect(page.getByText('Beregner registrerede muligheder… Du kan redigere videre.')).toBeVisible();
+  await expect(page.getByText('Søger efter forbedringer med holdets spring.')).toBeVisible();
   await page.getByRole('tab', { name: 'Plan B', exact: true }).click();
   await page.locator('.composition-guide-overview').click();
   await page.evaluate(() => {
@@ -338,10 +338,10 @@ test('sene workersvar er bundet til scenariet og kan aldrig vises som den nye pl
   });
   const screw = page.getByRole('region', { name: 'Guide til springplanens komposition' })
     .locator('.composition-guide-row').filter({ has: page.getByText('Skrue', { exact: true }) });
-  await screw.locator('summary').click();
-  await expect(screw).toContainText('dokumenteret mulighed 0,400');
+  await screw.locator(':scope > summary').click();
+  await expect(screw).toContainText('+0,400 med ændringer');
   await expect(screw).not.toContainText('0,200');
-  await expect(screw.getByRole('button', { name: 'Se konkrete ændringer' })).toBeDisabled();
+  await expect(screw.getByRole('button', { name: 'Se konkrete ændringer' })).toBeEnabled();
   expect(source.puts).toBe(0);
   expect(source.failures).toEqual([]);
 });

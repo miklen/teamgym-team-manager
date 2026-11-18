@@ -12,6 +12,7 @@ export const sources = [
   'packages/domain/src/workspace.ts',
   'packages/domain/src/identity.ts',
   'packages/domain/src/commands.ts',
+  'packages/domain/src/round-apparatus.ts',
   'packages/domain/src/inheritance.ts',
   'packages/domain/src/stability.ts',
   'packages/domain/src/spotting.ts',

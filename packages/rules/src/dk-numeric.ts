@@ -112,13 +112,14 @@ export function orderCheck(rotations: readonly (number | null)[], difficulties: 
   if (rotations.length !== difficulties.length || rotations.some((rotation) => rotation === null) || difficulties.some((value) => value === null)) {
     return { compliant: null, applies: true, deduction: uncertain('unresolved', ['Q06']), faultIndexes: [] };
   }
-  const compliant = rotations.every((rotation, index) => index === 0 || rotation! > rotations[index - 1]! ||
-    (rotation === rotations[index - 1] && difficulties[index]!.compare(difficulties[index - 1]!) >= 0));
-  return { compliant, applies: true, deduction: compliant ? known(0) : uncertain('unresolved', ['Q06']), faultIndexes: [] };
+  const inversionIndexes = rotations.flatMap((rotation, index) => index > 0 && (rotation! < rotations[index - 1]! ||
+    rotation === rotations[index - 1] && difficulties[index]!.compare(difficulties[index - 1]!) < 0) ? [index - 1, index] : []);
+  const compliant = inversionIndexes.length === 0;
+  return { compliant, applies: true, deduction: compliant ? known(0) : uncertain('unresolved', ['Q06']), faultIndexes: [], inversionIndexes: [...new Set(inversionIndexes)] };
 }
 
 /** DK 1.1.0: Hvert tællende spring, der står efter en højere kategori eller et sværere spring i samme kategori, giver ét fradrag. */
-export interface OrderResult { compliant: boolean | null; applies: boolean; deduction: NumericDecision; faultIndexes: readonly number[] }
+export interface OrderResult { compliant: boolean | null; applies: boolean; deduction: NumericDecision; faultIndexes: readonly number[]; inversionIndexes?: readonly number[] }
 
 export function resolvedOrderCheck(categories: readonly (number | null)[], difficulties: readonly NumericDecision[], roundNumber: number, rate = '0.1'): OrderResult {
   if (categories.length !== difficulties.length) throw new Error('Rækkefølgen kræver én kategori og én sværhed pr. spring.');

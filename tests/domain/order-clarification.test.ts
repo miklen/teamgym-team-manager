@@ -1,7 +1,8 @@
 import { describe, expect, it } from 'vitest';
-import { Fraction, setRoundEntries } from '@teamgym/domain';
+import { bindingFingerprint, Fraction, setRoundEntries } from '@teamgym/domain';
 import { DK_SPRING_CATALOG } from '../../packages/rules/src/catalog';
-import { DK_V2 } from '../../packages/rules/src/dk-v1';
+import { DK_V1, DK_V2 } from '../../packages/rules/src/dk-v1';
+import { REG_V1 } from '../../packages/rules/src/reg-v1';
 import { known, resolvedOrderCheck, uncertain } from '../../packages/rules/src/dk-numeric';
 import { evaluateSpringSkill } from '../../packages/rules/src/dk-spring';
 import { fromRows, workspaceBuilder } from '../fixtures/rule-workspace';
@@ -63,6 +64,23 @@ describe('afklaret rækkefølge i DK 1.1.0', () => {
     expect(order.decision.status).toBe('known');
     expect(order.decision.value?.toString()).toBe('1/5');
     expect(order.affectedIds).toEqual([round.id, round.entries[2]!.id, round.entries[3]!.id]);
+    const finding = result.planFindings.find((item) => item.id === order.id)!;
+    expect(finding).toMatchObject({ status: 'deduction', action: 'order', roundIds: [round.id], entryIds: [round.entries[2]!.id, round.entries[3]!.id], sources: order.sources });
+    expect(finding.amount?.toString()).toBe('1/5');
     expect(DK_V2.knownIssues.some((issue) => issue.id === 'Q06')).toBe(false);
+    for (const rulePackage of [DK_V1, REG_V1]) {
+      const copy = structuredClone(workspace);
+      const binding = copy.teams[0]!.rulesetBinding;
+      binding.rulesetId = rulePackage.manifest.rulesetId;
+      binding.packageVersion = '1.0.0';
+      copy.plans[0]!.bindingFingerprint = bindingFingerprint(binding);
+      const findings = rulePackage.analyze(copy, team.id, 'trampet', scenario.id).planFindings;
+      const legacy = findings.find((item) => item.id === 'C-ORDEN-2');
+      if (rulePackage === DK_V1) {
+        expect(legacy).toMatchObject({ status: 'unresolved', amount: null, issues: ['Q06'], roundIds: [round.id] });
+        expect(legacy?.entryIds.length).toBeGreaterThan(0);
+      } else expect(legacy).toBeUndefined();
+      expect(findings.some((item) => item.id === 'C-FLOW')).toBe(false);
+    }
   });
 });

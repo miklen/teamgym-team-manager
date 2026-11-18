@@ -16,13 +16,14 @@ import { TwistSplit } from './twist-split';
 import { twistElements, withTwistDistribution } from './twist-choice';
 
 /** Samme katalog, kædefilter, D-filter og rangering som gymnastens vælger, uden personlig vurdering. */
-export function AmbitionSpringPicker({ workspace, rulePackage, discipline, teamId, selected, approvalNote, onSelect, onBuild }: {
+export function AmbitionSpringPicker({ workspace, rulePackage, discipline, teamId, selected, approvalNote, apparatus, onSelect, onBuild }: {
   workspace: Workspace;
   rulePackage: RulePackage;
   discipline: 'tumbling' | 'trampet';
   teamId: string;
   selected: SpringDefinition | null;
   approvalNote?: string | null;
+  apparatus?: { allows: (definition: SpringDefinition) => boolean; message: string } | undefined;
   onSelect: (definition: SpringDefinition) => void;
   onBuild: (elements: ElementExecution[]) => void;
 }) {
@@ -32,7 +33,8 @@ export function AmbitionSpringPicker({ workspace, rulePackage, discipline, teamI
   const [chain, setChain] = useState<ChainState>(EMPTY_CHAIN);
   const [active, setActive] = useState<ChainSlot | null>(0);
   const [direction, setDirection] = useState<DirectionFilter>('all');
-  const library = useMemo(() => springLibrary(rulePackage, workspace).filter((item) => item.definition.discipline === discipline && listedSpring(item)), [rulePackage, workspace, discipline]);
+  const allChoices = useMemo(() => springLibrary(rulePackage, workspace).filter((item) => item.definition.discipline === discipline && listedSpring(item)), [rulePackage, workspace, discipline]);
+  const library = apparatus ? allChoices.filter((item) => apparatus.allows(item.definition)) : allChoices;
   const prechain = filterSpringChoices(library, discipline, query, EMPTY_CHAIN, minimum, unknown, rulePackage);
   const unfiltered = filterSpringChoices(library, discipline, query, chain, minimum, unknown, rulePackage);
   const purities = unfiltered.map((item) => springPurity(rulePackage.evaluateSkill(item.definition)));
@@ -48,6 +50,7 @@ export function AmbitionSpringPicker({ workspace, rulePackage, discipline, teamI
   const reset = () => { setQuery(''); setMinimum(''); setUnknown(false); setChain(EMPTY_CHAIN); setActive(0); setDirection('all'); };
   return (
     <section className="ambition-picker" aria-label="Find spring til ambition">
+      {apparatus?.message && <p className="muted">{apparatus.message}</p>}
       <div className="ambition-picker-search" role="search" aria-label="Find spring">
         <label>Søg spring
           <input type="search" aria-label="Søg sammensat spring eller alias" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Søg, fx strakt rondat" />

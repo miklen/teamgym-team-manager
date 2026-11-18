@@ -3,6 +3,7 @@ import { validateWorkspace } from './workspace';
 import type { Workspace } from './schema';
 import { checkMergePolicy, workspaceMergePolicy } from './merge-policy';
 import type { MergePolicy } from './merge-policy';
+import { retainedApparatusMix, workspaceRoundApparatus } from './round-apparatus';
 
 export type MergeSide = 'local' | 'remote';
 export interface MergeContext {
@@ -580,6 +581,15 @@ export function mergeWorkspace(
     // Afstemningen må kun ændre afledte vurderinger/tid. Et bevidst kildevalg eller relation
     // må aldrig forsvinde som en skjult generel reparation.
     const candidate = validateWorkspace(context.reconcile(clone(raw)));
+    const mixed = [...workspaceRoundApparatus(candidate)].filter(([, round]) => round.apparatus.type === 'mixed');
+    if (mixed.length) {
+      const inputRounds = all.map(workspaceRoundApparatus);
+      const introduced = mixed.filter(([id, round]) => !inputRounds.some((input) => retainedApparatusMix(input.get(id)?.apparatus, round.apparatus)));
+      if (introduced.length) return { ...review, status: 'blocked', diagnostics: introduced.map(([, round]) => {
+        const placements = [...round.apparatus.placements].map(([id, type]) => `${id} (${type === 'pegasus' ? 'Pegasus' : 'uden Pegasus'})`);
+        return `${round.scenario}, trampet, ${round.number}. omgang ville blande spring med og uden Pegasus på pladserne ${placements.join(', ')}. Ret omgangen eller de refererede spring og gennemgå igen.`;
+      }) };
+    }
     const explicit = (w: Workspace) =>
       canonicalJson({ ...w, athleteSkills: w.athleteSkills.map(assessment) });
     if (explicit(raw) !== explicit(candidate))

@@ -5,6 +5,7 @@
     "packages/domain/src/workspace.ts",
     "packages/domain/src/identity.ts",
     "packages/domain/src/commands.ts",
+    "packages/domain/src/round-apparatus.ts",
     "packages/domain/src/inheritance.ts",
     "packages/domain/src/stability.ts",
     "packages/domain/src/spotting.ts",
@@ -25,5 +26,5 @@
     "apps/web/src/twist-split.tsx",
     "apps/web/src/rhythm.tsx"
   ],
-  "fingerprint": "93145e5584e8998ef387714827f043244685a2e59f0c5524086e51e357064c79"
+  "fingerprint": "6c7b333e18bb9be2fdd440062d0df9cbeee6ea1386d23f444fc6ade36e2ce253"
 }

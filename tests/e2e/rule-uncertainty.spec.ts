@@ -72,7 +72,7 @@ test('gentagelser vises som holdfradrag med berørte omgange', async ({ page }) 
   const repetition = page.locator('.guide-deduction').filter({ hasText: 'Gentagne serier eller spring mellem omgange' });
   await repetition.locator('summary').click();
   await expect(repetition).toContainText('2,400');
-  await expect(repetition).toContainText('Berørte omgange: Omgang 1, Omgang 2, Omgang 3');
+  await expect(repetition.getByRole('group', { name: 'Berørte omgange' }).getByRole('button')).toHaveCount(3);
   await expect(repetition.locator('.rule-uncertainty')).toHaveCount(0);
 });
 
@@ -106,12 +106,13 @@ test('DK 1.1 viser det afklarede elementtillæg uden Q01-trekant', async ({ page
   const guide = page.getByRole('region', { name: 'Guide til springplanens komposition' });
   await guide.locator('.composition-guide-overview').click();
   const row = guide.locator('.composition-guide-row').filter({ has: page.getByText('Elementer', { exact: true }) });
-  await expect(row).toContainText('0,00 point');
+  await expect(row).toContainText('Intet tillæg i planen');
   await expect(row).not.toContainText('Q01');
   await expect(row).toContainText('Pr. serie · over tre omgange');
   await expect(row).not.toContainText('Uafklaret');
-  await row.locator('summary').click();
-  await expect(row).toContainText('Rondat – flik-flak – lukket salto');
+  await row.locator(':scope > summary').click();
+  await row.locator('.guide-example > summary').click();
+  await expect(row.getByText(/Rondat – flik-flak – lukket salto/)).toBeVisible();
 });
 
 test('J822 forklarer den åbne række ved momentet på mobil', async ({ page }) => {

@@ -1,5 +1,5 @@
+import { restoreRoundFixture } from '../fixtures/synthetic-workspace';
 import { describe, expect, it } from 'vitest';
-import { setRoundEntries } from '@teamgym/domain';
 import { DK_SPRING_CATALOG } from '../../packages/rules/src/catalog';
 import { DK_V1, DK_V2 } from '../../packages/rules/src/dk-v1';
 import { workspaceBuilder } from '../fixtures/rule-workspace';
@@ -23,7 +23,7 @@ function plan(packageVersion: string, rounds: readonly (readonly string[])[], ex
       role: extra?.round === roundIndex && index === 0 ? 'extra' as const : 'counting' as const }));
     const current = workspace.plans[0]!;
     const scenario = current.trampet[0]!;
-    workspace = setRoundEntries({ ...builder.workspace, plans: workspace.plans }, current.id, 'trampet', scenario.id, scenario.rounds[roundIndex]!.id, entries, { counting: 6, extra: 2 }, builder.environment);
+    workspace = restoreRoundFixture({ ...builder.workspace, plans: workspace.plans }, scenario.rounds[roundIndex]!.id, entries);
   });
   const rulePackage = packageVersion === '1.1.0' ? DK_V2 : DK_V1;
   return { workspace, result: rulePackage.analyze(workspace, team.id, 'trampet', workspace.plans[0]!.trampet[0]!.id) };
@@ -40,7 +40,14 @@ describe('afklaret Pegasus-omgang i DK 1.1.0', () => {
   });
 
   it('mangler der en omgang uden Pegasus, gives 0,20 pr. tællende gymnast', () => {
-    expect(redskab(plan('1.1.0', [vault, vault, vault]).result).decision.value?.toString()).toBe('6/5');
+    const { result } = plan('1.1.0', [vault, vault, vault]);
+    expect(redskab(result).decision.value?.toString()).toBe('6/5');
+    const finding = result.planFindings.find((item) => item.id === 'C-REDSKAB')!;
+    expect(finding).toMatchObject({ status: 'deduction', action: 'rounds', roundIds: result.rounds.map((round) => round.id), entryIds: [] });
+    expect(finding.detail).toContain('fuld omgang uden Pegasus');
+    expect(finding.amount?.toString()).toBe('6/5');
+    const partial = plan('1.1.0', [vault, vault, []]).result.planFindings.find((item) => item.id === 'C-REDSKAB')!;
+    expect(partial).toMatchObject({ status: 'preliminary', amount: null });
   });
 
   it('en blandet omgang er ikke mulig og giver ugyldig plan i stedet for Q04', () => {

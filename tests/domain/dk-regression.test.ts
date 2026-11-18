@@ -1,5 +1,6 @@
+import { restoreRoundFixture } from '../fixtures/synthetic-workspace';
 import { describe, expect, it } from 'vitest';
-import { hasTwistDistributionChoice, needsTwistDistribution, outTwistDistribution, setPlannedSpot, setRoundEntries } from '@teamgym/domain';
+import { hasTwistDistributionChoice, needsTwistDistribution, outTwistDistribution, setPlannedSpot } from '@teamgym/domain';
 import type { ElementExecution, RulesetBinding, SkillDefinition, SpringDiscipline } from '@teamgym/domain';
 import { DK_SPRING_CATALOG } from '../../packages/rules/src/catalog';
 import type { NumericDecision } from '../../packages/rules/src/dk-numeric';
@@ -89,7 +90,7 @@ function analyzePlan(spec: PlanSpec, binding: RulesetBinding, rulePackage: RuleP
     const entries = definitions.map((definition, index) => ({ id: builder.environment.id(), athleteId: athletes[index]!.id,
       athleteSkillId: builder.register(athletes[index]!.id, withOut(definition)), role: index < (round.extras?.length ?? 0) ? 'extra' as const : 'counting' as const }));
     const scenario = plan()[spec.discipline][0]!;
-    builder.workspace = setRoundEntries(builder.workspace, plan().id, spec.discipline, scenario.id, scenario.rounds[roundIndex]!.id, entries, { counting: 6, extra: 2 }, builder.environment);
+    builder.workspace = restoreRoundFixture(builder.workspace, scenario.rounds[roundIndex]!.id, entries);
   });
   for (const spot of spec.spots ?? []) {
     const scenario = plan()[spec.discipline][0]!;

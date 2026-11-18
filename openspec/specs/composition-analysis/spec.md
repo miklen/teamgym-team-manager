@@ -153,8 +153,8 @@ Guiden SHALL vise reglementets kvalifikationskrav og teoretiske mål for hvert r
 - **THEN** opfinder guiden ingen mål, tælleenhed eller sikre point fra en anden pakke og bevarer synlig adgang til den kendte usikkerhed.
 
 #### Scenario: Én samlet indgang til dokumenterede muligheder
-- **WHEN** potentialesøgningen har undersøgt holdets registrerede færdigheder for den valgte springplan
-- **THEN** vises valgt beløb, dokumenteret beløb, søgningens status og handlingen »Se konkrete ændringer« i den relevante tillægsrække i guiden, uden en gentaget potentialeliste længere nede. Handlingen åbner fortsat den fulde vidneopstilling uden automatisk at ændre planen. Under søgning vises status og mulighed for at afbryde; ved fejl vises fejlen i guiden. Et forsinket resultat fra et andet scenarie må ikke vises.
+- **WHEN** potentialesøgningen har fundet en konkret opstilling, der øger et tillæg i den valgte springplan
+- **THEN** vises planens bidrag, bidraget med forslaget, den ekstra gevinst og handlingen »Se konkrete ændringer« i den relevante tillægsrække i guiden. Handlingen åbner fortsat den fulde vidneopstilling uden automatisk at ændre planen. Under søgning vises status og mulighed for at afbryde; ved fejl vises fejlen i guiden. Et forsinket resultat fra et andet scenarie må ikke vises.
 
 ### Requirement: Guiden giver kompakt dynamisk status
 Guiden SHALL være sammenklappet ved åbning af springplanen. Den lukkede visning SHALL vise antal vurderbare omgange samt summer af planens tillæg og rå fradrag fra alle C-bidrag i den valgte regelpakke. D og C for disciplinen SHALL stå som de primære dynamiske tal før guiden; den faste holdprofil SHALL stå synligt ved scenariets navn og uddybes sammen med guidens regelrammer, frem for at være et tredje disciplinkort. Ufuldstændige eller uafklarede bidrag MUST NOT fremstilles som endelige beløb. Guiden SHALL kunne åbnes og lukkes med tastatur og uden at ændre arbejdsrummets data.
@@ -190,3 +190,38 @@ Ambitionspladser SHALL indgå i kompositionskrav, tillæg, fradrag og guiden som
 - **WHEN** gentagelsesreglen afhænger af, om de samme gymnaster udfører et spring, og en af de berørte pladser er en ambition, som giver forskellige udfald
 - **THEN** vises fradraget som ufuldstændigt med begge mulige værdier.
 
+### Requirement: Planbaserede sammensætningsfund kan stedfæstes
+
+Analysen SHALL for hvert planbaseret C-forhold, som den valgte regelpakke vurderer, levere regelhenvisning, status, kendt beløb eller uafklaret beløb, berørte omgangs- og pladsidentiteter samt en konkret forklaring på mulig rettelse. Stedfæstelsen SHALL bygge på samme regelresultat som C-oversigten. Den MUST NOT udpege én skyldig plads, når regelgrundlaget ikke afgør det. Mangler, invalide valg og mistede muligheder SHALL kunne skelnes fra sikre fradrag.
+
+#### Scenario: Gentaget spring med lige antal
+- **WHEN** samme springidentitet optræder lige mange gange i to tællende omgange
+- **THEN** markeres de berørte forekomster i begge omgange, mens det kendte fradrag vises samlet, og ingen af de to omgange udpeges som sikkert friholdt.
+
+#### Scenario: Rækkefølgefejl
+- **WHEN** en DK-omgang 2 eller 3 har spring i forkert rækkefølge
+- **THEN** stedfæstes de berørte pladser, og analysen foreslår den relevante rækkefølge uden at ændre den; DK 1.0.0 med uafklaret Q06 får ikke et opfundet præcist beløb.
+
+#### Scenario: Pakke uden rækkefølgefradrag
+- **WHEN** holdet anvender REG, som ikke har DK's rækkefølgefradrag
+- **THEN** vises ingen advarsel om dette DK-fradrag på pladserne.
+
+### Requirement: Omgangskrav vurderes uden opdigtet retningstæller
+
+Analysen SHALL vurdere banens rene forlæns- og baglænsomgange samt trampettens omgange med og uden Pegasus på tværs af alle tre omgange efter den valgte pakke. Antal skift mellem forlæns og baglæns spring i en omgang MUST NOT i sig selv tælles som fradrag. En ufuldstændig plan SHALL vise mulige udfald som foreløbige, når tomme pladser eller omgange stadig kan ændre resultatet.
+
+#### Scenario: Blandet retning
+- **WHEN** en baneomgang indeholder både rene forlæns- og baglænsserier
+- **THEN** forklarer guiden, hvilke rene omgangskrav planen endnu mangler, og peger på relevante omgange uden at påstå et fradrag pr. retningsskift.
+
+#### Scenario: Observeret udførelse mangler
+- **WHEN** planen har korrekt springrækkefølge, men intet observeret gennemløb
+- **THEN** bliver flow og fald fortsat ikke vurderet som automatisk planfradrag eller markeret som sikker fejl på en plads.
+
+### Requirement: Omgangens tillægsmuligheder bygger på en konkret opstilling
+
+Springplanen SHALL kun fremhæve muligheden for mere tillæg ved en omgang, hvis et konkret forslag med holdets registrerede spring øger bidraget og peger på den omgang. Markeringen SHALL vise den ekstra gevinst i forhold til planen. Regelforklaringen og planens aktuelle bidrag SHALL fortsat kunne ses i kompositionsguiden.
+
+#### Scenario: Dobbeltrotation uden en opnåelig forbedring
+- **WHEN** planen allerede får tillæg for en dobbeltrotation, og søgningen ikke finder en opstilling med holdets registrerede spring, som øger tillægget
+- **THEN** viser guiden planens bidrag og reglen, mens omgangen ikke markeres med en mulighed for mere tillæg.

@@ -240,6 +240,7 @@ export function ActionForm({
   disabled = false,
   className,
   formRef,
+  secondaryAction,
 }: {
   children: ReactNode;
   submit: (data: FormData) => void;
@@ -247,6 +248,7 @@ export function ActionForm({
   disabled?: boolean;
   className?: string;
   formRef?: RefObject<HTMLFormElement | null> | undefined;
+  secondaryAction?: ReactNode;
 }) {
   const [error, setError] = useState('');
   return (
@@ -274,6 +276,7 @@ export function ActionForm({
         <button disabled={disabled} type="submit">
           {label}
         </button>
+        {secondaryAction}
       </div>
     </form>
   );

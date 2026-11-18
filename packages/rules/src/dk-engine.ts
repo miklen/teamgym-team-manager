@@ -1,4 +1,4 @@
-import { Fraction, activePlannedSpot, bindingFingerprint, roundStability, sumFractions } from '@teamgym/domain';
+import { Fraction, activePlannedSpot, bindingFingerprint, roundApparatusLookup, roundStability, sumFractions } from '@teamgym/domain';
 import type { AthleteSkill, Diagnostic, EvaluationStatus, PlannedSpot, RoundEntry, ReserveEntry, SkillDefinition, SourceReference, SpringDiscipline, Workspace } from '@teamgym/domain';
 import type { SpotRate, SpotRates, TeamProfile } from './dk-data';
 import type { NumericDecision, OrderResult } from './dk-numeric';
@@ -8,6 +8,8 @@ import { evaluateSpringSkill, normalizeElement } from './dk-spring';
 import type { SpringSkillEvaluation } from './dk-spring';
 import { minTwistHalfTurns, resolveSpringRules } from './spring-rules';
 import type { SpringRules } from './spring-rules';
+import { analyzePlanFindings } from './plan-findings';
+import type { PlanFinding } from './plan-findings';
 
 export interface RuleContribution {
   id: string; label: string; kind: 'base' | 'bonus' | 'deduction' | 'observation';
@@ -49,6 +51,7 @@ export interface RoundEvaluation {
   plannedExecution: PlannedExecution;
   compositionReady: boolean;
   holdDeduction: NumericDecision; order: OrderResult; orderFaultIds: readonly string[]; sortedEntryIds: readonly string[];
+  holdDeviationIds: readonly string[];
   stability: ReturnType<typeof roundStability>;
 }
 export type ReserveEvaluation = Omit<ParticipantEvaluation, 'entry'> & { entry: ReserveEntry };
@@ -58,6 +61,7 @@ export interface DisciplineEvaluation {
   difficulty: NumericDecision; panelD: Fraction | null;
   composition: ReturnType<typeof compositionTotal>;
   contributions: readonly RuleContribution[]; diagnostics: readonly Diagnostic[];
+  planFindings: readonly PlanFinding[];
   /** Loft: C + D + gennemsnitligt planlagt E-loft. Aldrig en forventet karakter. */
   maximumScore: NumericDecision;
   /** Forskellen til samme loft uden planlagte modtagninger. */
@@ -108,6 +112,11 @@ export function evaluateDiscipline(workspace: Workspace, teamId: string, discipl
   const scenario = plan[discipline].find((item) => item.id === scenarioId);
   if (!scenario) throw new Error('Scenariet findes ikke i holdets disciplin.');
   const rawRounds = scenario.rounds;
+  const classifyApparatus = roundApparatusLookup(workspace);
+  const apparatusMixes = discipline === 'trampet' ? rawRounds.map((round) => {
+    const result = classifyApparatus(round.entries);
+    return result.type === 'mixed' ? [...result.placements.keys()] : [];
+  }) : [];
 
   /** En ambition evalueres fra springdefinitionen: D, identitet og C-berettigelse som en besat plads med samme spring. */
   function evaluateAmbition<T extends RoundEntry | ReserveEntry>(entry: T, plannedSkillId: string): Omit<ParticipantEvaluation, 'entry'> & { entry: T } {
@@ -190,17 +199,18 @@ export function evaluateDiscipline(workspace: Workspace, teamId: string, discipl
         ? `Mixfordelingen afhænger af, hvem der tager ${ambitionCount === 1 ? 'ambitionspladsen' : `de ${ambitionCount} ambitionspladser`}.`
         : 'De tællende skal opfylde holdprofilens eksplicitte mixfordeling.', [round.id], mix === 'invalid' ? 'invalid' : 'incomplete'));
     }
-    const apparatuses = new Set(entries.map((item) => item.evaluation?.apparatus).filter((value) => value === 'vault' || value === 'free'));
-    const mixedApparatus = discipline === 'trampet' && Boolean(settings.apparatusRoundsResolved) && apparatuses.size > 1;
+    const mixedApparatus = Boolean(settings.apparatusRoundsResolved && apparatusMixes[roundIndex]?.length);
     if (mixedApparatus) {
       status = 'invalid';
       diagnostics.push(diagnostic('mixed-apparatus', `${roundIndex + 1}. omgang blander spring med og uden Pegasus. Pegasus står foran trampolinen hele omgangen eller slet ikke.`, [round.id]));
     }
     const compositionReady = !invalidStructure && !mixedApparatus && counting.length === profile.counting && counting.every((item) => item.eligibleForC) && mixAttainable;
     let holdDeduction = known(0);
+    let holdDeviationIds: string[] = [];
     if (roundIndex === 0) {
       const hold = holdRound(counting.map((item) => item.identity), counting.map((item) => item.originalD.value), profile.counting, ruleSet.deductionRates.hold);
       holdDeduction = hold.deduction;
+      if (hold.referenceIdentity !== null) holdDeviationIds = counting.filter((item) => item.identity !== null && item.identity !== hold.referenceIdentity).map((item) => item.entry.id);
       for (const item of counting) {
         if (hold.referenceIdentity === null) item.adjustedD = uncertain(hold.status === 'known' ? 'incomplete' : hold.status, hold.issues);
         else if (item.identity !== null && item.identity !== hold.referenceIdentity) item.adjustedD = known(0);
@@ -231,7 +241,7 @@ export function evaluateDiscipline(workspace: Workspace, teamId: string, discipl
       (a.originalD.value && b.originalD.value ? a.originalD.value.compare(b.originalD.value) : 0));
     diagnostics.push(...entries.flatMap((item) => item.diagnostics));
     return { id: round.id, entries, counting, reserves: round.reserves.map((entry) => evaluateEntry(entry)), difficulty, panelD: difficulty.value?.panelFloor() ?? null, status, unspottedDifficulty, plannedExecution, compositionReady,
-      holdDeduction, order, orderFaultIds, sortedEntryIds: sorted.map((item) => item.entry.id), stability: roundStability(workspace, round.entries, profile, teamId) };
+      holdDeduction, holdDeviationIds, order, orderFaultIds, sortedEntryIds: sorted.map((item) => item.entry.id), stability: roundStability(workspace, round.entries, profile, teamId) };
   });
 
   function add(id: string, label: string, kind: RuleContribution['kind'], decision: NumericDecision, affectedIds: string[], guideCounts?: readonly (readonly number[])[]) {
@@ -242,11 +252,11 @@ export function evaluateDiscipline(workspace: Workspace, teamId: string, discipl
   const allEntryIds = rounds.flatMap((round) => round.counting.map((item) => item.entry.id));
   const base = Fraction.from(ruleSet.baseC);
   add('C-GRUND', 'Grundværdi', 'base', known(base), [plan.id]);
-  add('C-HOLD', 'Afvigelser i holdomgangen', 'deduction', rounds[0]!.holdDeduction, [rounds[0]!.id, ...rounds[0]!.counting.filter((item) => item.adjustedD.value?.compare(0) === 0).map((item) => item.entry.id)]);
+  add('C-HOLD', 'Afvigelser i holdomgangen', 'deduction', rounds[0]!.holdDeduction, [rounds[0]!.id, ...rounds[0]!.holdDeviationIds]);
 
   const identities = [...new Set(rounds.flatMap((round) => round.counting.filter((item) => item.eligibleForC && item.identity).map((item) => item.identity!)))];
-  const repeatResults = identities.map((identity) => {
-    const matches = rounds.map((round) => round.counting.filter((item) => item.eligibleForC && item.identity === identity));
+  const repeatMatches = identities.map((identity) => rounds.map((round) => round.counting.filter((item) => item.eligibleForC && item.identity === identity)));
+  const repeatResults = repeatMatches.map((matches) => {
     const identityCounts = matches.map((items) => items.length);
     if (settings.repetitionResolved) return resolvedRepetitionDeduction(identityCounts, profile.counting, ruleSet.deductionRates.repetition);
     const nonempty = matches.filter((items) => items.length > 0);
@@ -267,16 +277,14 @@ export function evaluateDiscipline(workspace: Workspace, teamId: string, discipl
   let repeat = sumDecisions(repeatResults);
   const allComplete = rounds.every((round) => round.compositionReady);
   if (!allComplete && repeat.status === 'known') repeat = uncertain('incomplete', [], repeat.knownSubtotal);
-  const repeatRoundIds = settings.repetitionResolved ? rounds.flatMap((round, roundIndex) => {
-    const relevant = identities.some((identity) => {
-      const identityCounts = rounds.map((candidate) => candidate.counting.filter((item) => item.eligibleForC && item.identity === identity).length);
-      const maximum = Math.max(...identityCounts);
-      const tiedMaximum = identityCounts.filter((count) => count === maximum).length > 1;
-      return identityCounts[roundIndex]! > 0 && identityCounts.filter((count) => count > 0).length > 1 &&
-        (tiedMaximum || identityCounts[roundIndex] !== maximum);
-    });
-    return relevant ? [round.id] : [];
-  }) : allEntryIds;
+  const repeatPlacements = rounds.map((_round, roundIndex) => repeatMatches.flatMap((matches) => {
+    const counts = matches.map((items) => items.length);
+    const maximum = Math.max(...counts);
+    const tiedMaximum = counts.filter((count) => count === maximum).length > 1;
+    return counts.filter((count) => count > 0).length > 1 && (!settings.repetitionResolved || tiedMaximum || counts[roundIndex] !== maximum)
+      ? matches[roundIndex]!.map((item) => item.entry.id) : [];
+  }));
+  const repeatRoundIds = settings.repetitionResolved ? rounds.filter((_round, index) => repeatPlacements[index]!.length > 0).map((round) => round.id) : allEntryIds;
   add('C-GENTAG', 'Gentagne serier eller spring mellem omgange', 'deduction', repeat, repeatRoundIds);
   if (ruleSet.orderDeduction) for (const [index, round] of rounds.entries()) if (index > 0) add(`C-ORDEN-${index + 1}`, `Rækkefølge i omgang ${index + 1}`, 'deduction', round.order.deduction,
     settings.orderResolved ? [round.id, ...round.orderFaultIds] : [round.id, ...round.entries.map((item) => item.entry.id)]);
@@ -355,7 +363,8 @@ export function evaluateDiscipline(workspace: Workspace, teamId: string, discipl
   const unspottedMaximum = withRounds(plannedMaximumScore(composition, unspottedDifficulty, rounds.map(() => known(10))));
   const spotCost = maximumScore.value !== null && unspottedMaximum.value !== null ? known(unspottedMaximum.value.subtract(maximumScore.value)) :
     uncertain(combineStatus([maximumScore.status, unspottedMaximum.status, 'incomplete']) as Exclude<EvaluationStatus, 'known'>, [...new Set([...maximumScore.issues, ...unspottedMaximum.issues])], unspottedMaximum.knownSubtotal.subtract(maximumScore.knownSubtotal));
-  return { discipline, rounds, difficulty, panelD: difficulty.value?.panelFloor() ?? null, composition, contributions, diagnostics, maximumScore, spotCost, invalidRoundIds,
+  const planFindings = analyzePlanFindings(rounds, contributions, diagnostics, profile, repeatPlacements, apparatusMixes);
+  return { discipline, rounds, difficulty, panelD: difficulty.value?.panelFloor() ?? null, composition, contributions, diagnostics, planFindings, maximumScore, spotCost, invalidRoundIds,
     status: combineStatus([difficulty.status, composition.status, ...rounds.map((round) => round.status)]), planned: true, fullExecutionScore: false };
 }
 

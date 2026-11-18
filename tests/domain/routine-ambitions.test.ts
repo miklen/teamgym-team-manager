@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   addAmbition, addAmbitions, changeAmbitionSkill, duplicateScenario, fillAmbition, insertReserve, migrateWorkspace, moveRoundFirst, registerAthleteSkill,
-  roundStability, serializeWorkspace, setArchived, setPlannedSpot, setRoundEntries, setRoundReserves, validateWorkspace, workspacePayload,
+  roundApparatus, roundStability, serializeWorkspace, setArchived, setPlannedSpot, setRoundEntries, setRoundReserves, switchRoundApparatus, validateWorkspace, workspacePayload,
 } from '@teamgym/domain';
 import type { SkillDefinition, Workspace } from '@teamgym/domain';
 import v1 from '../../examples/arbejdsrum-v1.json';
@@ -11,6 +11,7 @@ import v4 from '../../examples/arbejdsrum-v4.json';
 import { limits, salto, syntheticWorkspace, trampetSkill } from '../fixtures/synthetic-workspace';
 
 const newJump: Extract<SkillDefinition, { discipline: 'trampet' }> = { id: 'skill-ny-ambition', name: 'Syntetisk ambitionsspring', archived: false, discipline: 'trampet', jump: { ...salto, apparatus: 'trampet', twistsHalfTurns: 4, twistDistribution: [4] } };
+const pegasus = { ...newJump, id: 'skill-test-pegasus', jump: { ...newJump.jump, apparatus: 'pegasus' as const } };
 
 function setup() {
   const base = syntheticWorkspace();
@@ -29,6 +30,73 @@ function setup() {
 }
 
 describe('ambitioner i arbejdsrummet', () => {
+  it('afleder typen fra ekstra pladser og ambitioner og læser en gammel blanding uden omskrivning', () => {
+    const s = setup();
+    const { workspace, entryId } = s.add(s.workspace);
+    const entries = s.at(workspace).entries;
+    expect(roundApparatus(workspace, []).type).toBeNull();
+    expect(roundApparatus(workspace, entries).type).toBe('trampet');
+    const legacy = structuredClone(workspace);
+    legacy.skills.push(pegasus);
+    const extra = s.at(legacy).entries.find((entry) => entry.id === entryId)!;
+    Object.assign(extra, { role: 'extra', plannedSkillId: pegasus.id });
+    const restored = validateWorkspace(JSON.parse(serializeWorkspace(legacy)));
+    expect(serializeWorkspace(restored)).toBe(serializeWorkspace(legacy));
+    const mixed = roundApparatus(restored, s.at(restored).entries);
+    expect(mixed.type).toBe('mixed');
+    expect(mixed.placements.get(entryId)).toBe('pegasus');
+    const repaired = setRoundEntries(restored, s.plan.id, 'trampet', s.scenario.id, s.round.id, s.at(restored).entries.filter((entry) => entry.id !== entryId), limits, s.environment);
+    expect(roundApparatus(repaired, s.at(repaired).entries).type).toBe('trampet');
+  });
+
+  it('afviser blandede ændringer atomisk fra pladser, ambitioner, besættelse og reserve', () => {
+    const s = setup();
+    const registered = registerAthleteSkill(s.workspace, s.workspace.athletes[6]!.id, pegasus, s.environment);
+    const { workspace, entryId } = s.add(registered.workspace);
+    const target = s.at(workspace).entries[0]!;
+    const reserve = { id: 'reserve-pegasus', athleteId: workspace.athletes[6]!.id, athleteSkillId: registered.athleteSkillId };
+    const withReserve = setRoundReserves(workspace, s.plan.id, 'trampet', s.scenario.id, s.round.id, [reserve], s.environment);
+    const before = serializeWorkspace(withReserve);
+    expect(() => setRoundEntries(workspace, s.plan.id, 'trampet', s.scenario.id, s.round.id, [...s.at(workspace).entries, reserve], limits, s.environment)).toThrow(/Skift redskab/);
+    expect(() => s.add(s.workspace, pegasus)).toThrow(/Skift redskab/);
+    expect(s.workspace.skills.some((skill) => skill.id === pegasus.id)).toBe(false);
+    expect(() => changeAmbitionSkill(workspace, s.plan.id, 'trampet', s.scenario.id, s.round.id, entryId, pegasus, limits, s.environment)).toThrow(/Skift redskab/);
+    expect(() => fillAmbition(workspace, s.plan.id, 'trampet', s.scenario.id, s.round.id, entryId, registered.athleteSkillId, { ...s.environment, springIdentity: () => 'fælles' })).toThrow(/Skift redskab/);
+    expect(() => insertReserve(withReserve, s.plan.id, 'trampet', s.scenario.id, s.round.id, reserve.id, target.id, workspacePayload(withReserve), limits, s.environment)).toThrow(/Skift redskab/);
+    expect(serializeWorkspace(withReserve)).toBe(before);
+    const inserted = insertReserve(withReserve, s.plan.id, 'trampet', s.scenario.id, s.round.id, reserve.id, target.id, workspacePayload(withReserve), limits, s.environment, { athleteSkillId: null });
+    expect(s.at(inserted).entries[0]).toMatchObject({ id: target.id, athleteId: reserve.athleteId, athleteSkillId: null });
+  });
+
+  it('forhåndsviser og bekræfter redskabsskift med eksplicitte valg og frisk basis', () => {
+    const s = setup();
+    const withAmbition = s.add(s.workspace);
+    const first = s.at(withAmbition.workspace).entries[0]!;
+    const registered = registerAthleteSkill(withAmbition.workspace, first.athleteId!, pegasus, s.environment);
+    const workspace = setPlannedSpot(registered.workspace, s.plan.id, 'trampet', s.scenario.id, s.round.id, first.id, { grade: 'support' }, s.environment);
+    const before = serializeWorkspace(workspace);
+    const entries = s.at(workspace).entries;
+    const basis = workspacePayload(workspace);
+    const choices = Object.fromEntries(entries.map((entry) => [entry.id, entry.athleteId === null ? { kind: 'remove-ambition' as const } : entry.id === first.id ? { kind: 'registration' as const, registrationId: registered.athleteSkillId } : { kind: 'later' as const }]));
+    const apply = (current: Workspace, selected: Parameters<typeof switchRoundApparatus>[5] = choices) =>
+      switchRoundApparatus(current, s.plan.id, s.scenario.id, s.round.id, 'pegasus', selected, basis, s.environment);
+    expect(() => apply(workspace, {})).toThrow(/hver berørt plads/);
+    const preview = apply(workspace);
+    expect(serializeWorkspace(workspace)).toBe(before);
+    expect(s.at(preview).entries.map(({ id, athleteId, role }) => ({ id, athleteId, role }))).toEqual(entries.filter((entry) => entry.athleteId !== null).map(({ id, athleteId, role }) => ({ id, athleteId, role })));
+    expect(s.at(preview).entries[0]).toMatchObject({ athleteSkillId: registered.athleteSkillId, plannedSpot: null });
+    expect(s.at(preview).reserves).toEqual(s.at(workspace).reserves);
+    expect(preview.plans[0]!.trampet[0]!.rounds[0]).toEqual(workspace.plans[0]!.trampet[0]!.rounds[0]);
+    expect(apply(workspace)).toEqual(preview);
+    const replacement = { ...pegasus, id: 'test-ny-pegasus', jump: { ...pegasus.jump, twistsHalfTurns: 6, twistDistribution: [6] } };
+    const retained = apply(workspace, { ...choices, [withAmbition.entryId]: { kind: 'ambition', definition: replacement } });
+    expect(s.at(retained).entries.at(-1)).toMatchObject({ id: withAmbition.entryId, plannedSkillId: replacement.id });
+    expect(retained.skills).toContainEqual(replacement);
+    expect(serializeWorkspace(workspace)).toBe(before);
+    const changed = structuredClone(workspace);
+    changed.teams[0]!.name = 'Ændret testhold';
+    expect(() => apply(changed)).toThrow(/Data er ændret/);
+  });
   it('opretter 2 + 2 + 2 og 3 + 3 som atomiske blokke med selvstændige plads-id’er', () => {
     const s = setup();
     const empty = setRoundEntries(s.workspace, s.plan.id, 'trampet', s.scenario.id, s.round.id, [], limits, s.environment);

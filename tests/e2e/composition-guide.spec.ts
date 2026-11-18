@@ -39,13 +39,13 @@ for (const width of [1440, 390]) {
     await expect(guide.getByText('6 tællende ·', { exact: false }).first()).toBeVisible();
     await expect(guide.getByRole('heading', { name: 'C-regnskab' })).toBeVisible();
     await expect(page.locator('.composition')).toHaveCount(0);
-    expect(await guide.locator('summary').count()).toBeLessThan(12);
+    expect(await guide.locator('summary:visible').count()).toBeLessThan(12);
     const twist = guide.locator('.composition-guide-row').filter({ has: page.getByText('Skrue', { exact: true }) }).first();
-    await twist.locator('summary').focus();
+    await twist.locator(':scope > summary').focus();
     await page.keyboard.press('Enter');
     await expect(twist).toHaveAttribute('open', '');
-    await expect(twist).toContainText('Eksempel at træne frem mod');
-    await expect(twist).toContainText('Maksimalt tillæg');
+    await expect(twist).toContainText('Eksempel fra springkataloget');
+    await expect(twist).toContainText('Maks. i reglementet');
     await guide.screenshot({ path: testInfo.outputPath(`springguide-expanded-${width}.png`), animations: 'disabled' });
     await twist.locator('.guide-round-value').first().click();
     await expect(page.getByRole('region', { name: '1. omgang', exact: true })).toBeVisible();
@@ -118,9 +118,9 @@ test('ufuldstændige pladser viser foreløbig dækning uden endelige tillæg', a
   await guide.locator('.composition-guide-overview').click();
   await expect(guide).toContainText('Foreløbig plan');
   const twist = guide.locator('.composition-guide-row').filter({ has: page.getByText('Skrue', { exact: true }) }).first();
-  await expect(twist).toContainText('Foreløbig 6/6');
-  await twist.locator('summary').click();
-  await expect(twist).toContainText('Beløbet er ikke et endeligt C-tillæg');
+  await expect(twist).toContainText('Foreløbigt +0,600');
+  await twist.locator(':scope > summary').click();
+  await expect(twist.getByRole('button', { name: 'Se konkrete ændringer' })).toHaveCount(0);
 });
 
 test('manglende præcis regelpakke giver ingen guide med lånte tal', async ({ page }) => {

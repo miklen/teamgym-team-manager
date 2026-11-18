@@ -1,6 +1,7 @@
 import { useId, useMemo, useState } from 'react';
 import type { RefObject } from 'react';
 import { changeAmbitionSkill, skillIdentity, skillNeedsTwistDistribution } from '@teamgym/domain';
+import { apparatusRestriction } from './round-apparatus';
 import type { ElementExecution, Round, RoundEntry, SpringDiscipline, Workspace } from '@teamgym/domain';
 import { ambitionCandidates, ambitionEnvironment } from '@teamgym/rules';
 import type { AmbitionCandidate, RulePackage, TeamProfile } from '@teamgym/rules';
@@ -49,6 +50,7 @@ export function AmbitionCreateForm({ workspace, teamId, discipline, rulePackage,
   const [building, setBuilding] = useState<ElementExecution[] | null>(null);
   const [approvalNote, setApprovalNote] = useState<string | null>(null);
   const [count, setCount] = useState(1);
+  const apparatus = discipline === 'trampet' ? apparatusRestriction(workspace, round) : undefined;
   const capacity = Math.max(0, profile.counting + profile.extra - round.entries.length);
   const chosenCount = Math.min(count, capacity);
   const extrasAfter = Math.max(0, round.entries.length + chosenCount - profile.counting);
@@ -56,6 +58,7 @@ export function AmbitionCreateForm({ workspace, teamId, discipline, rulePackage,
     <button type="button" className="quiet" onClick={() => setBuilding(null)}>← Tilbage til springvalg</button>
     <SkillEditor key={JSON.stringify(building)} workspace={workspace} athleteId="" rulePackage={rulePackage} save={() => {}} openExisting={() => {}} initialDiscipline={discipline} initialElements={building} onDefinition={(definition, approve, note) => {
       if (definition.discipline === 'rhythm') throw new Error('Vælg et bane- eller trampetspring.');
+      if (apparatus && !apparatus.allows(definition)) throw new Error(apparatus.message);
       setSelected(definition);
       setApprovalNote(approve ? note : null);
       setBuilding(null);
@@ -78,7 +81,7 @@ export function AmbitionCreateForm({ workspace, teamId, discipline, rulePackage,
           <span className="ambition-mark" aria-hidden="true">+</span>
           <p>Planlæg springet nu. Pladsen tæller med i D og C og besættes, når en gymnast kan springet.</p>
         </div>
-        <AmbitionSpringPicker workspace={workspace} rulePackage={rulePackage} discipline={discipline} teamId={teamId} selected={selected} approvalNote={approvalNote} onSelect={(definition) => { setSelected(definition); setApprovalNote(null); onDirty?.(); }} onBuild={setBuilding} />
+        <AmbitionSpringPicker workspace={workspace} rulePackage={rulePackage} discipline={discipline} teamId={teamId} selected={selected} approvalNote={approvalNote} apparatus={apparatus} onSelect={(definition) => { setSelected(definition); setApprovalNote(null); onDirty?.(); }} onBuild={setBuilding} />
         <label>Antal nye pladser
           <select name="count" value={chosenCount} onChange={(event) => { setCount(Number(event.target.value)); onDirty?.(); }}>
             {Array.from({ length: capacity }, (_, index) => index + 1).map((value) => <option key={value} value={value}>{value}</option>)}
@@ -110,6 +113,7 @@ export function AmbitionFillForm({ workspace, teamId, discipline, rulePackage, p
   const [approvalNote, setApprovalNote] = useState<string | null>(null);
   const [selected, setSelected] = useState('');
   const groupId = useId();
+  const apparatus = discipline === 'trampet' ? apparatusRestriction(workspace, round, entry.id) : undefined;
   const shown = replacement ?? current;
   // Kandidater beregnes på et forhåndsvist arbejdsrum, så et nyt spring straks viser, hvem der kan det.
   const candidates = useMemo((): AmbitionCandidate[] => {
@@ -132,6 +136,7 @@ export function AmbitionFillForm({ workspace, teamId, discipline, rulePackage, p
     <button type="button" className="quiet" onClick={() => setBuilding(null)}>← Tilbage til ambitionen</button>
     <SkillEditor key={JSON.stringify(building)} workspace={workspace} athleteId="" rulePackage={rulePackage} save={() => {}} openExisting={() => {}} initialDiscipline={discipline} initialElements={building} onDefinition={(definition, approve, note) => {
       if (definition.discipline === 'rhythm') throw new Error('Vælg et bane- eller trampetspring.');
+      if (apparatus && !apparatus.allows(definition)) throw new Error(apparatus.message);
       setReplacement(definition);
       setApprovalNote(approve ? note : null);
       setBuilding(null);
@@ -161,7 +166,7 @@ export function AmbitionFillForm({ workspace, teamId, discipline, rulePackage, p
         </div>
         {changing ? (
           <div className="ambition-change">
-            <AmbitionSpringPicker workspace={workspace} rulePackage={rulePackage} discipline={discipline} teamId={teamId} selected={shown} approvalNote={approvalNote} onSelect={(definition) => { setReplacement(definition); setApprovalNote(null); setSelected(''); onDirty?.(); }} onBuild={setBuilding} />
+            <AmbitionSpringPicker workspace={workspace} rulePackage={rulePackage} discipline={discipline} teamId={teamId} selected={shown} approvalNote={approvalNote} apparatus={apparatus} onSelect={(definition) => { setReplacement(definition); setApprovalNote(null); setSelected(''); onDirty?.(); }} onBuild={setBuilding} />
           </div>
         ) : (
           <button type="button" className="quiet ambition-change-toggle" onClick={() => setChanging(true)}>

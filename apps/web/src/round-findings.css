@@ -1,0 +1,170 @@
+.round-findings {
+  min-width: 0;
+  margin-block: .3rem .5rem;
+  --finding-ink: #253853;
+  --finding-line: #d8e2f3;
+  --finding-surface: #f4f7fc;
+  --finding-accent: #294abd;
+}
+
+.round-finding-triggers {
+  display: flex;
+  flex-wrap: wrap;
+  gap: .25rem;
+}
+
+.round-findings button.round-finding {
+  display: inline-flex;
+  align-items: center;
+  gap: .28rem;
+  min-width: 0;
+  min-height: 28px;
+  max-width: 100%;
+  padding: .22rem .36rem .22rem .47rem;
+  background: #f3f6fa;
+  border: 1px solid transparent;
+  border-radius: 999px;
+  color: var(--finding-ink);
+  text-align: start;
+  font-size: .71rem;
+  font-weight: 650;
+  line-height: 1.2;
+  transition: background .16s, border-color .16s, color .16s;
+}
+
+.round-finding small {
+  color: #536681;
+  font-size: .66rem;
+  font-weight: 560;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.round-finding span { overflow-wrap: anywhere; }
+.round-finding[data-status='deduction'] small,
+.round-finding[data-status='invalid'] small { color: #914717; }
+.round-finding[data-status='opportunity'] small { color: var(--finding-accent); }
+
+.round-finding .icon {
+  flex: 0 0 auto;
+  width: .65rem;
+  height: .65rem;
+  transition: transform .16s;
+}
+
+.round-findings button.round-finding:hover,
+.round-findings button.round-finding[aria-expanded='true'] {
+  border-color: var(--finding-line);
+  background: #eaf0fb;
+  color: var(--finding-accent);
+  box-shadow: none;
+  transform: none;
+}
+
+.round-finding[aria-expanded='true'] .icon {
+  transform: rotate(90deg);
+}
+
+.round-finding-detail {
+  display: grid;
+  gap: .6rem;
+  margin-top: .45rem;
+  padding: .65rem .7rem;
+  border-left: 2px solid var(--finding-accent);
+  border-radius: 0 .55rem .55rem 0;
+  background: var(--finding-surface);
+  color: var(--finding-ink);
+  font-size: .78rem;
+  line-height: 1.45;
+  animation: finding-reveal .16s ease-out;
+}
+
+.round-finding-lead {
+  display: grid;
+  gap: .35rem;
+}
+
+.round-finding-lead > p { margin: 0; }
+.round-finding-score { display: flex; flex-wrap: wrap; gap: .15rem .45rem; align-items: baseline; }
+.round-finding-score strong { color: var(--finding-accent); font-size: 1.12rem; font-variant-numeric: tabular-nums; line-height: 1.1; }
+.round-finding-score small { color: #536681; font-size: .64rem; }
+
+.round-finding-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: .2rem .65rem;
+  border-top: 1px solid var(--finding-line);
+  padding-top: .4rem;
+}
+
+.round-finding-footer .sources { overflow-wrap: anywhere; }
+
+button.finding-next {
+  display: inline-flex;
+  align-items: center;
+  gap: .35rem;
+  margin-inline-start: auto;
+  padding: .25rem .15rem;
+  min-height: 28px;
+  background: transparent;
+  border-color: transparent;
+  color: var(--finding-accent);
+  font-size: .76rem;
+  text-align: start;
+}
+
+button.finding-next:hover:not(:disabled) { background: #e9effb; color: #1d3598; box-shadow: none; transform: none; }
+.finding-next .icon { flex: 0 0 auto; width: .9rem; height: .9rem; }
+
+@keyframes finding-reveal {
+  from { opacity: 0; transform: translateY(-3px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .round-finding-detail,
+  .round-findings button.round-finding,
+  .round-finding .icon { animation: none; transition: none; }
+}
+
+.round-apparatus {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: .25rem .55rem;
+  margin-block: .4rem;
+  font-size: .85rem;
+}
+
+.apparatus-choices {
+  display: grid;
+  gap: .6rem;
+  margin-block: .75rem;
+}
+
+.apparatus-switch {
+  width: min(680px, calc(100% - 28px));
+}
+
+.apparatus-choice {
+  display: grid;
+  gap: .2rem;
+  padding-block-end: .6rem;
+  border-bottom: 1px solid var(--line, #dbe1e9);
+  margin-block: 0;
+}
+
+.apparatus-choice select {
+  width: 100%;
+  min-width: 0;
+}
+
+.apparatus-comparison p {
+  margin-block: .25rem;
+}
+
+.apparatus-comparison h3 {
+  margin-block: .65rem .4rem;
+}

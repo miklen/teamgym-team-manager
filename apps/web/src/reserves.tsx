@@ -9,6 +9,7 @@ import { ActionForm, Dialog, points, statusText } from './components';
 import { EntryForm, StabilitySummary } from './spring';
 import { PlanDifficulty, PlanSafety } from './plan-skill-select';
 import { springDisplayName } from './spring-library';
+import { apparatusRestriction } from './round-apparatus';
 
 export function ReserveList({
   workspace,
@@ -42,6 +43,7 @@ export function ReserveList({
   const [editing, setEditing] = useState<{ entry?: ReserveEntry } | null>(null);
   const [inserting, setInserting] = useState<ReserveEntry | null>(null);
   const [targetId, setTargetId] = useState('');
+  const [chosenSpring, setChosenSpring] = useState<string | null | undefined>(undefined);
   const [preview, setPreview] = useState<{
     basis: string;
     workspace: Workspace;
@@ -117,13 +119,13 @@ export function ReserveList({
       setError(error instanceof Error ? error.message : 'Prioriteten kunne ikke ændres.');
     }
   }
-  function calculate(entryId: string, reserve: ReserveEntry) {
+  function calculate(entryId: string, reserve: ReserveEntry, choice = chosenSpring) {
     setTargetId(entryId);
     setPreview(null);
     setError('');
     if (!entryId) return;
     try {
-      const registration = workspace.athleteSkills.find((item) => item.id === reserve.athleteSkillId);
+      const registration = workspace.athleteSkills.find((item) => item.id === (choice === undefined ? reserve.athleteSkillId : choice));
       const skill = workspace.skills.find((item) => item.id === registration?.skillId);
       if (
         skill &&
@@ -142,6 +144,8 @@ export function ReserveList({
         entryId,
         basis,
         profile,
+        undefined,
+        choice === undefined ? undefined : { athleteSkillId: choice },
       );
       setPreview({
         basis,
@@ -153,6 +157,14 @@ export function ReserveList({
       setError(error instanceof Error ? error.message : 'Ret reserven før indsættelse.');
     }
   }
+  const insertionRestriction = inserting && discipline === 'trampet' ? apparatusRestriction(workspace, round, targetId) : null;
+  const insertionSkills = insertionRestriction ? workspace.athleteSkills.flatMap((registration) => {
+    if (registration.athleteId !== inserting!.athleteId || registration.archived) return [];
+    const definition = workspace.skills.find((item) => item.id === registration.skillId);
+    if (!definition || definition.archived || definition.discipline !== 'trampet' || !insertionRestriction.allows(definition) || rulePackage.evaluateSkill(definition, registration).validity !== 'known') return [];
+    return [{ id: registration.id, label: springDisplayName(definition, rulePackage) }];
+  }) : [];
+  const insertionSkill = (chosenSpring === undefined ? inserting?.athleteSkillId : chosenSpring) ?? '';
   return (
     <section ref={root} className="reserve-section" aria-label="Reserver">
       <div className="reserve-heading">
@@ -207,6 +219,7 @@ export function ReserveList({
                   onClick={() => {
                     setInserting(reserve);
                     setTargetId('');
+                    setChosenSpring(undefined);
                     setPreview(null);
                     setError('');
                   }}
@@ -404,6 +417,21 @@ export function ReserveList({
               )}
             </select>
           </label>
+          {insertionRestriction && <>
+            {insertionRestriction.message && <p className="muted">{insertionRestriction.message}</p>}
+            <label>Spring ved indsættelse
+              <select value={insertionSkill} onChange={(event) => {
+                const choice = event.target.value || null;
+                setChosenSpring(choice);
+                calculate(targetId, inserting, choice);
+              }}>
+                {insertionSkill && !insertionSkills.some((item) => item.id === insertionSkill) &&
+                  <option value={insertionSkill} disabled>Reservens spring er utilgængeligt</option>}
+                <option value="">Vælg spring senere</option>
+                {insertionSkills.map((item) => <option key={item.id} value={item.id}>{item.label}</option>)}
+              </select>
+            </label>
+          </>}
           {error && <p role="alert">{error}</p>}
           {(() => {
             const spot = round.entries.find((entry) => entry.id === targetId)?.plannedSpot;
@@ -470,6 +498,8 @@ export function ReserveList({
                     targetId,
                     preview.basis,
                     profile,
+                    undefined,
+                    chosenSpring === undefined ? undefined : { athleteSkillId: chosenSpring },
                   );
                   change(next);
                   inserted(targetId);

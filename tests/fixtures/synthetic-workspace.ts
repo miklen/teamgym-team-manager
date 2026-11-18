@@ -1,5 +1,5 @@
-import { createWorkspace, createTeam, createAthlete, registerAthleteSkill, updateAssessment, setRoundEntries } from '@teamgym/domain';
-import type { CommandEnvironment, ElementExecution, SkillDefinition } from '@teamgym/domain';
+import { createWorkspace, createTeam, createAthlete, registerAthleteSkill, updateAssessment, setRoundEntries, validateWorkspace } from '@teamgym/domain';
+import type { CommandEnvironment, ElementExecution, RoundEntry, SkillDefinition, Workspace } from '@teamgym/domain';
 
 export const binding = { rulesetId: 'dk', packageVersion: '1.1.0', ageGroup: 'junior', teamType: 'girls' };
 export const limits = { counting: 6, extra: 2 };
@@ -13,7 +13,7 @@ export const tumblingSkill: Extract<SkillDefinition, { discipline: 'tumbling' }>
   elements: [salto], connection: { kind: 'standard', transitions: [] },
   sharedConnectionApproval: null,
 };
-export const trampetSkill: SkillDefinition = { id: 'skill-trampet', name: 'Syntetisk trampetspring', archived: false, discipline: 'trampet', jump: { ...salto, apparatus: 'trampet' } };
+export const trampetSkill: Extract<SkillDefinition, { discipline: 'trampet' }> = { id: 'skill-trampet', name: 'Syntetisk trampetspring', archived: false, discipline: 'trampet', jump: { ...salto, apparatus: 'trampet' } };
 export const rhythmSkill: SkillDefinition = { id: 'skill-rhythm', name: 'Syntetisk hovedstand', archived: false, discipline: 'rhythm', momentId: 'rh-hb-headstand', variant: { legs: 'together' } };
 
 export function syntheticWorkspace(packageVersion = binding.packageVersion) {
@@ -39,4 +39,12 @@ export function syntheticWorkspace(packageVersion = binding.packageVersion) {
     workspace = setRoundEntries(workspace, plan.id, discipline, plan[discipline][0]!.id, round.id, entries, limits, environment);
   }
   return { workspace, environment, teamA, teamB, athleteA, athleteB, planId: plan.id };
+}
+
+/** Genskaber gemte pladser fra før redskabsgrænsen. Bruges til historiske regelfacit. */
+export function restoreRoundFixture(workspace: Workspace, roundId: string, entries: Pick<RoundEntry, 'id' | 'athleteId' | 'athleteSkillId' | 'role'>[]) {
+  const copy = structuredClone(workspace);
+  const round = copy.plans.flatMap((plan) => [...plan.tumbling, ...plan.trampet].flatMap((scenario) => scenario.rounds)).find((item) => item.id === roundId)!;
+  round.entries = entries.map((entry): RoundEntry => ({ ...entry, plannedSkillId: null, plannedSpot: null }));
+  return validateWorkspace(copy);
 }

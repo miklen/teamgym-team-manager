@@ -35,7 +35,7 @@ import {
   fillAmbition,
 } from '@teamgym/domain';
 import type { MergeContext, MergeResult, SkillDefinition, Workspace } from '@teamgym/domain';
-import { syntheticWorkspace, binding } from '../fixtures/synthetic-workspace';
+import { syntheticWorkspace, binding, trampetSkill } from '../fixtures/synthetic-workspace';
 import { DK_V1, DK_V2 } from '../../packages/rules/src/dk-v1';
 import { REG_V1 } from '../../packages/rules/src/reg-v1';
 import { DK_SPRING_CATALOG } from '../../packages/rules/src/catalog';
@@ -174,29 +174,59 @@ describe('trevejsmotor', () => {
       expect(result.contributions.find((item) => item.id === 'C-ORDEN-3')?.decision.value?.toString()).toBe('1/2');
     }
   });
-  it('fletter en blandet Pegasus-omgang uden blokering og viser den som ugyldig bagefter', () => {
-    const builder = workspaceBuilder();
-    const team = builder.team('Syntetisk fletteredskab', { rulesetId: 'dk', packageVersion: '1.1.0', ageGroup: 'junior', teamType: 'girls' });
-    const jump = (sourceId: string) => ({ id: `apparatus-${sourceId}`, name: `Syntetisk ${sourceId}`, archived: false,
-      discipline: 'trampet' as const, jump: structuredClone(DK_SPRING_CATALOG.find((item) => item.referenceId === sourceId)!.execution) });
-    const free = ['a4-f-01', 'a4-f-02', 'a4-f-03', 'a4-f-06', 'a4-f-07', 'a4-f-08'].map(jump);
-    const vault = ['a4-v-01', 'a4-v-02', 'a4-v-03', 'a4-v-04', 'a4-v-05', 'a4-v-06'].map(jump);
-    for (const round of [0, 1, 2]) builder.fill(team.id, 'trampet', round, free);
-    const vaultIds = (() => { builder.fill(team.id, 'trampet', 0, vault); return builder.workspace.plans[0]!.trampet[0]!.rounds[0]!.entries.map((entry) => entry.athleteSkillId); })();
-    builder.fill(team.id, 'trampet', 0, free);
-    const b = builder.workspace;
+  it('fletter redskaber pr. omgang og kr?ver valg ved samtidig ?ndring af samme liste', () => {
+    const { workspace, environment } = syntheticWorkspace();
+    const plan = workspace.plans[0]!;
+    const scenario = plan.trampet[0]!;
+    const vault = { ...trampetSkill, id: 'flette-pegasus', jump: { ...trampetSkill.jump, apparatus: 'pegasus' as const } };
+    const registered = registerAthleteSkill(workspace, workspace.athletes[0]!.id, vault, environment);
+    const b = structuredClone(registered.workspace);
+    const rounds = (w: typeof b) => w.plans[0]!.trampet[0]!.rounds;
+    for (const round of rounds(b)) round.entries = [];
     const l = structuredClone(b);
     const r = structuredClone(b);
-    l.plans[0]!.trampet[0]!.rounds[0]!.entries.forEach((entry, index) => { entry.athleteSkillId = vaultIds[index]!; });
-    r.plans[0]!.trampet[0]!.rounds[1]!.entries[0]!.athleteSkillId = vaultIds[0]!;
+    const original = scenario.rounds[0]!.entries[0]!;
+    const withVault = { ...original, athleteSkillId: registered.athleteSkillId };
+    rounds(l)[0]!.entries = [withVault];
+    rounds(r)[0]!.entries = [original];
+    for (const [left, right] of [[l, r], [r, l]] as const) {
+      const review = mergeWorkspace(b, left, right, context);
+      expect(review.status).toBe('blocked');
+      expect(review.conflicts).toHaveLength(1);
+      expect(rounds(valid(mergeWorkspace(b, left, right, context, { [review.conflicts[0]!.id]: 'local' })))[0]!.entries).toEqual(rounds(left)[0]!.entries);
+    }
+    rounds(r)[0]!.entries = [];
+    rounds(r)[1]!.entries = [{ ...original, id: 'flette-fri-anden' }];
     for (const [left, right] of [[l, r], [r, l]] as const) {
       const merged = valid(mergeWorkspace(b, left, right, context));
-      const result = DK_V2.analyze(merged, team.id, 'trampet', merged.plans[0]!.trampet[0]!.id);
-      const roundIds = merged.plans[0]!.trampet[0]!.rounds.map((round) => round.id);
-      expect(result.rounds.map((round) => round.status === 'invalid')).toEqual([false, true, false]);
-      expect(result.diagnostics.filter((item) => item.code === 'mixed-apparatus').flatMap((item) => item.affectedIds)).toEqual([roundIds[1]]);
-      expect(result.contributions.find((item) => item.id === 'C-REDSKAB')?.decision.status).toBe('invalid');
+      expect(rounds(merged).map((round) => round.entries)).toEqual([[withVault], rounds(r)[1]!.entries, []]);
     }
+  });
+
+  it('blokerer en ny blanding fra definition og deltagerliste i begge fletteretninger', () => {
+    const { workspace, environment } = syntheticWorkspace();
+    const free = { ...trampetSkill, id: 'flette-fri', jump: { ...trampetSkill.jump, twistsHalfTurns: 4, twistDistribution: [4] } };
+    const registered = registerAthleteSkill(workspace, workspace.athletes[1]!.id, free, environment);
+    const b = structuredClone(registered.workspace);
+    const round = (w: typeof b) => w.plans[0]!.trampet[0]!.rounds[0]!;
+    const [first, second] = round(b).entries;
+    round(b).entries = [first!];
+    const l = structuredClone(b);
+    const r = structuredClone(b);
+    const definition = l.skills.find((skill) => skill.id === trampetSkill.id)!;
+    if (definition.discipline !== 'trampet') throw new Error('Forkert testdefinition');
+    definition.jump.apparatus = 'pegasus';
+    round(r).entries.push({ ...second!, athleteSkillId: registered.athleteSkillId });
+    const snapshot = JSON.stringify([b, l, r]);
+    for (const [left, right] of [[l, r], [r, l]] as const) {
+      const review = mergeWorkspace(b, left, right, context);
+      expect(review.status).toBe('blocked');
+      expect(review).not.toHaveProperty('candidate');
+      expect(review.diagnostics.join(' ')).toContain('Pegasus');
+      expect(review.diagnostics.join(' ')).toContain(first!.id);
+      expect(review.diagnostics.join(' ')).toContain(second!.id);
+    }
+    expect(JSON.stringify([b, l, r])).toBe(snapshot);
   });
   it('bevarer ensidig/ens ændring og forskellige felter, er deterministisk og muterer intet', () => {
     const { b, l, r } = fixture();

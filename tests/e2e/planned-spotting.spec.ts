@@ -10,7 +10,7 @@ import {
 } from '@teamgym/domain';
 import type { ElementExecution, SkillDefinition } from '@teamgym/domain';
 import type { Page } from '@playwright/test';
-import { limits, syntheticWorkspace } from '../fixtures/synthetic-workspace';
+import { limits, restoreRoundFixture, syntheticWorkspace } from '../fixtures/synthetic-workspace';
 import { overviewFull } from '../fixtures/overview-workspace';
 import { scenarioWorkspace } from '../fixtures/scenario-workspace';
 import { fourOfSix, openWorkspace } from './drive-fixture';
@@ -50,7 +50,9 @@ function spottingWorkspace(options: { pegasusRound?: boolean; extra?: boolean; t
     }));
     if (options.extra && roundIndex === 2)
       entries.unshift({ id: 'synthetic-extra-spot', athleteId: workspace.athletes[1]!.id, role: 'extra' as never, athleteSkillId: register(workspace.athletes[1]!.id, jump080) });
-    workspace = setRoundEntries(workspace, planId, 'trampet', scenarioId, roundId, entries, limits, environment);
+    workspace = options.pegasusRound && roundIndex === 1
+      ? restoreRoundFixture(workspace, roundId, entries)
+      : setRoundEntries(workspace, planId, 'trampet', scenarioId, roundId, entries, limits, environment);
   });
   if (options.tumblingSeries) {
     const athlete = workspace.athletes[2]!;
@@ -250,10 +252,13 @@ test('Maks. mulig karakter: tom, delvis, fuld og blandet Pegasus-omgang', async 
   const { planId, scenarioId, environment } = setup;
   let workspace = setup.workspace;
   workspace = createScenario(workspace, planId, 'trampet', scenarioId, 'Tom plan', environment);
-  workspace = duplicateScenario(workspace, planId, 'trampet', scenarioId, 'Fuld plan', environment);
-  const full = workspace.plans[0]!.trampet.find((item) => item.name === 'Fuld plan')!;
-  const last = full.rounds[1].entries[5]!;
-  last.athleteSkillId = workspace.athleteSkills.find((item) => item.athleteId === last.athleteId && item.skillId === jump060.id)!.id;
+  const repaired = structuredClone(workspace);
+  const legacy = workspace.plans[0]!.trampet[0]!;
+  const repairedRound = repaired.plans[0]!.trampet[0]!.rounds[1];
+  const repairedLast = repairedRound.entries[5]!;
+  repairedLast.athleteSkillId = workspace.athleteSkills.find((item) => item.athleteId === repairedLast.athleteId && item.skillId === jump060.id)!.id;
+  workspace = duplicateScenario(repaired, planId, 'trampet', scenarioId, 'Fuld plan', environment);
+  workspace.plans[0]!.trampet[0] = legacy;
   await openWorkspace(page, validateWorkspace(workspace));
   await trampet(page);
   const maximum = page.locator('.maximum-metric');
@@ -263,6 +268,7 @@ test('Maks. mulig karakter: tom, delvis, fuld og blandet Pegasus-omgang', async 
   await expect(maximum).toContainText('Ugyldig omgang i planen');
   await maximum.getByRole('button', { name: '2. omgang er ugyldig', exact: true }).click();
   await expect(round(page, 2)).toBeFocused();
+  await round(page, 2).getByRole('button', { name: 'Blandet redskab Ugyldigt' }).click();
   await expect(round(page, 2)).toContainText('blander spring med og uden Pegasus');
 
   await page.getByRole('tab', { name: 'Tom plan', exact: true }).click();
@@ -318,18 +324,73 @@ test('potentialeforslag viser bortfald af modtagning og fjerner den ved anvendel
   const guide = page.getByRole('region', { name: 'Guide til springplanens komposition' });
   await guide.locator('.composition-guide-overview').click();
   const screw = guide.locator('.composition-guide-row').filter({ has: page.getByText('Skrue', { exact: true }) });
-  await screw.locator('summary').click();
+  await screw.locator(':scope > summary').click();
   await screw.getByRole('button', { name: 'Se konkrete ændringer' }).click();
   const preview = page.getByRole('dialog');
+  const score = preview.getByRole('table', { name: 'Point før og med forslaget' });
+  // Tre modtagninger à 1,0 giver et gennemsnitligt E-loft på 9,0 før forslaget.
+  const [cdBefore] = await score.getByRole('row').filter({ hasText: 'C + D' }).getByRole('cell').allTextContents();
+  const [maximumBefore] = await score.getByRole('row').filter({ hasText: 'Karakterloft' }).getByRole('cell').allTextContents();
+  expect(Number(maximumBefore!.replace(',', '.')) - Number(cdBefore!.replace(',', '.'))).toBeCloseTo(9);
   await expect(preview).toContainText('Planlagt modtagning bortfalder (Hjælp til udførelse).');
-  const removed = await preview.getByText('Planlagt modtagning bortfalder (Hjælp til udførelse).').count();
+  let removed = 0;
+  for (const round of await preview.getByRole('group', { name: 'Vælg omgang i forslaget' }).getByRole('button').all()) {
+    await round.click();
+    removed += await preview.getByText('Planlagt modtagning bortfalder (Hjælp til udførelse).').count();
+  }
   expect(removed).toBeGreaterThan(0);
   const tags = page.locator('.spot-trigger.active[aria-label^="Planlagt modtagning Hjælp til udførelse"]');
   await expect(tags).toHaveCount(3);
-  await preview.getByRole('button', { name: 'Opdater' }).click();
+  await preview.getByRole('button', { name: 'Anvend hele forslaget' }).click();
   await expect(tags).toHaveCount(3 - removed);
   await page.getByRole('button', { name: /Lokale ændringer/ }).click();
   await expect(page.getByRole('button', { name: 'Gemt', exact: true })).toBeVisible();
   const remaining = source.workspace.plans[0]!.tumbling[0]!.rounds.flatMap((item) => item.entries).filter((entry) => entry.plannedSpot);
   expect(remaining).toHaveLength(3 - removed);
+});
+
+test('et større skruetillæg kan give lavere C+D og karakterloft', async ({ page }) => {
+  const fixture = syntheticWorkspace();
+  let workspace = fixture.workspace;
+  const single: SkillDefinition = { ...jump060, id: 'synthetic-single-tuck', name: 'Syntetisk lukket salto',
+    jump: { ...straight(0), bodyPositions: ['tuck'], twistDistribution: [] } };
+  const double: SkillDefinition = { ...jump060, id: 'synthetic-double-tuck', name: 'Syntetisk dobbelt lukket',
+    jump: { ...straight(0), rotationQuarterTurns: 8, bodyPositions: ['tuck', 'tuck'], twistDistribution: [] } };
+  const entries = workspace.plans[0]!.trampet[0]!.rounds[0].entries;
+  for (const [index, { athleteId }] of entries.entries()) {
+    const definitions = [pegasus, single, jump060];
+    const registrations = definitions.map((skill) => {
+      const result = registerAthleteSkill(workspace, athleteId!, skill, fixture.environment);
+      workspace = result.workspace;
+      return result.athleteSkillId;
+    });
+    if (index === entries.length - 1) {
+      const result = registerAthleteSkill(workspace, athleteId!, double, fixture.environment);
+      workspace = result.workspace;
+      registrations[2] = result.athleteSkillId;
+    }
+    for (const [roundIndex, round] of workspace.plans[0]!.trampet[0]!.rounds.entries()) {
+      round.entries[index]!.athleteSkillId = registrations[roundIndex]!;
+    }
+  }
+  await page.setViewportSize({ width: 390, height: 900 });
+  const source = await openWorkspace(page, workspace);
+  await trampet(page);
+  const guide = page.getByRole('region', { name: 'Guide til springplanens komposition' });
+  await guide.locator('.composition-guide-overview').click();
+  const screw = guide.locator('[data-guide-rule="T-SKRUE"]');
+  await screw.locator(':scope > summary').click();
+  await screw.getByRole('button', { name: 'Se konkrete ændringer' }).click();
+  const dialog = page.getByRole('dialog', { name: 'Skruetillæg' });
+  await expect(dialog.locator('.proposal-outcome')).toContainText('−0,030');
+  await expect(dialog.locator('.proposal-outcome')).toContainText('Lavere karakterloft');
+  const score = dialog.getByRole('table', { name: 'Point før og med forslaget' });
+  await expect(score.getByRole('row').filter({ hasText: 'Tillæg' }).getByRole('cell')).toHaveText(['+0,500', '+0,600']);
+  await expect(score.getByRole('row').filter({ hasText: 'Komposition' }).getByRole('cell')).toHaveText(['1,600', '1,600']);
+  await expect(score.getByRole('row').filter({ hasText: 'C + D' }).getByRole('cell')).toHaveText(['3,630', '3,600']);
+  await expect(score.getByRole('row').filter({ hasText: 'Karakterloft' }).getByRole('cell')).toHaveText(['13,630', '13,600']);
+  expect(await dialog.evaluate((node) => node.scrollWidth <= node.clientWidth)).toBe(true);
+  expect((await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa', 'wcag21aa', 'wcag22aa']).analyze()).violations).toEqual([]);
+  expect(source.puts).toBe(0);
+  expect(source.failures).toEqual([]);
 });

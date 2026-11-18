@@ -1,3 +1,4 @@
+import { restoreRoundFixture } from '../fixtures/synthetic-workspace';
 import { describe, expect, it } from 'vitest';
 import { Fraction, setPlannedSpot, setRoundEntries } from '@teamgym/domain';
 import type { NumericDecision } from '../../packages/rules/src/dk-numeric';
@@ -37,12 +38,13 @@ function team(binding: RulesetBinding, rulePackage: RulePackage, athleteCount = 
   if (!profile) throw new Error('Profilen findes ikke i pakken.');
   const limits = { counting: profile.counting, extra: profile.extra };
   const plan = () => builder.workspace.plans.find((item) => item.teamId === created.id)!;
-  function place(discipline: SpringDiscipline, roundIndex: number, counting: readonly Spring[], extras: readonly Spring[] = [], roles?: readonly ('extra' | 'counting')[]) {
+  function place(discipline: SpringDiscipline, roundIndex: number, counting: readonly Spring[], extras: readonly Spring[] = [], roles?: readonly ('extra' | 'counting')[], legacy = false) {
     const definitions = [...extras, ...counting];
     const entries = definitions.map((definition, index) => ({ id: builder.environment.id(), athleteId: athletes[index]!.id,
       athleteSkillId: builder.register(athletes[index]!.id, definition), role: roles?.[index] ?? (index < extras.length ? 'extra' as const : 'counting' as const) }));
     const scenario = plan()[discipline][0]!;
-    builder.workspace = setRoundEntries(builder.workspace, plan().id, discipline, scenario.id, scenario.rounds[roundIndex]!.id, entries, limits, builder.environment);
+    const id = scenario.rounds[roundIndex]!.id;
+    builder.workspace = legacy ? restoreRoundFixture(builder.workspace, id, entries) : setRoundEntries(builder.workspace, plan().id, discipline, scenario.id, id, entries, limits, builder.environment);
   }
   function rounds(discipline: SpringDiscipline, ...all: readonly (readonly Spring[])[]) { all.forEach((counting, index) => place(discipline, index, counting)); }
   function spot(discipline: SpringDiscipline, roundIndex: number, entryIndex: number, input: PlannedSpotInput) {
@@ -188,7 +190,12 @@ describe('REG-facit: bane-C (H 9.2)', () => {
   it('REG-F16: ingen ren forlæns omgang giver 6 × 0,1 = 0,60', () => {
     const setup = team(reg(), REG_V1);
     setup.rounds('tumbling', times(6, series('a3-b-01', 'a3-b-02')), times(6, RF_LUKKET), times(6, RF_STRAKT));
-    expect(value(contribution(setup.analyze('tumbling'), 'C-RETNING'))).toBe(f('0.60'));
+    const analysis = setup.analyze('tumbling');
+    expect(value(contribution(analysis, 'C-RETNING'))).toBe(f('0.60'));
+    const finding = analysis.planFindings.find((item) => item.id === 'C-RETNING')!;
+    expect(finding).toMatchObject({ status: 'deduction', roundIds: analysis.rounds.map((round) => round.id), entryIds: [], action: 'rounds' });
+    expect(finding.detail).toContain('fuld omgang rent forlæns');
+    expect(finding.amount?.toString()).toBe('3/5');
   });
 
   it('REG-F17: C bliver aldrig under 0,0 (0,0 − 0,60 → 0,0)', () => {
@@ -198,6 +205,21 @@ describe('REG-facit: bane-C (H 9.2)', () => {
     expect(value(contribution(analysis, 'C-RETNING'))).toBe(f('0.60'));
     expect(analysis.composition.raw?.toString()).toBe(Fraction.from('-0.60').toString());
     expect(value(analysis.composition)).toBe('0');
+  });
+
+  it('stedfæster manglende rene omgange uafhængigt af antallet af retningsskift', () => {
+    const setup = team(reg(), REG_V1);
+    const alternating = [KRAFT_LUKKET, RF_LUKKET, KRAFT_LUKKET, RF_LUKKET, KRAFT_LUKKET, RF_LUKKET];
+    const grouped = [...times(3, KRAFT_LUKKET), ...times(3, RF_LUKKET)];
+    for (const pattern of [alternating, grouped]) {
+      setup.rounds('tumbling', pattern, pattern, pattern);
+      const analysis = setup.analyze('tumbling');
+      const finding = analysis.planFindings.find((item) => item.id === 'C-RETNING')!;
+      expect(finding.amount?.toString()).toBe('3/5');
+      expect(finding.detail).toContain('rent forlæns og en fuld omgang rent baglæns');
+      expect(finding.roundIds).toEqual(analysis.rounds.map((round) => round.id));
+      expect(finding.entryIds).toEqual([]);
+    }
   });
 
   it('REG-F13: faldende D 0,80 → 0,60 → 0,70 giver intet rækkefølgefradrag og intet rækkefølgekrav', () => {
@@ -264,7 +286,9 @@ describe('REG-facit: trampet-C (H 10.2)', () => {
 
   it('REG-F24: Q04 – en blandet Pegasus-omgang er ugyldig planlægning', () => {
     const setup = team(reg(), REG_V1);
-    setup.rounds('trampet', times(6, OVERSLAG), [...times(3, OVERSLAG), ...times(3, FRI_STRAKT)], times(6, FRI_LUKKET));
+    setup.place('trampet', 0, times(6, OVERSLAG));
+    setup.place('trampet', 1, [...times(3, OVERSLAG), ...times(3, FRI_STRAKT)], [], undefined, true);
+    setup.place('trampet', 2, times(6, FRI_LUKKET));
     const analysis = setup.analyze('trampet');
     expect(analysis.rounds[1]!.status).toBe('invalid');
     expect(contribution(analysis, 'C-REDSKAB').status).toBe('invalid');

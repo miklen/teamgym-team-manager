@@ -1,3 +1,4 @@
+import { restoreRoundFixture } from '../fixtures/synthetic-workspace';
 import { describe, expect, it } from 'vitest';
 import { Fraction, setPlannedSpot, setRoundEntries } from '@teamgym/domain';
 import type { PlannedSpotInput, SkillDefinition, Workspace } from '@teamgym/domain';
@@ -24,11 +25,12 @@ function trampetSetup(binding = V2) {
   const athletes = builder.workspace.athletes.filter((athlete) => athlete.teamId === team.id);
   const plan = () => builder.workspace.plans.find((item) => item.teamId === team.id)!;
   const scenario = () => plan().trampet[0]!;
-  function round(index: number, sources: string[], extras: string[] = []) {
+  function round(index: number, sources: string[], extras: string[] = [], legacy = false) {
     const entries = [...extras.map((source, offset) => ({ source, role: 'extra' as const, athlete: athletes[sources.length + offset]! })),
       ...sources.map((source, offset) => ({ source, role: 'counting' as const, athlete: athletes[offset]! }))].map((item) => ({
       id: builder.environment.id(), athleteId: item.athlete.id, athleteSkillId: builder.register(item.athlete.id, jump(item.source)), role: item.role }));
-    builder.workspace = setRoundEntries(builder.workspace, plan().id, 'trampet', scenario().id, scenario().rounds[index]!.id, entries, { counting: 6, extra: 2 }, builder.environment);
+    const id = scenario().rounds[index]!.id;
+    builder.workspace = legacy ? restoreRoundFixture(builder.workspace, id, entries) : setRoundEntries(builder.workspace, plan().id, 'trampet', scenario().id, id, entries, { counting: 6, extra: 2 }, builder.environment);
   }
   function spot(roundIndex: number, entryIndex: number, input: PlannedSpotInput, discipline: 'tumbling' | 'trampet' = 'trampet') {
     const target = plan()[discipline][0]!.rounds[roundIndex]!;
@@ -170,7 +172,7 @@ describe('planlagt modtagning i regelmotoren', () => {
 
   it('viser ugyldig maks. ved blandet Pegasus-omgang', () => {
     const setup = trampetSetup();
-    for (const index of [0, 1, 2]) setup.round(index, index === 1 ? ['a4-f-08', 'a4-f-08', 'a4-f-08', 'a4-f-08', 'a4-f-08', 'a4-v-01'] : Array(6).fill('a4-f-08'));
+    for (const index of [0, 1, 2]) setup.round(index, index === 1 ? ['a4-f-08', 'a4-f-08', 'a4-f-08', 'a4-f-08', 'a4-f-08', 'a4-v-01'] : Array(6).fill('a4-f-08'), [], index === 1);
     const result = setup.analyze();
     expect(result.maximumScore.status).toBe('invalid');
     expect(result.maximumScore.value).toBeNull();

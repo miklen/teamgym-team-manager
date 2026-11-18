@@ -1,0 +1,476 @@
+.potential-preview {
+  --proposal-ink: #182944;
+  --proposal-muted: #556884;
+  --proposal-line: #dce5f1;
+  --proposal-accent: #2547bd;
+  --proposal-surface: #eff4ff;
+  width: min(780px, calc(100% - 24px));
+  color: var(--proposal-ink);
+}
+
+.potential-preview > header {
+  padding: 13px clamp(14px, 3.5vw, 28px);
+}
+.potential-preview > header h2 {
+  font-size: 1.12rem;
+  letter-spacing: -0.025em;
+}
+.potential-preview > .dialog-body {
+  padding: 0;
+}
+
+.proposal-overview {
+  display: grid;
+  grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.2fr);
+  align-items: center;
+  gap: 26px;
+  padding: 22px clamp(14px, 3.5vw, 28px);
+  background: #1c3156;
+  color: #f8faff;
+}
+
+.proposal-outcome {
+  min-width: 0;
+}
+.proposal-outcome > span {
+  display: block;
+  color: #c9d8f3;
+  font-size: 0.76rem;
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+.proposal-outcome > div {
+  display: grid;
+  justify-items: start;
+  gap: 0.12rem;
+  margin-top: 0.45rem;
+}
+.proposal-outcome strong {
+  color: #fff;
+  font-size: clamp(2.2rem, 5.4vw, 3.25rem);
+  line-height: 1;
+  letter-spacing: -0.065em;
+  font-variant-numeric: tabular-nums;
+}
+.proposal-outcome[data-trend='-1'] strong {
+  color: #ffd0a8;
+}
+.proposal-outcome small {
+  color: #c9d8f3;
+  font-size: 0.79rem;
+}
+
+.proposal-scoreboard,
+.proposal-safety table {
+  width: 100%;
+  border-collapse: collapse;
+}
+.proposal-scoreboard th,
+.proposal-scoreboard td {
+  padding: 0.36rem 0;
+  border-bottom: 1px solid #496184;
+  font-variant-numeric: tabular-nums;
+  font-size: 0.77rem;
+}
+.proposal-scoreboard thead th {
+  color: #c9d8f3;
+  font-size: 0.69rem;
+  font-weight: 600;
+}
+.proposal-scoreboard th[scope='row'] {
+  color: #e6eeff;
+  text-align: start;
+  font-weight: 600;
+}
+.proposal-scoreboard :is(th, td):not(:first-child) {
+  padding-inline-start: 0.45rem;
+  text-align: end;
+}
+.proposal-scoreboard td[data-different='true'] {
+  color: #fff;
+  font-weight: 750;
+}
+.proposal-scoreboard [data-total='true'] th {
+  color: #fff;
+  font-weight: 750;
+}
+.proposal-scoreboard th small {
+  display: block;
+  color: #c9d8f3;
+  font-size: 0.66rem;
+  font-weight: 500;
+}
+.proposal-scoreboard tbody tr:last-child > * {
+  border-bottom: 0;
+}
+
+.proposal-review {
+  padding: 16px clamp(14px, 3.5vw, 28px) 18px;
+}
+.proposal-controls {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+  margin-bottom: 0.65rem;
+}
+.proposal-view-switch {
+  display: inline-flex;
+  gap: 3px;
+  max-width: 100%;
+  padding: 3px;
+  border: 1px solid var(--proposal-line);
+  border-radius: 10px;
+  background: #f1f5fa;
+}
+
+.potential-preview :is(.proposal-view-switch, .proposal-round-switch) button {
+  padding: 0.4rem 0.68rem;
+  min-height: 34px;
+  border: 1px solid transparent;
+  border-radius: 7px;
+  background: transparent;
+  color: var(--proposal-muted);
+  font-size: 0.77rem;
+  font-weight: 650;
+  line-height: 1.25;
+  transition:
+    background 0.15s ease,
+    color 0.15s ease,
+    border-color 0.15s ease;
+}
+
+.potential-preview :is(.proposal-view-switch, .proposal-round-switch) button:hover {
+  color: var(--proposal-accent);
+  box-shadow: none;
+  transform: none;
+}
+.potential-preview :is(.proposal-view-switch, .proposal-round-switch) button[aria-pressed='true'] {
+  background: #fff;
+  color: var(--proposal-accent);
+  border-color: var(--proposal-line);
+}
+.potential-preview .proposal-round-switch button[aria-pressed='true'] {
+  background: var(--proposal-surface);
+}
+
+.proposal-view {
+  animation: proposal-reveal 0.16s ease-out;
+}
+.proposal-no-changes {
+  margin: 0;
+  padding: 0.85rem 0;
+  border-top: 1px solid var(--proposal-line);
+  color: var(--proposal-muted);
+  font-size: 0.8rem;
+}
+.proposal-changes,
+.proposal-lineup,
+.proposal-moves ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.proposal-change {
+  border-top: 1px solid var(--proposal-line);
+  padding: 10px 0;
+}
+.proposal-person {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 0.35rem 0.65rem;
+  margin-bottom: 0.36rem;
+}
+.proposal-person > div {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  column-gap: 0.55rem;
+}
+.proposal-person strong,
+.proposal-lineup > li > div > strong {
+  font-size: 0.89rem;
+  font-weight: 700;
+  overflow-wrap: anywhere;
+}
+.proposal-person small,
+.proposal-person-meta,
+.proposal-lineup > li > div > small {
+  color: var(--proposal-muted);
+  font-size: 0.72rem;
+}
+.proposal-person-meta {
+  display: grid;
+  justify-items: end;
+  flex-shrink: 0;
+  font-weight: 600;
+}
+.proposal-change[data-kind='spring'] .proposal-person > div > small,
+.proposal-change[data-kind='added'] .proposal-person > div > small {
+  color: var(--proposal-accent);
+}
+
+.proposal-spring-comparison {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 20px minmax(0, 1fr);
+  align-items: center;
+  gap: 8px;
+}
+.proposal-spring-comparison > div {
+  min-width: 0;
+  padding: 0.45rem 0.65rem;
+  border-radius: 7px;
+  background: #f3f6fa;
+}
+.proposal-spring-comparison > div:last-child {
+  background: var(--proposal-surface);
+}
+.proposal-spring-comparison > .icon {
+  width: 1rem;
+  height: 1rem;
+  color: var(--proposal-accent);
+  justify-self: center;
+}
+.proposal-spring-comparison > div > small {
+  display: block;
+  margin-bottom: 0.16rem;
+  color: var(--proposal-muted);
+  font-weight: 650;
+  font-size: 0.67rem;
+}
+.proposal-spring {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 0.25rem 0.6rem;
+  flex-wrap: wrap;
+}
+.proposal-spring-name {
+  flex: 1 1 8rem;
+  min-width: 0;
+  font-size: 0.78rem;
+  line-height: 1.3;
+  overflow-wrap: anywhere;
+}
+.proposal-spring-name small {
+  display: block;
+  color: var(--proposal-muted);
+  margin-top: 0.15rem;
+}
+.proposal-spring-values {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.25rem 0.55rem;
+}
+.proposal-spring-values .plan-difficulty {
+  font-size: 0.67rem;
+}
+.proposal-spot {
+  margin: 0.4rem 0 0;
+  color: #864721;
+  font-size: 0.74rem;
+}
+
+.proposal-moves,
+.proposal-safety {
+  padding: 0;
+  border: 0;
+  border-top: 1px solid var(--proposal-line);
+}
+.proposal-moves > summary,
+.proposal-safety > summary {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  list-style: none;
+  gap: 0.4rem;
+  padding: 0.38rem 0;
+  color: var(--proposal-accent);
+  font-size: 0.78rem;
+  font-weight: 650;
+}
+.proposal-moves > summary::-webkit-details-marker,
+.proposal-safety > summary::-webkit-details-marker {
+  display: none;
+}
+.proposal-moves > summary .icon,
+.proposal-safety > summary .icon {
+  width: 0.9rem;
+  height: 0.9rem;
+  flex-shrink: 0;
+  transition: transform 0.15s ease;
+}
+.proposal-moves[open] > summary .icon,
+.proposal-safety[open] > summary .icon {
+  transform: rotate(90deg);
+}
+.proposal-moves > ul {
+  padding: 0.1rem 0.6rem;
+  border-radius: 8px;
+  background: #f4f7fb;
+  animation: proposal-reveal 0.16s ease-out;
+}
+.proposal-moves > ul > li {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.4rem;
+  padding: 0.3rem 0;
+  font-size: 0.75rem;
+  overflow-wrap: anywhere;
+}
+.proposal-moves > ul > li + li {
+  border-top: 1px solid var(--proposal-line);
+}
+.proposal-place-shift {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  white-space: nowrap;
+  color: var(--proposal-muted);
+  font-variant-numeric: tabular-nums;
+}
+.proposal-place-shift .icon {
+  width: 0.85rem;
+  height: 0.85rem;
+}
+.proposal-place-shift strong {
+  color: var(--proposal-ink);
+  font-size: inherit;
+}
+
+.proposal-round-switch {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+}
+.proposal-round-switch button {
+  display: grid;
+  gap: 0.13rem;
+  text-align: start;
+}
+.proposal-round-switch small {
+  display: block;
+  color: var(--proposal-muted);
+  font-size: 0.66rem;
+  font-weight: 500;
+}
+.proposal-lineup > li {
+  display: grid;
+  grid-template-columns: 24px minmax(0, 1fr);
+  gap: 0.5rem;
+  padding: 0.4rem 0;
+  border-top: 1px solid var(--proposal-line);
+}
+.proposal-slot-number {
+  display: grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  background: #eef2f8;
+  color: var(--proposal-muted);
+  border-radius: 50%;
+  font-size: 0.72rem;
+  font-variant-numeric: tabular-nums;
+}
+.proposal-lineup .proposal-spring-name {
+  color: var(--proposal-muted);
+}
+.proposal-lineup .proposal-spring-name strong {
+  font-weight: 550;
+}
+
+.proposal-safety {
+  margin-top: 12px;
+}
+.proposal-safety table {
+  font-size: 0.75rem;
+  animation: proposal-reveal 0.16s ease-out;
+}
+.proposal-safety table :is(th, td) {
+  text-align: start;
+  vertical-align: top;
+  padding: 0.3rem 0.35rem;
+  border-bottom: 1px solid var(--proposal-line);
+  overflow-wrap: anywhere;
+}
+.proposal-safety-value {
+  display: grid;
+  gap: 0.15rem;
+}
+.proposal-safety-value small {
+  color: var(--proposal-muted);
+}
+.proposal-form > .notice {
+  margin-inline: clamp(14px, 3.5vw, 28px);
+}
+.proposal-form > .actions {
+  position: sticky;
+  z-index: 1;
+  bottom: 0;
+  margin: 0;
+  padding: 0.65rem clamp(14px, 3.5vw, 28px);
+  background: #fff;
+  border-top: 1px solid var(--proposal-line);
+}
+
+@keyframes proposal-reveal {
+  from {
+    opacity: 0;
+    transform: translateY(-3px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (max-width: 600px) {
+  .potential-preview > header {
+    padding-block: 0.5rem;
+  }
+  .proposal-overview {
+    grid-template-columns: 1fr;
+    gap: 0.45rem;
+    padding-block: 0.75rem;
+  }
+  .proposal-outcome > div {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 0.15rem 0.55rem;
+    margin-top: 0.3rem;
+  }
+  .proposal-round-switch {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    width: 100%;
+  }
+  .potential-preview .proposal-round-switch button {
+    padding-inline: 0.45rem;
+  }
+  .proposal-spring-comparison {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 3px;
+  }
+  .proposal-spring-comparison > .icon {
+    display: none;
+  }
+  .proposal-spring-comparison > div {
+    display: grid;
+    grid-template-columns: 4.4rem minmax(0, 1fr);
+    gap: 0.3rem;
+    align-items: baseline;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .potential-preview,
+  .potential-preview * {
+    animation: none !important;
+    transition: none !important;
+  }
+}

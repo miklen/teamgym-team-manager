@@ -1,4 +1,4 @@
-import { bindingFingerprint, canonicalJson, Fraction, validateWorkspace, workspacePayload } from '@teamgym/domain';
+import { assertRoundApparatusEdit, bindingFingerprint, canonicalJson, Fraction, roundApparatusLookup, trampetApparatus, validateWorkspace, workspacePayload, workspaceRoundApparatus } from '@teamgym/domain';
 import type { AthleteSkill, RoundEntry, SkillDefinition, SpringDiscipline, Workspace } from '@teamgym/domain';
 import type { DisciplineEvaluation, ParticipantEvaluation } from './dk-engine';
 import type { SpringSkillEvaluation } from './dk-spring';
@@ -110,7 +110,16 @@ export async function searchBonusPotentials(workspace: Workspace, teamId: string
   }
   const currentFirst = before.rounds[0]!;
   const firstIsIdentical = currentFirst.compositionReady && currentFirst.unspottedDifficulty.status === 'known' && new Set(currentFirst.counting.map((item) => item.identity)).size === 1;
-  const uniform = [...groups.values()].map((group) => bestTeam(group, kernel.profile, () => 0)).find((group) => group !== null) ?? null;
+  const classify = roundApparatusLookup(workspace);
+  const compatible = scenario.rounds.map((round) => {
+    if (discipline === 'tumbling') return [candidates];
+    const { type } = classify(round.entries);
+    return (['pegasus', 'trampet'] as const).filter((apparatus) => !type || type === 'mixed' || type === apparatus)
+      .map((apparatus) => candidates.filter((candidate) => trampetApparatus(candidate.definition) === apparatus));
+  });
+  const eligibleFirst = new Set(compatible[0]!.flat());
+  const uniform = [...groups.values()].map((group) => bestTeam(group.filter((candidate) => eligibleFirst.has(candidate)), kernel.profile, () => 0))
+    .find((group) => group !== null) ?? null;
   const basisPayload = workspacePayload(workspace);
   const fingerprint = bindingFingerprint(team.rulesetBinding);
 
@@ -119,9 +128,10 @@ export async function searchBonusPotentials(workspace: Workspace, teamId: string
     const base: BonusPotential = { id: bonus.id, label: bonus.label, selected: selected?.value ?? null, selectedKnownSubtotal: selected?.knownSubtotal ?? new Fraction(0),
       ruleMaximum: bonus.maximum, documentedValue: null, status: truncated ? 'lower-bound' : 'incomplete', issue: bonus.unresolvedIssue,
       preview: null, independent: true, searchedCandidates: examined };
-    const optimal = bestTeam(candidates, kernel.profile, bonus.weight);
+    const optimal = compatible.map((groups) => groups.map((group) => bestTeam(group, kernel.profile, bonus.weight)).filter((team) => team !== null)
+      .sort((a, b) => b.reduce((sum, item) => sum + bonus.weight(item), 0) - a.reduce((sum, item) => sum + bonus.weight(item), 0))[0]);
     if (plan.bindingFingerprint !== fingerprint) return { ...base, status: 'incomplete', issue: 'PLAN-CONTEXT' };
-    if ((!firstIsIdentical && !uniform) || !optimal || options.signal?.aborted) return base;
+    if ((!firstIsIdentical && !uniform) || !optimal.slice(1).some(Boolean) || options.signal?.aborted) return base;
     let chosen: PotentialPreview | null = null;
     let best: Fraction | null = null;
     let ambitionBlocked = false;
@@ -129,13 +139,14 @@ export async function searchBonusPotentials(workspace: Workspace, teamId: string
     const hasAmbition = (index: number) => scenario.rounds[index]!.entries.some((entry) => entry.athleteId === null);
     for (const roundIndex of [1, 2]) {
       const replaced = [...(firstIsIdentical ? [] : [0]), ...[1, 2].filter((index) => index === roundIndex || !before.rounds[index]?.compositionReady)];
+      if (replaced.some((index) => index > 0 && !optimal[index])) continue;
       if (replaced.some(hasAmbition)) { ambitionBlocked = true; continue; }
       const copy = structuredClone(workspace);
       const copyPlan = copy.plans.find((item) => item.id === plan.id)!;
       const copyScenario = copyPlan[discipline].find((item) => item.id === scenarioId)!;
       for (const index of replaced) {
         const round = copyScenario.rounds[index]!;
-        round.entries = witnessEntries(index === 0 ? uniform! : optimal, round.entries, round.id);
+        round.entries = witnessEntries(index === 0 ? uniform! : optimal[index]!, round.entries, round.id);
       }
       for (const round of copyScenario.rounds) round.reserves = round.reserves.filter((reserve) => !round.entries.some((entry) => entry.athleteId === reserve.athleteId));
       copyPlan.bindingFingerprint = fingerprint;
@@ -173,7 +184,13 @@ export function applyPotentialPreview(workspace: Workspace, preview: PotentialPr
   if (!binding || bindingFingerprint(binding) !== preview.bindingFingerprint || workspacePayload(workspace) !== preview.basisPayload) throw new Error('Data er ændret siden forhåndsvisningen. Beregn muligheden igen.');
   const result = structuredClone(preview.workspace);
   result.updatedAt = new Date().toISOString();
-  return validateWorkspace(result);
+  const candidate = validateWorkspace(result);
+  const previous = workspaceRoundApparatus(workspace);
+  const empty = { type: null, placements: new Map() } as const;
+  for (const [id, round] of workspaceRoundApparatus(candidate)) {
+    assertRoundApparatusEdit(previous.get(id)?.apparatus ?? empty, round.apparatus);
+  }
+  return candidate;
 }
 
 export class PotentialCache {

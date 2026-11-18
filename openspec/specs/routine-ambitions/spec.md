@@ -1,7 +1,8 @@
 # routine-ambitions Specification
 
 ## Purpose
-TBD - created by archiving change add-routine-ambitions. Update Purpose after archive.
+Lader træneren planlægge en omgangsplads med et valgt spring, før en gymnast er udpeget. Ambitionen indgår i planens analyse, og træneren kan senere besætte pladsen med en gymnast, der har det valgte spring registreret.
+
 ## Requirements
 ### Requirement: Ambition oprettes i Tilføj plads-dialogen
 Træneren SHALL kunne oprette en omgangsplads uden gymnast, en ambition, i en bane- eller trampetomgang gennem den eksisterende Tilføj plads-dialog. Valget skal hedde Ingen gymnast endnu. Valget SHALL være tydeligt i dialogen uden at erstatte det almindelige gymnastvalg. En ambition SHALL have præcis ét valgt spring, før den kan gemmes. Ambitionen SHALL have rolle (tællende eller ekstra) og position som en almindelig plads og følge holdprofilens grænser og regler for rækkefølge. Ændringen SHALL ske gennem en domænekommando og MUST NOT ændres før Opdater.
@@ -121,3 +122,15 @@ En ambition med en trænergodkendt kæde SHALL vise den præcise springdefinitio
 #### Scenario: Godkendelse er ikke gymnastkunnen
 - **WHEN** en godkendt kæde står på en ubesat ambition, og ingen gymnast har registreret springet
 - **THEN** tæller springets kendte D som planlagt, mens pladsen viser Mangler gymnast og Ingen kan endnu.
+
+### Requirement: Ambitionens redskab passer til omgangen
+
+En ny eller ændret ambition i en trampetomgang SHALL vælge spring af omgangens aktuelle redskabstype, hvis denne er fastlagt. Ambitionen SHALL fortsat have præcis ét spring, når den gemmes. Et redskabsskift SHALL aldrig stiltiende slette eller tømme en ambition; træneren SHALL for hver berørt ambition vælge et foreneligt spring eller udtrykkeligt fjerne pladsen i forhåndsvisningen. Et nyt spring bygget fra omgangens dialog SHALL være underlagt samme grænse.
+
+#### Scenario: Modsat ambition afvises
+- **WHEN** omgangen har et Pegasus-spring, og træneren forsøger at gemme en ambition med et trampetspring
+- **THEN** forklares konflikten, og hverken ambition eller ny fælles definition oprettes.
+
+#### Scenario: Redskabsskift med ambition
+- **WHEN** træneren skifter en omgang med en Pegasus-ambition til trampet
+- **THEN** kræver forhåndsvisningen et konkret trampetspring til ambitionen eller et udtrykkeligt valg om at fjerne netop den plads.

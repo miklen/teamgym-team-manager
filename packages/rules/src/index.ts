@@ -17,6 +17,7 @@ export * from './dk-v1';
 export * from './reg-v1';
 export * from './spring-rules';
 export * from './dk-engine';
+export type { PlanFinding, PlanFindingStatus } from './plan-findings';
 export type { NumericDecision } from './dk-numeric';
 export type { SpringSkillEvaluation } from './dk-spring';
 export * from './potential';

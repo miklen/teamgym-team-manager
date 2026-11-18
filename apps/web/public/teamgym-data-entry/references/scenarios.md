@@ -14,6 +14,10 @@ Find planen i `plans` med præcis `teamId`. `bindingFingerprint` er den kanonisk
 
 En **ambition** er en udførende plads uden valgt gymnast: `{id, athleteId:null, athleteSkillId:null, role, plannedSpot:null, plannedSkillId:"<skill-id>"}`. `plannedSkillId` peger på en eksisterende præcis definition i samme disciplin. En besat plads har altid `plannedSkillId:null`. *Kan nu*, mulige kandidater og matchstatus er afledt i appen; gem dem ikke.
 
+I en trampetomgang skal alle valgte udførende spring bruge samme `jump.apparatus`: `pegasus` eller `trampet`. Følg registreringen til definitionen på besatte pladser, og brug `plannedSkillId` på ambitioner. Medregn ekstra pladser. Besatte pladser med `athleteSkillId:null` fastlægger ingen type. Reserver holder deres egne valg. Ved indsættelse skal reservens valgte spring passe til omgangen, eller træneren skal vælge et andet foreneligt spring eller vente med springvalget. Omgangstypen afledes fra de eksisterende referencer og gemmes ikke særskilt.
+
+En gammel blandet omgang kan læses som kladde. Bed træneren beslutte rettelsen, før du ændrer dens redskab eller kopierer den til et nyt scenarie. Når træneren bevidst skifter redskab, bevares id'er, roller og den indbyrdes rækkefølge for alle tilbageværende pladser. For hver berørt gymnast kræves et foreneligt spring eller et udtrykkeligt valg om at vælge senere. En berørt ambition skal have et foreneligt spring eller fjernes efter udtrykkeligt valg. Vis hvilke modtagninger der bortfalder, før ændringen gemmes.
+
 `plannedSpot` er `null` eller `{grade, skillId, elementIndex}` på en udførende plads med valgt spring. `grade` er `support`, `assist` eller `heavy`. `skillId` er definitionen, som modtagningen faktisk er planlagt for, normalt den valgte registrerings `skillId`. Ved `heavy` på bane er `elementIndex` et gyldigt nulbaseret indeks i seriens `elements`; ellers er feltet `null`. Bed om afklaring af modtaget element, hjælpens grad og springets identitet. En ændret springreference kræver fornyet modtagningsbeslutning; behold ikke en modtagning for det gamle spring.
 
 ## Syntetisk noter-til-scenarie
@@ -28,4 +32,6 @@ Træneren har **allerede besluttet**: “Nyt banescenarie Sikker A efter Plan A.
 
 Scenariet, de tre omgange og 21 pladser får nye unikke ID'er. Hver udførende får sin egen `athleteId` og `athleteSkillId`; G's reserveplads får G's registrering eller `null` efter det faktiske filindhold. Hver besat udførende får `plannedSkillId:null`. Alle andre scenarier, fælles registreringer og deres rækkefølge bevares. Hvis træneren kun har bedt om “den flotteste til sidst” uden at oplyse en observation af udførelsen, skal du spørge; stabilitetstallet må ikke bruges som mål for flot udførelse. Denne registrering beviser ikke sportslig kvalitet eller officielle point.
 
-Kontrollér efterfølgende hele filens ID-unikhed, scenarienavne, tre omgange, disciplin, gymnast/registrerings-referencer, reserver og modtagninger. En schema-valid fil kan stadig være en sportsligt uafklaret kladde; kald den ikke en godkendt opstilling uden trænerens valg.
+På trampet kan Test A have valgt et Pegasus-spring, Test B vente med at vælge spring, og en ambition pege på en anden Pegasus-definition. En ekstra plads skal også bruge Pegasus, hvis den har et spring. Test G må stå som reserve med et trampetspring. Ved indsættelse i denne omgang skal G's udførende plads bruge en forenelig registrering eller `athleteSkillId:null` efter trænerens valg.
+
+Kontrollér efterfølgende hele filens ID-unikhed, scenarienavne, tre omgange, disciplin, gymnast/registrerings-referencer, redskabsgrænse, reserver og modtagninger. En schema-valid fil kan stadig være en sportsligt uafklaret kladde; kald den ikke en godkendt opstilling uden trænerens valg.
