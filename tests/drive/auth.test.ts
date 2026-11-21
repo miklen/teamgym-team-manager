@@ -81,7 +81,7 @@ describe('personlig Google-forbindelse uden automatisk popup', () => {
   it('husker gyldig forbindelse, verificerer faktisk konto og genbruger uden OAuth-kald', async () => {
     const h = harness();
     await h.connection.restore();
-    const connecting = h.connection.connect(true);
+    const connecting = h.connection.connect();
     h.token();
     await connecting;
     await h.connection.rememberFile({ id: 'file', name: 'Test.json', folderIds: ['folder'] });
@@ -101,7 +101,7 @@ describe('personlig Google-forbindelse uden automatisk popup', () => {
   it('læser kun referencen ved lokal start og verificerer først kontoen ved Drive-valg', async () => {
     const h = harness();
     await h.connection.restore();
-    const connecting = h.connection.connect(true);
+    const connecting = h.connection.connect();
     h.token();
     await connecting;
     await h.connection.rememberFile({ id: 'file', name: 'Test.json', folderIds: [] });
@@ -119,7 +119,7 @@ describe('personlig Google-forbindelse uden automatisk popup', () => {
   it('udløb følger expires_in med margin, sletter token og bevarer kun konto/fil til ét brugerklik', async () => {
     const h = harness();
     await h.connection.restore();
-    const connecting = h.connection.connect(true);
+    const connecting = h.connection.connect();
     h.token({ expiresIn: 60 });
     await connecting;
     await h.connection.rememberFile({ id: 'file', name: 'Test.json', folderIds: [] });
@@ -129,8 +129,8 @@ describe('personlig Google-forbindelse uden automatisk popup', () => {
     expect(h.connection.snapshot().status).toBe('expired');
     expect((await h.store.read()).connection?.token).toBeNull();
     expect(h.requests).toBe(1);
-    const retry = h.connection.connect(true);
-    expect(h.options).toEqual({ hint: 'A@example.invalid', prompt: 'none' });
+    const retry = h.connection.connect();
+    expect(h.options).toEqual({ hint: 'A@example.invalid', prompt: '' });
     h.token();
     await retry;
     expect(h.requests).toBe(2);
@@ -139,12 +139,12 @@ describe('personlig Google-forbindelse uden automatisk popup', () => {
   it('afbrudt popup og manglende scope giver fejl uden popup-loop', async () => {
     const h = harness();
     await h.connection.restore();
-    const first = h.connection.connect(true);
+    const first = h.connection.connect();
     h.fail();
     await first;
     expect(h.connection.snapshot().status).toBe('error');
     expect(h.requests).toBe(1);
-    const second = h.connection.connect(true);
+    const second = h.connection.connect();
     h.token({ scopes: [] });
     await second;
     expect(h.connection.snapshot().status).toBe('error');
@@ -154,7 +154,7 @@ describe('personlig Google-forbindelse uden automatisk popup', () => {
   it('kasserer token fra gammel generation efter afbrydelse', async () => {
     const h = harness();
     await h.connection.restore();
-    const connecting = h.connection.connect(true);
+    const connecting = h.connection.connect();
     await h.connection.disconnect();
     h.token();
     await connecting;
@@ -165,7 +165,7 @@ describe('personlig Google-forbindelse uden automatisk popup', () => {
   it('anden fane stopper straks nye kald, også før asynkrone lagersvar', async () => {
     const h = harness();
     await h.connection.restore();
-    const connecting = h.connection.connect(true);
+    const connecting = h.connection.connect();
     h.token();
     await connecting;
     h.externalDisconnect();
@@ -192,31 +192,47 @@ describe('personlig Google-forbindelse uden automatisk popup', () => {
       ),
     ).toBe(false);
   });
-  it('stille genforbindelse beholder den gamle reference ved fremmed konto og adskiller et efterfølgende kontoskift', async () => {
+  it('afviser en anden konto ved genforbindelse og tillader kontoskift efter afbrydelse', async () => {
     const h = harness();
     await h.connection.restore();
-    const first = h.connection.connect(true);
+    const first = h.connection.connect();
     h.token();
     await first;
     await h.connection.rememberFile({ id: 'old', name: 'Gammelt.json', folderIds: [] });
     h.connection.expire();
     h.account('B');
-    const second = h.connection.connect(true);
+    const second = h.connection.connect();
+    expect(h.options).toEqual({ hint: 'A@example.invalid', prompt: '' });
     h.token();
     await second;
     expect(h.connection.snapshot()).toMatchObject({ status: 'error', account: { permissionId: 'A' }, file: { id: 'old' } });
     expect((await h.store.read()).connection).toMatchObject({ token: null, file: { id: 'old' } });
-    const third = h.connection.connect(true);
-    expect(h.options).toEqual({ hint: 'A@example.invalid', prompt: '' });
+    await h.connection.disconnect();
+    const third = h.connection.connect();
+    expect(h.options).toEqual({ hint: undefined, prompt: 'select_account' });
     h.token();
     await third;
     expect(h.connection.snapshot()).toMatchObject({ account: { permissionId: 'B' }, file: null });
     expect((await h.store.read()).connection?.file).toBeNull();
   });
+  it('forbinder kun den første valgte konto, når to faner forbinder forskellige konti samtidig', async () => {
+    const store = new MemoryConnectionStore();
+    const first = harness(store);
+    const second = harness(store);
+    second.account('B');
+    const firstConnection = first.connection.connect();
+    const secondConnection = second.connection.connect();
+    first.token();
+    await firstConnection;
+    second.token();
+    await secondConnection;
+    expect(second.connection.snapshot()).toMatchObject({ status: 'disconnected', account: null });
+    expect((await store.read()).connection?.account.permissionId).toBe('A');
+  });
   it('fornyer stille ved klik tæt på udløb uden ny generation og bevarer filvalg', async () => {
     const h = harness();
     await h.connection.restore();
-    const connecting = h.connection.connect(true);
+    const connecting = h.connection.connect();
     h.token();
     await connecting;
     await h.connection.rememberFile({ id: 'file', name: 'Test.json', folderIds: [] });
@@ -238,7 +254,7 @@ describe('personlig Google-forbindelse uden automatisk popup', () => {
   it('mislykket eller fremmed fornyelse beholder token og pauser nye forsøg', async () => {
     const h = harness();
     await h.connection.restore();
-    const connecting = h.connection.connect(true);
+    const connecting = h.connection.connect();
     h.token();
     await connecting;
     h.advance(3_600_000 - RENEW_WINDOW + 1);
@@ -268,7 +284,7 @@ describe('personlig Google-forbindelse uden automatisk popup', () => {
     };
     const h = harness(bad);
     await h.connection.restore();
-    const connecting = h.connection.connect(true);
+    const connecting = h.connection.connect();
     h.token();
     await connecting;
     expect(h.connection.snapshot()).toMatchObject({ status: 'connected', remembered: false });

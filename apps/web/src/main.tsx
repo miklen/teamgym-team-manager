@@ -4,7 +4,7 @@ import { createRoot } from 'react-dom/client';
 import { flushSync } from 'react-dom';
 import { CURRENT_SCHEMA_VERSION, createWorkspace, skillNeedsTwistDistribution } from '@teamgym/domain';
 import type { SkillDefinition } from '@teamgym/domain';
-import { DriveError, openLocalHandle, overwriteDriveTarget, parseDriveLink, pickGoogleResource, prepareGoogle, readLocalFile, saveNewLocalHandle, serializeLocalWorkspace } from '@teamgym/drive';
+import { DriveError, openLocalHandle, overwriteDriveTarget, parseDriveLink, pickGoogleResource, prepareGoogleAuthorization, prepareGooglePicker, readLocalFile, saveNewLocalHandle, serializeLocalWorkspace } from '@teamgym/drive';
 import type { LoadedWorkspace, LocalHandle, LocalOrigin, RecentWorkspace } from '@teamgym/drive';
 import type { Workspace } from '@teamgym/domain';
 import type { DriveLink } from '@teamgym/drive';
@@ -66,7 +66,6 @@ function App() {
   const [creating, setCreating] = useState(false);
   const [openingLink, setOpeningLink] = useState(false);
   const [folderLink, setFolderLink] = useState('');
-  const [remember, setRemember] = useState(false);
   const [recovery, setRecovery] = useState<string | null>(null);
   const [restoring, setRestoring] = useState(true);
   const [editorEpoch, setEditorEpoch] = useState(0);
@@ -152,9 +151,6 @@ function App() {
   useEffect(() => {
     let active = true;
     void restoreConnection()
-      .then(() => {
-        if (active) setRemember(connection.snapshot().remembered);
-      })
       .catch((error: unknown) => {
         if (active) setError(error instanceof Error ? error.message : 'Forbindelsen kunne ikke genoprettes.');
       })
@@ -175,7 +171,9 @@ function App() {
     window.addEventListener('beforeunload', before);
     window.addEventListener('focus', focus);
     // Google kræver et brugerklik for at åbne fornyelsesvinduet; selve klikket afventer ikke fornyelsen.
-    const renew = () => connection.renewIfExpiring();
+    const renew = () => {
+      if (globalThis.google?.accounts?.oauth2) connection.renewIfExpiring();
+    };
     document.addEventListener('click', renew, true);
     return () => {
       active = false;
@@ -186,8 +184,7 @@ function App() {
     };
   }, []);
   useEffect(() => {
-    if (auth.status === 'disconnected') {
-      setRemember(false);
+    if (auth.status === 'disconnected' && !auth.account) {
       if (observedAccount.current)
         void recentWorkspaces.removeDriveAccount(observedAccount.current).then(refreshRecent).catch(() => setRecentError('Drive-poster kunne ikke ryddes fra Seneste.'));
       if (workspaceSession.snapshot().loaded && workspaceSession.dirty()) setRecovery(workspaceSession.exportDraft());
@@ -198,13 +195,9 @@ function App() {
       observedAccount.current = null;
       return;
     }
-    if (auth.status !== 'connected' || !auth.account) return;
-    if (observedAccount.current && observedAccount.current !== auth.account.permissionId) {
-      void recentWorkspaces.removeDriveAccount(observedAccount.current).then(refreshRecent).catch(() => setRecentError('Den tidligere kontos poster kunne ikke ryddes.'));
-      if (workspaceSession.dirty()) setRecovery(workspaceSession.exportDraft());
-      workspaceSession.clear();
-    }
+    if (!auth.account) return;
     observedAccount.current = auth.account.permissionId;
+    if (auth.status !== 'connected') return;
     if (workspaceSession.snapshot().loaded) {
       void workspaceSession.checkRemote();
       return;
@@ -228,7 +221,7 @@ function App() {
     setGoogleError('');
     setGoogleLoading(true);
     try {
-      await prepareGoogle();
+      await prepareGoogleAuthorization();
       setReady(true);
     } catch (error) {
       setGoogleError(error instanceof Error ? error.message : 'Google kunne ikke indlæses.');
@@ -238,16 +231,15 @@ function App() {
   }
   async function ensureGoogle() {
     if (!configured) throw new Error('Google Drive er ikke konfigureret i denne udgave.');
-    try { await prepareGoogle(); }
+    if (await connection.verifyRestored()) return true;
+    try { await prepareGoogleAuthorization(); }
     catch (error) {
       setGoogleError(error instanceof Error ? error.message : 'Google kunne ikke indlæses.');
       throw error;
     }
     setGoogleError('');
     setReady(true);
-    if (connection.snapshot().status === 'connected') return true;
-    if (await connection.verifyRestored()) return true;
-    await connection.connect(remember);
+    await connection.connect();
     return connection.snapshot().status === 'connected';
   }
   function startNew() {
@@ -308,6 +300,7 @@ function App() {
     folder: boolean,
     target?: { fileId?: string; parentId?: string; includeFolders?: boolean },
   ) {
+    await prepareGooglePicker();
     // Native showModal gør resten af dokumentet inert, også Googles eksterne iframe.
     // Luk alle app-modaler i samme render, før Picker (og eventuelt cookievalg) vises.
     flushSync(() => setPickerActive(true));
@@ -457,11 +450,16 @@ function App() {
   const workspace = data.draft;
   const pendingFileId = /^#\/arbejdsrum\/([\w-]+)/.exec(route)?.[1];
   const deepLink = pendingFileId && !['kladde', 'lokal'].includes(pendingFileId) ? pendingFileId : null;
+  useEffect(() => {
+    if (configured && deepLink) void prepareGoogleAuthorization().catch(() => {});
+  }, [deepLink]);
   const starting =
     !workspace &&
     (restoring ||
       (auth.status === 'connected' && !!deepLink && data.state === 'loading'));
   const fileId = data.loaded?.basis.fileId;
+  const needsDriveConnection = !!data.loaded && (auth.status === 'expired' || auth.status === 'error');
+  const reconnecting = !!data.loaded && auth.status === 'connecting';
   const workspacePath = fileId ?? (data.local ? 'lokal' : 'kladde');
   const match = /\/hold\/([^/]+)(?:\/([^/]+))?/.exec(route);
   const teamId =
@@ -623,7 +621,7 @@ function App() {
                 {data.state === 'changed' ? data.loaded ? ' · Gem på Drive' : data.local ? ' · Gem lokal fil' : ' · Vælg placering' : ''}
               </button>
             )}
-            {workspace && <button className="quiet" disabled={starting} onClick={() => setSettings(true)}>
+            {(workspace || auth.account) && <button className="quiet" disabled={starting} onClick={() => setSettings(true)}>
               <Icon name="settings" />
               <span>Arbejdsrum</span>
             </button>}
@@ -724,21 +722,28 @@ function App() {
               </button>
             </div>
           )}
-          {(error || data.message || auth.message || downloadNotice) && (
+          {(error || data.message || auth.message || downloadNotice || reconnecting) && (
             <div className="notice" role="status">
               {error && <p>{error}</p>}
-              {auth.message && <p>{auth.message}</p>}
+              {reconnecting ? <p>Forbinder til Google Drive…</p> : auth.message && (
+                <p>{auth.message}{needsDriveConnection && ' Arbejdsrummet er stadig åbent.'}</p>
+              )}
               {data.message && <p>{data.message}</p>}
               {downloadNotice && <p>{downloadNotice}</p>}
               {workspace && (
                 <div className="actions">
+                  {needsDriveConnection && (
+                    <button disabled={busy || !configured} onClick={() => void run(async () => { await ensureGoogle(); })}>
+                      Forbind til Google Drive
+                    </button>
+                  )}
                   <button className="quiet" onClick={downloadDraft}>
                     Eksportér lokal kladde
                   </button>
-                  {data.loaded && (
+                  {data.loaded && data.newer && auth.status === 'connected' && (
                     <button
                       className="quiet"
-                      disabled={busy || data.state === 'saving' || auth.status !== 'connected'}
+                      disabled={busy || data.state === 'saving'}
                       onClick={() => {
                         if (confirmDiscard()) void workspaceSession.open(data.loaded!.basis.fileId, true);
                       }}
@@ -749,17 +754,6 @@ function App() {
                 </div>
               )}
             </div>
-          )}
-          {workspace && data.loaded && (auth.status === 'expired' || auth.status === 'error') && (
-            <section className="reconnect">
-              <p>Kladden er i denne side. Genforbind for at kontrollere filversion og fortsætte.</p>
-              <button
-                disabled={busy || !configured}
-                onClick={() => void ensureGoogle()}
-              >
-                Forbind til Google Drive
-              </button>
-            </section>
           )}
           <div key={editorEpoch}>
             {starting ? (
@@ -783,7 +777,7 @@ function App() {
                 <div className="startup-emblem" aria-hidden="true"><Icon name="cloud" /></div>
                 <div>
                   <h1>Åbn arbejdsrum på Drive</h1>
-                  <p>Forbind den Google-konto, der har adgang til filen i linket.</p>
+                  <p>{auth.account ? `Fortsæt med ${auth.account.email}.` : 'Forbind den Google-konto, der har adgang til filen i linket.'}</p>
                 </div>
                 <button disabled={busy || !configured} onClick={() => void run(async () => { await ensureGoogle(); })}>Forbind til Google Drive</button>
                 {data.message && <p role="alert">{data.message}</p>}
@@ -798,8 +792,6 @@ function App() {
                 openLink={() => void run(async () => { if (await ensureGoogle()) setOpeningLink(true); })}
                 configured={configured}
                 busy={busy}
-                remember={remember}
-                setRemember={setRemember}
                 recent={recent}
                 recentError={recentError}
                 rowErrors={recentRowError}
@@ -885,7 +877,6 @@ function App() {
         {saveChoice && (
           <Dialog title="Gem arbejdsrummet" suspended={pickerActive} close={() => setSaveChoice(false)}>
             <p>Vælg, hvor filen skal gemmes. Din kladde forbliver her, hvis du annullerer.</p>
-            <label className="check"><input type="checkbox" checked={remember} onChange={(event) => setRemember(event.target.checked)} /> Husk Google-forbindelsen på denne enhed</label>
             <div className="actions">
               <button disabled={busy} onClick={() => void saveAsLocal()}>Gem som lokal fil</button>
               <button disabled={busy || !configured} onClick={() => void run(async () => {
@@ -981,11 +972,11 @@ function App() {
           <Dialog title="Arbejdsrum og forbindelse" className="workspace-dialog" suspended={pickerActive} close={() => setSettings(false)}>
             <div className="workspace-dialog-overview">
               <span className="workspace-dialog-kicker">Aktiv fil</span>
-              <strong className="workspace-dialog-name">{data.loaded?.metadata.name ?? data.local?.name ?? 'Ugemt kladde'}</strong>
-              <span className="workspace-dialog-subtitle">{data.loaded ? `Google Drive · ${data.loaded.metadata.writable ? 'Skriveadgang' : 'Læseadgang'}` : data.local ? 'Lokal fil' : 'Vælg placering ved første gemning'}</span>
+              <strong className="workspace-dialog-name">{data.loaded?.metadata.name ?? data.local?.name ?? (workspace ? 'Ugemt kladde' : 'Ingen fil åben')}</strong>
+              {workspace && <span className="workspace-dialog-subtitle">{data.loaded ? `Google Drive · ${data.loaded.metadata.writable ? 'Skriveadgang' : 'Læseadgang'}` : data.local ? 'Lokal fil' : 'Vælg placering ved første gemning'}</span>}
               <div className="workspace-dialog-primary-actions">
                 {data.draft && <button disabled={busy || data.state === 'saving'} onClick={() => { if (commitForms()) { setSettings(false); setSaveChoice(true); } }}>Gem som…</button>}
-                {auth.status === 'connected' && <button className="quiet" disabled={busy} onClick={() => {
+                {auth.account && <button className="quiet" disabled={busy} onClick={() => {
                   if (data.loaded && !confirmDiscard()) return;
                   void run(async () => {
                     if (data.loaded) workspaceSession.clear();
@@ -997,7 +988,7 @@ function App() {
             </div>
             {error && !openingLink && !creating && <p className="notice" role="alert">{error}</p>}
             <p className="workspace-dialog-connection">{auth.account
-              ? `${auth.account.name} · ${auth.account.email} · ${auth.remembered ? 'Forbindelsen huskes, til adgangen udløber' : 'Forbindelsen huskes ikke efter lukning'}`
+              ? `${auth.account.name} · ${auth.account.email} · ${auth.remembered ? 'Kontoen huskes på denne enhed, indtil du afbryder forbindelsen' : 'Forbindelsen huskes ikke efter lukning'}`
               : 'Ingen Google-konto forbundet. Du kan stadig bruge lokale filer.'}</p>
             {data.local && <p className="workspace-dialog-guidance">{data.local.handle ? 'Gem skriver til denne fil efter ny adgangskontrol.' : 'Denne browser kan ikke skrive tilbage til den åbnede fil. Hent en ny kopi ved Gem.'}</p>}
             <section className="workspace-dialog-section" aria-labelledby="workspace-file-actions-title">

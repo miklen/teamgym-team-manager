@@ -182,4 +182,14 @@ Drive kan ændre filens ETag og version uden at ændre arbejdsrummets indhold. F
 
 En afvist betinget upload har kendt udfald. Et mistet svar beholder operationens id, payloadhash og afsendte snapshot. Genforsøg og gennemgang læser filen, før en ny upload kan ske. Genkendes operationen i recentOperations, bruges det bekræftede eget snapshot som sammenligningsbasis, også hvis andre siden har gemt. Det giver aldrig den gamle levende kladde en ekstern revisionsbasis uden fletning. Hvis en nyere fil ikke kan afklare udfaldet, blokeres gennemgangen til eksport/bevidst genindlæsning; ingen ny upload opfindes.
 
+### Genbrug af Google-forbindelsen
+
+Ændringen bruger det eksisterende lokale IndexedDB-format til at huske Google-konto og seneste filreference ved enhver verificeret forbindelse. Kontoens Drive-`permissionId` kontrolleres efter genindlæsning og genforbindelse. Browserens lager-generation og konto kontrolleres samlet ved skrivning, så sent login eller et samtidigt valg af en anden konto ikke erstatter den aktive forbindelse. Kontoskift sker ved afbrydelse, som også isolerer andre faners ugemte Drive-kladder til eksport.
+
+Forbindelsen styrer, hvornår den aktuelle Drive-revision kan læses og vises. Arbejdsrumsformat, fælles sammenligningsbasis, identiteter, rækkefølge, referencer, regler og afledte værdier følger fortsat den fælles kontrakt. Genforbindelse bevarer den levende kladde og bruger den eksisterende kontrol af Drive-revision og rettigheder før gemning.
+
+Ved udløb viser det åbne arbejdsrum forbindelsesstatus og bevarer kladde og basis. Sene svar fra den gamle forbindelse ignoreres i baggrundskontrollen. Efter genforbindelse sammenlignes den aktuelle fil med den eksisterende basis, og genindlæsning tilbydes kun ved fund af nyere fælles indhold. Et muligt uafklaret uploadsvar afstemmes via den samme gemmeoperation før ny skrivning.
+
+Kontrastrettelsen i dialogen med ændringsforslag ændrer kun knappens baggrund, når markøren hviler over den. Sammenligningen af omgange bruger de samme data.
+
 Anvendelse genkontrollerer filbasis og skriveadgang, genberegner den gyldige kandidat og sætter R som loaded/basis. Kandidaten får R's gemmemetadata. Pending-operationer ryddes, og næste særskilte gemning får et frisk operations-id. `DriveClient.upload` bevarer den oprindelige ETag i `If-Match`; et kapløb efter kontrollen kan derfor stadig ikke overskrive en nyere fil. Eksport, migration og afbrydelse dækkes fortsat af Drive-regressionstests.

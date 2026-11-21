@@ -4,12 +4,11 @@ import type { Locator, Page } from '@playwright/test';
 interface GoogleMock {
   failLoads: number;
   failFirstAuthorization: boolean;
-  requireInteraction: boolean;
 }
 export const test = base.extend<{ googleMock: GoogleMock }>({
   // eslint-disable-next-line no-empty-pattern -- Playwright kræver destructuring af fixture-afhængigheder.
   googleMock: async ({}, use) => {
-    await use({ failLoads: 0, failFirstAuthorization: false, requireInteraction: false });
+    await use({ failLoads: 0, failFirstAuthorization: false });
   },
   page: async ({ page, context, googleMock }, use) => {
     await context.route('https://accounts.google.com/gsi/client', async (route) => {
@@ -23,12 +22,11 @@ export const test = base.extend<{ googleMock: GoogleMock }>({
         body: `
         let attempts = 0;
         window.google = { accounts: { oauth2: {
-          initTokenClient: (configuration) => ({ requestAccessToken: () => {
+          initTokenClient: (configuration) => ({ requestAccessToken: (options) => {
             attempts++; window.syntheticTokenRequests = attempts;
-            const {login_hint, prompt} = configuration;
+            const {login_hint, prompt} = {...configuration, ...options};
             window.syntheticTokenOptions = {login_hint, prompt};
             if (${googleMock.failFirstAuthorization} && attempts === 1) configuration.error_callback({type:'popup_closed'});
-            else if (${googleMock.requireInteraction} && prompt === 'none') configuration.callback({error:'access_denied'});
             else configuration.callback({access_token:'synthetic-renewed-access',expires_in:'3600',scope:'https://www.googleapis.com/auth/drive.file'});
           }}), hasGrantedAllScopes: () => true, revoke: (_, done) => done()
         }}};`,

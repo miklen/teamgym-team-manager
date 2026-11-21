@@ -30,7 +30,7 @@ Efter et accepteret svar læses filen konsistent igen. Kun genkendt operation me
 | Udfald | Appens reaktion |
 | --- | --- |
 | 412 eller afvigende basis | Konflikt, kladde bevaret, ingen automatisk merge eller overskrivning |
-| 401/udløb | Token slettes, konto-/filhint bevares, ét brugerklik til GIS-genforbindelse |
+| 401/udløb | Arbejdsrummet forbliver åbent. Forbind til Google Drive bruger den huskede konto, hvorefter appen kontrollerer version og adgang igen. |
 | 403/læseadgang | Gemning afvises; kladde kan eksporteres |
 | 404/410/papirkurv | Filen er væk eller utilgængelig; ingen erstatningsfil |
 | Netværk/CORS/mistet svar | Fejl med ukendt udfald; læs konsistent før genforsøg |

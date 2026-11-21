@@ -1,7 +1,8 @@
 import { expect, test } from './test';
 import { openWorkspace } from './drive-fixture';
 
-test('Google indlæses først, når en Drive-handling vælges', async ({ page }) => {
+test('Google indlæses først, når en Drive-handling vælges', async ({ page, googleMock }) => {
+  googleMock.failFirstAuthorization = true;
   await page.goto('./');
   await expect(page.getByRole('heading', { name: 'Planlæg dit hold.' })).toBeVisible();
   expect(await page.evaluate(() => 'syntheticTokenOptions' in window)).toBe(false);
@@ -35,8 +36,9 @@ for (const width of [1440, 390]) {
     await page.getByRole('button', { name: 'Gem i Google Drive' }).click();
     await page.getByLabel('Arbejdsrummets navn').fill('Syntetisk sæson');
     await page.getByRole('button', { name: 'Vælg mappe og opret JSON-fil' }).click();
-    expect(await page.evaluate(() => document.querySelectorAll('dialog:modal').length)).toBe(0);
     const picker = page.frameLocator('iframe[title="Google Drive"]');
+    await expect(page.locator('iframe[title="Google Drive"]')).toBeVisible();
+    await expect(page.locator('dialog:modal')).toHaveCount(0);
     await picker.getByRole('button', { name: 'Accepter kun nødvendige' }).click();
     await picker.getByRole('button', { name: 'Annuller', exact: true }).click();
     await expect(page.locator('iframe[title="Google Drive"]')).toHaveCount(0);

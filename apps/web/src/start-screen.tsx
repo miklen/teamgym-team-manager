@@ -11,8 +11,6 @@ interface StartScreenProps {
   openLink: () => void;
   configured: boolean;
   busy: boolean;
-  remember: boolean;
-  setRemember: (remember: boolean) => void;
   recent: RecentWorkspace[];
   recentError: string;
   rowErrors: Record<string, string>;
@@ -20,12 +18,11 @@ interface StartScreenProps {
   removeRecent: (entry: RecentWorkspace) => void;
 }
 
-function OpenOptions({ openLocal, openDrive, openLink, configured, busy, remember, setRemember }: Pick<StartScreenProps, 'openLocal' | 'openDrive' | 'openLink' | 'configured' | 'busy' | 'remember' | 'setRemember'>) {
+function OpenOptions({ openLocal, openDrive, openLink, configured, busy }: Pick<StartScreenProps, 'openLocal' | 'openDrive' | 'openLink' | 'configured' | 'busy'>) {
   return <div id="start-open-options" className="start-open-options">
     <button onClick={openLocal} disabled={busy}>Lokal fil <span aria-hidden="true">↗</span></button>
     <button onClick={openDrive} disabled={busy || !configured}>Google Drive <span aria-hidden="true">↗</span></button>
     <button onClick={openLink} disabled={busy || !configured}>Drive-link <span aria-hidden="true">↗</span></button>
-    {configured && <label className="start-remember"><input type="checkbox" checked={remember} onChange={(event) => setRemember(event.target.checked)} /> Husk Google-forbindelsen på denne enhed</label>}
   </div>;
 }
 
@@ -35,7 +32,7 @@ function DataTrust({ details, setDetails }: { details: boolean; setDetails: (det
     <div>
       <p>Du arbejder i browseren. Du vælger selv, om filen gemmes på din enhed eller i din Google Drive. Appen har ingen server, der opbevarer arbejdsrumsfiler.</p>
       <button className="start-details-toggle" aria-expanded={details} onClick={() => setDetails(!details)}>Sådan opbevares dine data <span aria-hidden="true">{details ? '−' : '↗'}</span></button>
-      {details && <p className="start-details">Browseren kan huske referencer til filer, du har åbnet. Vælger du at huske Google-forbindelsen, gemmes den på denne enhed indtil den udløber. Når du vælger Drive, indlæses Googles login og filvælger; Google kan bruge egne cookies og vise egne valg. Deling af Drive-filer styrer du i Google Drive. Andre med adgang til din enhed eller Google-konto kan også have adgang til filerne.</p>}
+      {details && <p className="start-details">Browseren kan huske referencer til filer, du har åbnet. Når du forbinder Google Drive, gemmes din valgte konto og den aktuelle adgang på denne enhed. Kontoen huskes, indtil du vælger at afbryde forbindelsen under Arbejdsrum. Google kan bruge egne cookies og vise egne valg. Deling af Drive-filer styrer du i Google Drive. Andre med adgang til din enhed eller Google-konto kan også have adgang til filerne.</p>}
     </div>
   </div>;
 }

@@ -16,7 +16,7 @@ Systemet SHALL lade hver træner forbinde sin egen Google-konto gennem Google Id
 - **THEN** appen tilbyder valg/autorisation af filen og viser ikke fejlagtigt, at arbejdsrummet er tomt.
 
 ### Requirement: Google-forbindelsen huskes mellem besøg
-Systemet SHALL bevare det aktuelle access token med udløbstid, scopes, kontoreference og seneste filreference i versionsmærket IndexedDB, når træneren har valgt at huske forbindelsen, og genbruge gyldig adgang efter genindlæsning eller browsergenstart. Udløb SHALL følge Googles `expires_in` med en kort sikkerhedsmargin og MUST NOT forlænges lokalt. Den faktiske konto og aktuelle filrettigheder SHALL kontrolleres, før en Drive-fil åbnes. Et almindeligt besøg SHALL vise startoverblikket med Seneste uden automatisk at hente den sidst brugte Drive-fil eller kræve Google-forbindelse for lokal brug; et direkte arbejdsrumslink SHALL fortsat kunne åbne den angivne fil efter verificeret adgang. Ved manglende browserlager SHALL en hukommelsesbaseret forbindelse stadig fungere med tydelig besked om, at den ikke kan huskes. Systemet MUST NOT gemme refresh tokens eller client secrets. Husket login SHALL ikke medføre vedvarende lagring af gymnastdata i browseren.
+Systemet SHALL efter verifikation af den valgte Google-konto gemme det aktuelle access token med udløbstid, scopes, kontoreference og seneste filreference i versionsmærket IndexedDB og genbruge gyldig adgang efter genindlæsning eller browsergenstart. Udløb SHALL følge Googles `expires_in` med en kort sikkerhedsmargin og MUST NOT forlænges lokalt. Den faktiske konto og aktuelle filrettigheder SHALL kontrolleres, før en Drive-fil åbnes. Et almindeligt besøg SHALL vise startoverblikket med Seneste uden automatisk at hente den sidst brugte Drive-fil eller kræve Google-forbindelse for lokal brug. Et direkte arbejdsrumslink, herunder genindlæsning af et åbent Drive-arbejdsrum, SHALL åbne den angivne fil efter verificeret adgang. Ved manglende browserlager SHALL en hukommelsesbaseret forbindelse stadig fungere med tydelig besked om, at den ikke kan huskes. Systemet MUST NOT gemme refresh tokens eller client secrets. Husket login SHALL ikke medføre vedvarende lagring af gymnastdata i browseren.
 
 #### Scenario: Genåbn med gyldig adgang
 - **WHEN** træneren genåbner appen med et endnu gyldigt gemt token og tidligere Drive-filer
@@ -31,11 +31,19 @@ Systemet SHALL bevare det aktuelle access token med udløbstid, scopes, kontoref
 - **THEN** kan træneren stadig forbinde og arbejde i den aktuelle side, men appen oplyser, at forbindelsen ikke huskes efter lukning.
 
 ### Requirement: Udløbet adgang genoptages med genbrugt samtykke
-Ved udløb eller 401 SHALL tokenet slettes og kontohint/filreference bevares. Ved klik på Forbind til Google Drive SHALL tokenklienten med en kendt konto anmode om adgang med `login_hint`, `include_granted_scopes:true` og `prompt:'none'`. Den verificerede konto SHALL stemme med den kendte konto, før et stille svar kan overtages. Hvis Google kræver brugerhandling, SHALL et nyt klik tillade Googles login og samtykke med `prompt:''` og samme kontohint. Systemet MUST NOT tvinge consent eller select_account ved hvert besøg, love ubegrænset tavs tokenfornyelse eller åbne gentagne baggrundspopups. En genforbindelse SHALL bevare kladden og kontrollere filversion/rettighed igen før gemning.
+Ved udløb eller 401 SHALL tokenet slettes og kontohint/filreference bevares. Ét klik på Forbind til Google Drive SHALL anmode om adgang med `login_hint`, `include_granted_scopes:true` og `prompt:''`, så Google kan genbruge login og samtykke eller bede om dem i samme forløb. Den verificerede konto SHALL stemme med den huskede kontos Drive-identitet før adgang genoptages. Appen SHALL kun bede om frit kontovalg, når der endnu ikke er valgt en konto eller efter bevidst afbrydelse. Tokenkald SHALL ske fra et brugerklik. En genforbindelse SHALL bevare kladden og kontrollere filversion/rettighed igen før gemning.
 
 #### Scenario: Tilbage efter tokenudløb
 - **WHEN** træneren vender tilbage med udløbet token, tidligere samtykke og et aktivt Google-login
-- **THEN** tilbydes Fortsæt med Google med husket konto/fil, og tidligere tilladelser genbruges, når Google tillader det, uden at appen selv kræver nyt samtykke.
+- **THEN** bruger Forbind til Google Drive den huskede konto og genbruger de tidligere tilladelser, når Google tillader det.
+
+#### Scenario: Adgangen udløber, mens arbejdsrummet er åbent
+- **WHEN** en baggrundskontrol eller gemning rammer udløbet adgang
+- **THEN** tilbydes genforbindelse i det åbne arbejdsrum. Den lokale basis og kladde bevares, og en nyere fil tilbydes først, hvis Drive-kontrollen finder ændret indhold. En gemning med uafklaret udfald afstemmes før en ny upload.
+
+#### Scenario: Nyt token for en anden konto
+- **WHEN** Google returnerer et token for en anden konto ved genforbindelse, eller to faner vælger forskellige konti samtidigt
+- **THEN** afvises det nye token, den valgte konto forbliver bundet til browseren, og et kontoskift kræver afbrydelse.
 
 #### Scenario: Popup afbrydes
 - **WHEN** Google-popup blokeres eller lukkes uden et token

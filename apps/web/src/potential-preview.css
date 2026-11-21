@@ -142,6 +142,7 @@
 }
 
 .potential-preview :is(.proposal-view-switch, .proposal-round-switch) button:hover {
+  background: var(--proposal-surface);
   color: var(--proposal-accent);
   box-shadow: none;
   transform: none;

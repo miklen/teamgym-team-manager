@@ -24,7 +24,7 @@ export interface ConnectionRecord {
 }
 export interface ConnectionStore {
   read(): Promise<ConnectionRecord>;
-  /** Atomisk sammenligning med fælles epoch; gamle asynkrone svar kan ikke genoprette adgang. */
+  /** Samme epoch og konto kræves, hvis der allerede er gemt en forbindelse. */
   write(connection: RememberedConnection, expectedEpoch: string): Promise<boolean>;
   clear(): Promise<string>;
 }
@@ -104,7 +104,8 @@ export class IndexedConnectionStore implements ConnectionStore {
   }
   write(connection: RememberedConnection, expectedEpoch: string) {
     return this.transaction<boolean>((store, row, done) => {
-      if (row.epoch !== expectedEpoch) {
+      if (row.epoch !== expectedEpoch ||
+        (row.connection && row.connection.account.permissionId !== connection.account.permissionId)) {
         done(false);
         return;
       }
@@ -127,7 +128,9 @@ export class MemoryConnectionStore implements ConnectionStore {
     return structuredClone(this.row);
   }
   async write(connection: RememberedConnection, epoch: string) {
-    if (epoch !== this.row.epoch) return false;
+    if (epoch !== this.row.epoch ||
+      (this.row.connection && this.row.connection.account.permissionId !== connection.account.permissionId))
+      return false;
     this.row.connection = structuredClone(connection);
     return true;
   }

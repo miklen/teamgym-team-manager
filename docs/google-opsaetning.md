@@ -20,7 +20,7 @@ Produktionsadresse: `https://teamgym.bnyg.dk/`. Navigation er hash-baseret. Den 
 
 ## Browserlager og CSP
 
-Versionsmærket IndexedDB gemmer kun den ønskede forbindelse: aktuelt token, Googles udløbstid, scopes, verificeret kontoreference og seneste filreference. En 30-sekunders sikkerhedsmargin forkorter adgang; appen forlænger den aldrig. Lagerfejl giver forbindelse i hukommelsen med tydelig besked. Afbrydelse invaliderer en fælles lager-epoch, så gamle svar ikke kan genoprette gemt adgang. BroadcastChannel sender kun afbrydelsessignal, aldrig tokens.
+Efter login gemmer versionsmærket IndexedDB aktuelt token, Googles udløbstid, scopes, verificeret kontoreference og seneste filreference. En 30-sekunders sikkerhedsmargin forkorter adgang. Konto og filreference bevares efter udløb og bruges ved genforbindelse. Lagerfejl giver forbindelse i hukommelsen med tydelig besked. Afbrydelse invaliderer en fælles lager-epoch, så gamle svar ikke kan genoprette gemt adgang. BroadcastChannel sender kun afbrydelsessignal, aldrig tokens.
 
 HTML indeholder en CSP med afgrænsede GIS-, Picker- og Drive-hosts, ingen inline scripts/eval, objektblokering og worker fra egen origin. Inline styles tillades til Google-komponenterne. GIS og Picker-scripts kunne indlæses under den lokale CSP; scripts er også indlæst på den rigtige Pages-origin. Den fulde Picker-iframe og login/genbrug dér er stadig udestående. React håndterer navne/noter som tekst. Appen bruger ikke `dangerouslySetInnerHTML`.
 

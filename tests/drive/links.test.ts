@@ -130,16 +130,16 @@ it('genbruger husket filnøgle efter genåbning og rydder den ved kontoskift', a
     async revoke() {},
   };
   const first = new GoogleConnection(store, oauth, fetcher);
-  await first.connect(true);
+  await first.connect();
   first.client().rememberResourceKey('synthetic-file', '0-synthetic');
   await first.rememberFile(await first.client().metadata('synthetic-file'));
   const next = new GoogleConnection(store, oauth, fetcher);
   await next.restore();
   await next.client().metadata('synthetic-file');
   expect(keys.at(-1)).toBe('synthetic-file/0-synthetic');
+  await next.disconnect();
   account = 'B';
-  await next.connect(true);
-  await next.connect(true);
+  await next.connect();
   await next.client().metadata('synthetic-file');
   expect(keys.at(-1)).toBeNull();
   expect(next.snapshot().file).toBeNull();

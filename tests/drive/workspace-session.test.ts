@@ -552,7 +552,30 @@ describe('basis, snapshot, kladde og uklart svar', () => {
     expect(workspacePayload(session.snapshot().draft!)).toBe(original);
     expect(session.snapshot().draft!.recentOperations[0]!.payloadHash).toMatch(/^[a-f0-9]{64}$/);
   });
-  it.each([401, 403, 404])('bevarer kladde og sandfærdig fejl ved HTTP %i', async (status) => {
+  it('bevarer en ugemt kladde og dens status, når adgang udløber før upload', async () => {
+    const { source, session } = await open();
+    add(session);
+    const draft = session.snapshot().draft;
+    source.setStatus(401);
+    await session.checkRemote();
+    await session.save();
+    expect(session.snapshot()).toMatchObject({ state: 'changed', message: '', newer: false });
+    expect(session.snapshot().draft).toBe(draft);
+    expect(source.puts).toBe(0);
+  });
+  it('afstemmer en gennemført upload, når adgang udløb før bekræftelsen', async () => {
+    const { source, session } = await open();
+    add(session);
+    source.afterPut(async () => { source.setStatus(401); });
+    await session.save();
+    expect(session.snapshot()).toMatchObject({ state: 'error', newer: false });
+    expect(session.snapshot().message).toContain('afventer kontrol');
+    source.setStatus(200);
+    await session.checkRemote();
+    expect(session.snapshot()).toMatchObject({ state: 'saved', operationCompleted: true, newer: false });
+    expect(source.puts).toBe(1);
+  });
+  it.each([403, 404])('bevarer kladde og sandfærdig fejl ved HTTP %i', async (status) => {
     const { source, session } = await open();
     add(session);
     const draft = session.exportDraft();

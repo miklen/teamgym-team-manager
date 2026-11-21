@@ -689,8 +689,6 @@ main {
 .start-open-options button { min-height: 49px; padding: 8px 6px; color: #3e5168; background: transparent; border-bottom: 1px solid #e2e6e6; font-size: .84rem; }
 .start-open-options button:last-child { border-bottom: 0; }
 .start-open-options button:hover { color: var(--accent); background: transparent; }
-.start-open-options .start-remember { display: flex; align-items: center; gap: 10px; min-height: 49px; color: #52627a; font-size: .74rem; line-height: 1.4; cursor: pointer; }
-.start-remember input { width: 18px; height: 18px; accent-color: var(--accent); flex: none; }
 .start-availability { max-width: 480px; margin: 12px 0 0; color: #66758b; font-size: .74rem; line-height: 1.5; }
 .start-trust { display: flex; gap: 15px; max-width: 480px; margin-top: auto; padding-top: 44px; color: #52627a; }
 .start-trust-mark { color: var(--accent); font-size: .7rem; line-height: 1.6rem; }

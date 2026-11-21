@@ -320,6 +320,7 @@ export class WorkspaceSession {
       return Promise.resolve();
     }
     const generation = this.generation;
+    const connection = this.connectionContext();
     let loaded = structuredClone(this.view.loaded);
     const draft = structuredClone(this.view.draft);
     this.publish({ state: 'saving', message: '' });
@@ -384,7 +385,16 @@ export class WorkspaceSession {
     };
     this.inFlight = work()
       .catch((error: unknown) => {
-        if (generation === this.generation) this.fail(error);
+        if (generation !== this.generation) return;
+        if (error instanceof DriveError &&
+            (error.code === 'auth' || (error.code === 'cancelled' && connection !== this.connectionContext()))) {
+          this.publish({
+            state: this.pending ? 'error' : this.dirty() ? 'changed' : 'unchanged',
+            message: this.pending ? 'Den seneste gemning afventer kontrol efter genforbindelse.' : '',
+          });
+          return;
+        }
+        this.fail(error);
       })
       .finally(() => {
         this.inFlight = null;
@@ -491,11 +501,14 @@ export class WorkspaceSession {
   async checkRemote() {
     if (!this.view.loaded || this.inFlight) return;
     const generation = this.generation;
+    const connection = this.connectionContext();
     const observedBasis = this.view.loaded.basis;
+    const observingSameFile = () =>
+      generation === this.generation && connection === this.connectionContext() &&
+      !this.inFlight && this.view.loaded?.basis === observedBasis;
     try {
-      const current = await this.client.read(this.view.loaded.basis.fileId);
-      if (generation !== this.generation || this.inFlight) return;
-      if (this.view.loaded?.basis !== observedBasis) return;
+      const current = await this.client.read(observedBasis.fileId);
+      if (!observingSameFile()) return;
       if (this.pending && this.recognize(current, this.pending)) return;
       if (
         current.basis.etag !== this.view.loaded!.basis.etag ||
@@ -532,7 +545,7 @@ export class WorkspaceSession {
             : 'Skriveadgangen er fjernet. Kladden er bevaret til eksport.',
         });
     } catch (error) {
-      if (generation === this.generation) this.fail(error);
+      if (observingSameFile() && !(error instanceof DriveError && error.code === 'auth')) this.fail(error);
     }
   }
 

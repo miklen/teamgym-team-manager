@@ -390,6 +390,9 @@ test('et større skruetillæg kan give lavere C+D og karakterloft', async ({ pag
   await expect(score.getByRole('row').filter({ hasText: 'C + D' }).getByRole('cell')).toHaveText(['3,630', '3,600']);
   await expect(score.getByRole('row').filter({ hasText: 'Karakterloft' }).getByRole('cell')).toHaveText(['13,630', '13,600']);
   expect(await dialog.evaluate((node) => node.scrollWidth <= node.clientWidth)).toBe(true);
+  const secondRound = dialog.getByRole('group', { name: 'Vælg omgang i forslaget' }).getByRole('button', { name: /^2\. omgang/ });
+  await secondRound.hover();
+  await expect(secondRound).toHaveCSS('background-color', 'rgb(239, 244, 255)');
   expect((await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa', 'wcag21aa', 'wcag22aa']).analyze()).violations).toEqual([]);
   expect(source.puts).toBe(0);
   expect(source.failures).toEqual([]);
