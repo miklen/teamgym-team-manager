@@ -1,9 +1,11 @@
 import { useId, useLayoutEffect, useRef, useState } from 'react';
 import type { CSSProperties, FocusEvent, KeyboardEvent, ReactNode } from 'react';
-import type { Stability } from '@teamgym/domain';
+import type { Fraction, Stability } from '@teamgym/domain';
+import { points } from './components';
 import { SpringDirectionFilter, directionCounts } from './spring-direction-filter';
 import { matchesDirection } from './spring-picker-model';
 import type { SpringDirectionFilter as DirectionFilter, SpringPurity } from './spring-picker-model';
+import { SpringMinimumFilter, passesSpringMinimum, useSpringMinimum } from './spring-minimum-filter';
 import './spring-plan.css';
 
 export function PlanDifficulty({ value, spotted }: { value: string | null; spotted?: string | undefined }) {
@@ -60,7 +62,7 @@ export interface PlanSkillOption {
   id: string;
   name: string;
   direction: string;
-  difficulty: string | null;
+  difficulty: Fraction | null;
   stability: Stability | null;
   /** Antal andre aktive gymnaster på holdet, der kan springet. Afledt, gemmes ikke. */
   known?: number;
@@ -279,19 +281,25 @@ export function PlanSkillSelect({
   const id = useId();
   const list = useSearchList();
   const { query, open } = list;
+  const [minimum, setMinimum] = useSpringMinimum();
   const [value, setValue] = useState(
     options.some((option) => option.id === initialValue) ? initialValue : '',
   );
   const selected = options.find((option) => option.id === value);
+  const eligible = options.filter((option) => passesSpringMinimum(option.difficulty, minimum));
   const searched = options.filter((option) =>
     matchesWords(query, `${option.name} ${option.direction} ${option.search ?? ''}`),
   );
   const directionFilter = direction?.value ?? 'all';
-  const filtered = searched.filter((option) => matchesDirection(option.purity, directionFilter));
+  const searchedByDifficulty = searched.filter((option) => passesSpringMinimum(option.difficulty, minimum));
+  const inDirection = (option: PlanSkillOption) => matchesDirection(option.purity, directionFilter);
+  const filtered = searchedByDifficulty.filter(inDirection);
   const rows: (PlanSkillOption | null)[] = query.trim() || catalog || team ? filtered : [null, ...filtered];
   const activeIndex = Math.min(list.active, rows.length - 1);
   const offset = catalog || team ? 0 : 1;
-  const start = options.findIndex((option) => option.id === value) + offset;
+  const start = eligible
+    .filter(inDirection)
+    .findIndex((option) => option.id === value) + offset;
   const choose = (option: PlanSkillOption | null) => {
     setValue(option?.id ?? '');
     onChange?.(option?.id ?? '');
@@ -335,7 +343,7 @@ export function PlanSkillSelect({
         </span>
         {selected && (
           <span className="plan-choice-numbers">
-            <PlanDifficulty value={selected.difficulty} />
+            <PlanDifficulty value={selected.difficulty ? points(selected.difficulty) : null} />
             {catalog ? (
               <PlanNoAthlete />
             ) : team && selected.team ? (
@@ -369,11 +377,21 @@ export function PlanSkillSelect({
               onChange={(event) => list.setQuery(event.target.value)}
               onKeyDown={list.searchKeyDown(rows.length, (index) => choose(rows[index]!))}
             />
+            <SpringMinimumFilter
+              minimum={minimum}
+              difficulties={options.map((option) => option.difficulty)}
+              shown={filtered.length}
+              total={searched.filter(inDirection).length}
+              onChange={(next) => {
+                setMinimum(next);
+                list.setActive(0);
+              }}
+            />
             {direction && (
               <SpringDirectionFilter
                 keepFocus
                 value={direction.value}
-                counts={directionCounts(searched.map((option) => option.purity ?? null))}
+                counts={directionCounts(searchedByDifficulty.map((option) => option.purity ?? null))}
                 onChange={(next) => {
                   direction.change(next);
                   list.setActive(0);
@@ -387,69 +405,74 @@ export function PlanSkillSelect({
             <span>{catalog ? 'Gymnast' : team ? 'Holdet' : 'Sikkerhed'}</span>
           </div>
           <ul id={`${id}-list`} role="listbox" aria-labelledby={`${id}-label`} className="plan-skill-options">
-            {rows.map((option, index) => (
-              <li
-                id={`${id}-option-${index}`}
-                key={option?.id ?? 'empty'}
-                role="option"
-                aria-selected={(option?.id ?? '') === value}
-                aria-label={
-                  option
-                    ? `${option.name}${option.direction ? `, ${option.direction}` : ''}${option.known ? `, kendt af ${option.known} på holdet` : ''}, D ${option.difficulty ?? 'Uafklaret'}, ${
-                        catalog
-                          ? 'ingen gymnast'
-                          : team && option.team
-                            ? rosterSpoken(option.team)
-                            : `sikkerhed ${option.stability === null ? 'Ikke vurderet' : `${option.stability}/5`}`
-                      }${spokenUsage(option.usage)}`
-                    : 'Vælg senere · ufuldstændig plads'
-                }
-                data-active={index === activeIndex}
-                className="plan-skill-option"
-                onPointerMove={() => list.setActive(index)}
-                onMouseDown={(event) => event.preventDefault()}
-                onClick={() => choose(option)}
-              >
-                <span className="plan-choice-name">
-                  <strong>{option?.name ?? 'Vælg senere'}</strong>
-                  <small>
-                    {option?.direction || (option ? '' : 'Gem pladsen uden spring')}
-                    {option?.known ? (
-                      <span className="team-known">Kendt af {option.known} på holdet</span>
-                    ) : null}
-                  </small>
-                  <UsageMarks usage={option?.usage} />
-                </span>
-                {option ? (
-                  <PlanDifficulty value={option.difficulty} />
-                ) : (
-                  <span className="plan-option-placeholder" aria-hidden="true">
-                    —
+            {rows.map((option, index) => {
+              const difficulty = option?.difficulty ? points(option.difficulty) : null;
+              return (
+                <li
+                  id={`${id}-option-${index}`}
+                  key={option?.id ?? 'empty'}
+                  role="option"
+                  aria-selected={(option?.id ?? '') === value}
+                  aria-label={
+                    option
+                      ? `${option.name}${option.direction ? `, ${option.direction}` : ''}${option.known ? `, kendt af ${option.known} på holdet` : ''}, D ${difficulty ?? 'Uafklaret'}, ${
+                          catalog
+                            ? 'ingen gymnast'
+                            : team && option.team
+                              ? rosterSpoken(option.team)
+                              : `sikkerhed ${option.stability === null ? 'Ikke vurderet' : `${option.stability}/5`}`
+                        }${spokenUsage(option.usage)}`
+                      : 'Vælg senere · ufuldstændig plads'
+                  }
+                  data-active={index === activeIndex}
+                  className="plan-skill-option"
+                  onPointerMove={() => list.setActive(index)}
+                  onMouseDown={(event) => event.preventDefault()}
+                  onClick={() => choose(option)}
+                >
+                  <span className="plan-choice-name">
+                    <strong>{option?.name ?? 'Vælg senere'}</strong>
+                    <small>
+                      {option?.direction || (option ? '' : 'Gem pladsen uden spring')}
+                      {option?.known ? (
+                        <span className="team-known">Kendt af {option.known} på holdet</span>
+                      ) : null}
+                    </small>
+                    <UsageMarks usage={option?.usage} />
                   </span>
-                )}
-                {catalog ? (
-                  <PlanNoAthlete />
-                ) : team && option?.team ? (
-                  <PlanRoster {...option.team} />
-                ) : (
-                  <PlanSafety value={option?.stability ?? null} />
-                )}
-                <span className="plan-option-check" aria-hidden="true">
-                  {(option?.id ?? '') === value ? '✓' : ''}
-                </span>
-              </li>
-            ))}
+                  {option ? (
+                    <PlanDifficulty value={difficulty} />
+                  ) : (
+                    <span className="plan-option-placeholder" aria-hidden="true">
+                      —
+                    </span>
+                  )}
+                  {catalog ? (
+                    <PlanNoAthlete />
+                  ) : team && option?.team ? (
+                    <PlanRoster {...option.team} />
+                  ) : (
+                    <PlanSafety value={option?.stability ?? null} />
+                  )}
+                  <span className="plan-option-check" aria-hidden="true">
+                    {(option?.id ?? '') === value ? '✓' : ''}
+                  </span>
+                </li>
+              );
+            })}
           </ul>
-          {(rows.length === 0 || (directionFilter !== 'all' && filtered.length === 0)) &&
+          {(rows.length === 0 || ((minimum || directionFilter !== 'all') && filtered.length === 0)) &&
             (options.length === 0 && empty ? (
               <div className="plan-options-empty" role="status">
                 {empty}
               </div>
             ) : (
               <p className="plan-options-empty" role="status">
-                {directionFilter !== 'all' && searched.length > 0
-                  ? `Ingen rene ${directionFilter === 'forward' ? 'forlæns' : 'baglæns'} spring ${subject === 'registrerede' ? 'registreret' : subject}${query.trim() ? ' matcher søgningen' : ''}.`
-                  : `Ingen ${subject === 'registrerede' ? 'registrerede spring' : `spring ${subject}`} matcher.`}
+                {minimum
+                  ? 'Ingen spring matcher minimum D og de øvrige filtre.'
+                  : directionFilter !== 'all' && searched.length > 0
+                    ? `Ingen rene ${directionFilter === 'forward' ? 'forlæns' : 'baglæns'} spring ${subject === 'registrerede' ? 'registreret' : subject}${query.trim() ? ' matcher søgningen' : ''}.`
+                    : `Ingen ${subject === 'registrerede' ? 'registrerede spring' : `spring ${subject}`} matcher.`}
               </p>
             ))}
         </div>

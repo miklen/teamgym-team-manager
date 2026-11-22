@@ -3,12 +3,13 @@ import { skillIdentity } from '@teamgym/domain';
 import type { ElementExecution, Workspace } from '@teamgym/domain';
 import type { RulePackage } from '@teamgym/rules';
 import { SpringChain } from './spring-chain';
-import { EMPTY_CHAIN, chainIsEmpty, chainPrefill, listedSpring } from './spring-chain-model';
+import { EMPTY_CHAIN, chainIsEmpty, chainPrefill, listedSpring, matchesChain } from './spring-chain-model';
 import type { ChainSlot, ChainState } from './spring-chain-model';
-import { filterSpringChoices, matchesDirection, springPickerRows, springPurity, teamUsableSpringCounts } from './spring-picker-model';
+import { matchesDirection, springPickerRows, springPurity, teamUsableSpringCounts } from './spring-picker-model';
 import type { SpringDirectionFilter as DirectionFilter } from './spring-picker-model';
 import { SpringDirectionFilter, directionCounts } from './spring-direction-filter';
-import { springDirectionText, springDisplayName, springLibrary } from './spring-library';
+import { SpringMinimumFilter, passesSpringMinimum, useSpringMinimum } from './spring-minimum-filter';
+import { matchesSpring, springDirectionText, springDisplayName, springLibrary } from './spring-library';
 import type { SpringDefinition } from './spring-library';
 import { PlanDifficulty } from './plan-skill-select';
 import { points } from './components';
@@ -28,26 +29,37 @@ export function AmbitionSpringPicker({ workspace, rulePackage, discipline, teamI
   onBuild: (elements: ElementExecution[]) => void;
 }) {
   const [query, setQuery] = useState('');
-  const [minimum, setMinimum] = useState('');
+  const [minimum, setMinimum] = useSpringMinimum();
   const [unknown, setUnknown] = useState(false);
   const [chain, setChain] = useState<ChainState>(EMPTY_CHAIN);
   const [active, setActive] = useState<ChainSlot | null>(0);
   const [direction, setDirection] = useState<DirectionFilter>('all');
-  const allChoices = useMemo(() => springLibrary(rulePackage, workspace).filter((item) => item.definition.discipline === discipline && listedSpring(item)), [rulePackage, workspace, discipline]);
-  const library = apparatus ? allChoices.filter((item) => apparatus.allows(item.definition)) : allChoices;
-  const prechain = filterSpringChoices(library, discipline, query, EMPTY_CHAIN, minimum, unknown, rulePackage);
-  const unfiltered = filterSpringChoices(library, discipline, query, chain, minimum, unknown, rulePackage);
-  const purities = unfiltered.map((item) => springPurity(rulePackage.evaluateSkill(item.definition)));
   const directional = discipline === 'tumbling';
-  const choices = directional ? unfiltered.filter((_, index) => matchesDirection(purities[index], direction)) : unfiltered;
+  const allChoices = useMemo(() => springLibrary(rulePackage, workspace)
+    .filter((choice) => choice.definition.discipline === discipline && listedSpring(choice))
+    .map((choice) => {
+      const evaluation = rulePackage.evaluateSkill(choice.definition);
+      return { choice, evaluation, purity: springPurity(evaluation), difficulty: evaluation.difficulty.value };
+    }), [rulePackage, workspace, discipline]);
+  const available = apparatus ? allChoices.filter(({ choice }) => apparatus.allows(choice.definition)) : allChoices;
+  const library = available.map(({ choice }) => choice);
+  const searched = available.filter(({ choice }) => matchesSpring(choice, query));
+  const byDifficulty = ({ difficulty }: (typeof available)[number]) =>
+    unknown ? difficulty === null : passesSpringMinimum(difficulty, minimum);
+  const inDirection = ({ purity }: (typeof available)[number]) => !directional || matchesDirection(purity, direction);
+  const prechain = searched.filter(byDifficulty);
+  const chained = searched.filter(({ choice }) => matchesChain(choice.definition, chain));
+  const matchingDifficulty = chained.filter(byDifficulty);
+  const choices = matchingDifficulty.filter(inDirection).map(({ choice }) => choice);
+  const evaluations = new Map(available.map(({ choice, evaluation }) => [choice.id, evaluation]));
   const counts = useMemo(() => teamUsableSpringCounts(workspace, teamId, rulePackage), [workspace, teamId, rulePackage]);
-  const rowCounts = new Map(library.map((choice) => [skillIdentity(choice.definition), counts.get(rulePackage.evaluateSkill(choice.definition).identity) ?? 0]));
+  const rowCounts = new Map(available.map(({ choice, evaluation }) => [skillIdentity(choice.definition), counts.get(evaluation.identity) ?? 0]));
   const rows = springPickerRows(library, choices, [], query, rowCounts);
   const prefill = chainPrefill(library.map((item) => item.definition), chain);
   const preview = selected?.discipline === 'tumbling' && approvalNote ? { ...selected, sharedConnectionApproval: { executionIdentity: skillIdentity(selected), approvedAt: new Date().toISOString(), note: approvalNote } } : selected;
   const selectionEvaluation = preview ? rulePackage.evaluateSkill(preview) : null;
   const selectedCapable = selectionEvaluation ? counts.get(selectionEvaluation.identity) ?? 0 : 0;
-  const reset = () => { setQuery(''); setMinimum(''); setUnknown(false); setChain(EMPTY_CHAIN); setActive(0); setDirection('all'); };
+  const reset = () => { setQuery(''); setMinimum(null); setUnknown(false); setChain(EMPTY_CHAIN); setActive(0); setDirection('all'); };
   return (
     <section className="ambition-picker" aria-label="Find spring til ambition">
       {apparatus?.message && <p className="muted">{apparatus.message}</p>}
@@ -55,20 +67,30 @@ export function AmbitionSpringPicker({ workspace, rulePackage, discipline, teamI
         <label>Søg spring
           <input type="search" aria-label="Søg sammensat spring eller alias" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Søg, fx strakt rondat" />
         </label>
-        {directional && <SpringDirectionFilter value={direction} onChange={setDirection} counts={directionCounts(purities)} />}
+        {directional && <SpringDirectionFilter value={direction} onChange={setDirection} counts={directionCounts(matchingDifficulty.map(({ purity }) => purity))} />}
         <details className="ambition-chain-filter">
           <summary>Kædefilter{!chainIsEmpty(chain) ? ' · aktivt' : ''}</summary>
-          <SpringChain discipline={discipline} definitions={prechain.map((item) => item.definition)} labels={library.map((item) => item.definition)} state={chain} change={setChain} active={active} setActive={setActive} />
+          <SpringChain discipline={discipline} definitions={prechain.map(({ choice }) => choice.definition)} labels={library.map((item) => item.definition)} state={chain} change={setChain} active={active} setActive={setActive} />
         </details>
-        <details className="picker-more" open={minimum !== '' || unknown || undefined}>
-          <summary>Filtrér på D{minimum || unknown ? ' · aktivt' : ''}</summary>
-          <div className="picker-more-fields">
-            <label>Minimum-D
-              <input type="text" inputMode="decimal" value={minimum} disabled={unknown} onChange={(event) => { if (/^\d*(?:[.,]\d*)?$/.test(event.target.value)) setMinimum(event.target.value); }} placeholder="Alle værdier" />
-            </label>
-            <label className="check"><input type="checkbox" checked={unknown} onChange={(event) => setUnknown(event.target.checked)} />Kun spring, hvor D er ukendt</label>
-          </div>
-        </details>
+        <SpringMinimumFilter
+          minimum={minimum}
+          difficulties={available.map(({ difficulty }) => difficulty)}
+          shown={choices.length}
+          total={chained.filter(inDirection).length}
+          onChange={setMinimum}
+          unknownOnly={unknown}
+        />
+        <label className="check ambition-picker-unknown">
+          <input
+            type="checkbox"
+            checked={unknown}
+            onChange={(event) => {
+              event.stopPropagation();
+              setUnknown(event.target.checked);
+            }}
+          />
+          Kun spring, hvor D er ukendt
+        </label>
       </div>
       {selected && <div className="ambition-picker-selected" role="status">
         <small>Valgt spring · bevares ved filtrering</small>
@@ -79,12 +101,12 @@ export function AmbitionSpringPicker({ workspace, rulePackage, discipline, teamI
         {selected.discipline === 'tumbling' && (selected.sharedConnectionApproval || approvalNote) && <small>Trænerbekræftet forbindelse{approvalNote ? ' ved gemning' : ''}</small>}
       </div>}
       {selected && twistElements(selected).map(({ element, index, label }) => <TwistSplit key={index} element={element} label={label} onChange={(distribution) => onSelect(withTwistDistribution(selected, index, distribution))} />)}
-      <div className="ambition-picker-results-head"><strong>Resultater</strong><span role="status">{choices.length} spring passer</span>{(query || minimum || unknown || !chainIsEmpty(chain) || (directional && direction !== 'all')) && <button type="button" className="quiet" onClick={reset}>Nulstil filtre</button>}</div>
+      <div className="ambition-picker-results-head"><strong>Resultater</strong>{(query || minimum || unknown || !chainIsEmpty(chain) || (directional && direction !== 'all')) && <button type="button" className="quiet" onClick={reset}>Nulstil filtre</button>}</div>
       {choices.length ? <div className="ambition-picker-results" role="list">
         {rows.map((row) => {
           const choice = row.choice;
-          if (!choice) return null;
-          const evaluation = rulePackage.evaluateSkill(choice.definition);
+          const evaluation = choice && evaluations.get(choice.id);
+          if (!choice || !evaluation) return null;
           const capable = counts.get(evaluation.identity) ?? 0;
           return <div key={row.key} role="listitem"><button type="button" className="ambition-picker-row" aria-label={`Vælg ${springDisplayName(choice.definition, rulePackage)}, ${capable} ${capable === 1 ? 'gymnast kan' : 'gymnaster kan'} springet`} onClick={() => onSelect({ ...structuredClone(choice.definition), id: choice.own ? choice.definition.id : crypto.randomUUID() })}>
             <span><strong>{springDisplayName(choice.definition, rulePackage)}</strong><small>{springDirectionText(choice.definition)} · {choice.definition.discipline === 'tumbling' && choice.definition.sharedConnectionApproval ? 'Trænerbekræftet forbindelse' : evaluation.connection === 'unverified' ? 'Forbindelse uafklaret' : 'Forbindelse kendt'}</small></span>

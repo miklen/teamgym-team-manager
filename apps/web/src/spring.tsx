@@ -1391,7 +1391,7 @@ function AthleteEntryForm({
               name: row.name,
               direction: row.direction,
               purity: row.purity,
-              difficulty: row.difficulty ? points(row.difficulty) : null,
+              difficulty: row.difficulty,
               stability: null,
               team: {
                 free: row.available.map((item) => athleteName(item.athleteId)?.name ?? ''),
@@ -1417,7 +1417,7 @@ function AthleteEntryForm({
               name: springDisplayName(skill, rulePackage),
               direction: springDirectionText(skill),
               purity: springPurity(evaluated),
-              difficulty: evaluated.difficulty.value ? points(evaluated.difficulty.value) : null,
+              difficulty: evaluated.difficulty.value,
               stability: registration.stability,
               usage: marks(evaluated.identity),
             }))}

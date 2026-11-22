@@ -50,6 +50,13 @@ for (const width of [1440, 390]) {
     await expect(full).toBeVisible();
     await expect(hard).toBeVisible();
     await expect(page.getByRole('dialog')).not.toContainText('Egen D');
+    const slider = page.getByRole('slider', { name: 'Minimum D' });
+    const track = await slider.boundingBox();
+    expect(track).not.toBeNull();
+    await slider.click({ position: { x: track!.width - 2, y: track!.height / 2 } });
+    await expect(slider).toHaveAttribute('aria-valuetext', 'Mindst 1,000');
+    await expect(hard).toBeVisible();
+    await expect(full).toHaveCount(0);
     await page.screenshot({ path: `tmp/ui-qa/plan-skill-options-${width}.png`, animations: 'disabled' });
     const accessibility = await new AxeBuilder({ page })
       .withTags(['wcag2a', 'wcag2aa', 'wcag21aa', 'wcag22aa'])
@@ -58,6 +65,8 @@ for (const width of [1440, 390]) {
     expect(
       await page.getByRole('dialog').evaluate((element) => element.scrollWidth <= element.clientWidth),
     ).toBe(true);
+    await page.getByRole('button', { name: 'Ryd minimum D' }).click();
+    await expect(full).toBeVisible();
     await search.fill('ingen match');
     await expect(
       page.getByRole('status').filter({ hasText: 'Ingen registrerede spring matcher.' }),
@@ -106,6 +115,94 @@ for (const width of [1440, 390]) {
     expect(source.failures).toEqual([]);
   });
 }
+
+test('D-skyderen viser grænsen og bortfiltrerede spring, og valget huskes mellem vælgerne', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  const setup = optionsWorkspace();
+  const withClara = createAthlete(setup, { name: 'Clara Eksempel', teamId: setup.teams[0]!.id });
+  const source = await openWorkspace(page, registerAthleteSkill(withClara, withClara.athletes[2]!.id, overviewFull).workspace);
+  await page.getByRole('link', { name: 'Springplan', exact: true }).click();
+  const addSlot = page.getByRole('button', { name: '+ Tilføj plads', exact: true }).first();
+  const dialog = page.getByRole('dialog');
+  const trigger = dialog.getByRole('button', { name: 'Spring', exact: true });
+  const minimum = dialog.getByRole('slider', { name: 'Minimum D', exact: true });
+  const count = dialog.getByRole('status').filter({ hasText: 'skjult af D' });
+  const rows = dialog.getByRole('listbox').getByRole('option');
+  const equal = rows.filter({ hasText: '0,800' });
+  const above = rows.filter({ hasText: '1,000' });
+
+  await addSlot.click();
+  await trigger.click();
+  await expect(rows).toHaveCount(3);
+  await expect(minimum).toHaveAttribute('aria-valuetext', 'Alle værdier');
+  await expect(count).toHaveText('3 af 3 spring vises · 0 skjult af D');
+  await minimum.press('End');
+  await expect(minimum).toHaveAttribute('aria-valuetext', 'Mindst 1,000');
+  await expect(count).toHaveText('1 af 3 spring vises · 2 skjult af D');
+  await minimum.press('ArrowLeft');
+  await expect(minimum).toHaveAttribute('aria-valuetext', 'Mindst 0,800');
+  await expect(equal).toBeVisible();
+  await expect(above).toBeVisible();
+  await expect(rows).toHaveCount(2);
+  await expect(count).toHaveText('2 af 3 spring vises · 1 skjult af D');
+  await minimum.press('End');
+  await minimum.press('Escape');
+  await trigger.click();
+  await expect(minimum).toHaveAttribute('aria-valuetext', 'Mindst 1,000');
+  await expect(rows).toHaveCount(1);
+  await expect(above).toBeVisible();
+  await dialog.getByRole('combobox', { name: 'Søg i holdets spring' }).press('Escape');
+  await dialog.getByRole('button', { name: 'Luk dialog', exact: true }).click();
+  await expect(dialog).toHaveCount(0);
+  await page.reload();
+
+  await addSlot.click();
+  await chooseAthlete(dialog, 'Alma Eksempel');
+  await trigger.click();
+  await expect(minimum).toHaveAttribute('aria-valuetext', 'Mindst 1,000');
+  await expect(equal).toHaveCount(0);
+  await expect(above).toBeVisible();
+  await expect(rows.getByText('Vælg senere')).toBeVisible();
+  await minimum.press('Enter');
+  await expect(minimum).toBeFocused();
+  const search = dialog.getByRole('combobox', { name: 'Søg registrerede spring' });
+  await search.fill('360');
+  await expect(rows).toHaveCount(0);
+  await expect(count).toHaveText('0 af 1 spring vises · 1 skjult af D');
+  await search.fill('720');
+  await expect(rows).toHaveCount(1);
+  await expect(above).toBeVisible();
+  await expect(count).toHaveText('1 af 1 spring vises · 0 skjult af D');
+  await search.press('Escape');
+
+  await chooseAthlete(dialog, 'Clara Eksempel');
+  await trigger.click();
+  await expect(minimum).toHaveAttribute('aria-valuetext', 'Mindst 1,000');
+  await expect(count).toHaveText('0 af 1 spring vises · 1 skjult af D');
+  await minimum.press('ArrowLeft');
+  await expect(minimum).toHaveAttribute('aria-valuetext', 'Mindst 0,800');
+  await expect(equal).toBeVisible();
+  await minimum.press('Escape');
+
+  await dialog.getByRole('radio', { name: 'Ingen gymnast endnu' }).check();
+  const ambition = dialog.getByRole('region', { name: 'Find spring til ambition' });
+  await expect(minimum).toHaveAttribute('aria-valuetext', 'Mindst 0,800');
+  await ambition.getByRole('checkbox', { name: 'Kun spring, hvor D er ukendt' }).check();
+  await expect(minimum).toBeDisabled();
+  await ambition.getByRole('checkbox', { name: 'Kun spring, hvor D er ukendt' }).uncheck();
+  await expect(minimum).toHaveAttribute('aria-valuetext', 'Mindst 0,800');
+  await ambition.getByRole('button', { name: 'Ryd minimum D' }).click();
+  await expect(minimum).toBeFocused();
+  await expect(minimum).toHaveAttribute('aria-valuetext', 'Alle værdier');
+  await expect(ambition.locator('.ambition-picker-row').first()).toBeVisible();
+  await page.reload();
+  await addSlot.click();
+  await trigger.click();
+  await expect(minimum).toHaveAttribute('aria-valuetext', 'Alle værdier');
+  await expect(rows).toHaveCount(3);
+  expect(source.puts).toBe(0);
+  expect(source.failures).toEqual([]);
+});
 
 test('springvalget nulstilles ved skift af gymnast og bevarer kladden ved lukning', async ({ page }) => {
   const source = await openWorkspace(page, optionsWorkspace());

@@ -142,10 +142,140 @@
 .plan-skill-search {
   padding: 12px;
 }
-.plan-skill-search input {
+.plan-skill-search > input {
   width: 100%;
   min-width: 0;
   background: #f7f9fc;
+}
+.plan-skill-search > .spring-minimum-filter {
+  margin-top: 8px;
+}
+.spring-minimum-filter {
+  padding: 0 12px 10px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: #f7f9fc;
+  transition: background-color 140ms ease, border-color 140ms ease;
+}
+.spring-minimum-filter[data-active='true'],
+.spring-minimum-filter:focus-within {
+  background: #f0f4ff;
+  border-color: #a8b8ee;
+}
+.spring-minimum-heading {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0 8px;
+  min-height: 44px;
+}
+.spring-minimum-heading > label {
+  color: var(--ink);
+  margin: 0;
+  font-weight: 750;
+}
+.spring-minimum-value {
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: #e9eef7;
+  color: #435572;
+  font-size: 0.72rem;
+  font-weight: 650;
+}
+.spring-minimum-filter[data-active='true'] .spring-minimum-value {
+  background: #dfe7ff;
+  color: #2945a3;
+}
+.spring-minimum-heading > button.quiet {
+  margin-inline-start: auto;
+  margin-inline-end: -6px;
+  padding-inline: 7px;
+  color: #2945a3;
+  font-size: 0.75rem;
+}
+.spring-minimum-axis {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 8px;
+  margin-block-start: -6px;
+  color: var(--muted);
+  font-size: 0.69rem;
+  font-weight: 650;
+}
+.spring-minimum-axis > input[type='range'] {
+  --minimum-rail: linear-gradient(to right, #b1bfd8 var(--minimum-position), var(--accent) var(--minimum-position));
+  appearance: none;
+  display: block;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  box-shadow: none;
+  cursor: pointer;
+  touch-action: pan-y;
+}
+.spring-minimum-axis > input:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+.spring-minimum-axis > input:focus-visible {
+  outline-offset: -3px;
+}
+.spring-minimum-axis > input::-webkit-slider-runnable-track {
+  height: 5px;
+  border-radius: 999px;
+  background: var(--minimum-rail);
+}
+.spring-minimum-axis > input::-moz-range-track {
+  height: 5px;
+  border-radius: 999px;
+  background: var(--minimum-rail);
+}
+.spring-minimum-axis > input::-webkit-slider-thumb {
+  appearance: none;
+  width: 20px;
+  height: 20px;
+  margin-top: -7.5px;
+  border: 2px solid var(--accent);
+  border-radius: 50%;
+  background: var(--paper);
+  box-shadow: 0 1px 3px #263e7a26;
+}
+.spring-minimum-axis > input::-moz-range-thumb {
+  width: 16px;
+  height: 16px;
+  border: 2px solid var(--accent);
+  border-radius: 50%;
+  background: var(--paper);
+  box-shadow: 0 1px 3px #263e7a26;
+}
+.spring-minimum-axis > input:active:not(:disabled)::-webkit-slider-thumb {
+  background: #dfe7ff;
+}
+.spring-minimum-axis > input:active:not(:disabled)::-moz-range-thumb {
+  background: #dfe7ff;
+}
+.spring-minimum-count,
+.spring-minimum-unavailable {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.72rem;
+}
+.spring-minimum-count strong {
+  color: var(--ink);
+  font-weight: 700;
+}
+@media (forced-colors: active) {
+  .spring-minimum-axis > input[type='range'] {
+    appearance: auto;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .spring-minimum-filter {
+    transition: none;
+  }
 }
 .plan-option-columns,
 .plan-skill-option {
